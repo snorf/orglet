@@ -4,12 +4,24 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts"],
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ],
   "references": [
-    { "path": "../metadata" },
-    { "path": "../schema" },
-    { "path": "../engine" },
-    { "path": "../api" }
+    {
+      "path": "../metadata"
+    },
+    {
+      "path": "../schema"
+    },
+    {
+      "path": "../engine"
+    },
+    {
+      "path": "../api"
+    }
   ]
 }
