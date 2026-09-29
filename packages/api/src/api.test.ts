@@ -50,6 +50,15 @@ afterAll(async () => {
   await pool.end();
 });
 
+describe("ui", () => {
+  it("serves the built-in page at / without a session", async () => {
+    const res = await app.inject({ method: "GET", url: "/" });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-type"]).toContain("text/html");
+    expect(res.body).toContain("<title>orglet</title>");
+  });
+});
+
 describe("login", () => {
   it("answers SOAP login with the fields jsforce and simple-salesforce read", async () => {
     const res = await app.inject({

@@ -3,6 +3,7 @@
  * describe, composite, limits. Everything under /services/data needs a bearer session and
  * answers JSON with Salesforce's error envelopes.
  */
+import { readFile } from "node:fs/promises";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import formbody from "@fastify/formbody";
 import type { DmlEngine, Session } from "@orglet/engine";
@@ -138,6 +139,10 @@ export function createApiServer(options: ApiOptions): FastifyInstance {
     req.log.error(err);
     return sendErrors(reply, 500, [apiError("UNKNOWN_EXCEPTION", err.message)]);
   });
+
+  // The built-in page: object browser and SOQL console, a single self-contained file.
+  const uiFile = new URL("../ui/index.html", import.meta.url);
+  app.get("/", async (_req, reply) => reply.type("text/html;charset=UTF-8").send(await readFile(uiFile, "utf8")));
 
   registerLoginRoutes(app, ctx);
   registerMiscRoutes(app, ctx);

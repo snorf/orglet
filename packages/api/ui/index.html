@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>orglet</title>
+<style>
+  :root { --bg: #f3f4f6; --panel: #fff; --line: #d9dde3; --text: #1b2733; --muted: #5f6b7a; --accent: #0b5cad; --accent-bg: #e7f0fa; --err: #b42318; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #14181d; --panel: #1d2329; --line: #313a44; --text: #e6e9ee; --muted: #9aa5b1; --accent: #6db3ff; --accent-bg: #223244; --err: #ff8a80; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; }
+  header .meta { color: var(--muted); font-size: 12px; margin-left: auto; }
+  main { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 45px); }
+  nav { border-right: 1px solid var(--line); background: var(--panel); overflow: auto; }
+  nav input { width: calc(100% - 16px); margin: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); }
+  nav button { display: block; width: 100%; text-align: left; padding: 6px 12px; border: 0; background: none; color: var(--text); cursor: pointer; font: inherit; }
+  nav button.active, nav button:hover { background: var(--accent-bg); }
+  nav .custom { color: var(--muted); font-size: 11px; margin-left: 6px; }
+  section { padding: 16px; overflow: auto; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .tabs button { padding: 6px 12px; border: 1px solid var(--line); border-bottom: 0; background: var(--bg); color: var(--text); cursor: pointer; font: inherit; border-radius: 4px 4px 0 0; }
+  .tabs button.active { background: var(--panel); font-weight: 600; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 0 4px 4px 4px; padding: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; max-width: 420px; overflow: hidden; text-overflow: ellipsis; }
+  th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  a, .link { color: var(--accent); cursor: pointer; text-decoration: none; }
+  textarea { width: 100%; min-height: 96px; padding: 8px; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); }
+  .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; flex-wrap: wrap; }
+  .btn { padding: 6px 12px; border: 1px solid var(--accent); background: var(--accent); color: #fff; border-radius: 4px; cursor: pointer; font: inherit; }
+  .btn.secondary { background: var(--panel); color: var(--accent); }
+  .muted { color: var(--muted); }
+  .error { color: var(--err); white-space: pre-wrap; font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .login { max-width: 360px; margin: 80px auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 20px; }
+  .login label { display: block; margin: 10px 0 4px; color: var(--muted); font-size: 12px; }
+  .login input { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--text); font: inherit; }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; word-break: break-word; }
+  pre { margin: 0; white-space: pre-wrap; font-size: 12px; }
+  @media (max-width: 720px) { main { grid-template-columns: 1fr; } nav { max-height: 200px; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+  const V = "59.0";
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const h = (tag, attrs = {}, ...children) => {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") el.className = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else if (v !== undefined && v !== null) el.setAttribute(k, v);
+    }
+    for (const c of children.flat()) if (c !== null && c !== undefined) el.append(c.nodeType ? c : document.createTextNode(String(c)));
+    return el;
+  };
+  const app = $("#app");
+  const state = { token: sessionStorage.getItem("orglet.token"), user: sessionStorage.getItem("orglet.user"), objects: [], current: null, tab: "records", soql: "", result: null, error: null };
+
+  async function api(path, options = {}) {
+    const res = await fetch(`/services/data/v${V}/${path}`, { ...options, headers: { Authorization: `Bearer ${state.token}`, "Content-Type": "application/json", ...(options.headers || {}) } });
+    if (res.status === 401) { logout(); throw new Error("Session expired"); }
+    const text = await res.text();
+    const body = text ? JSON.parse(text) : null;
+    if (!res.ok) throw Object.assign(new Error(Array.isArray(body) ? body.map((e) => `${e.errorCode}: ${e.message}`).join("\n") : `HTTP ${res.status}`), { body });
+    return body;
+  }
+
+  function logout() { sessionStorage.removeItem("orglet.token"); state.token = null; render(); }
+
+  async function login(username, password) {
+    const res = await fetch("/services/oauth2/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "password", client_id: "orglet-ui", client_secret: "x", username, password }) });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error_description || body.error);
+    state.token = body.access_token; state.user = username;
+    sessionStorage.setItem("orglet.token", state.token); sessionStorage.setItem("orglet.user", username);
+  }
+
+  function renderLogin() {
+    const form = h("form", { class: "login", onsubmit: async (e) => {
+      e.preventDefault();
+      try { await login($("#u", form).value, $("#p", form).value); await loadObjects(); render(); }
+      catch (err) { $("#err", form).textContent = err.message; }
+    } },
+      h("h2", { style: "margin-top:0" }, "orglet"),
+      h("p", { class: "muted" }, "Sign in with an org user. In permissive mode any password works."),
+      h("label", { for: "u" }, "Username"), h("input", { id: "u", value: "admin@orglet.local", autocomplete: "username" }),
+      h("label", { for: "p" }, "Password"), h("input", { id: "p", type: "password", value: "x", autocomplete: "current-password" }),
+      h("div", { class: "row" }, h("button", { class: "btn", type: "submit" }, "Sign in")),
+      h("div", { id: "err", class: "error" }));
+    app.replaceChildren(form);
+  }
+
+  async function loadObjects() {
+    const global = await api("sobjects");
+    state.objects = global.sobjects;
+  }
+
+  function flatten(record, prefix = "", out = {}) {
+    for (const [k, v] of Object.entries(record)) {
+      if (k === "attributes") continue;
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        if ("records" in v && Array.isArray(v.records)) out[prefix + k] = `${v.totalSize} record(s)`;
+        else if ("attributes" in v) flatten(v, `${prefix}${k}.`, out);
+        else out[prefix + k] = JSON.stringify(v);
+      } else out[prefix + k] = v;
+    }
+    return out;
+  }
+
+  function cell(key, value) {
+    if (value === null || value === undefined) return h("td", { class: "muted" }, "–");
+    if (typeof value === "number") return h("td", { class: "num" }, value);
+    if (typeof value === "string" && /^[a-zA-Z0-9]{18}$/.test(value) && (key === "Id" || key.endsWith("Id") || key.endsWith(".Id"))) {
+      return h("td", {}, h("span", { class: "link", onclick: () => openRecord(value) }, value));
+    }
+    return h("td", { title: String(value) }, String(value));
+  }
+
+  function resultTable(records) {
+    if (!records.length) return h("p", { class: "muted" }, "No records.");
+    const rows = records.map((r) => flatten(r));
+    const all = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+    // A null parent on one row and Parent.Name on another: keep the dotted columns only.
+    const cols = all.filter((c) => !all.some((o) => o.startsWith(`${c}.`)));
+    return h("div", { style: "overflow:auto" }, h("table", {},
+      h("thead", {}, h("tr", {}, cols.map((c) => h("th", {}, c)))),
+      h("tbody", {}, rows.map((r) => h("tr", {}, cols.map((c) => cell(c, r[c])))))));
+  }
+
+  async function runSoql(soql, url) {
+    state.error = null; state.result = null; render();
+    try {
+      state.result = url ? await api(url.replace(new RegExp(`^/services/data/v${V}/`), "")) : await api(`query?q=${encodeURIComponent(soql)}`);
+    } catch (err) { state.error = err.message; }
+    render();
+  }
+
+  async function openRecord(id) {
+    const prefix = id.slice(0, 3);
+    const obj = state.objects.find((o) => o.keyPrefix === prefix);
+    if (!obj) { state.error = `No object with key prefix ${prefix}`; return render(); }
+    state.error = null;
+    try {
+      const record = await api(`sobjects/${obj.name}/${id}`);
+      state.current = obj.name; state.tab = "record"; state.record = record;
+    } catch (err) { state.error = err.message; }
+    render();
+  }
+
+  async function selectObject(name, tab = "records") {
+    state.current = name; state.tab = tab; state.error = null; state.result = null; state.describe = null;
+    render();
+    try {
+      state.describe = await api(`sobjects/${name}/describe`);
+      if (tab === "records") {
+        const system = new Set(["Id", "IsDeleted", "CreatedById", "LastModifiedById", "SystemModstamp", "CreatedDate", "LastModifiedDate", "OwnerId", "RecordTypeId", "MasterRecordId", "LastViewedDate", "LastReferencedDate", "LastActivityDate", "PhotoUrl"]);
+        const usable = state.describe.fields.filter((f) => !system.has(f.name) && !f.calculated && !["address", "location", "textarea"].includes(f.type) && !f.name.endsWith("GeocodeAccuracy"));
+        const nameField = usable.find((f) => f.nameField);
+        const rest = usable.filter((f) => f !== nameField);
+        // Name first, then custom fields (the interesting ones in a real org), then the standard rest.
+        const fields = ["Id", ...(nameField ? [nameField.name] : []), ...rest.filter((f) => f.custom).map((f) => f.name), ...rest.filter((f) => !f.custom).map((f) => f.name)].slice(0, 9);
+        fields.push("LastModifiedDate");
+        state.soql = `SELECT ${fields.join(", ")} FROM ${name} ORDER BY LastModifiedDate DESC LIMIT 50`;
+        await runSoql(state.soql);
+        return;
+      }
+    } catch (err) { state.error = err.message; }
+    render();
+  }
+
+  function renderFields() {
+    if (!state.describe) return h("p", { class: "muted" }, "Loading…");
+    return h("div", { style: "overflow:auto" }, h("table", {},
+      h("thead", {}, h("tr", {}, ["Name", "Label", "Type", "Length", "Required", "Reference", "Picklist"].map((c) => h("th", {}, c)))),
+      h("tbody", {}, state.describe.fields.map((f) => h("tr", {},
+        h("td", {}, f.name, f.custom ? h("span", { class: "custom" }, "custom") : null),
+        h("td", {}, f.label),
+        h("td", {}, f.calculated ? `formula (${f.type})` : f.type),
+        h("td", { class: "num" }, f.length || f.precision ? (f.type === "double" || f.type === "currency" || f.type === "percent" || f.type === "int" ? `${f.precision},${f.scale}` : f.length) : ""),
+        h("td", {}, f.nillable || f.defaultedOnCreate ? "" : "yes"),
+        h("td", {}, f.referenceTo.join(", ")),
+        h("td", { title: f.picklistValues.map((v) => v.value).join(", ") }, f.picklistValues.map((v) => v.value).join(", ")))))));
+  }
+
+  function renderRecord() {
+    const r = state.record;
+    if (!r) return null;
+    const flat = flatten(r);
+    return h("div", {},
+      h("div", { class: "row" }, h("strong", {}, r.attributes.type), h("span", { class: "muted" }, r.Id),
+        h("button", { class: "btn secondary", onclick: () => { state.soql = `SELECT FIELDS(ALL) FROM ${r.attributes.type} WHERE Id = '${r.Id}'`; state.tab = "soql"; runSoql(state.soql); } }, "Open in SOQL")),
+      h("dl", {}, Object.entries(flat).flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, v === null ? h("span", { class: "muted" }, "–") : (typeof v === "string" && /^[a-zA-Z0-9]{18}$/.test(v) && k.endsWith("Id") && k !== "Id") ? h("span", { class: "link", onclick: () => openRecord(v) }, v) : String(v))])));
+  }
+
+  function renderSoql() {
+    const ta = h("textarea", { spellcheck: "false", onkeydown: (e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { state.soql = ta.value; runSoql(state.soql); } } }, state.soql);
+    const res = state.result;
+    return h("div", {},
+      ta,
+      h("div", { class: "row" },
+        h("button", { class: "btn", onclick: () => { state.soql = ta.value; runSoql(state.soql); } }, "Run"),
+        h("span", { class: "muted" }, "⌘/Ctrl+Enter"),
+        res ? h("span", { class: "muted" }, `${res.records.length} of ${res.totalSize} record(s)${res.done ? "" : ", more available"}`) : null,
+        res && !res.done ? h("button", { class: "btn secondary", onclick: () => runSoql(null, res.nextRecordsUrl) }, "Next page") : null),
+      state.error ? h("div", { class: "error" }, state.error) : null,
+      res ? resultTable(res.records) : null);
+  }
+
+  function render() {
+    if (!state.token) return renderLogin();
+    const filter = state.filter || "";
+    const nav = h("nav", {},
+      h("input", { placeholder: "Filter objects", value: filter, oninput: (e) => { state.filter = e.target.value; render(); $("nav input").focus(); const i = $("nav input"); i.setSelectionRange(i.value.length, i.value.length); } }),
+      state.objects.filter((o) => o.name.toLowerCase().includes(filter.toLowerCase())).map((o) =>
+        h("button", { class: o.name === state.current ? "active" : "", onclick: () => selectObject(o.name) }, o.name, o.custom ? h("span", { class: "custom" }, o.keyPrefix) : null)));
+    const tabs = h("div", { class: "tabs" }, ["records", "fields", "soql", ...(state.record ? ["record"] : [])].map((t) =>
+      h("button", { class: t === state.tab ? "active" : "", onclick: () => { state.tab = t; if (t === "records" && state.current) selectObject(state.current); else render(); } }, t[0].toUpperCase() + t.slice(1))));
+    let body;
+    if (state.tab === "fields") body = state.current ? renderFields() : h("p", { class: "muted" }, "Pick an object.");
+    else if (state.tab === "record") body = renderRecord();
+    else if (state.tab === "soql") body = renderSoql();
+    else body = state.current ? h("div", {}, h("p", { class: "muted" }, state.soql), state.error ? h("div", { class: "error" }, state.error) : null, state.result ? resultTable(state.result.records) : h("p", { class: "muted" }, "Loading…")) : h("p", { class: "muted" }, "Pick an object on the left, or write SOQL.");
+    app.replaceChildren(
+      h("header", {}, h("h1", {}, "orglet"), h("span", { class: "muted" }, state.current || ""), h("span", { class: "meta" }, state.user, " · ", h("span", { class: "link", onclick: logout }, "sign out"))),
+      h("main", {}, nav, h("section", {}, tabs, h("div", { class: "panel" }, body))));
+  }
+
+  (async () => {
+    if (state.token) { try { await loadObjects(); } catch { state.token = null; } }
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
