@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readSourceProject, UnsupportedMetadataError } from "./sfdx.js";
+import { readSourceProject } from "./sfdx.js";
 
 async function project(files: Record<string, string>): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "orglet-sfdx-"));
@@ -46,11 +46,14 @@ describe("readSourceProject", () => {
     expect(p.objects[0]?.fields[0]?.valueSet?.values).toEqual([{ value: "Only", label: "Only", default: true, active: true }]);
   });
 
-  it("rejects roll-up summary fields with an UNSUPPORTED error until they are implemented", async () => {
+  it("skips roll-up summary fields with an UNSUPPORTED warning and keeps loading", async () => {
     const root = await project({
       "objects/Foo__c/fields/Total__c.field-meta.xml": field("<fullName>Total__c</fullName><type>Summary</type><summaryOperation>count</summaryOperation>"),
+      "objects/Foo__c/fields/Bar__c.field-meta.xml": field("<fullName>Bar__c</fullName><type>Text</type><length>10</length>"),
     });
-    await expect(readSourceProject(root)).rejects.toBeInstanceOf(UnsupportedMetadataError);
+    const p = await readSourceProject(root);
+    expect(p.objects[0]?.fields.map((f) => f.fullName)).toEqual(["Bar__c"]);
+    expect(p.warnings).toEqual([expect.stringMatching(/^UNSUPPORTED:field-type .*Total__c.*Summary/)]);
   });
 
   it("reads metadata-format object files with inlined fields and rules", async () => {

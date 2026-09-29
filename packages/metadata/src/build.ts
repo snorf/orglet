@@ -406,7 +406,7 @@ function customKeyPrefix(index: number): string {
 }
 
 export function buildOrgSchema(baseline: Baseline, project?: SourceProject): BuildResult {
-  const warnings: string[] = [];
+  const warnings: string[] = [...(project?.warnings ?? [])];
   const standardValueSets = new Map(baseline.standardValueSets);
   for (const s of project?.standardValueSets ?? []) standardValueSets.set(s.name, s);
   const globalValueSets = new Map<string, GlobalValueSetDef>();

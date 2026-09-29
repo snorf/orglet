@@ -68,6 +68,8 @@ export interface SourceProject {
   objects: SourceObject[];
   globalValueSets: GlobalValueSetDef[];
   standardValueSets: StandardValueSetDef[];
+  /** `UNSUPPORTED:<area>` notes for metadata that was skipped rather than loaded. */
+  warnings: string[];
 }
 
 const CUSTOM_FIELD_TYPES = new Set<string>([
@@ -149,7 +151,8 @@ function parsePicklistValues(nodes: XmlNode[]): PicklistValue[] {
   });
 }
 
-function parseField(node: XmlNode, file: string): SourceField {
+/** Parse one field; unsupported field types are reported in `warnings` and skipped (undefined). */
+function parseField(node: XmlNode, file: string, warnings: string[]): SourceField | undefined {
   const fullName = str(node, "fullName");
   if (!fullName) throw new Error(`${file}: <fullName> missing`);
   const f: SourceField = { fullName };
@@ -157,7 +160,8 @@ function parseField(node: XmlNode, file: string): SourceField {
   if (type !== undefined) {
     if (!CUSTOM_FIELD_TYPES.has(type)) throw new Error(`${file}: unknown field type ${type}`);
     if (type === "Summary" || type === "ExternalLookup" || type === "IndirectLookup" || type === "Hierarchy" || type === "MetadataRelationship") {
-      throw new UnsupportedMetadataError("field-type", `${file}: field type ${type} is not supported yet`);
+      warnings.push(`UNSUPPORTED:field-type ${file}: field type ${type} is not supported yet; field skipped`);
+      return undefined;
     }
     f.type = type as FieldType;
   }
@@ -246,7 +250,7 @@ function parseRecordType(node: XmlNode, file: string): RecordTypeDef {
   return rt;
 }
 
-async function readObjectDir(dir: string): Promise<SourceObject> {
+async function readObjectDir(dir: string, warnings: string[]): Promise<SourceObject> {
   const name = basename(dir);
   const obj: SourceObject = { name, fields: [], validationRules: [], recordTypes: [] };
 
@@ -272,7 +276,10 @@ async function readObjectDir(dir: string): Promise<SourceObject> {
       if (fmt !== undefined) obj.nameField.displayFormat = fmt;
     }
     // Metadata-format style: fields/validationRules/recordTypes inlined in the object file.
-    for (const f of list(node, "fields")) obj.fields.push(parseField(f, objFile));
+    for (const f of list(node, "fields")) {
+      const parsed = parseField(f, objFile, warnings);
+      if (parsed) obj.fields.push(parsed);
+    }
     for (const r of list(node, "validationRules")) obj.validationRules.push(parseValidationRule(r, objFile));
     for (const r of list(node, "recordTypes")) obj.recordTypes.push(parseRecordType(r, objFile));
   } catch (err) {
@@ -280,7 +287,8 @@ async function readObjectDir(dir: string): Promise<SourceObject> {
   }
 
   for (const file of await filesWithSuffix(join(dir, "fields"), ".field-meta.xml")) {
-    obj.fields.push(parseField(parseMetadataXml(await readFile(file, "utf8"), "CustomField"), file));
+    const parsed = parseField(parseMetadataXml(await readFile(file, "utf8"), "CustomField"), file, warnings);
+    if (parsed) obj.fields.push(parsed);
   }
   for (const file of await filesWithSuffix(join(dir, "validationRules"), ".validationRule-meta.xml")) {
     obj.validationRules.push(parseValidationRule(parseMetadataXml(await readFile(file, "utf8"), "ValidationRule"), file));
@@ -314,13 +322,13 @@ async function readStandardValueSet(file: string): Promise<StandardValueSetDef> 
 
 export async function readSourceProject(rootDir: string): Promise<SourceProject> {
   const packageDirectories = await readPackageDirectories(rootDir);
-  const project: SourceProject = { rootDir, packageDirectories, objects: [], globalValueSets: [], standardValueSets: [] };
+  const project: SourceProject = { rootDir, packageDirectories, objects: [], globalValueSets: [], standardValueSets: [], warnings: [] };
 
   for (const pkgDir of packageDirectories) {
     for (const objectsDir of await findDirs(pkgDir, "objects")) {
       const entries = await readdir(objectsDir, { withFileTypes: true });
       for (const e of entries.filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
-        project.objects.push(await readObjectDir(join(objectsDir, e.name)));
+        project.objects.push(await readObjectDir(join(objectsDir, e.name), project.warnings));
       }
     }
     for (const dir of await findDirs(pkgDir, "globalValueSets")) {
