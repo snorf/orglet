@@ -185,51 +185,51 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | — | Pending |
-| INFRA-02 | — | Pending |
-| INFRA-03 | — | Pending |
-| INFRA-04 | — | Pending |
-| INFRA-05 | — | Pending |
-| INFRA-06 | — | Pending |
-| INFRA-07 | — | Pending |
-| PREFIX-01 | — | Pending |
-| PREFIX-02 | — | Pending |
-| PREFIX-03 | — | Pending |
-| PREFIX-04 | — | Pending |
-| BASE-01 | — | Pending |
-| BASE-02 | — | Pending |
-| BASE-03 | — | Pending |
-| BASE-04 | — | Pending |
-| BASE-05 | — | Pending |
-| POLY-01 | — | Pending |
-| POLY-02 | — | Pending |
-| POLY-03 | — | Pending |
-| POLY-04 | — | Pending |
-| POLY-05 | — | Pending |
-| POLY-06 | — | Pending |
-| ROLL-01 | — | Pending |
-| ROLL-02 | — | Pending |
-| ROLL-03 | — | Pending |
-| ROLL-04 | — | Pending |
-| ROLL-05 | — | Pending |
-| ROLL-06 | — | Pending |
-| ROLL-07 | — | Pending |
-| ROLL-08 | — | Pending |
-| ROLL-09 | — | Pending |
-| BULK-01 | — | Pending |
-| BULK-02 | — | Pending |
-| BULK-03 | — | Pending |
-| BULK-04 | — | Pending |
-| BULK-05 | — | Pending |
-| ACCEPT-01 | — | Pending |
-| ACCEPT-02 | — | Pending |
-| ACCEPT-03 | — | Pending |
+| INFRA-01 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Pending |
+| INFRA-05 | Phase 1 | Pending |
+| INFRA-06 | Phase 1 | Pending |
+| INFRA-07 | Phase 1 | Pending |
+| PREFIX-01 | Phase 2 | Pending |
+| PREFIX-02 | Phase 2 | Pending |
+| PREFIX-03 | Phase 2 | Pending |
+| PREFIX-04 | Phase 2 | Pending |
+| BASE-01 | Phase 3 | Pending |
+| BASE-02 | Phase 3 | Pending |
+| BASE-03 | Phase 3 | Pending |
+| BASE-04 | Phase 3 | Pending |
+| BASE-05 | Phase 3 | Pending |
+| POLY-01 | Phase 4 | Pending |
+| POLY-02 | Phase 4 | Pending |
+| POLY-03 | Phase 4 | Pending |
+| POLY-04 | Phase 4 | Pending |
+| POLY-05 | Phase 4 | Pending |
+| POLY-06 | Phase 4 | Pending |
+| ROLL-01 | Phase 5 | Pending |
+| ROLL-02 | Phase 5 | Pending |
+| ROLL-03 | Phase 5 | Pending |
+| ROLL-04 | Phase 5 | Pending |
+| ROLL-05 | Phase 5 | Pending |
+| ROLL-06 | Phase 5 | Pending |
+| ROLL-07 | Phase 5 | Pending |
+| ROLL-08 | Phase 5 | Pending |
+| ROLL-09 | Phase 5 | Pending |
+| BULK-01 | Phase 6 | Pending |
+| BULK-02 | Phase 6 | Pending |
+| BULK-03 | Phase 6 | Pending |
+| BULK-04 | Phase 6 | Pending |
+| BULK-05 | Phase 6 | Pending |
+| ACCEPT-01 | Phase 7 | Pending |
+| ACCEPT-02 | Phase 7 | Pending |
+| ACCEPT-03 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 39 total
-- Mapped to phases: 0
-- Unmapped: 39 ⚠️ (filled by roadmap)
+- Mapped to phases: 39
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-29*
-*Last updated: 2026-09-29 after initial definition*
+*Last updated: 2026-09-29 after roadmap creation*
