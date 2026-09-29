@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { SaveResult } from "@orglet/engine";
+import { normalizeDatetime, runQuery, type SaveResult } from "@orglet/engine";
 import { normalizeId } from "@orglet/schema";
 import { attributes } from "@orglet/soql";
 import { asString, type RecordData } from "@orglet/formula";
@@ -64,6 +64,38 @@ export function registerSobjectRoutes(app: FastifyInstance, ctx: ApiContext): vo
     const [result] = await ctx.engine.insert(session(req), obj.name, [(req.body ?? {}) as Record<string, unknown>]);
     if (!result?.success) return sendErrors(reply, statusFor(result as SaveResult), saveErrorsToApi(result as SaveResult));
     return reply.code(201).send({ id: result.id, success: true, errors: [] });
+  });
+
+  // ---- updated / deleted since ---------------------------------------------------------
+
+  const window = (req: FastifyRequest, reply: FastifyReply): { start: string; end: string } | undefined => {
+    const q = req.query as { start?: string; end?: string };
+    const start = q.start ? normalizeDatetime(q.start) : undefined;
+    const end = q.end ? normalizeDatetime(q.end) : undefined;
+    if (!start || !end) {
+      void sendErrors(reply, 400, [apiError("INVALID_QUERY_FILTER_OPERATOR", "The start and end parameters must be ISO 8601 date-times")]);
+      return undefined;
+    }
+    return { start, end };
+  };
+  const soqlDate = (iso: string) => iso.replace("+0000", "Z");
+
+  app.get<{ Params: { type: string } }>("/services/data/v:version/sobjects/:type/updated", async (req, reply) => {
+    const obj = objectOr404(req.params.type, reply);
+    if (!obj) return;
+    const w = window(req, reply);
+    if (!w) return;
+    const page = await runQuery(ctx.engine, session(req), `SELECT Id FROM ${obj.name} WHERE LastModifiedDate >= ${soqlDate(w.start)} AND LastModifiedDate <= ${soqlDate(w.end)} ORDER BY LastModifiedDate`, { apiVersion: version(req) });
+    return reply.send({ ids: page.records.map((r) => r["Id"]), latestDateCovered: w.end });
+  });
+
+  app.get<{ Params: { type: string } }>("/services/data/v:version/sobjects/:type/deleted", async (req, reply) => {
+    const obj = objectOr404(req.params.type, reply);
+    if (!obj) return;
+    const w = window(req, reply);
+    if (!w) return;
+    const page = await runQuery(ctx.engine, session(req), `SELECT Id, LastModifiedDate FROM ${obj.name} WHERE IsDeleted = true AND LastModifiedDate >= ${soqlDate(w.start)} AND LastModifiedDate <= ${soqlDate(w.end)} ORDER BY LastModifiedDate`, { apiVersion: version(req), includeDeleted: true });
+    return reply.send({ deletedRecords: page.records.map((r) => ({ id: r["Id"], deletedDate: r["LastModifiedDate"] })), earliestDateAvailable: w.start, latestDateCovered: w.end });
   });
 
   // ---- by record id -------------------------------------------------------------------
@@ -131,8 +163,9 @@ export function registerSobjectRoutes(app: FastifyInstance, ctx: ApiContext): vo
     const body = { ...((req.body ?? {}) as Record<string, unknown>), [field.name]: req.params.value };
     const [result] = await ctx.engine.upsert(session(req), obj.name, field.name, [body]);
     if (!result?.success) {
-      if (result?.errors[0]?.statusCode === "INVALID_OPERATION" && result.errors[0].message.startsWith("Duplicate external id")) {
-        return reply.code(300).send([apiError("MULTIPLE_CHOICES", result.errors[0].message)]);
+      const dup = result?.errors[0];
+      if (dup?.statusCode === "DUPLICATE_EXTERNAL_ID") {
+        return reply.code(300).send((dup.matchingIds ?? []).map((id) => `/services/data/v${version(req)}/sobjects/${obj.name}/${id}`));
       }
       return sendErrors(reply, statusFor(result as SaveResult), saveErrorsToApi(result as SaveResult));
     }

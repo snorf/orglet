@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { runQuery } from "@orglet/engine";
+import { compileSoql } from "@orglet/soql";
 import { apiError, sendErrors, session, type ApiContext } from "../server.js";
 
 interface Locator {
@@ -47,7 +48,15 @@ export function registerQueryRoutes(app: FastifyInstance, ctx: ApiContext): void
     ["queryAll", true],
   ] as const) {
     app.get(`/services/data/v:version/${path}`, async (req, reply) => {
-      const q = (req.query as { q?: string }).q;
+      const { q, explain } = req.query as { q?: string; explain?: string };
+      if (explain) {
+        // Validate the query and answer a plausible plan; orglet has no query optimiser to report on.
+        const compiled = compileSoql(explain, { schema: ctx.engine.schema, orgSchema: ctx.engine.orgSchema, includeDeleted: all });
+        return reply.send({
+          plans: [{ cardinality: 1, fields: [], leadingOperationType: "TableScan", notes: [], relativeCost: 1, sobjectCardinality: 1, sobjectType: compiled.sobject.name }],
+          sourceQuery: explain,
+        });
+      }
       if (!q) return sendErrors(reply, 400, [apiError("MALFORMED_QUERY", "unexpected token: end of query")]);
       return run(req, reply, q, all, 0);
     });

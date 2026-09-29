@@ -117,13 +117,13 @@ export class DmlEngine {
         const raw = input[extField.name] ?? input[externalIdField];
         const coerced = coerceValue(extField, raw);
         if (coerced.error || coerced.value === null) {
-          const w: Work = { index, errors: [coerced.error ?? Errors.requiredMissing([extField.name])], changes: {}, next: {} };
+          const w: Work = { index, errors: [coerced.error ?? Errors.requiredMissing([extField.name])], changes: {}, next: {}, created: false };
           all.push(w);
           continue;
         }
         const matches = extField.name === "Id" ? [...(await this.store.loadByIds(client, obj, [String(coerced.value)])).values()] : await this.store.findByField(client, obj, extField, coerced.value);
         if (matches.length > 1) {
-          const w: Work = { index, errors: [Errors.invalidOperation(`Duplicate external id specified: ${String(coerced.value)}`)], changes: {}, next: {} };
+          const w: Work = { index, errors: [Errors.duplicateExternalId(extField.name, String(coerced.value), matches.map((m) => asString(m["Id"])))], changes: {}, next: {}, created: false };
           all.push(w);
         } else if (matches.length === 1) {
           const existing = matches[0] as RecordData;
@@ -210,16 +210,25 @@ export class DmlEngine {
       if (allOrNone && failed) {
         await client.query("ROLLBACK");
         results = work.map((w) => {
-          if (w.errors.length > 0) return failure(w.errors);
+          if (w.errors.length > 0) {
+            const f = failure(w.errors);
+            if (w.created !== undefined) f.created = w.created;
+            return f;
+          }
           const r: SaveResult = { success: false, errors: [Errors.rolledBack()] };
           if (w.id) r.id = w.id;
+          if (w.created !== undefined) r.created = w.created;
           return r;
         });
         return results;
       }
       await client.query("COMMIT");
       results = work.map((w) => {
-        if (w.errors.length > 0) return failure(w.errors);
+        if (w.errors.length > 0) {
+          const f = failure(w.errors);
+          if (w.created !== undefined) f.created = w.created;
+          return f;
+        }
         const r: SaveResult = { success: true, errors: [] };
         if (w.id) r.id = w.id;
         if (w.created !== undefined) r.created = w.created;

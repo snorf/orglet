@@ -171,7 +171,8 @@ class Compiler {
       throw malformed((err as Error).message);
     }
     if (!query.sObject) throw malformed("unexpected token: FROM");
-    if (query.for) throw unsupported("soql-for", `FOR ${query.for} is not supported yet`);
+    // FOR VIEW / FOR REFERENCE only touch LastViewedDate; FOR UPDATE locks rows for the
+    // transaction, which a single-statement REST query never observes. All three are accepted.
     if (query.withDataCategory || query.withSecurityEnforced || query.withAccessLevel) throw unsupported("soql-with", "WITH clauses are not supported yet");
     const obj = this.objectFor(query.sObject);
     const scope: Scope = { obj, alias: this.nextAlias(), joins: new Map() };

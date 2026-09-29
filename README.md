@@ -13,8 +13,8 @@ documentation and open-source client SDKs; no Salesforce service is used for ben
 
 ## Status
 
-Phase 0, headless: the REST API works end to end against Postgres. Conformance against the
-upstream SDK test suites is in progress (M7).
+Phase 0, headless, is complete: the REST API works end to end against Postgres and the
+upstream SDK suites pass for everything phase 0 covers (see `conformance/`).
 
 | Milestone | Scope | State |
 |---|---|---|
@@ -25,7 +25,7 @@ upstream SDK test suites is in progress (M7).
 | M4 | DML engine implementing the documented order of execution | done |
 | M5 | SOQL to SQL compiler with Salesforce result shaping | done |
 | M6 | REST API: login, sobjects, query, describe, composite | done |
-| M7 | Conformance: `jsforce` e2e subset and `simple-salesforce` script pass | in progress |
+| M7 | Conformance: `simple-salesforce` 26/26, `jsforce` e2e subset 51 passing (Bulk, SOSL, layouts excluded) | done |
 
 Later phases: UI API + LWC/SLDS front end, Flows, change events to Kafka/SQS, Apex.
 

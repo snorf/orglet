@@ -133,6 +133,6 @@ describe("compileSoql", () => {
     } catch (e) {
       expect((e as SoqlError).errorCode).toBe("MALFORMED_QUERY");
     }
-    expect(() => compile("SELECT Id FROM Account FOR UPDATE")).toThrow(/UNSUPPORTED:soql-for/);
+    expect(compile("SELECT Id FROM Account FOR VIEW").sql).toContain('FROM "org"."account"');
   });
 });

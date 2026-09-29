@@ -6,6 +6,8 @@ export interface SaveError {
   statusCode: string;
   message: string;
   fields: string[];
+  /** DUPLICATE_EXTERNAL_ID only: the records that matched. */
+  matchingIds?: string[];
 }
 
 export interface SaveResult {
@@ -56,6 +58,12 @@ export const Errors = {
   rolledBack: () =>
     saveError("ALL_OR_NONE_OPERATION_ROLLED_BACK", "Record rolled back because not all records were valid and the request was using AllOrNone header"),
   missingId: () => saveError("MISSING_ARGUMENT", "Id not specified in an update call"),
+  duplicateExternalId: (field: string, value: string, ids: string[]): SaveError => ({
+    statusCode: "DUPLICATE_EXTERNAL_ID",
+    message: `Duplicate external id specified: ${value}`,
+    fields: [field],
+    matchingIds: ids,
+  }),
   invalidOperation: (message: string) => saveError("INVALID_OPERATION", message),
   unsupported: (area: string, message: string) => saveError("UNSUPPORTED", `UNSUPPORTED:${area} ${message}`),
 };
