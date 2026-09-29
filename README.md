@@ -13,20 +13,44 @@ documentation and open-source client SDKs; no Salesforce service is used for ben
 
 ## Status
 
-Phase 0, headless. Nothing works yet. The plan:
+Phase 0, headless: the REST API works end to end against Postgres. Conformance against the
+upstream SDK test suites is in progress (M7).
 
-| Milestone | Scope |
-|---|---|
-| M0 | Repo skeleton, toolchain, Postgres via docker compose |
-| M1 | SFDX source-format metadata parser, built-in standard objects |
-| M2 | Postgres schema generation and migration, Salesforce IDs |
-| M3 | Formula engine (validation rules, formula fields) |
-| M4 | DML engine implementing the documented order of execution |
-| M5 | SOQL to SQL compiler with Salesforce result shaping |
-| M6 | REST API: login, sobjects, query, describe, composite |
-| M7 | Conformance: `jsforce` e2e subset and `simple-salesforce` script pass |
+| Milestone | Scope | State |
+|---|---|---|
+| M0 | Repo skeleton, toolchain, Postgres via docker compose | done |
+| M1 | SFDX source-format metadata parser, built-in standard objects | done |
+| M2 | Postgres schema generation and migration, Salesforce IDs | done |
+| M3 | Formula engine (validation rules, formula fields) on vendored sigha | done |
+| M4 | DML engine implementing the documented order of execution | done |
+| M5 | SOQL to SQL compiler with Salesforce result shaping | done |
+| M6 | REST API: login, sobjects, query, describe, composite | done |
+| M7 | Conformance: `jsforce` e2e subset and `simple-salesforce` script pass | in progress |
 
 Later phases: UI API + LWC/SLDS front end, Flows, change events to Kafka/SQS, Apex.
+
+## Quick start
+
+```sh
+pnpm db:up
+pnpm build
+node packages/cli/dist/index.js up --project examples/acme
+```
+
+Then point any Salesforce client at `http://localhost:8080`:
+
+```sh
+curl -s -X POST http://localhost:8080/services/oauth2/token \
+  -d 'grant_type=password&client_id=x&client_secret=y&username=admin@orglet.local&password=anything'
+# -> { "access_token": "...", "instance_url": "http://localhost:8080", ... }
+
+curl -s -H "Authorization: Bearer $TOKEN" \
+  'http://localhost:8080/services/data/v59.0/query?q=SELECT+Id,Name+FROM+Account'
+```
+
+`--project` takes the output of `sf project retrieve` (SFDX source format). Objects, fields,
+validation rules, record types and value sets are read from it; standard objects come from the
+built-in baseline. Anything not supported is logged as `UNSUPPORTED:<area>` rather than faked.
 
 ## Layout
 
