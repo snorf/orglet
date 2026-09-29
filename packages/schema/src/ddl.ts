@@ -92,7 +92,7 @@ export function foreignKeySql(orgSchema: string, table: string, fk: ForeignKeySp
   return (
     `ALTER TABLE ${quote(orgSchema)}.${quote(table)} ADD CONSTRAINT ${quote(fk.name)} ` +
     `FOREIGN KEY (${quote(fk.column)}) REFERENCES ${quote(orgSchema)}.${quote(fk.referencesTable)} (${quote("id")}) ` +
-    `DEFERRABLE INITIALLY IMMEDIATE`
+    `DEFERRABLE INITIALLY DEFERRED`
   );
 }
 

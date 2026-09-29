@@ -144,6 +144,12 @@ export function fromSfValue(v: SfValue): RecordValue {
   }
 }
 
+/** Scalar rendering of a record value; nested records and blanks render as "". */
+export function asString(v: RecordValue | RecordData | undefined): string {
+  if (v === null || v === undefined || typeof v === "object") return "";
+  return String(v);
+}
+
 /** Blank-aware equality on record values, used by ISCHANGED. */
 export function recordValuesEqual(a: RecordValue | RecordData | undefined, b: RecordValue | RecordData | undefined): boolean {
   const na = a === undefined || a === "" || typeof a === "object" ? null : a;

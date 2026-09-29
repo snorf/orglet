@@ -188,6 +188,13 @@ function fromStandardJson(
     f.defaultedOnCreate = true;
     if (f.defaultValue === undefined) f.defaultValue = "false";
   }
+  // A picklist default is a value, not a formula: express it on the value set.
+  if (f.picklist && f.defaultValue !== undefined) {
+    const def = f.defaultValue;
+    f.picklist = { ...f.picklist, values: f.picklist.values.map((v) => ({ ...v, default: v.value === def })) };
+    delete f.defaultValue;
+    f.defaultedOnCreate = true;
+  }
   if (j.type === "AutoNumber" || j.formula !== undefined) {
     readOnly(f);
     if (j.type === "AutoNumber") f.defaultedOnCreate = true;
@@ -353,10 +360,19 @@ function isCustomObjectName(name: string): boolean {
   return /__c$/i.test(name);
 }
 
+function recordTypeField(): FieldDef {
+  const f = baseField("RecordTypeId", "Record Type ID", "Lookup", false);
+  f.referenceTo = ["RecordType"];
+  f.relationshipName = "RecordType";
+  f.defaultedOnCreate = true;
+  return f;
+}
+
 function fromSourceObject(obj: SourceObject, keyPrefix: string, sets: ValueSets): SObjectDef {
   const hasOwner = !obj.fields.some((f) => f.type === "MasterDetail");
   const sys = systemFields(hasOwner);
   const custom = obj.fields.map((f) => fromSourceField(f, obj.name, sets));
+  if (obj.recordTypes.length > 0) custom.unshift(recordTypeField());
   const label = obj.label ?? obj.name.replace(/__c$/i, "");
   return {
     name: obj.name,
