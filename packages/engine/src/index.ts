@@ -12,3 +12,5 @@ export { Store, formatAutoNumber } from "./store.js";
 export { FormulaRegistry, applyCompoundFields, applyFormulaFields } from "./formulas.js";
 export { loadParents } from "./parents.js";
 export { coerceValue, coerceRecord, normalizeDatetime } from "./coerce.js";
+export { runQuery } from "./query.js";
+export type { QueryOptions, QueryPage } from "./query.js";

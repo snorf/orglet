@@ -35,8 +35,7 @@ export async function loadParents(client: Queryable, store: Store, obj: SObjectD
 }
 
 function relationship(schema: OrgSchema, obj: SObjectDef, relationshipName: string): { field: string; target: SObjectDef } | undefined {
-  const field = obj.fields.find((f) => f.relationshipName?.toLowerCase() === relationshipName.toLowerCase());
-  if (!field || !field.referenceTo || field.referenceTo.length !== 1) return undefined;
-  const target = schema.getObject(field.referenceTo[0] ?? "");
-  return target ? { field: field.name, target } : undefined;
+  const resolved = schema.resolveRelationship(obj.name, relationshipName);
+  if (resolved === undefined || resolved === "polymorphic") return undefined;
+  return { field: resolved.field.name, target: resolved.target };
 }

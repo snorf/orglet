@@ -92,15 +92,13 @@ function resolvePath(schema: OrgSchema, objectName: string, path: readonly strin
       canonical.push(field.name);
       return { path: canonical, field };
     }
-    const rel = current.fields.find((f) => f.relationshipName?.toLowerCase() === segment.toLowerCase());
-    if (!rel || !rel.referenceTo || rel.referenceTo.length === 0) throw fieldNotFound(path.join("."));
-    if (rel.referenceTo.length > 1) {
-      throw new FormulaCompileError(`UNSUPPORTED:formula-polymorphic ${path.join(".")}: polymorphic relationship ${rel.relationshipName ?? segment} cannot be traversed`);
+    const resolved = schema.resolveRelationship(current.name, segment);
+    if (resolved === undefined) throw fieldNotFound(path.join("."));
+    if (resolved === "polymorphic") {
+      throw new FormulaCompileError(`UNSUPPORTED:formula-polymorphic ${path.join(".")}: polymorphic relationship ${segment} cannot be traversed`);
     }
-    const next = schema.getObject(rel.referenceTo[0] ?? "");
-    if (!next) throw new FormulaCompileError(`UNSUPPORTED:reference-target ${path.join(".")}: ${rel.referenceTo[0] ?? ""} is not defined`);
-    canonical.push(rel.relationshipName ?? segment);
-    current = next;
+    canonical.push(resolved.field.relationshipName ?? segment);
+    current = resolved.target;
   }
   throw fieldNotFound(path.join("."));
 }

@@ -269,9 +269,15 @@ importers:
 
   packages/soql:
     dependencies:
+      '@jetstreamapp/soql-parser-js':
+        specifier: ^8.1.0
+        version: 8.1.0
       '@orglet/metadata':
         specifier: workspace:*
         version: link:../metadata
+      '@orglet/schema':
+        specifier: workspace:*
+        version: link:../schema
 
 packages:
 
@@ -488,6 +494,10 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@jetstreamapp/soql-parser-js@8.1.0':
+    resolution: {integrity: sha512-Lb1nVhEZTC3jEP2eFIHuEIWLYB9VnlcXxho1d1RbPO2MwxJX8vI9PRmqtvvlTPPvRU9+U/mRSLm889fs8kn8+g==}
+    hasBin: true
 
   '@jridgewell/sourcemap-codec@1.6.0':
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
@@ -1499,6 +1509,8 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@jetstreamapp/soql-parser-js@8.1.0': {}
 
   '@jridgewell/sourcemap-codec@1.6.0': {}
 

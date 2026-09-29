@@ -10,11 +10,15 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b"
   },
   "dependencies": {
-    "@orglet/metadata": "workspace:*"
+    "@jetstreamapp/soql-parser-js": "^8.1.0",
+    "@orglet/metadata": "workspace:*",
+    "@orglet/schema": "workspace:*"
   }
 }

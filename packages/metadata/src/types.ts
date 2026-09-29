@@ -192,6 +192,12 @@ export interface OrgSchema {
   getObject(name: string): SObjectDef | undefined;
   getField(objectName: string, fieldName: string): FieldDef | undefined;
   childRelationships(objectName: string): ChildRelationship[];
+  /**
+   * Resolve a parent-side relationship name (`Account`, `Owner`, `Project__r`) on an object.
+   * Polymorphic lookups resolve when exactly one of their targets is defined in the schema;
+   * otherwise `"polymorphic"` is returned and callers need TYPEOF-style handling.
+   */
+  resolveRelationship(objectName: string, relationshipName: string): { field: FieldDef; target: SObjectDef } | "polymorphic" | undefined;
 }
 
 /**

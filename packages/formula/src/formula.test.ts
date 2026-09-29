@@ -40,7 +40,7 @@ describe("compileFormula", () => {
   });
 
   it("refuses polymorphic traversal and unknown globals explicitly", () => {
-    expect(() => rule("Owner.Alias = 'x'")).toThrow(/UNSUPPORTED:formula-polymorphic/);
+    expect(rule("Owner.Alias = 'x'").references[0]?.key).toBe("Owner.Alias"); // User|Group: only User is defined
     expect(() => rule("$Setup.Foo__c.Bar__c")).toThrow(/UNSUPPORTED:formula-global/);
   });
 
