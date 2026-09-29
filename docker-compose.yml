@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: orglet-postgres
+    environment:
+      POSTGRES_USER: orglet
+      POSTGRES_PASSWORD: orglet
+      POSTGRES_DB: orglet
+    ports:
+      - "${ORGLET_PG_PORT:-5433}:5432"
+    volumes:
+      - orglet-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orglet"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+volumes:
+  orglet-pgdata:

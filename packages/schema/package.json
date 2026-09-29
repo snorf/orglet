@@ -1,0 +1,26 @@
+{
+  "name": "@orglet/schema",
+  "version": "0.0.0",
+  "description": "Generates and migrates the Postgres schema from an OrgSchema; Salesforce ID generation",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@orglet/metadata": "workspace:*",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  }
+}

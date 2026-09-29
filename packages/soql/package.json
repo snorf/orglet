@@ -1,0 +1,20 @@
+{
+  "name": "@orglet/soql",
+  "version": "0.0.0",
+  "description": "SOQL parsing and compilation to parameterised SQL; Salesforce result shaping",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@orglet/metadata": "workspace:*"
+  }
+}

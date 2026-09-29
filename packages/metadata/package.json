@@ -1,0 +1,23 @@
+{
+  "name": "@orglet/metadata",
+  "version": "0.0.0",
+  "description": "Parses SFDX source-format metadata and built-in standard objects into an OrgSchema",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "standard"
+  ],
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.11.1"
+  }
+}
