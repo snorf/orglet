@@ -19,6 +19,12 @@ import { formatAutoNumber, Store } from "./store.js";
 export interface EngineOptions {
   orgSchema?: string;
   executors?: TriggerExecutor[];
+  /**
+   * Data-migration mode: records may carry their original Id and audit fields, lookups are
+   * not checked (so parents and children can arrive in any order), and validation rules and
+   * hooks are bypassed. Postgres foreign keys are disabled for the session while it is on.
+   */
+  importMode?: boolean;
 }
 
 export interface DmlOptions {
@@ -57,6 +63,7 @@ export class DmlEngine {
   readonly bus = new ChangeBus();
   readonly executors: TriggerExecutor[];
   readonly orgSchema: string;
+  readonly importMode: boolean;
 
   constructor(
     readonly pool: Pool,
@@ -67,6 +74,7 @@ export class DmlEngine {
     this.store = new Store(schema, this.orgSchema);
     this.formulas = new FormulaRegistry(schema);
     this.executors = options.executors ?? [];
+    this.importMode = options.importMode ?? false;
   }
 
   get warnings(): string[] {
@@ -203,6 +211,8 @@ export class DmlEngine {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
+      // Import mode: no FK enforcement, so a child can be loaded before its parent.
+      if (this.importMode) await client.query("SET LOCAL session_replication_role = replica");
       const globals = await this.loadGlobals(client, session);
       const work = await body(client, globals);
       work.sort((a, b) => a.index - b.index);
@@ -285,12 +295,19 @@ export class DmlEngine {
   // Preparation
 
   private prepareInsert(obj: SObjectDef, input: Record<string, unknown>, index: number): Work {
-    const coerced = coerceRecord(obj, input, "insert", (n) => this.schema.getField(obj.name, n));
-    return { index, errors: coerced.errors, changes: coerced.values, next: { ...coerced.values } };
+    const coerced = coerceRecord(obj, input, "insert", (n) => this.schema.getField(obj.name, n), this.importMode);
+    const w: Work = { index, errors: coerced.errors, changes: coerced.values, next: { ...coerced.values } };
+    const given = coerced.values["Id"];
+    if (typeof given === "string") {
+      if (keyPrefixOf(given) !== obj.keyPrefix) w.errors.push(Errors.malformedId("Id", "Id", given));
+      else w.id = given;
+      delete w.changes["Id"];
+    }
+    return w;
   }
 
   private prepareUpdate(obj: SObjectDef, input: Record<string, unknown>, index: number): Work {
-    const coerced = coerceRecord(obj, input, "update", (n) => this.schema.getField(obj.name, n));
+    const coerced = coerceRecord(obj, input, "update", (n) => this.schema.getField(obj.name, n), this.importMode);
     const w: Work = { index, errors: coerced.errors, changes: coerced.values, next: {} };
     const rawId = input["Id"] ?? input["id"];
     if (rawId === undefined || rawId === null || rawId === "") {
@@ -338,17 +355,21 @@ export class DmlEngine {
     // Build the prospective row: defaults + system fields (insert) or old + changes (update).
     for (const w of live()) {
       if (operation === "insert") {
-        w.id = generateId(obj.keyPrefix);
+        w.id ??= generateId(obj.keyPrefix);
         w.next = { ...(await this.defaults(client, obj, w.changes, session, globals)), ...w.changes };
-        Object.assign(w.next, { Id: w.id, IsDeleted: false, CreatedDate: now, CreatedById: session.userId, LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now });
+        const audit = { IsDeleted: false, CreatedDate: now, CreatedById: session.userId, LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now };
+        // Import mode keeps supplied audit values; otherwise the platform sets them.
+        for (const [k, v] of Object.entries(audit)) if (!this.importMode || w.changes[k] === undefined) w.next[k] = v;
+        w.next["Id"] = w.id;
         if (obj.hasOwner && w.next["OwnerId"] === undefined) w.next["OwnerId"] = session.userId;
       } else {
-        w.next = { ...(w.old ?? {}), ...w.changes, LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now };
+        const stamps = this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now };
+        w.next = { ...(w.old ?? {}), ...w.changes, ...stamps };
       }
     }
 
     // Before hooks may change `next`; anything they touch counts as a change.
-    await this.runHooks(session, obj, operation, "before", work.filter((w) => w.errors.length === 0));
+    if (!this.importMode) await this.runHooks(session, obj, operation, "before", work.filter((w) => w.errors.length === 0));
     for (const w of live()) {
       if (operation === "update") {
         for (const [k, v] of Object.entries(w.next)) {
@@ -361,10 +382,10 @@ export class DmlEngine {
 
     // System validation that needs the whole row: required fields and references.
     for (const w of live()) this.checkRequired(obj, w, operation);
-    await this.checkReferences(client, obj, live());
+    if (!this.importMode) await this.checkReferences(client, obj, live());
 
-    // Custom validation rules.
-    const rules = this.formulas.validationRules(obj);
+    // Custom validation rules (bypassed in import mode, like a data load with automation off).
+    const rules = this.importMode ? [] : this.formulas.validationRules(obj);
     if (rules.length > 0) {
       const candidates = live();
       const rows = candidates.map((w) => ({ ...w.next }));
@@ -384,7 +405,7 @@ export class DmlEngine {
       await client.query(`SAVEPOINT rec`);
       try {
         if (operation === "insert") await this.store.insert(client, obj, w.next);
-        else await this.store.update(client, obj, w.id as string, { ...w.changes, LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now });
+        else await this.store.update(client, obj, w.id as string, { ...w.changes, ...(this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now }) });
         await client.query(`RELEASE SAVEPOINT rec`);
       } catch (err) {
         await client.query(`ROLLBACK TO SAVEPOINT rec`);
@@ -393,7 +414,7 @@ export class DmlEngine {
       }
     }
 
-    await this.runHooks(session, obj, operation, "after", live());
+    if (!this.importMode) await this.runHooks(session, obj, operation, "after", live());
   }
 
   private async defaults(client: PoolClient, obj: SObjectDef, changes: RecordData, session: Session, globals: Globals): Promise<RecordData> {
@@ -491,6 +512,7 @@ export class DmlEngine {
   }
 
   private async duplicateError(client: PoolClient, obj: SObjectDef, w: Work, constraint: string | undefined): Promise<SaveError> {
+    if (constraint?.endsWith("_pkey")) return Errors.duplicateValue("Id", w.id ?? "");
     const field = obj.fields.find((f) => f.unique && constraint?.endsWith(f.name.toLowerCase()));
     if (!field) return Errors.duplicateValue(constraint ?? "unique", "");
     const value = w.next[field.name];

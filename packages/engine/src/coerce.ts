@@ -114,19 +114,23 @@ export interface CoercedRecord {
 /**
  * Coerce one client record for insert or update: unknown fields, read-only fields and bad
  * values become errors. `Id` and `attributes` are ignored here; callers handle them.
+ * In import mode every stored field is writable (audit fields, derived flags), and `Id` is
+ * kept on insert so migrated records keep their identifiers.
  */
-export function coerceRecord(obj: SObjectDef, input: Record<string, unknown>, operation: "insert" | "update", lookupField: (name: string) => FieldDef | undefined): CoercedRecord {
+export function coerceRecord(obj: SObjectDef, input: Record<string, unknown>, operation: "insert" | "update", lookupField: (name: string) => FieldDef | undefined, importMode = false): CoercedRecord {
   const values: RecordData = {};
   const errors: SaveError[] = [];
   const notWritable: string[] = [];
   for (const [key, raw] of Object.entries(input)) {
-    if (key === "attributes" || key.toLowerCase() === "id") continue;
+    if (key === "attributes") continue;
+    if (key.toLowerCase() === "id" && !(importMode && operation === "insert")) continue;
     const field = lookupField(key);
     if (!field) {
       errors.push(Errors.invalidField(key, obj.name));
       continue;
     }
-    if (field.formula !== undefined || (operation === "insert" ? !field.createable : !field.updateable)) {
+    const writable = importMode ? field.formula === undefined && field.type !== "Address" && field.type !== "Name" && field.type !== "Location" : operation === "insert" ? field.createable : field.updateable;
+    if (field.formula !== undefined || !writable) {
       notWritable.push(field.name);
       continue;
     }

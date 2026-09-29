@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { createPool, databaseUrlFromEnv, migrate, quote, type Pool } from "@orglet/schema";
+import { createPool, databaseUrlFromEnv, migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
 import type { ChangeEvent } from "./events.js";
@@ -218,5 +218,30 @@ describe("master-detail, delete and undelete", () => {
 
   it("refuses to touch unknown objects with a 404-style error", async () => {
     await expect(engine.insert(session, "Nope__c", [{}])).rejects.toMatchObject({ statusCode: "NOT_FOUND", httpStatus: 404 });
+  });
+});
+
+describe("import mode", () => {
+  it("keeps supplied ids and audit fields, loads children before parents, and bypasses rules and hooks", async () => {
+    const importer = new DmlEngine(pool, schema, { orgSchema, importMode: true, executors: [{ run: () => Promise.reject(new Error("hooks must not run")) }] });
+    const accountId = toCaseSafeId("001000000000AAA");
+    const contactId = toCaseSafeId("003000000000BBB");
+    const [child] = await importer.insert(session, "Contact", [{ Id: contactId, LastName: "First", AccountId: accountId, CreatedDate: "2020-01-02T03:04:05.000+0000", CreatedById: session.userId }]);
+    expect(child, JSON.stringify(child?.errors)).toMatchObject({ id: contactId, success: true });
+    const [parent] = await importer.insert(session, "Account", [{ Id: accountId, Name: "Imported", Type: "Customer - Direct", CreatedDate: "2019-06-01T00:00:00.000+0000" }]);
+    expect(parent, JSON.stringify(parent?.errors)).toMatchObject({ id: accountId, success: true });
+
+    const account = (await engine.retrieve(session, "Account", [accountId])).get(accountId);
+    expect(account).toMatchObject({ Name: "Imported", CreatedDate: "2019-06-01T00:00:00.000+0000", CreatedById: session.userId });
+    const contact = (await engine.retrieve(session, "Contact", [contactId])).get(contactId);
+    expect(contact).toMatchObject({ AccountId: accountId, CreatedDate: "2020-01-02T03:04:05.000+0000" });
+
+    const [dup] = await importer.insert(session, "Account", [{ Id: accountId, Name: "Again" }]);
+    expect(dup?.errors[0]).toMatchObject({ statusCode: "DUPLICATE_VALUE", fields: ["Id"] });
+    const [wrongPrefix] = await importer.insert(session, "Account", [{ Id: contactId, Name: "Wrong" }]);
+    expect(wrongPrefix?.errors[0]?.statusCode).toBe("MALFORMED_ID");
+    // Outside import mode the same validation rule still fires and ids are not accepted.
+    const [normal] = await engine.insert(session, "Account", [{ Id: toCaseSafeId("001000000000CCC"), Name: "Normal", Type: "Customer - Direct" }]);
+    expect(normal?.errors.map((e) => e.statusCode)).toContain("FIELD_CUSTOM_VALIDATION_EXCEPTION");
   });
 });

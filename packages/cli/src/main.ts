@@ -26,6 +26,8 @@ Options:
   --org-schema  Postgres schema holding the org tables (default "org")
   --force       Allow the migration to drop columns/tables and narrow types
   --users       Comma-separated username:password pairs; without it any password is accepted
+  --import      Data-migration mode: keep supplied Ids and audit fields, skip lookup checks,
+                validation rules and hooks (load parents and children in any order)
   --quiet       Only print errors
 `;
 
@@ -59,7 +61,7 @@ async function check(c: Common): Promise<number> {
   return 0;
 }
 
-async function up(c: Common, port: number, force: boolean, auth: AuthConfig): Promise<number> {
+async function up(c: Common, port: number, force: boolean, auth: AuthConfig, importMode: boolean): Promise<number> {
   const loaded = await loadOrgSchema(c.project ? { projectDir: c.project } : {});
   for (const w of loaded.warnings) console.warn(`warning: ${w}`);
   const pool = createPool(c.db);
@@ -76,8 +78,9 @@ async function up(c: Common, port: number, force: boolean, auth: AuthConfig): Pr
   log(c, `schema "${c.orgSchema}": ${changes} change(s) applied`);
 
   const boot = await bootstrapOrg(pool, loaded.schema, { orgSchema: c.orgSchema });
-  const engine = new DmlEngine(pool, loaded.schema, { orgSchema: c.orgSchema });
+  const engine = new DmlEngine(pool, loaded.schema, { orgSchema: c.orgSchema, importMode });
   for (const w of engine.warnings) console.warn(`warning: ${w}`);
+  if (importMode) console.warn("import mode: Ids and audit fields are accepted; lookups, validation rules and hooks are not enforced");
   engine.bus.subscribe((events) => {
     if (process.env["ORGLET_EVENTS"] === "stdout") for (const e of events) console.log(JSON.stringify({ event: "change", ...e }));
   });
@@ -121,6 +124,7 @@ export async function main(argv: string[]): Promise<number> {
       db: { type: "string" },
       "org-schema": { type: "string" },
       force: { type: "boolean" },
+      import: { type: "boolean" },
       users: { type: "string" },
       quiet: { type: "boolean" },
       help: { type: "boolean", short: "h" },
@@ -138,7 +142,7 @@ export async function main(argv: string[]): Promise<number> {
       const auth: AuthConfig = values.users
         ? { mode: "list", users: values.users.split(",").map((pair) => ({ username: pair.split(":")[0] ?? "", password: pair.split(":").slice(1).join(":") })) }
         : { mode: "permissive" };
-      return up(c, port, values.force === true, auth);
+      return up(c, port, values.force === true, auth, values.import === true);
     }
     case "check":
       return check(c);
