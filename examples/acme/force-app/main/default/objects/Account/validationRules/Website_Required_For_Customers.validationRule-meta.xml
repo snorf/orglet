@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Website_Required_For_Customers</fullName>
+    <active>true</active>
+    <description>Customers must have a website on file.</description>
+    <errorConditionFormula>AND(ISPICKVAL(Type, &quot;Customer - Direct&quot;), ISBLANK(Website))</errorConditionFormula>
+    <errorDisplayField>Website</errorDisplayField>
+    <errorMessage>Website is required for direct customers.</errorMessage>
+</ValidationRule>

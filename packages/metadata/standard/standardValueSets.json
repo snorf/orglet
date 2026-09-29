@@ -1,0 +1,757 @@
+{
+  "AccountType": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Prospect",
+        "label": "Prospect",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Customer - Direct",
+        "label": "Customer - Direct",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Customer - Channel",
+        "label": "Customer - Channel",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Channel Partner / Reseller",
+        "label": "Channel Partner / Reseller",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Installation Partner",
+        "label": "Installation Partner",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Technology Partner",
+        "label": "Technology Partner",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Other",
+        "label": "Other",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "Industry": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Agriculture",
+        "label": "Agriculture",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Apparel",
+        "label": "Apparel",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Banking",
+        "label": "Banking",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Biotechnology",
+        "label": "Biotechnology",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Chemicals",
+        "label": "Chemicals",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Communications",
+        "label": "Communications",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Construction",
+        "label": "Construction",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Consulting",
+        "label": "Consulting",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Education",
+        "label": "Education",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Electronics",
+        "label": "Electronics",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Energy",
+        "label": "Energy",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Engineering",
+        "label": "Engineering",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Entertainment",
+        "label": "Entertainment",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Environmental",
+        "label": "Environmental",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Finance",
+        "label": "Finance",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Food & Beverage",
+        "label": "Food & Beverage",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Government",
+        "label": "Government",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Healthcare",
+        "label": "Healthcare",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Hospitality",
+        "label": "Hospitality",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Insurance",
+        "label": "Insurance",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Machinery",
+        "label": "Machinery",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Manufacturing",
+        "label": "Manufacturing",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Media",
+        "label": "Media",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Not For Profit",
+        "label": "Not For Profit",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Recreation",
+        "label": "Recreation",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Retail",
+        "label": "Retail",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Shipping",
+        "label": "Shipping",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Technology",
+        "label": "Technology",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Telecommunications",
+        "label": "Telecommunications",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Transportation",
+        "label": "Transportation",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Utilities",
+        "label": "Utilities",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Other",
+        "label": "Other",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "AccountRating": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Hot",
+        "label": "Hot",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Warm",
+        "label": "Warm",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Cold",
+        "label": "Cold",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "AccountOwnership": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Public",
+        "label": "Public",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Private",
+        "label": "Private",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Subsidiary",
+        "label": "Subsidiary",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Other",
+        "label": "Other",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "LeadSource": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Web",
+        "label": "Web",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Phone Inquiry",
+        "label": "Phone Inquiry",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Partner Referral",
+        "label": "Partner Referral",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Purchased List",
+        "label": "Purchased List",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Other",
+        "label": "Other",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "LeadStatus": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Open - Not Contacted",
+        "label": "Open - Not Contacted",
+        "default": true,
+        "active": true,
+        "isConverted": false
+      },
+      {
+        "value": "Working - Contacted",
+        "label": "Working - Contacted",
+        "default": false,
+        "active": true,
+        "isConverted": false
+      },
+      {
+        "value": "Closed - Converted",
+        "label": "Closed - Converted",
+        "default": false,
+        "active": true,
+        "isConverted": true
+      },
+      {
+        "value": "Closed - Not Converted",
+        "label": "Closed - Not Converted",
+        "default": false,
+        "active": true,
+        "isConverted": false
+      }
+    ]
+  },
+  "Salutation": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Mr.",
+        "label": "Mr.",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Ms.",
+        "label": "Ms.",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Mrs.",
+        "label": "Mrs.",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Dr.",
+        "label": "Dr.",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Prof.",
+        "label": "Prof.",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "OpportunityStage": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Prospecting",
+        "label": "Prospecting",
+        "default": false,
+        "active": true,
+        "probability": 10,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Qualification",
+        "label": "Qualification",
+        "default": false,
+        "active": true,
+        "probability": 10,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Needs Analysis",
+        "label": "Needs Analysis",
+        "default": false,
+        "active": true,
+        "probability": 20,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Value Proposition",
+        "label": "Value Proposition",
+        "default": false,
+        "active": true,
+        "probability": 30,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Id. Decision Makers",
+        "label": "Id. Decision Makers",
+        "default": false,
+        "active": true,
+        "probability": 60,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Perception Analysis",
+        "label": "Perception Analysis",
+        "default": false,
+        "active": true,
+        "probability": 70,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Proposal/Price Quote",
+        "label": "Proposal/Price Quote",
+        "default": false,
+        "active": true,
+        "probability": 75,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Negotiation/Review",
+        "label": "Negotiation/Review",
+        "default": false,
+        "active": true,
+        "probability": 90,
+        "forecastCategory": "Pipeline",
+        "closed": false,
+        "won": false
+      },
+      {
+        "value": "Closed Won",
+        "label": "Closed Won",
+        "default": false,
+        "active": true,
+        "probability": 100,
+        "forecastCategory": "Closed",
+        "closed": true,
+        "won": true
+      },
+      {
+        "value": "Closed Lost",
+        "label": "Closed Lost",
+        "default": false,
+        "active": true,
+        "probability": 0,
+        "forecastCategory": "Omitted",
+        "closed": true,
+        "won": false
+      }
+    ]
+  },
+  "OpportunityType": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Existing Customer - Upgrade",
+        "label": "Existing Customer - Upgrade",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Existing Customer - Replacement",
+        "label": "Existing Customer - Replacement",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Existing Customer - Downgrade",
+        "label": "Existing Customer - Downgrade",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "New Customer",
+        "label": "New Customer",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "ForecastCategoryName": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Omitted",
+        "label": "Omitted",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Pipeline",
+        "label": "Pipeline",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Best Case",
+        "label": "Best Case",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Commit",
+        "label": "Commit",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Closed",
+        "label": "Closed",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "CaseStatus": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "New",
+        "label": "New",
+        "default": true,
+        "active": true,
+        "isClosed": false
+      },
+      {
+        "value": "Working",
+        "label": "Working",
+        "default": false,
+        "active": true,
+        "isClosed": false
+      },
+      {
+        "value": "Escalated",
+        "label": "Escalated",
+        "default": false,
+        "active": true,
+        "isClosed": false
+      },
+      {
+        "value": "Closed",
+        "label": "Closed",
+        "default": false,
+        "active": true,
+        "isClosed": true
+      }
+    ]
+  },
+  "CasePriority": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "High",
+        "label": "High",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Medium",
+        "label": "Medium",
+        "default": true,
+        "active": true
+      },
+      {
+        "value": "Low",
+        "label": "Low",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "CaseOrigin": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Phone",
+        "label": "Phone",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Email",
+        "label": "Email",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Web",
+        "label": "Web",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "CaseType": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Mechanical",
+        "label": "Mechanical",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Electrical",
+        "label": "Electrical",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Electronic",
+        "label": "Electronic",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Structural",
+        "label": "Structural",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Other",
+        "label": "Other",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "CaseReason": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Installation",
+        "label": "Installation",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Equipment Complexity",
+        "label": "Equipment Complexity",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Performance",
+        "label": "Performance",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Breakdown",
+        "label": "Breakdown",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Equipment Design",
+        "label": "Equipment Design",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Feedback",
+        "label": "Feedback",
+        "default": false,
+        "active": true
+      },
+      {
+        "value": "Other",
+        "label": "Other",
+        "default": false,
+        "active": true
+      }
+    ]
+  },
+  "ContractStatus": {
+    "sorted": false,
+    "values": [
+      {
+        "value": "Draft",
+        "label": "Draft",
+        "default": true,
+        "active": true,
+        "statusCode": "Draft"
+      },
+      {
+        "value": "In Approval Process",
+        "label": "In Approval Process",
+        "default": false,
+        "active": true,
+        "statusCode": "InApproval"
+      },
+      {
+        "value": "Activated",
+        "label": "Activated",
+        "default": false,
+        "active": true,
+        "statusCode": "Activated"
+      }
+    ]
+  }
+}

@@ -1,0 +1,460 @@
+{
+  "name": "Contract",
+  "label": "Contract",
+  "labelPlural": "Contracts",
+  "keyPrefix": "800",
+  "hasOwner": true,
+  "fields": [
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Account",
+      "childRelationshipName": "Contracts",
+      "nillable": false
+    },
+    {
+      "name": "ActivatedById",
+      "label": "Activated By ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "ActivatedBy",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ActivatedDate",
+      "label": "Activated Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BillingAddress",
+      "label": "Billing Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BillingCity",
+      "label": "Billing City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingCountry",
+      "label": "Billing Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingGeocodeAccuracy",
+      "label": "Billing Geocode Accuracy",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress",
+      "restrictedPicklist": true,
+      "picklistValues": [
+        {
+          "value": "Address",
+          "label": "Address"
+        },
+        {
+          "value": "NearAddress",
+          "label": "Near Address"
+        },
+        {
+          "value": "Block",
+          "label": "Block"
+        },
+        {
+          "value": "Street",
+          "label": "Street"
+        },
+        {
+          "value": "ExtendedZip",
+          "label": "Extended Zip"
+        },
+        {
+          "value": "Zip",
+          "label": "Zip"
+        },
+        {
+          "value": "Neighborhood",
+          "label": "Neighborhood"
+        },
+        {
+          "value": "City",
+          "label": "City"
+        },
+        {
+          "value": "County",
+          "label": "County"
+        },
+        {
+          "value": "State",
+          "label": "State"
+        },
+        {
+          "value": "Unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "BillingLatitude",
+      "label": "Billing Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingLongitude",
+      "label": "Billing Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingPostalCode",
+      "label": "Billing Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingState",
+      "label": "Billing State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingStreet",
+      "label": "Billing Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "CompanySignedDate",
+      "label": "Company Signed Date",
+      "type": "Date"
+    },
+    {
+      "name": "CompanySignedId",
+      "label": "Company Signed By ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "CompanySigned"
+    },
+    {
+      "name": "ContractNumber",
+      "label": "Contract Number",
+      "type": "AutoNumber",
+      "displayFormat": "{00000000}",
+      "nameField": true,
+      "idLookup": true,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ContractTerm",
+      "label": "Contract Term (months)",
+      "type": "Number",
+      "precision": 4,
+      "scale": 0
+    },
+    {
+      "name": "CustomerSignedDate",
+      "label": "Customer Signed Date",
+      "type": "Date"
+    },
+    {
+      "name": "CustomerSignedId",
+      "label": "Customer Signed By ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "CustomerSigned"
+    },
+    {
+      "name": "CustomerSignedTitle",
+      "label": "Customer Signed Title",
+      "type": "Text",
+      "length": 40
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "EndDate",
+      "label": "Contract End Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastActivityDate",
+      "label": "Last Activity",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastApprovedDate",
+      "label": "Last Approved Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Contract Name",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "OwnerExpirationNotice",
+      "label": "Owner Expiration Notice",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": [
+        {
+          "value": "15",
+          "label": "15 Days"
+        },
+        {
+          "value": "30",
+          "label": "30 Days"
+        },
+        {
+          "value": "45",
+          "label": "45 Days"
+        },
+        {
+          "value": "60",
+          "label": "60 Days"
+        },
+        {
+          "value": "90",
+          "label": "90 Days"
+        },
+        {
+          "value": "120",
+          "label": "120 Days"
+        }
+      ]
+    },
+    {
+      "name": "Pricebook2Id",
+      "label": "Price Book ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Pricebook2"
+      ],
+      "relationshipName": "Pricebook2",
+      "childRelationshipName": "Contracts"
+    },
+    {
+      "name": "RecordTypeId",
+      "label": "Record Type ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "RecordType"
+      ],
+      "relationshipName": "RecordType"
+    },
+    {
+      "name": "ShippingAddress",
+      "label": "Shipping Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ShippingCity",
+      "label": "Shipping City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingCountry",
+      "label": "Shipping Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingGeocodeAccuracy",
+      "label": "Shipping Geocode Accuracy",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress",
+      "restrictedPicklist": true,
+      "picklistValues": [
+        {
+          "value": "Address",
+          "label": "Address"
+        },
+        {
+          "value": "NearAddress",
+          "label": "Near Address"
+        },
+        {
+          "value": "Block",
+          "label": "Block"
+        },
+        {
+          "value": "Street",
+          "label": "Street"
+        },
+        {
+          "value": "ExtendedZip",
+          "label": "Extended Zip"
+        },
+        {
+          "value": "Zip",
+          "label": "Zip"
+        },
+        {
+          "value": "Neighborhood",
+          "label": "Neighborhood"
+        },
+        {
+          "value": "City",
+          "label": "City"
+        },
+        {
+          "value": "County",
+          "label": "County"
+        },
+        {
+          "value": "State",
+          "label": "State"
+        },
+        {
+          "value": "Unknown",
+          "label": "Unknown"
+        }
+      ]
+    },
+    {
+      "name": "ShippingLatitude",
+      "label": "Shipping Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingLongitude",
+      "label": "Shipping Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingPostalCode",
+      "label": "Shipping Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingState",
+      "label": "Shipping State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingStreet",
+      "label": "Shipping Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "SpecialTerms",
+      "label": "Special Terms",
+      "type": "LongTextArea",
+      "length": 4000
+    },
+    {
+      "name": "StartDate",
+      "label": "Contract Start Date",
+      "type": "Date"
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true,
+      "standardValueSet": "ContractStatus"
+    },
+    {
+      "name": "StatusCode",
+      "label": "Status Category",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "restrictedPicklist": true,
+      "picklistValues": [
+        {
+          "value": "Draft",
+          "label": "Draft"
+        },
+        {
+          "value": "InApproval",
+          "label": "In Approval Process"
+        },
+        {
+          "value": "Activated",
+          "label": "Activated"
+        },
+        {
+          "value": "Terminated",
+          "label": "Terminated"
+        },
+        {
+          "value": "Expired",
+          "label": "Expired"
+        }
+      ]
+    }
+  ]
+}

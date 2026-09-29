@@ -1,0 +1,101 @@
+{
+  "name": "User",
+  "label": "User",
+  "labelPlural": "Users",
+  "keyPrefix": "005",
+  "deletable": false,
+  "undeletable": false,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Username", "label": "Username", "type": "Text", "length": 80, "nillable": false, "unique": true, "idLookup": true },
+    { "name": "Email", "label": "Email", "type": "Email", "length": 128, "nillable": false, "idLookup": true },
+    { "name": "Name", "label": "Full Name", "type": "Name", "length": 203, "createable": false, "updateable": false, "nameField": true },
+    { "name": "FirstName", "label": "First Name", "type": "Text", "length": 40, "compoundFieldName": "Name" },
+    { "name": "LastName", "label": "Last Name", "type": "Text", "length": 80, "nillable": false, "compoundFieldName": "Name" },
+    { "name": "Alias", "label": "Alias", "type": "Text", "length": 8, "nillable": false },
+    { "name": "CommunityNickname", "label": "Nickname", "type": "Text", "length": 40, "nillable": false, "unique": true },
+    { "name": "IsActive", "label": "Active", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "true" },
+    { "name": "ProfileId", "label": "Profile ID", "type": "Lookup", "nillable": false, "referenceTo": ["Profile"], "relationshipName": "Profile", "childRelationshipName": "Users" },
+    { "name": "UserRoleId", "label": "Role ID", "type": "Lookup", "referenceTo": ["UserRole"], "relationshipName": "UserRole", "childRelationshipName": "Users" },
+    { "name": "ManagerId", "label": "Manager ID", "type": "Lookup", "referenceTo": ["User"], "relationshipName": "Manager", "childRelationshipName": "ManagedUsers" },
+    { "name": "TimeZoneSidKey", "label": "Time Zone", "type": "Picklist", "nillable": false, "restrictedPicklist": true, "picklistValues": [
+      { "value": "GMT", "label": "(GMT+00:00) Greenwich Mean Time (GMT)" },
+      { "value": "Europe/London", "label": "(GMT+00:00) British Time (Europe/London)" },
+      { "value": "Europe/Stockholm", "label": "(GMT+01:00) Central European Time (Europe/Stockholm)" },
+      { "value": "Europe/Berlin", "label": "(GMT+01:00) Central European Time (Europe/Berlin)" },
+      { "value": "Europe/Paris", "label": "(GMT+01:00) Central European Time (Europe/Paris)" },
+      { "value": "Europe/Helsinki", "label": "(GMT+02:00) Eastern European Time (Europe/Helsinki)" },
+      { "value": "America/New_York", "label": "(GMT-05:00) Eastern Standard Time (America/New_York)" },
+      { "value": "America/Chicago", "label": "(GMT-06:00) Central Standard Time (America/Chicago)" },
+      { "value": "America/Denver", "label": "(GMT-07:00) Mountain Standard Time (America/Denver)" },
+      { "value": "America/Los_Angeles", "label": "(GMT-08:00) Pacific Standard Time (America/Los_Angeles)" },
+      { "value": "Asia/Tokyo", "label": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)" },
+      { "value": "Australia/Sydney", "label": "(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)" }
+    ] },
+    { "name": "LocaleSidKey", "label": "Locale", "type": "Picklist", "nillable": false, "restrictedPicklist": true, "picklistValues": [
+      { "value": "en_US", "label": "English (United States)" },
+      { "value": "en_GB", "label": "English (United Kingdom)" },
+      { "value": "sv_SE", "label": "Swedish (Sweden)" },
+      { "value": "de_DE", "label": "German (Germany)" },
+      { "value": "fr_FR", "label": "French (France)" }
+    ] },
+    { "name": "EmailEncodingKey", "label": "Email Encoding", "type": "Picklist", "nillable": false, "restrictedPicklist": true, "picklistValues": [
+      { "value": "UTF-8", "label": "Unicode (UTF-8)" },
+      { "value": "ISO-8859-1", "label": "General US & Western Europe (ISO-8859-1, ISO-LATIN-1)" }
+    ] },
+    { "name": "LanguageLocaleKey", "label": "Language", "type": "Picklist", "nillable": false, "restrictedPicklist": true, "picklistValues": [
+      { "value": "en_US", "label": "English" },
+      { "value": "sv", "label": "Swedish" },
+      { "value": "de", "label": "German" },
+      { "value": "fr", "label": "French" }
+    ] },
+    { "name": "UserType", "label": "User Type", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
+      { "value": "Standard", "label": "Standard" },
+      { "value": "PowerPartner", "label": "Partner" },
+      { "value": "PowerCustomerSuccess", "label": "Customer Portal Manager" },
+      { "value": "CustomerSuccess", "label": "Customer Portal User" },
+      { "value": "Guest", "label": "Guest" },
+      { "value": "CspLitePortal", "label": "High Volume Portal" }
+    ] },
+    { "name": "Title", "label": "Title", "type": "Text", "length": 80 },
+    { "name": "Department", "label": "Department", "type": "Text", "length": 80 },
+    { "name": "Division", "label": "Division", "type": "Text", "length": 80 },
+    { "name": "CompanyName", "label": "Company Name", "type": "Text", "length": 80 },
+    { "name": "Phone", "label": "Phone", "type": "Phone", "length": 40 },
+    { "name": "MobilePhone", "label": "Mobile", "type": "Phone", "length": 40 },
+    { "name": "Fax", "label": "Fax", "type": "Phone", "length": 40 },
+    { "name": "Extension", "label": "Extension", "type": "Phone", "length": 40 },
+    { "name": "Address", "label": "Address", "type": "Address", "createable": false, "updateable": false },
+    { "name": "Street", "label": "Street", "type": "TextArea", "length": 255, "compoundFieldName": "Address" },
+    { "name": "City", "label": "City", "type": "Text", "length": 40, "compoundFieldName": "Address" },
+    { "name": "State", "label": "State/Province", "type": "Text", "length": 80, "compoundFieldName": "Address" },
+    { "name": "PostalCode", "label": "Zip/Postal Code", "type": "Text", "length": 20, "compoundFieldName": "Address" },
+    { "name": "Country", "label": "Country", "type": "Text", "length": 80, "compoundFieldName": "Address" },
+    { "name": "Latitude", "label": "Latitude", "type": "Number", "precision": 18, "scale": 15, "compoundFieldName": "Address" },
+    { "name": "Longitude", "label": "Longitude", "type": "Number", "precision": 18, "scale": 15, "compoundFieldName": "Address" },
+    { "name": "EmployeeNumber", "label": "Employee Number", "type": "Text", "length": 20 },
+    { "name": "AboutMe", "label": "About Me", "type": "LongTextArea", "length": 1000 },
+    { "name": "LastLoginDate", "label": "Last Login", "type": "DateTime", "createable": false, "updateable": false },
+    { "name": "SmallPhotoUrl", "label": "Photo URL", "type": "Url", "length": 1024, "createable": false, "updateable": false },
+    { "name": "FullPhotoUrl", "label": "Url for full-sized Photo", "type": "Url", "length": 1024, "createable": false, "updateable": false },
+    { "name": "ReceivesInfoEmails", "label": "Info Emails", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "ReceivesAdminInfoEmails", "label": "Admin Info Emails", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "UserPermissionsMarketingUser", "label": "Marketing User", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "UserPermissionsOfflineUser", "label": "Offline User", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "UserPreferencesActivityRemindersPopup", "label": "ActivityRemindersPopup", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "FederationIdentifier", "label": "SAML Federation ID", "type": "Text", "length": 512, "idLookup": true },
+    { "name": "AccountId", "label": "Account ID", "type": "Lookup", "createable": false, "updateable": false, "referenceTo": ["Account"], "relationshipName": "Account", "childRelationshipName": "Users" },
+    { "name": "ContactId", "label": "Contact ID", "type": "Lookup", "referenceTo": ["Contact"], "relationshipName": "Contact", "childRelationshipName": "Users" },
+    { "name": "DefaultGroupNotificationFrequency", "label": "Default Notification Frequency when Joining Groups", "type": "Picklist", "nillable": false, "defaultedOnCreate": true, "defaultValue": "N", "restrictedPicklist": true, "picklistValues": [
+      { "value": "P", "label": "Email on Each Post" },
+      { "value": "D", "label": "Daily Digests" },
+      { "value": "W", "label": "Weekly Digests" },
+      { "value": "N", "label": "Never", "default": true }
+    ] },
+    { "name": "DigestFrequency", "label": "Chatter Email Highlights Frequency", "type": "Picklist", "nillable": false, "defaultedOnCreate": true, "defaultValue": "D", "restrictedPicklist": true, "picklistValues": [
+      { "value": "D", "label": "Daily", "default": true },
+      { "value": "W", "label": "Weekly" },
+      { "value": "N", "label": "Never" }
+    ] }
+  ]
+}

@@ -1,0 +1,350 @@
+{
+  "name": "Account",
+  "label": "Account",
+  "labelPlural": "Accounts",
+  "keyPrefix": "001",
+  "hasOwner": true,
+  "fields": [
+    {
+      "name": "AccountNumber",
+      "label": "Account Number",
+      "type": "Text",
+      "length": 40
+    },
+    {
+      "name": "AccountSource",
+      "label": "Account Source",
+      "type": "Picklist",
+      "standardValueSet": "LeadSource"
+    },
+    {
+      "name": "AnnualRevenue",
+      "label": "Annual Revenue",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "BillingAddress",
+      "label": "Billing Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BillingCity",
+      "label": "Billing City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingCountry",
+      "label": "Billing Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingGeocodeAccuracy",
+      "label": "Billing Geocode Accuracy",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": [],
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingLatitude",
+      "label": "Billing Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingLongitude",
+      "label": "Billing Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingPostalCode",
+      "label": "Billing Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingState",
+      "label": "Billing State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingStreet",
+      "label": "Billing Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "ChannelProgramLevelName",
+      "label": "Channel Program Level Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ChannelProgramName",
+      "label": "Channel Program Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Account Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "Fax",
+      "label": "Account Fax",
+      "type": "Phone",
+      "length": 40
+    },
+    {
+      "name": "Industry",
+      "label": "Industry",
+      "type": "Picklist",
+      "standardValueSet": "Industry"
+    },
+    {
+      "name": "IsCustomerPortal",
+      "label": "Customer Portal Account",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "IsPartner",
+      "label": "Partner Account",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "IsPriorityRecord",
+      "label": "Important",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "LastActivityDate",
+      "label": "Last Activity",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MasterRecordId",
+      "label": "Master Record ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "MasterRecord",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Account Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "nameField": true
+    },
+    {
+      "name": "NumberOfEmployees",
+      "label": "Employees",
+      "type": "Number",
+      "precision": 8,
+      "scale": 0
+    },
+    {
+      "name": "Ownership",
+      "label": "Ownership",
+      "type": "Picklist",
+      "standardValueSet": "AccountOwnership"
+    },
+    {
+      "name": "ParentId",
+      "label": "Parent Account ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Parent",
+      "childRelationshipName": "ChildAccounts"
+    },
+    {
+      "name": "Phone",
+      "label": "Account Phone",
+      "type": "Phone",
+      "length": 40
+    },
+    {
+      "name": "PhotoUrl",
+      "label": "Photo URL",
+      "type": "Url",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Rating",
+      "label": "Account Rating",
+      "type": "Picklist",
+      "standardValueSet": "AccountRating"
+    },
+    {
+      "name": "RecordTypeId",
+      "label": "Record Type ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "RecordType"
+      ],
+      "relationshipName": "RecordType"
+    },
+    {
+      "name": "ShippingAddress",
+      "label": "Shipping Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ShippingCity",
+      "label": "Shipping City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingCountry",
+      "label": "Shipping Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingGeocodeAccuracy",
+      "label": "Shipping Geocode Accuracy",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": [],
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingLatitude",
+      "label": "Shipping Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingLongitude",
+      "label": "Shipping Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingPostalCode",
+      "label": "Shipping Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingState",
+      "label": "Shipping State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingStreet",
+      "label": "Shipping Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "Sic",
+      "label": "SIC Code",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "SicDesc",
+      "label": "SIC Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "Site",
+      "label": "Account Site",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "TickerSymbol",
+      "label": "Ticker Symbol",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "Type",
+      "label": "Account Type",
+      "type": "Picklist",
+      "standardValueSet": "AccountType"
+    },
+    {
+      "name": "Website",
+      "label": "Website",
+      "type": "Url",
+      "length": 255
+    }
+  ]
+}
