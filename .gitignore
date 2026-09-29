@@ -8,3 +8,5 @@ coverage/
 .DS_Store
 *.log
 .orglet/
+conformance/python/.venv/
+__pycache__/

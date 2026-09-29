@@ -75,7 +75,7 @@ export function baseUrl(req: FastifyRequest): string {
 }
 
 export function createApiServer(options: ApiOptions): FastifyInstance {
-  const app = Fastify({ logger: options.logger ?? false, bodyLimit: 64 * 1024 * 1024, maxParamLength: 500 });
+  const app = Fastify({ logger: options.logger ?? false, bodyLimit: 64 * 1024 * 1024, maxParamLength: 500, ignoreTrailingSlash: true });
   const ctx: ApiContext = {
     engine: options.engine,
     sessions: new SessionStore(options.engine, options.organizationId, options.auth ?? { mode: "permissive" }),

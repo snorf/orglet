@@ -15,9 +15,6 @@ export function registerMiscRoutes(app: FastifyInstance, ctx: ApiContext): void 
   app.get("/services/data", (_req, reply) =>
     reply.send(VERSIONS.map((v) => ({ label: label(v), url: `/services/data/v${v}.0`, version: `${v}.0` }))),
   );
-  app.get("/services/data/", (_req, reply) =>
-    reply.send(VERSIONS.map((v) => ({ label: label(v), url: `/services/data/v${v}.0`, version: `${v}.0` }))),
-  );
 
   app.get("/services/data/v:version", (req, reply) => {
     const v = req.apiVersion ?? ctx.defaultVersion;

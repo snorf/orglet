@@ -51,11 +51,6 @@ export function registerQueryRoutes(app: FastifyInstance, ctx: ApiContext): void
       if (!q) return sendErrors(reply, 400, [apiError("MALFORMED_QUERY", "unexpected token: end of query")]);
       return run(req, reply, q, all, 0);
     });
-    app.get(`/services/data/v:version/${path}/`, async (req, reply) => {
-      const q = (req.query as { q?: string }).q;
-      if (!q) return sendErrors(reply, 400, [apiError("MALFORMED_QUERY", "unexpected token: end of query")]);
-      return run(req, reply, q, all, 0);
-    });
     app.get<{ Params: { locator: string } }>(`/services/data/v:version/${path}/:locator`, async (req, reply) => {
       const decoded = lookupLocator(ctx.locators, req.params.locator);
       if (!decoded) return sendErrors(reply, 400, [apiError("INVALID_QUERY_LOCATOR", "invalid query locator")]);

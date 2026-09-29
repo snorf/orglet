@@ -1,0 +1,5 @@
+# Pin cryptography to a version with a prebuilt macOS wheel. Without SYSTEM_VERSION_COMPAT=0
+# set during install, pip reports macOS as 10.16 and falls back to building cryptography's
+# Rust extension from source, which links against the wrong libcrypto and fails to import.
+cryptography==43.0.3
+simple-salesforce
