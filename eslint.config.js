@@ -2,7 +2,7 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "**/node_modules/**", "conformance/**", "examples/**"] },
+  { ignores: ["**/dist/**", "**/node_modules/**", "conformance/**", "examples/**", "packages/sigha/src/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {

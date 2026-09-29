@@ -4,9 +4,18 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts"],
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ],
   "references": [
-    { "path": "../metadata" }
+    {
+      "path": "../metadata"
+    },
+    {
+      "path": "../sigha"
+    }
   ]
 }

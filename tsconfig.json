@@ -1,12 +1,29 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/metadata" },
-    { "path": "packages/schema" },
-    { "path": "packages/formula" },
-    { "path": "packages/soql" },
-    { "path": "packages/engine" },
-    { "path": "packages/api" },
-    { "path": "packages/cli" }
+    {
+      "path": "packages/sigha"
+    },
+    {
+      "path": "packages/metadata"
+    },
+    {
+      "path": "packages/schema"
+    },
+    {
+      "path": "packages/formula"
+    },
+    {
+      "path": "packages/soql"
+    },
+    {
+      "path": "packages/engine"
+    },
+    {
+      "path": "packages/api"
+    },
+    {
+      "path": "packages/cli"
+    }
   ]
 }

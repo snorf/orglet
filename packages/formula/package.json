@@ -10,11 +10,14 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b"
   },
   "dependencies": {
-    "@orglet/metadata": "workspace:*"
+    "@orglet/metadata": "workspace:*",
+    "@orglet/sigha": "workspace:*"
   }
 }
