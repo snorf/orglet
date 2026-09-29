@@ -14,6 +14,7 @@ import { registerLoginRoutes } from "./routes/login.js";
 import { registerSobjectRoutes } from "./routes/sobjects.js";
 import { registerQueryRoutes } from "./routes/query.js";
 import { registerCompositeRoutes } from "./routes/composite.js";
+import { registerBulkRoutes } from "./routes/bulk.js";
 import { registerMiscRoutes } from "./routes/misc.js";
 
 export interface ApiOptions {
@@ -149,5 +150,6 @@ export function createApiServer(options: ApiOptions): FastifyInstance {
   registerSobjectRoutes(app, ctx);
   registerQueryRoutes(app, ctx);
   registerCompositeRoutes(app, ctx);
+  registerBulkRoutes(app, ctx);
   return app;
 }
