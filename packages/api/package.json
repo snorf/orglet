@@ -10,14 +10,19 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b"
   },
   "dependencies": {
+    "@fastify/formbody": "^9.0.0",
+    "@orglet/engine": "workspace:*",
     "@orglet/metadata": "workspace:*",
     "@orglet/schema": "workspace:*",
     "@orglet/soql": "workspace:*",
-    "@orglet/engine": "workspace:*"
+    "fastify": "^5.12.5",
+    "@orglet/formula": "workspace:*"
   }
 }
