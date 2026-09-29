@@ -159,11 +159,12 @@ function parseField(node: XmlNode, file: string, warnings: string[]): SourceFiel
   const type = str(node, "type");
   if (type !== undefined) {
     if (!CUSTOM_FIELD_TYPES.has(type)) throw new Error(`${file}: unknown field type ${type}`);
-    if (type === "Summary" || type === "ExternalLookup" || type === "IndirectLookup" || type === "Hierarchy" || type === "MetadataRelationship") {
+    if (type === "Summary" || type === "ExternalLookup" || type === "IndirectLookup" || type === "MetadataRelationship") {
       warnings.push(`UNSUPPORTED:field-type ${file}: field type ${type} is not supported yet; field skipped`);
       return undefined;
     }
-    f.type = type as FieldType;
+    // Hierarchy is a self-referencing lookup (Account.ParentId, User.ManagerId).
+    f.type = type === "Hierarchy" ? "Lookup" : (type as FieldType);
   }
   const set = <K extends keyof SourceField>(key: K, value: SourceField[K] | undefined) => {
     if (value !== undefined) f[key] = value;

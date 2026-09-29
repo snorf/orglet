@@ -56,6 +56,15 @@ describe("readSourceProject", () => {
     expect(p.warnings).toEqual([expect.stringMatching(/^UNSUPPORTED:field-type .*Total__c.*Summary/)]);
   });
 
+  it("reads Hierarchy fields as lookups", async () => {
+    const root = await project({
+      "objects/Account/fields/ParentId.field-meta.xml": field("<fullName>ParentId</fullName><type>Hierarchy</type>"),
+    });
+    const p = await readSourceProject(root);
+    expect(p.objects[0]?.fields[0]).toMatchObject({ fullName: "ParentId", type: "Lookup" });
+    expect(p.warnings).toEqual([]);
+  });
+
   it("reads metadata-format object files with inlined fields and rules", async () => {
     const root = await project({
       "objects/Foo__c/Foo__c.object-meta.xml": `<?xml version="1.0" encoding="UTF-8"?>

@@ -312,8 +312,9 @@ function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): 
       break;
     case "Lookup":
     case "MasterDetail": {
-      if (!sf.referenceTo) throw new Error(`${objectName}.${sf.fullName}: ${sf.type} without <referenceTo>`);
-      f.referenceTo = [sf.referenceTo];
+      // A Hierarchy field arrives as Lookup without referenceTo: it points at its own object.
+      const referenceTo = sf.referenceTo ?? objectName;
+      f.referenceTo = [referenceTo];
       f.relationshipName = sf.fullName.replace(/__c$/i, "__r");
       if (sf.relationshipName) f.childRelationshipName = `${sf.relationshipName}__r`;
       if (sf.relationshipLabel !== undefined) f.relationshipLabel = sf.relationshipLabel;
