@@ -36,6 +36,6 @@ export async function loadParents(client: Queryable, store: Store, obj: SObjectD
 
 function relationship(schema: OrgSchema, obj: SObjectDef, relationshipName: string): { field: string; target: SObjectDef } | undefined {
   const resolved = schema.resolveRelationship(obj.name, relationshipName);
-  if (resolved === undefined || resolved === "polymorphic") return undefined;
+  if (resolved === undefined) return undefined;
   return { field: resolved.field.name, target: resolved.target };
 }

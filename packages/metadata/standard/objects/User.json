@@ -96,6 +96,21 @@
       { "value": "D", "label": "Daily", "default": true },
       { "value": "W", "label": "Weekly" },
       { "value": "N", "label": "Never" }
-    ] }
+    ] },
+    { "name": "CallCenterId", "label": "Call Center ID", "type": "Lookup", "referenceTo": ["CallCenter"], "relationshipName": "CallCenter" },
+    { "name": "DelegatedApproverId", "label": "Delegated Approver ID", "type": "Lookup", "referenceTo": ["Group", "User"], "relationshipName": "DelegatedApprover" },
+    { "name": "EndDay", "label": "End of Day", "type": "Picklist", "restrictedPicklist": true, "picklistValues": [] },
+    { "name": "ForecastEnabled", "label": "Allow Forecasting", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "IndividualId", "label": "Individual ID", "type": "Lookup", "referenceTo": ["Individual"], "relationshipName": "Individual" },
+    { "name": "IsSystemControlled", "label": "System Controlled", "type": "Checkbox", "nillable": false, "createable": false, "updateable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "JigsawImportLimitOverride", "label": "Data.com Monthly Addition Limit", "type": "Number", "precision": 9, "scale": 0 },
+    { "name": "SenderEmail", "label": "Email Sender Address", "type": "Email", "length": 80 },
+    { "name": "SenderName", "label": "Email Sender Name", "type": "Text", "length": 80 },
+    { "name": "Signature", "label": "Email Signature", "type": "LongTextArea", "length": 1333 },
+    { "name": "StartDay", "label": "Start of Day", "type": "Picklist", "restrictedPicklist": true, "picklistValues": [] },
+    { "name": "StayInTouchNote", "label": "Stay-in-Touch Email Note", "type": "Text", "length": 512 },
+    { "name": "StayInTouchSignature", "label": "Stay-in-Touch Email Signature", "type": "LongTextArea", "length": 512 },
+    { "name": "StayInTouchSubject", "label": "Stay-in-Touch Email Subject", "type": "Text", "length": 80 },
+    { "name": "WorkspaceId", "label": "Workspace ID", "type": "Lookup", "referenceTo": ["IdeaTheme"], "relationshipName": "Workspace" }
   ]
 }

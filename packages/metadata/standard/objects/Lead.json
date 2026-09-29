@@ -76,6 +76,23 @@
     { "name": "Status", "label": "Lead Status", "type": "Picklist", "nillable": false, "defaultedOnCreate": true, "standardValueSet": "LeadStatus" },
     { "name": "Street", "label": "Street", "type": "TextArea", "length": 255, "compoundFieldName": "Address" },
     { "name": "Title", "label": "Title", "type": "Text", "length": 128 },
-    { "name": "Website", "label": "Website", "type": "Url" }
+    { "name": "Website", "label": "Website", "type": "Url" },
+    { "name": "CampaignId", "label": "Campaign ID", "type": "Lookup", "referenceTo": ["Campaign"], "relationshipName": "Campaign", "childRelationshipName": "Leads" },
+    { "name": "CleanStatus", "label": "Clean Status", "type": "Picklist", "restrictedPicklist": true, "picklistValues": [
+      { "value": "Matched", "label": "Matched" },
+      { "value": "Different", "label": "Different" },
+      { "value": "Acknowledged", "label": "Acknowledged" },
+      { "value": "NotFound", "label": "NotFound" },
+      { "value": "Inactive", "label": "Inactive" },
+      { "value": "Pending", "label": "Pending" },
+      { "value": "SelectMatch", "label": "SelectMatch" },
+      { "value": "Skipped", "label": "Skipped" }
+    ] },
+    { "name": "CompanyDunsNumber", "label": "Company D-U-N-S Number", "type": "Text", "length": 9 },
+    { "name": "DandbCompanyId", "label": "D&B Company ID", "type": "Lookup", "referenceTo": ["DandBCompany"], "relationshipName": "DandbCompany" },
+    { "name": "DoNotCall", "label": "Do Not Call", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "IndividualId", "label": "Individual ID", "type": "Lookup", "referenceTo": ["Individual"], "relationshipName": "Individual" },
+    { "name": "Jigsaw", "label": "Data.com Key", "type": "Text", "length": 20 },
+    { "name": "LastTransferDate", "label": "Last Transfer Date", "type": "Date", "createable": false, "updateable": false }
   ]
 }

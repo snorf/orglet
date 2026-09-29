@@ -50,14 +50,14 @@ export class OrgSchemaImpl implements OrgSchema {
     return this.fieldIndex.get(objectName.toLowerCase())?.get(fieldName.toLowerCase());
   }
 
-  resolveRelationship(objectName: string, relationshipName: string): { field: FieldDef; target: SObjectDef } | "polymorphic" | undefined {
+  resolveRelationship(objectName: string, relationshipName: string): { field: FieldDef; target: SObjectDef; targets: SObjectDef[]; polymorphic: boolean } | undefined {
     const obj = this.getObject(objectName);
     const field = obj?.fields.find((f) => f.relationshipName?.toLowerCase() === relationshipName.toLowerCase());
     if (!field?.referenceTo || field.referenceTo.length === 0) return undefined;
     const defined = field.referenceTo.map((n) => this.getObject(n)).filter((o): o is SObjectDef => o !== undefined);
-    if (defined.length === 1) return { field, target: defined[0] as SObjectDef };
-    if (defined.length === 0) return undefined;
-    return "polymorphic";
+    const target = defined[0];
+    if (!target) return undefined;
+    return { field, target, targets: defined, polymorphic: defined.length > 1 };
   }
 
   childRelationships(objectName: string): ChildRelationship[] {

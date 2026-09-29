@@ -386,6 +386,77 @@
       "label": "Title",
       "type": "Text",
       "length": 128
+    },
+    {
+      "name": "BuyerAttributes",
+      "label": "Buyer Attributes",
+      "type": "MultiselectPicklist",
+      "length": 4099,
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "BusinessUser", "label": "BusinessUser" },
+        { "value": "Buyer", "label": "Buyer" },
+        { "value": "Champion", "label": "Champion" },
+        { "value": "DecisionMaker", "label": "DecisionMaker" },
+        { "value": "Detractor", "label": "Detractor" },
+        { "value": "Evaluator", "label": "Evaluator" },
+        { "value": "ExecutiveSponsor", "label": "ExecutiveSponsor" },
+        { "value": "TechnicalExpert", "label": "TechnicalExpert" }
+      ]
+    },
+    {
+      "name": "CleanStatus",
+      "label": "Clean Status",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "Matched", "label": "Matched" },
+        { "value": "Different", "label": "Different" },
+        { "value": "Acknowledged", "label": "Acknowledged" },
+        { "value": "NotFound", "label": "NotFound" },
+        { "value": "Inactive", "label": "Inactive" },
+        { "value": "Pending", "label": "Pending" },
+        { "value": "SelectMatch", "label": "SelectMatch" },
+        { "value": "Skipped", "label": "Skipped" }
+      ]
+    },
+    {
+      "name": "ContactSource",
+      "label": "Creation Source",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "Auto Create", "label": "Auto Create" }
+      ]
+    },
+    {
+      "name": "IndividualId",
+      "label": "Individual ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Individual"
+      ],
+      "relationshipName": "Individual"
+    },
+    {
+      "name": "Jigsaw",
+      "label": "Data.com Key",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "LastCURequestDate",
+      "label": "Last Stay-in-Touch Request Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastCUUpdateDate",
+      "label": "Last Stay-in-Touch Save Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
     }
   ]
 }

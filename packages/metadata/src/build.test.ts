@@ -155,6 +155,6 @@ describe("examples/acme merged onto the baseline", () => {
   });
 
   it("reports unknown reference targets as warnings instead of failing", () => {
-    expect(result.warnings.some((w) => w.startsWith("UNSUPPORTED:reference-target Group"))).toBe(true);
+    expect(result.warnings.some((w) => w.startsWith("UNSUPPORTED:reference-target BusinessProcess"))).toBe(true);
   });
 });

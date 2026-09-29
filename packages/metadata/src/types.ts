@@ -194,10 +194,10 @@ export interface OrgSchema {
   childRelationships(objectName: string): ChildRelationship[];
   /**
    * Resolve a parent-side relationship name (`Account`, `Owner`, `Project__r`) on an object.
-   * Polymorphic lookups resolve when exactly one of their targets is defined in the schema;
-   * otherwise `"polymorphic"` is returned and callers need TYPEOF-style handling.
+   * For polymorphic lookups `target` is the first defined target (User for Owner), which is
+   * what SOQL and formulas use until TYPEOF is supported; `targets` lists all defined ones.
    */
-  resolveRelationship(objectName: string, relationshipName: string): { field: FieldDef; target: SObjectDef } | "polymorphic" | undefined;
+  resolveRelationship(objectName: string, relationshipName: string): { field: FieldDef; target: SObjectDef; targets: SObjectDef[]; polymorphic: boolean } | undefined;
 }
 
 /**

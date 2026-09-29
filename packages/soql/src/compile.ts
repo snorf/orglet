@@ -113,7 +113,7 @@ class Compiler {
       }
       const resolved = this.options.schema.resolveRelationship(obj.name, seg);
       if (resolved === undefined) throw invalidRelationship(seg, obj.name);
-      if (resolved === "polymorphic") throw unsupported("soql-polymorphic", `relationship ${seg} on ${obj.name} is polymorphic; use TYPEOF (not supported yet)`);
+      // Polymorphic lookups (Owner: User|Group, What, Who) join their first target until TYPEOF exists.
       const { field: rel, target } = resolved;
       const joinAlias = this.nextAlias();
       scope.joins.set(key, {
@@ -256,7 +256,6 @@ class Compiler {
         // Resolve through the scope (creates the join) to get the canonical relationship name.
         const resolved = this.options.schema.resolveRelationship(obj.name, seg);
         if (resolved === undefined) throw invalidRelationship(seg, obj.name);
-        if (resolved === "polymorphic") throw unsupported("soql-polymorphic", `relationship ${seg} on ${obj.name} is polymorphic; use TYPEOF (not supported yet)`);
         const rel = resolved.field;
         if (!rel.relationshipName) throw invalidRelationship(seg, obj.name);
         this.resolve(scope, [...key.split("."), "Id"]);

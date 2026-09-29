@@ -17,5 +17,8 @@ export default defineConfig({
     include: ["packages/*/src/**/*.test.ts", "packages/*/test/**/*.test.ts"],
     environment: "node",
     passWithNoTests: true,
+    // Schema migrations against Postgres in Docker take a few seconds per test file.
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
   },
 });

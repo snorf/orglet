@@ -1,0 +1,198 @@
+{
+  "name": "Asset",
+  "label": "Asset",
+  "labelPlural": "Assets",
+  "keyPrefix": "02i",
+  "hasOwner": true,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Asset Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "referenceTo": ["Account"],
+      "relationshipName": "Account",
+      "childRelationshipName": "Assets"
+    },
+    {
+      "name": "ContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "referenceTo": ["Contact"],
+      "relationshipName": "Contact",
+      "childRelationshipName": "Assets"
+    },
+    {
+      "name": "Product2Id",
+      "label": "Product",
+      "type": "Lookup",
+      "referenceTo": ["Product2"],
+      "relationshipName": "Product2",
+      "childRelationshipName": "Assets"
+    },
+    {
+      "name": "ParentId",
+      "label": "Parent Asset",
+      "type": "Lookup",
+      "referenceTo": ["Asset"],
+      "relationshipName": "Parent",
+      "childRelationshipName": "ChildAssets"
+    },
+    {
+      "name": "RootAssetId",
+      "label": "Root Asset",
+      "type": "Lookup",
+      "referenceTo": ["Asset"],
+      "relationshipName": "RootAsset",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SerialNumber",
+      "label": "Serial Number",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "InstallDate",
+      "label": "Install Date",
+      "type": "Date"
+    },
+    {
+      "name": "PurchaseDate",
+      "label": "Purchase Date",
+      "type": "Date"
+    },
+    {
+      "name": "UsageEndDate",
+      "label": "Usage End Date",
+      "type": "Date"
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "picklistValues": [
+        { "value": "Purchased", "label": "Purchased" },
+        { "value": "Shipped", "label": "Shipped" },
+        { "value": "Installed", "label": "Installed" },
+        { "value": "Registered", "label": "Registered" },
+        { "value": "Obsolete", "label": "Obsolete" }
+      ]
+    },
+    {
+      "name": "Price",
+      "label": "Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2
+    },
+    {
+      "name": "Quantity",
+      "label": "Quantity",
+      "type": "Number",
+      "precision": 12,
+      "scale": 2
+    },
+    {
+      "name": "Description",
+      "label": "Asset Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "IsCompetitorProduct",
+      "label": "Competitor Asset",
+      "type": "Checkbox"
+    },
+    {
+      "name": "IsInternal",
+      "label": "Internal Asset",
+      "type": "Checkbox"
+    },
+    {
+      "name": "AssetLevel",
+      "label": "Asset Level",
+      "type": "Number",
+      "precision": 3,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AssetProvidedById",
+      "label": "Asset Provided By ID",
+      "type": "Lookup",
+      "referenceTo": ["Account"],
+      "relationshipName": "AssetProvidedBy"
+    },
+    {
+      "name": "AssetServicedById",
+      "label": "Asset Serviced By ID",
+      "type": "Lookup",
+      "referenceTo": ["Account"],
+      "relationshipName": "AssetServicedBy"
+    },
+    {
+      "name": "ProductCode",
+      "label": "Product Code",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StockKeepingUnit",
+      "label": "Stock Keeping Unit",
+      "type": "Text",
+      "length": 180,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ProductDescription",
+      "label": "Product Description",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ProductFamily",
+      "label": "Product Family",
+      "type": "Picklist",
+      "picklistValues": [],
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "RecordTypeId",
+      "label": "Record Type ID",
+      "type": "Lookup",
+      "referenceTo": ["RecordType"],
+      "relationshipName": "RecordType"
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}

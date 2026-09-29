@@ -94,9 +94,7 @@ function resolvePath(schema: OrgSchema, objectName: string, path: readonly strin
     }
     const resolved = schema.resolveRelationship(current.name, segment);
     if (resolved === undefined) throw fieldNotFound(path.join("."));
-    if (resolved === "polymorphic") {
-      throw new FormulaCompileError(`UNSUPPORTED:formula-polymorphic ${path.join(".")}: polymorphic relationship ${segment} cannot be traversed`);
-    }
+    // Polymorphic lookups resolve against their first target (Owner -> User) until TYPEOF-style handling exists.
     canonical.push(resolved.field.relationshipName ?? segment);
     current = resolved.target;
   }

@@ -52,6 +52,7 @@
     { "name": "RecordTypeId", "label": "Record Type ID", "type": "Lookup", "referenceTo": ["RecordType"], "relationshipName": "RecordType" },
     { "name": "StageName", "label": "Stage", "type": "Picklist", "nillable": false, "standardValueSet": "OpportunityStage" },
     { "name": "TotalOpportunityQuantity", "label": "Quantity", "type": "Number", "precision": 18, "scale": 2 },
-    { "name": "Type", "label": "Opportunity Type", "type": "Picklist", "standardValueSet": "OpportunityType" }
+    { "name": "Type", "label": "Opportunity Type", "type": "Picklist", "standardValueSet": "OpportunityType" },
+    { "name": "IqScore", "label": "Opportunity Score", "type": "Number", "precision": 3, "scale": 0, "createable": false, "updateable": false }
   ]
 }

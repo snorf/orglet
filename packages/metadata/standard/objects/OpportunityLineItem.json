@@ -1,0 +1,136 @@
+{
+  "name": "OpportunityLineItem",
+  "label": "Opportunity Product",
+  "labelPlural": "Opportunity Products",
+  "keyPrefix": "00k",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Opportunity Product Name",
+      "type": "Text",
+      "length": 255,
+      "nameField": true,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OpportunityId",
+      "label": "Opportunity ID",
+      "type": "Lookup",
+      "referenceTo": ["Opportunity"],
+      "relationshipName": "Opportunity",
+      "childRelationshipName": "OpportunityLineItems",
+      "nillable": false,
+      "updateable": false
+    },
+    {
+      "name": "PricebookEntryId",
+      "label": "Price Book Entry ID",
+      "type": "Lookup",
+      "referenceTo": ["PricebookEntry"],
+      "relationshipName": "PricebookEntry",
+      "childRelationshipName": "OpportunityLineItems",
+      "nillable": false,
+      "updateable": false
+    },
+    {
+      "name": "Product2Id",
+      "label": "Product ID",
+      "type": "Lookup",
+      "referenceTo": ["Product2"],
+      "relationshipName": "Product2",
+      "childRelationshipName": "OpportunityLineItems",
+      "updateable": false
+    },
+    {
+      "name": "ProductCode",
+      "label": "Product Code",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Quantity",
+      "label": "Quantity",
+      "type": "Number",
+      "precision": 12,
+      "scale": 2,
+      "nillable": false
+    },
+    {
+      "name": "UnitPrice",
+      "label": "Sales Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "TotalPrice",
+      "label": "Total Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ListPrice",
+      "label": "List Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Discount",
+      "label": "Discount",
+      "type": "Percent",
+      "precision": 3,
+      "scale": 2
+    },
+    {
+      "name": "Subtotal",
+      "label": "Subtotal",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ServiceDate",
+      "label": "Date",
+      "type": "Date"
+    },
+    {
+      "name": "Description",
+      "label": "Line Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "SortOrder",
+      "label": "Sort Order",
+      "type": "Number",
+      "precision": 3,
+      "scale": 0
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}

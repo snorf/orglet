@@ -34,6 +34,17 @@
     { "name": "SuppliedEmail", "label": "Email", "type": "Email" },
     { "name": "SuppliedName", "label": "Name", "type": "Text", "length": 80 },
     { "name": "SuppliedPhone", "label": "Phone", "type": "Text", "length": 40 },
-    { "name": "Type", "label": "Case Type", "type": "Picklist", "standardValueSet": "CaseType" }
+    { "name": "Type", "label": "Case Type", "type": "Picklist", "standardValueSet": "CaseType" },
+    { "name": "BusinessHoursId", "label": "Business Hours ID", "type": "Lookup", "referenceTo": ["BusinessHours"], "relationshipName": "BusinessHours" },
+    { "name": "Comments", "label": "Internal Comments", "type": "LongTextArea", "length": 4000, "updateable": false },
+    { "name": "EntitlementId", "label": "Entitlement ID", "type": "Lookup", "referenceTo": ["Entitlement"], "relationshipName": "Entitlement" },
+    { "name": "IsStopped", "label": "Stopped", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "MilestoneStatus", "label": "Milestone Status", "type": "Text", "length": 255, "createable": false, "updateable": false },
+    { "name": "MilestoneStatusIcon", "label": "Milestone Status Icon", "type": "Text", "length": 255, "createable": false, "updateable": false },
+    { "name": "ServiceContractId", "label": "Service Contract ID", "type": "Lookup", "referenceTo": ["ServiceContract"], "relationshipName": "ServiceContract" },
+    { "name": "SlaExitDate", "label": "SLA Exit Date", "type": "DateTime" },
+    { "name": "SlaStartDate", "label": "SLA Start Date", "type": "DateTime" },
+    { "name": "SourceId", "label": "Source ID", "type": "Lookup", "referenceTo": ["SocialPost"], "relationshipName": "Source" },
+    { "name": "StopStartDate", "label": "Stop Start Date", "type": "DateTime", "createable": false, "updateable": false }
   ]
 }

@@ -753,5 +753,95 @@
         "statusCode": "Activated"
       }
     ]
+  },
+  "TaskSubject": {
+    "sorted": false,
+    "values": [
+      { "value": "Call", "label": "Call", "default": false, "active": true },
+      { "value": "Email", "label": "Email", "default": false, "active": true },
+      { "value": "Send Letter", "label": "Send Letter", "default": false, "active": true },
+      { "value": "Send Quote", "label": "Send Quote", "default": false, "active": true },
+      { "value": "Other", "label": "Other", "default": false, "active": true }
+    ]
+  },
+  "EventSubject": {
+    "sorted": false,
+    "values": [
+      { "value": "Call", "label": "Call", "default": false, "active": true },
+      { "value": "Email", "label": "Email", "default": false, "active": true },
+      { "value": "Meeting", "label": "Meeting", "default": false, "active": true },
+      { "value": "Send Letter", "label": "Send Letter", "default": false, "active": true },
+      { "value": "Send Quote", "label": "Send Quote", "default": false, "active": true },
+      { "value": "Other", "label": "Other", "default": false, "active": true }
+    ]
+  },
+  "TaskStatus": {
+    "sorted": false,
+    "values": [
+      { "value": "Not Started", "label": "Not Started", "default": true, "active": true, "isClosed": false },
+      { "value": "In Progress", "label": "In Progress", "default": false, "active": true, "isClosed": false },
+      { "value": "Completed", "label": "Completed", "default": false, "active": true, "isClosed": true },
+      { "value": "Waiting on someone else", "label": "Waiting on someone else", "default": false, "active": true, "isClosed": false },
+      { "value": "Deferred", "label": "Deferred", "default": false, "active": true, "isClosed": false }
+    ]
+  },
+  "TaskPriority": {
+    "sorted": false,
+    "values": [
+      { "value": "High", "label": "High", "default": false, "active": true },
+      { "value": "Normal", "label": "Normal", "default": true, "active": true },
+      { "value": "Low", "label": "Low", "default": false, "active": true }
+    ]
+  },
+  "TaskType": {
+    "sorted": false,
+    "values": [
+      { "value": "Call", "label": "Call", "default": false, "active": true },
+      { "value": "Email", "label": "Email", "default": false, "active": true },
+      { "value": "Meeting", "label": "Meeting", "default": false, "active": true },
+      { "value": "Other", "label": "Other", "default": false, "active": true }
+    ]
+  },
+  "EventType": {
+    "sorted": false,
+    "values": [
+      { "value": "Call", "label": "Call", "default": false, "active": true },
+      { "value": "Email", "label": "Email", "default": false, "active": true },
+      { "value": "Meeting", "label": "Meeting", "default": false, "active": true },
+      { "value": "Other", "label": "Other", "default": false, "active": true }
+    ]
+  },
+  "CampaignStatus": {
+    "sorted": false,
+    "values": [
+      { "value": "Planned", "label": "Planned", "default": true, "active": true },
+      { "value": "In Progress", "label": "In Progress", "default": false, "active": true },
+      { "value": "Completed", "label": "Completed", "default": false, "active": true },
+      { "value": "Aborted", "label": "Aborted", "default": false, "active": true }
+    ]
+  },
+  "CampaignType": {
+    "sorted": false,
+    "values": [
+      { "value": "Conference", "label": "Conference", "default": false, "active": true },
+      { "value": "Webinar", "label": "Webinar", "default": false, "active": true },
+      { "value": "Trade Show", "label": "Trade Show", "default": false, "active": true },
+      { "value": "Public Relations", "label": "Public Relations", "default": false, "active": true },
+      { "value": "Partners", "label": "Partners", "default": false, "active": true },
+      { "value": "Referral Program", "label": "Referral Program", "default": false, "active": true },
+      { "value": "Advertisement", "label": "Advertisement", "default": false, "active": true },
+      { "value": "Banner Ads", "label": "Banner Ads", "default": false, "active": true },
+      { "value": "Direct Mail", "label": "Direct Mail", "default": false, "active": true },
+      { "value": "Email", "label": "Email", "default": false, "active": true },
+      { "value": "Telemarketing", "label": "Telemarketing", "default": false, "active": true },
+      { "value": "Other", "label": "Other", "default": false, "active": true }
+    ]
+  },
+  "CampaignMemberStatus": {
+    "sorted": false,
+    "values": [
+      { "value": "Sent", "label": "Sent", "default": true, "active": true },
+      { "value": "Responded", "label": "Responded", "default": false, "active": true }
+    ]
   }
 }

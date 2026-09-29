@@ -1,0 +1,136 @@
+{
+  "name": "Product2",
+  "label": "Product",
+  "labelPlural": "Products",
+  "keyPrefix": "01t",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Product Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "ProductCode",
+      "label": "Product Code",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "Description",
+      "label": "Product Description",
+      "type": "LongTextArea",
+      "length": 4000
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox"
+    },
+    {
+      "name": "Family",
+      "label": "Product Family",
+      "type": "Picklist",
+      "picklistValues": []
+    },
+    {
+      "name": "QuantityUnitOfMeasure",
+      "label": "Unit of Measure",
+      "type": "Picklist",
+      "picklistValues": [
+        { "value": "Each", "label": "Each", "default": true }
+      ]
+    },
+    {
+      "name": "DisplayUrl",
+      "label": "Display Url",
+      "type": "Url",
+      "length": 255
+    },
+    {
+      "name": "StockKeepingUnit",
+      "label": "Stock Keeping Unit",
+      "type": "Text",
+      "length": 180
+    },
+    {
+      "name": "IsArchived",
+      "label": "Archived",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Type",
+      "label": "Product Type",
+      "type": "Picklist",
+      "updateable": false,
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "Base", "label": "Base" },
+        { "value": "Null", "label": "Null" }
+      ]
+    },
+    {
+      "name": "ProductClass",
+      "label": "Product Class",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "Bundle", "label": "Bundle" },
+        { "value": "Set", "label": "Set" },
+        { "value": "Simple", "label": "Simple" },
+        { "value": "VariationParent", "label": "Variation Parent" },
+        { "value": "Variation", "label": "Variation" }
+      ]
+    },
+    {
+      "name": "ExternalDataSourceId",
+      "label": "External Data Source ID",
+      "type": "Lookup",
+      "referenceTo": ["ExternalDataSource"],
+      "relationshipName": "ExternalDataSource"
+    },
+    {
+      "name": "ExternalId",
+      "label": "External ID",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "SourceProductId",
+      "label": "Source Product ID",
+      "type": "Lookup",
+      "referenceTo": ["Product2"],
+      "relationshipName": "SourceProduct"
+    },
+    {
+      "name": "SellerId",
+      "label": "Seller ID",
+      "type": "Lookup",
+      "referenceTo": ["Account"],
+      "relationshipName": "Seller"
+    }
+  ]
+}

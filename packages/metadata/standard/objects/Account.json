@@ -345,6 +345,83 @@
       "label": "Website",
       "type": "Url",
       "length": 255
+    },
+    {
+      "name": "CleanStatus",
+      "label": "Clean Status",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "Matched", "label": "Matched" },
+        { "value": "Different", "label": "Different" },
+        { "value": "Acknowledged", "label": "Acknowledged" },
+        { "value": "NotFound", "label": "NotFound" },
+        { "value": "Inactive", "label": "Inactive" },
+        { "value": "Pending", "label": "Pending" },
+        { "value": "SelectMatch", "label": "SelectMatch" },
+        { "value": "Skipped", "label": "Skipped" }
+      ]
+    },
+    {
+      "name": "DandbCompanyId",
+      "label": "D&B Company ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "DandBCompany"
+      ],
+      "relationshipName": "DandbCompany"
+    },
+    {
+      "name": "DunsNumber",
+      "label": "D-U-N-S Number",
+      "type": "Text",
+      "length": 9
+    },
+    {
+      "name": "Jigsaw",
+      "label": "Data.com Key",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "NaicsCode",
+      "label": "NAICS Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "NaicsDesc",
+      "label": "NAICS Description",
+      "type": "Text",
+      "length": 120
+    },
+    {
+      "name": "OperatingHoursId",
+      "label": "Operating Hour ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "OperatingHours"
+      ],
+      "relationshipName": "OperatingHours"
+    },
+    {
+      "name": "Tier",
+      "label": "Tier",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": []
+    },
+    {
+      "name": "Tradestyle",
+      "label": "Tradestyle",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "YearStarted",
+      "label": "Year Started",
+      "type": "Text",
+      "length": 4
     }
   ]
 }
