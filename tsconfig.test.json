@@ -10,5 +10,5 @@
       "@orglet/*": ["./packages/*/src/index.ts"]
     }
   },
-  "include": ["packages/*/src/**/*.test.ts", "packages/*/test/**/*.ts", "vitest.config.ts", "eslint.config.js"]
+  "include": ["packages/*/src/**/*.test.ts", "packages/*/test/**/*.ts", "test/**/*.ts", "vitest.config.ts", "eslint.config.js"]
 }

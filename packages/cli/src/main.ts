@@ -40,7 +40,7 @@ interface Common {
 
 function common(values: Record<string, string | boolean | undefined>): Common {
   const c: Common = {
-    db: typeof values["db"] === "string" ? values["db"] : databaseUrlFromEnv(),
+    db: typeof values["db"] === "string" ? values["db"] : (databaseUrlFromEnv() ?? "postgres://orglet:orglet@localhost:5433/orglet"),
     orgSchema: typeof values["org-schema"] === "string" ? values["org-schema"] : DEFAULT_ORG_SCHEMA,
     quiet: values["quiet"] === true,
   };

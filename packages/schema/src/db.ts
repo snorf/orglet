@@ -31,8 +31,9 @@ export function createPool(connectionString: string): Pool {
   return new pg.Pool({ connectionString });
 }
 
-export function databaseUrlFromEnv(): string {
-  return process.env["ORGLET_DATABASE_URL"] ?? "postgres://orglet:orglet@localhost:5433/orglet";
+/** The configured Postgres URL, if any. Callers that need a default (the CLI) supply their own. */
+export function databaseUrlFromEnv(): string | undefined {
+  return process.env["ORGLET_DATABASE_URL"];
 }
 
 export async function withTransaction<T>(pool: Pool, fn: (client: PoolClient) => Promise<T>): Promise<T> {
