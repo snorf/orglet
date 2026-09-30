@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-09-29T20:41:41.935Z"
-last_activity: 2026-09-29 — ROADMAP.md and STATE.md created, awaiting user approval
+status: executing
+stopped_at: Completed 01-test-infrastructure-ci-02-PLAN.md
+last_updated: "2026-09-30T19:30:37.366Z"
+last_activity: 2026-09-30
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 4
+  completed_plans: 1
   percent: 0
 ---
 
@@ -27,10 +27,10 @@ rather than faked.
 
 ## Current Position
 
-Phase: 1 of 7 (Test Infrastructure & CI)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-09-29 — ROADMAP.md and STATE.md created, awaiting user approval
+Phase: 1 (Test Infrastructure & CI) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-09-30
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01-test-infrastructure-ci P02 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ Recent decisions affecting current work:
 - Persist custom-object key prefixes inside the org's own Postgres schema (`_orglet` internal schema) so `orglet reset` clears them by construction.
 - pglite for tests, Docker Compose stays for the running server; no production code path depends on pglite.
 - Roll-ups and all business rules recompute in the app-side save pipeline, never as Postgres triggers.
+- [Phase 01-test-infrastructure-ci]: ci.yml copied verbatim from research (job keys test-pglite/test-postgres, no name: fields) so branch-protection ruleset status-check contexts match
+- [Phase 01-test-infrastructure-ci]: No corepack enable step and no version: on pnpm/action-setup@v6 in CI; reads packageManager from package.json
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-29T20:41:41.931Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-test-infrastructure-ci/01-CONTEXT.md
+Last session: 2026-09-30T19:30:37.364Z
+Stopped at: Completed 01-test-infrastructure-ci-02-PLAN.md
+Resume file: None

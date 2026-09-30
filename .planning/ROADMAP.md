@@ -48,7 +48,7 @@ typecheck and the full test suite — against both pglite and real Postgres — 
 **Plans**: 4 plans
 Plans:
 - [ ] 01-01-PLAN.md — pglite test backend (`test/db.ts`), D-19 compat test recorded first, five DB-backed files migrated, 5433 default moved to CLI
-- [ ] 01-02-PLAN.md — `.github/workflows/ci.yml` (test-pglite, test-postgres), README badge + Docker-optional docs, .env.example/compose comments
+- [x] 01-02-PLAN.md — `.github/workflows/ci.yml` (test-pglite, test-postgres), README badge + Docker-optional docs, .env.example/compose comments
 - [ ] 01-03-PLAN.md — local pre-flight on both backends + `orglet up` smoke, Johan-confirmed repo creation and pushes, first CI run green
 - [ ] 01-04-PLAN.md — Johan-confirmed ruleset on main, phase PR opened (not merged)
 **Research flag**: yes — verify `session_replication_role` and `information_schema` behavior against the pinned `pglite@0.5.8` directly; treated by research as genuinely unresolved, not settled.
