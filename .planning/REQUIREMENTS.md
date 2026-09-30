@@ -12,10 +12,10 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Test Infrastructure & CI
 
-- [ ] **INFRA-01**: User can run the full unit and integration test suite with `pnpm test` on a
+- [x] **INFRA-01**: User can run the full unit and integration test suite with `pnpm test` on a
   machine without Docker; Postgres-backed tests run against an embedded pglite instance reached
   through the existing `pg` pool over the pglite socket server
-- [ ] **INFRA-02**: Import-mode behaviour (`SET LOCAL session_replication_role = replica`) and
+- [x] **INFRA-02**: Import-mode behaviour (`SET LOCAL session_replication_role = replica`) and
   the `information_schema` schema differ are verified to work on the pinned pglite version, or
   the affected tests are explicitly tagged to run only on real Postgres with the reason recorded
 - [x] **INFRA-03**: `orglet up` and the Docker Compose path continue to use a real Postgres 16;
@@ -185,8 +185,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
+| INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Pending |
 | INFRA-05 | Phase 1 | Complete |

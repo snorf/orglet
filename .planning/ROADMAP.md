@@ -47,7 +47,7 @@ typecheck and the full test suite — against both pglite and real Postgres — 
   5. GitHub Actions runs lint, typecheck and the full suite on every push/PR in two jobs — one against pglite, one against a Postgres 16 service container — and neither job ever invokes `scripts/sync-sigha.sh`.
 **Plans**: 4 plans
 Plans:
-- [ ] 01-01-PLAN.md — pglite test backend (`test/db.ts`), D-19 compat test recorded first, five DB-backed files migrated, 5433 default moved to CLI
+- [x] 01-01-PLAN.md — pglite test backend (`test/db.ts`), D-19 compat test recorded first, five DB-backed files migrated, 5433 default moved to CLI
 - [x] 01-02-PLAN.md — `.github/workflows/ci.yml` (test-pglite, test-postgres), README badge + Docker-optional docs, .env.example/compose comments
 - [ ] 01-03-PLAN.md — local pre-flight on both backends + `orglet up` smoke, Johan-confirmed repo creation and pushes, first CI run green
 - [ ] 01-04-PLAN.md — Johan-confirmed ruleset on main, phase PR opened (not merged)
