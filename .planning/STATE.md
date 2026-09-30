@@ -83,7 +83,6 @@ None yet.
 - Phase 3: Key prefix and name-equivalent field for `IdeaTheme` (prefix, single-source) and `DandBCompany`/`Entitlement`/`ServiceContract`/`SocialPost` (name field, unconfirmed) need verification against the Object Reference before writing baseline JSON.
 - Phase 4: Exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js` needs reading from its `.d.ts` during implementation; not verified during research.
 - Phase 5: Roll-up reparent and undelete recompute triggers are not confirmed by a direct official Salesforce quote (scope is not in question, only edge-case sourcing).
-- Phase 1 (01-01): pnpm test's default vitest fork concurrency (6 concurrent PGlite WASM instances) is intermittently flaky (ECONNRESET in pglite-compat.test.ts afterAll) on machines under heavy ambient memory/CPU pressure -- not a code defect (verified: isolated runs and --poolOptions.forks.maxForks=2 pass 100%); watch for this in plan 01-03's pre-flight and the first CI run before treating a pnpm test failure as a regression.
 
 ## Session Continuity
 
