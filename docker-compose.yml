@@ -1,3 +1,4 @@
+# Real Postgres 16 for `orglet up` and for running the tests against Postgres; `pnpm test` does not need it.
 services:
   postgres:
     image: postgres:16-alpine

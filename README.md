@@ -1,5 +1,7 @@
 # orglet
 
+[![CI](https://github.com/snorf/orglet/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/snorf/orglet/actions/workflows/ci.yml)
+
 A self-hosted, single-tenant emulator of the Salesforce platform. Point it at an SFDX
 project and it builds the org in Postgres and speaks the Salesforce REST API, so existing
 clients such as `jsforce` and `simple-salesforce` work unchanged.
@@ -68,15 +70,23 @@ conformance/        Runs upstream SDK test suites against orglet
 
 ## Development
 
-Requires Node 22 (`.nvmrc`), pnpm via corepack, and Docker.
+Requires Node 22 (`.nvmrc`) and pnpm via corepack. Docker is optional: the tests run against an
+embedded Postgres (pglite), so Docker is only needed to run the server with `orglet up` or to run the
+tests against a real Postgres 16.
 
 ```sh
 corepack enable pnpm
 pnpm install
-pnpm db:up        # Postgres 16 on localhost:5433
 pnpm build
-pnpm test
+pnpm test         # embedded pglite, no Docker needed
 pnpm lint
+```
+
+To run the same tests against real Postgres, as the `test-postgres` CI job does:
+
+```sh
+pnpm db:up        # Postgres 16 on localhost:5433
+ORGLET_DATABASE_URL=postgres://orglet:orglet@localhost:5433/orglet pnpm test
 ```
 
 ## License
