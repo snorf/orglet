@@ -31,7 +31,11 @@ export async function openTestDb(): Promise<TestDb> {
     return { pool, close: () => pool.end() };
   }
   const db = await PGlite.create();
-  const server = new PGLiteSocketServer({ db, port: 0, host: "127.0.0.1" });
+  // pglite-socket allows one connection by default. pg-pool destroys a client after a failed query
+  // and reconnects at once; if the server has not yet processed the old socket's close, the new
+  // connection is rejected and the next query fails with ECONNRESET. Allow as many sockets as the
+  // pool can open (pg.Pool default max is 10); they are still served one query at a time.
+  const server = new PGLiteSocketServer({ db, port: 0, host: "127.0.0.1", maxConnections: 10 });
   await server.start();
   const pool = createPool(`postgres://postgres:postgres@${server.getServerConn()}/postgres`);
   return {
