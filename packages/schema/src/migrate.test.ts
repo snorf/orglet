@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { loadOrgSchema, OrgSchemaImpl, type FieldDef, type SObjectDef } from "@orglet/metadata";
-import { createPool, databaseUrlFromEnv, type Pool } from "./db.js";
+import type { Pool } from "./db.js";
+import { openTestDb, type TestDb } from "../../../test/db.js";
 import { migrate } from "./migrate.js";
 import { quote } from "./columns.js";
 
@@ -10,20 +11,17 @@ const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 
 // Each run gets its own Postgres schema so tests never touch each other or a dev org.
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
+let testDb: TestDb;
 let pool: Pool;
 
 beforeAll(async () => {
-  pool = createPool(databaseUrlFromEnv());
-  try {
-    await pool.query("SELECT 1");
-  } catch (err) {
-    throw new Error(`Postgres not reachable at ${databaseUrlFromEnv()} (run \`pnpm db:up\`): ${String(err)}`);
-  }
+  testDb = await openTestDb();
+  pool = testDb.pool;
 });
 
 afterAll(async () => {
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
-  await pool.end();
+  await testDb.close();
 });
 
 async function columns(table: string): Promise<Map<string, string>> {

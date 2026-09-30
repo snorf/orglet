@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { createPool, databaseUrlFromEnv, migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
+import { migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
+import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
 import type { ChangeEvent } from "./events.js";
@@ -11,6 +12,7 @@ import type { Session, TriggerContext } from "./hooks.js";
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
 
+let testDb: TestDb;
 let pool: Pool;
 let schema: OrgSchema;
 let engine: DmlEngine;
@@ -19,7 +21,8 @@ const hookLog: string[] = [];
 const events: ChangeEvent[] = [];
 
 beforeAll(async () => {
-  pool = createPool(databaseUrlFromEnv());
+  testDb = await openTestDb();
+  pool = testDb.pool;
   schema = (await loadOrgSchema({ projectDir: ACME })).schema;
   await migrate(pool, schema, { orgSchema });
   session = (await bootstrapOrg(pool, schema, { orgSchema })).session;
@@ -48,7 +51,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
-  await pool.end();
+  await testDb.close();
 });
 
 async function one(sobject: string, input: Record<string, unknown>): Promise<string> {
