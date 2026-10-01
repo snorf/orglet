@@ -81,7 +81,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None yet.
+- Reword ROADMAP phase 7 to validate against the DE retrieve, not the org (planning, 2026-10-01)
 
 ### Blockers/Concerns
 
