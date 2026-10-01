@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 01-test-infrastructure-ci-03-PLAN.md
-last_updated: "2026-10-01T07:55:14.886Z"
+status: verifying
+stopped_at: Completed 01-test-infrastructure-ci-04-PLAN.md
+last_updated: "2026-10-01T08:08:05.708Z"
 last_activity: 2026-10-01
 progress:
   total_phases: 7
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Phase: 1 (Test Infrastructure & CI) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-test-infrastructure-ci P02 | 2min | 2 tasks | 4 files |
 | Phase 01-test-infrastructure-ci P01 | 11min | 3 tasks | 11 files |
 | Phase 01-test-infrastructure-ci P03 | continuation | 3 tasks | 3 files |
+| Phase 01-test-infrastructure-ci P04 | 11min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Recent decisions affecting current work:
 - [Phase 01-test-infrastructure-ci]: Per-file embedded pglite instance (not a shared globalSetup instance) to avoid the pglite-socket single-query-queue serialization hazard across vitest's parallel forked workers
 - [Phase 01-test-infrastructure-ci]: ci.yml step order corrected to install -> build -> lint -> test (both jobs); package exports resolve cross-package types from dist/index.d.ts, absent on a fresh checkout
 - [Phase 01-test-infrastructure-ci]: snorf/orglet is public, main is default branch, gsd/phase-01-test-infrastructure-ci pushed with green CI (run 36832808542) on both test-pglite and test-postgres
+- [Phase 01-test-infrastructure-ci]: Ruleset 'require CI on main' (id 24295978) active on snorf/orglet main: pull_request + required_status_checks (test-pglite, test-postgres), strict policy true, bypass_actors empty
+- [Phase 01-test-infrastructure-ci]: PR snorf/orglet#1 (gsd/phase-01-test-infrastructure-ci -> main) open with both required checks green; not merged, awaiting Johan after /gsd:verify-work
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-01T07:55:14.882Z
-Stopped at: Completed 01-test-infrastructure-ci-03-PLAN.md
+Last session: 2026-10-01T08:08:05.700Z
+Stopped at: Completed 01-test-infrastructure-ci-04-PLAN.md
 Resume file: None
