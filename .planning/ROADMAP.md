@@ -49,7 +49,7 @@ typecheck and the full test suite — against both pglite and real Postgres — 
 Plans:
 - [x] 01-01-PLAN.md — pglite test backend (`test/db.ts`), D-19 compat test recorded first, five DB-backed files migrated, 5433 default moved to CLI
 - [x] 01-02-PLAN.md — `.github/workflows/ci.yml` (test-pglite, test-postgres), README badge + Docker-optional docs, .env.example/compose comments
-- [ ] 01-03-PLAN.md — local pre-flight on both backends + `orglet up` smoke, Johan-confirmed repo creation and pushes, first CI run green
+- [x] 01-03-PLAN.md — local pre-flight on both backends + `orglet up` smoke, Johan-confirmed repo creation and pushes, first CI run green
 - [ ] 01-04-PLAN.md — Johan-confirmed ruleset on main, phase PR opened (not merged)
 **Research flag**: yes — verify `session_replication_role` and `information_schema` behavior against the pinned `pglite@0.5.8` directly; treated by research as genuinely unresolved, not settled.
 
@@ -140,7 +140,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Test Infrastructure & CI | 0/TBD | Not started | - |
+| 1. Test Infrastructure & CI | 3/4 | In Progress|  |
 | 2. Custom-Object Key-Prefix Persistence | 0/TBD | Not started | - |
 | 3. Thin Standard-Object Baselines | 0/TBD | Not started | - |
 | 4. Polymorphic Lookups & SOQL TYPEOF | 0/TBD | Not started | - |

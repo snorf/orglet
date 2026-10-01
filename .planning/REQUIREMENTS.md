@@ -20,7 +20,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   the affected tests are explicitly tagged to run only on real Postgres with the reason recorded
 - [x] **INFRA-03**: `orglet up` and the Docker Compose path continue to use a real Postgres 16;
   no production code path depends on pglite
-- [ ] **INFRA-04**: The project is published in a public GitHub repository under Johan's
+- [x] **INFRA-04**: The project is published in a public GitHub repository under Johan's
   personal account with the repo-local git identity, after explicit confirmation of the
   repository name and the first push
 - [x] **INFRA-05**: GitHub Actions runs lint, typecheck (`tsc -b`) and the full test suite
@@ -188,7 +188,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-01 | Phase 1 | Complete |
 | INFRA-02 | Phase 1 | Complete |
 | INFRA-03 | Phase 1 | Complete |
-| INFRA-04 | Phase 1 | Pending |
+| INFRA-04 | Phase 1 | Complete |
 | INFRA-05 | Phase 1 | Complete |
 | INFRA-06 | Phase 1 | Complete |
 | INFRA-07 | Phase 1 | Complete |

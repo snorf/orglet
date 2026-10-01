@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-test-infrastructure-ci-01-PLAN.md
-last_updated: "2026-09-30T19:43:39.593Z"
-last_activity: 2026-09-30
+stopped_at: Completed 01-test-infrastructure-ci-03-PLAN.md
+last_updated: "2026-10-01T07:55:14.886Z"
+last_activity: 2026-10-01
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -28,9 +28,9 @@ rather than faked.
 ## Current Position
 
 Phase: 1 (Test Infrastructure & CI) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
-Last activity: 2026-09-30
+Last activity: 2026-10-01
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 01-test-infrastructure-ci P02 | 2min | 2 tasks | 4 files |
 | Phase 01-test-infrastructure-ci P01 | 11min | 3 tasks | 11 files |
+| Phase 01-test-infrastructure-ci P03 | continuation | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 01-test-infrastructure-ci]: No corepack enable step and no version: on pnpm/action-setup@v6 in CI; reads packageManager from package.json
 - [Phase 01-test-infrastructure-ci]: D-19 resolved PASS (2026-09-30): session_replication_role and information_schema work correctly on pglite 0.5.8, no production or test-assertion workaround needed
 - [Phase 01-test-infrastructure-ci]: Per-file embedded pglite instance (not a shared globalSetup instance) to avoid the pglite-socket single-query-queue serialization hazard across vitest's parallel forked workers
+- [Phase 01-test-infrastructure-ci]: ci.yml step order corrected to install -> build -> lint -> test (both jobs); package exports resolve cross-package types from dist/index.d.ts, absent on a fresh checkout
+- [Phase 01-test-infrastructure-ci]: snorf/orglet is public, main is default branch, gsd/phase-01-test-infrastructure-ci pushed with green CI (run 36832808542) on both test-pglite and test-postgres
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-09-30T19:37:30.987Z
-Stopped at: Completed 01-test-infrastructure-ci-01-PLAN.md
+Last session: 2026-10-01T07:55:14.882Z
+Stopped at: Completed 01-test-infrastructure-ci-03-PLAN.md
 Resume file: None
