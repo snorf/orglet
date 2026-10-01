@@ -65,7 +65,7 @@ renaming custom objects never shifts the Id-meaning of existing records.
   4. `orglet check` (no database) labels any prefix it reports as provisional, and `orglet reset` preserves persisted prefix assignments unless the user explicitly asks to drop them.
 **Plans**: 3 plans
 Plans:
-- [ ] 02-01-PLAN.md — `@orglet/schema` prefix module: `internal.ts` (ensureInternalSchema), `prefixes.ts` (KeyPrefixError, pure two-pass planKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, dropKeyPrefixes), `prefixes.test.ts` (T1-T8, T10, T12)
+- [x] 02-01-PLAN.md — `@orglet/schema` prefix module: `internal.ts` (ensureInternalSchema), `prefixes.ts` (KeyPrefixError, pure two-pass planKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, dropKeyPrefixes), `prefixes.test.ts` (T1-T8, T10, T12)
 - [ ] 02-02-PLAN.md — CLI wiring (`up` reconcile + `--key-prefixes`, `check` provisional lines, `reset --drop-prefixes`, KeyPrefixError catch, USAGE) + `main.test.ts` (T9), `build.ts` doc comment, README section
 - [ ] 02-03-PLAN.md — API describe assertion (T11), full suite on pglite + Docker Postgres, acme CLI smoke sequence, Johan's devrandom checkpoint
 

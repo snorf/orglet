@@ -32,13 +32,13 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Custom-Object Key Prefixes
 
-- [ ] **PREFIX-01**: A custom object's key prefix is assigned the first time the object is seen
+- [x] **PREFIX-01**: A custom object's key prefix is assigned the first time the object is seen
   by `orglet up` and stored in the org database (internal `_orglet` schema), so reloading with
   a new or renamed custom object never changes the prefix of an existing object
-- [ ] **PREFIX-02**: An existing org database whose prefixes were assigned by the old
+- [x] **PREFIX-02**: An existing org database whose prefixes were assigned by the old
   alphabetical scheme keeps those exact assignments as its initial persisted state on first
   upgrade; no existing Id changes meaning
-- [ ] **PREFIX-03**: A persisted custom prefix can never collide with a standard-object prefix
+- [x] **PREFIX-03**: A persisted custom prefix can never collide with a standard-object prefix
   or with another custom object's prefix; a collision fails the load with a clear error
 - [ ] **PREFIX-04**: `orglet check` (no database) reports provisional prefixes and states that
   they are provisional; `orglet reset` keeps prefix assignments unless the user asks to drop
@@ -192,9 +192,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-05 | Phase 1 | Complete |
 | INFRA-06 | Phase 1 | Complete |
 | INFRA-07 | Phase 1 | Complete |
-| PREFIX-01 | Phase 2 | Pending |
-| PREFIX-02 | Phase 2 | Pending |
-| PREFIX-03 | Phase 2 | Pending |
+| PREFIX-01 | Phase 2 | Complete |
+| PREFIX-02 | Phase 2 | Complete |
+| PREFIX-03 | Phase 2 | Complete |
 | PREFIX-04 | Phase 2 | Pending |
 | BASE-01 | Phase 3 | Pending |
 | BASE-02 | Phase 3 | Pending |
