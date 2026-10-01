@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { migrate, quote, type Pool } from "@orglet/schema";
+import { dropKeyPrefixes, migrate, quote, reconcileKeyPrefixes, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { createApiServer } from "./server.js";
@@ -33,6 +33,8 @@ beforeAll(async () => {
   testDb = await openTestDb();
   pool = testDb.pool;
   schema = (await loadOrgSchema({ projectDir: ACME })).schema;
+  // Same order as `orglet up`: reconcile prefixes, then migrate, then bootstrap/engine, so describe and Ids see the persisted value.
+  await reconcileKeyPrefixes(pool, schema, { orgSchema, mapping: { Project__c: "a0Z" } });
   await migrate(pool, schema, { orgSchema });
   const boot = await bootstrapOrg(pool, schema, { orgSchema });
   orgId = boot.session.organizationId;
@@ -49,6 +51,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+  // _orglet rows live outside the org schema and would otherwise outlive this file on a shared Postgres.
+  await dropKeyPrefixes(pool, orgSchema);
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
   await testDb.close();
 });
