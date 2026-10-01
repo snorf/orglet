@@ -1,8 +1,8 @@
 ---
 phase: 2
 slug: custom-object-key-prefix-persistence
-status: draft
-nyquist_compliant: false
+status: ready
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-10-01
 ---
@@ -41,9 +41,9 @@ Task IDs are `<plan>-T<n>` from the PLAN.md files (filled in by the planner 2026
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 02-01-T2 | 02-01 | 1 | PREFIX-01 | integration (T1 two-build drift, the gate) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "two-build"` | ❌ written in 02-01-T1/T2 (TDD, RED first) | ⬜ pending |
-| 02-01-T2 | 02-01 | 1 | PREFIX-01 | integration (T2 removal, T3 rename) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "removal\|rename"` | ❌ written in 02-01-T2 | ⬜ pending |
-| 02-01-T2 | 02-01 | 1 | PREFIX-02 | integration (T4 existing records, T5 newcomer sorts first) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "existing records\|sorts before"` | ❌ written in 02-01-T2 | ⬜ pending |
-| 02-01-T1, 02-01-T2 | 02-01 | 1 | PREFIX-03 | unit (T6 planner collisions, 02-01-T1), integration (T7 nothing written, 02-01-T2) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "planKeyPrefixes\|nothing written"` | ❌ written in 02-01-T1/T2 | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | PREFIX-01 | integration (T2 removal, T3 rename) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "removal|rename"` | ❌ written in 02-01-T2 | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | PREFIX-02 | integration (T4 existing records, T5 newcomer sorts first) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "existing records|sorts before"` | ❌ written in 02-01-T2 | ⬜ pending |
+| 02-01-T1, 02-01-T2 | 02-01 | 1 | PREFIX-03 | unit (T6 planner collisions, 02-01-T1), integration (T7 nothing written, 02-01-T2) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "planKeyPrefixes|nothing written"` | ❌ written in 02-01-T1/T2 | ⬜ pending |
 | 02-01-T1 | 02-01 | 1 | PREFIX-03 | unit (T8 mapping parser) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "parseKeyPrefixMapping"` | ❌ written in 02-01-T1 | ⬜ pending |
 | 02-02-T1 | 02-02 | 2 | PREFIX-04 | unit, console spy (T9 `check` output + USAGE) | `pnpm vitest run packages/cli/src/main.test.ts` | ❌ written in 02-02-T1 | ⬜ pending |
 | 02-01-T2 | 02-01 | 1 | PREFIX-04 | integration (T10 reset keeps rows, `dropKeyPrefixes` per org) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "drop"` | ❌ written in 02-01-T2 | ⬜ pending |
@@ -77,11 +77,11 @@ Task IDs are `<plan>-T<n>` from the PLAN.md files (filled in by the planner 2026
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (none: every test is written RED-first inside its TDD task)
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-10-01
