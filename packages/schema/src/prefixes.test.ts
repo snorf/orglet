@@ -306,7 +306,7 @@ describe("reconcileKeyPrefixes", () => {
     await migrate(pool, first, { orgSchema: orgB });
     const boot = await bootstrapOrg(pool, first, { orgSchema: orgB });
     const engine = new DmlEngine(pool, first, { orgSchema: orgB });
-    const [big] = await engine.insert(boot.session, "BigTable__c", [{ Name: "legacy" }]);
+    const [big] = await engine.insert(boot.session, "BigTable__c", [{}]); // BigTable__c.Name is an AutoNumber
     expect(big?.success).toBe(true);
     expect(big?.id).toMatch(/^a00/);
     const [ups] = await engine.insert(boot.session, "UpsertTable__c", [{ Name: "legacy" }]);
@@ -320,7 +320,7 @@ describe("reconcileKeyPrefixes", () => {
       ["Project__c", "a02", "provisional"],
       ["UpsertTable__c", "a03", "records"],
     ]);
-    const [upd] = await engine.update(boot.session, "BigTable__c", [{ Id: big?.id, Name: "still valid" }]);
+    const [upd] = await engine.update(boot.session, "BigTable__c", [{ Id: big?.id }]);
     expect(upd?.success).toBe(true);
   });
 
@@ -330,7 +330,7 @@ describe("reconcileKeyPrefixes", () => {
     await migrate(pool, first, { orgSchema: orgB2 });
     const boot = await bootstrapOrg(pool, first, { orgSchema: orgB2 });
     const engine = new DmlEngine(pool, first, { orgSchema: orgB2 });
-    const [big] = await engine.insert(boot.session, "BigTable__c", [{ Name: "legacy" }]);
+    const [big] = await engine.insert(boot.session, "BigTable__c", [{}]); // BigTable__c.Name is an AutoNumber
     expect(big?.id).toMatch(/^a00/);
 
     const second = build([...project.objects, minimal("Aardvark__c")]);

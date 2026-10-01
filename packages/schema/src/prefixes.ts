@@ -7,7 +7,9 @@
  * read -> scan -> plan -> insert -> mutate transaction around it.
  */
 import type { OrgSchema } from "@orglet/metadata";
-import type { Pool } from "./db.js";
+import { DEFAULT_ORG_SCHEMA, INTERNAL_SCHEMA, quote, tableName } from "./columns.js";
+import { withTransaction, type Pool } from "./db.js";
+import { ensureInternalSchema } from "./internal.js";
 
 export type KeyPrefixSource = "standard" | "persisted" | "records" | "mapping" | "provisional" | "next-free";
 
@@ -200,8 +202,20 @@ export function parseKeyPrefixMapping(raw: unknown, schema: OrgSchema): Record<s
   return result;
 }
 
+const TABLE = `${quote(INTERNAL_SCHEMA)}.${quote("key_prefixes")}`;
+const CREATE_TABLE = `CREATE TABLE IF NOT EXISTS ${TABLE} (
+  org_schema  text        NOT NULL,
+  object_name text        NOT NULL,
+  key_prefix  char(3)     NOT NULL,
+  source      text        NOT NULL,
+  assigned_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (org_schema, object_name),
+  UNIQUE (org_schema, key_prefix)
+)`;
+
 export interface ReconcileKeyPrefixesOptions {
   orgSchema?: string;
+  /** Output of parseKeyPrefixMapping (canonical object names). */
   mapping?: Record<string, string>;
 }
 
@@ -211,10 +225,66 @@ export interface ReconcileKeyPrefixesResult {
   warnings: string[];
 }
 
-export function reconcileKeyPrefixes(_pool: Pool, _schema: OrgSchema, _options: ReconcileKeyPrefixesOptions = {}): Promise<ReconcileKeyPrefixesResult> {
-  return Promise.reject(new Error("not implemented"));
+/**
+ * Give every custom object in `schema` its persisted key prefix, writing rows for the ones that
+ * have none, and set `SObjectDef.keyPrefix` in place so bootstrapOrg, the DML engine and describe
+ * all see the persisted value. One transaction: a KeyPrefixError rolls back every row.
+ */
+export async function reconcileKeyPrefixes(pool: Pool, schema: OrgSchema, options: ReconcileKeyPrefixesOptions = {}): Promise<ReconcileKeyPrefixesResult> {
+  const orgSchema = options.orgSchema ?? DEFAULT_ORG_SCHEMA;
+  return withTransaction(pool, async (client) => {
+    // Lock order is fixed: the constant _orglet lock first, then this org's lock (deadlock-free, D-05).
+    await ensureInternalSchema(client);
+    await client.query(CREATE_TABLE);
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))", ["orglet.key_prefixes", orgSchema]);
+
+    const all = [...schema.objects.values()];
+    const customObjects = all.filter((o) => o.custom).sort((a, b) => a.name.localeCompare(b.name));
+    const standard = all.filter((o) => !o.custom).map((o) => ({ name: o.name, keyPrefix: o.keyPrefix }));
+
+    const persistedRows = await client.query<{ object_name: string; key_prefix: string }>(`SELECT object_name, key_prefix FROM ${TABLE} WHERE org_schema = $1`, [orgSchema]);
+    const persisted = new Map(persistedRows.rows.map((r) => [r.object_name.toLowerCase(), { name: r.object_name, keyPrefix: r.key_prefix }]));
+
+    const tableRows = await client.query<{ table_name: string }>("SELECT table_name FROM information_schema.tables WHERE table_schema = $1", [orgSchema]);
+    const tables = new Set(tableRows.rows.map((r) => r.table_name));
+
+    // Records already on disk are the strongest evidence of an object's prefix (D-08); soft-deleted
+    // rows count too, so no WHERE. Only objects without a row and with an existing table are scanned.
+    const observed = new Map<string, string[]>();
+    for (const obj of customObjects) {
+      const lower = obj.name.toLowerCase();
+      if (persisted.has(lower) || !tables.has(tableName(obj))) continue;
+      const res = await client.query<{ p: string }>(`SELECT DISTINCT left(id, 3) AS p FROM ${quote(orgSchema)}.${quote(tableName(obj))}`);
+      observed.set(lower, res.rows.map((r) => r.p));
+    }
+
+    const plan = planKeyPrefixes({
+      custom: customObjects.map((o) => ({ name: o.name, provisional: o.keyPrefix })),
+      standard,
+      persisted,
+      observed,
+      mapping: new Map(Object.entries(options.mapping ?? {}).map(([k, v]) => [k.toLowerCase(), v])),
+    });
+
+    for (const a of plan.assignments) {
+      await client.query(`INSERT INTO ${TABLE} (org_schema, object_name, key_prefix, source) VALUES ($1, $2, $3, $4)`, [orgSchema, a.objectName, a.keyPrefix, a.source]);
+    }
+
+    const assigned = new Map(plan.assignments.map((a) => [a.objectName.toLowerCase(), a.keyPrefix]));
+    for (const obj of customObjects) {
+      const lower = obj.name.toLowerCase();
+      const value = persisted.get(lower)?.keyPrefix ?? assigned.get(lower);
+      if (value !== undefined) obj.keyPrefix = value;
+    }
+
+    return { assignments: plan.assignments, warnings: plan.warnings };
+  });
 }
 
-export function dropKeyPrefixes(_pool: Pool, _orgSchema: string): Promise<number> {
-  return Promise.reject(new Error("not implemented"));
+/** Remove one org's prefix rows; safe on a database that never ran `up`, and leaves other orgs' rows and the `_orglet` schema in place (D-07). */
+export async function dropKeyPrefixes(pool: Pool, orgSchema: string): Promise<number> {
+  const exists = await pool.query<{ t: string | null }>("SELECT to_regclass($1)::text AS t", [`${INTERNAL_SCHEMA}.key_prefixes`]);
+  if (exists.rows[0] === undefined || exists.rows[0].t === null) return 0;
+  const res = await pool.query(`DELETE FROM ${TABLE} WHERE org_schema = $1`, [orgSchema]);
+  return res.rowCount ?? 0;
 }
