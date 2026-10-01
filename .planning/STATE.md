@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-10-01T12:46:26.851Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-10-01T12:52:30.720Z"
 last_activity: 2026-10-01
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 02 (Custom-Object Key-Prefix Persistence) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-10-01
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-test-infrastructure-ci P03 | continuation | 3 tasks | 3 files |
 | Phase 01-test-infrastructure-ci P04 | 11min | 2 tasks | 1 files |
 | Phase 02-custom-object-key-prefix-persistence P01 | 8min | 2 tasks | 4 files |
+| Phase 02-custom-object-key-prefix-persistence P02 | 6min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 02-custom-object-key-prefix-persistence]: Task 2 stubs as non-async functions returning Promise.reject so @typescript-eslint/require-await stays green between TDD tasks
 - [Phase 02-custom-object-key-prefix-persistence]: PREFIX-04 not marked complete by plan 02-01: storage half done (rows survive DROP SCHEMA, dropKeyPrefixes per org), CLI half (check/reset --drop-prefixes) is plan 02-02
 - [Phase 02-custom-object-key-prefix-persistence]: BigTable__c.Name is an AutoNumber: record-seeding tests insert it with no fields (plan fixture { Name } was rejected by the engine)
+- [Phase 02-custom-object-key-prefix-persistence]: reconcileKeyPrefixes runs before migrate (D-04) so a prefix conflict on a fresh database leaves no tables behind
+- [Phase 02-custom-object-key-prefix-persistence]: KeyPrefixError in the CLI prints error: <message> plus one hint line and returns 1 without pool.end(), mirroring the Postgres-unreachable branch
+- [Phase 02-custom-object-key-prefix-persistence]: The --key-prefixes file is read and validated before createPool so a bad file fails without touching the database
 
 ### Pending Todos
 
@@ -95,6 +99,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-01T12:46:26.849Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-10-01T12:52:24.539Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
