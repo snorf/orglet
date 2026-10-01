@@ -24,8 +24,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
       - run: pnpm build
+      - run: pnpm lint
       - run: pnpm test
 
   test-postgres:
@@ -54,6 +54,6 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
       - run: pnpm build
+      - run: pnpm lint
       - run: pnpm test

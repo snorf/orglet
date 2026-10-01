@@ -376,6 +376,10 @@ Design notes, each answering a specific question from the brief:
   `tsc -b`. D-16 wins as a locked decision — followed here — and both orders are functionally safe for
   the reason above, so there's no correctness cost to the resolution, only a note that the two research
   documents briefly disagreed on a non-binding stylistic point.
+  **Correction (2026-10-01, CI run 36831399404):** this "both orders are safe" claim was wrong on a
+  dist-less fresh checkout — `pnpm lint` fails with 81 `@typescript-eslint/no-unsafe-*` errors because
+  package `exports` resolve cross-package types from `dist/index.d.ts`, which doesn't exist until
+  `pnpm build` runs; `ci.yml` now runs `build` before `lint`.
 - **`pnpm test` needs no prior build, confirmed:** `vitest.config.ts` (read directly) aliases every
   `@orglet/<name>` import to `./packages/<name>/src/index.ts` — tests run against TypeScript source
   through vitest's own esbuild transform, never against `dist/`. No `pnpm build` dependency for `test`

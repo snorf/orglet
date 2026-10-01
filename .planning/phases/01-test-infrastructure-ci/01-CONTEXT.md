@@ -60,8 +60,10 @@ running server does.
 - **D-14:** Workflow triggers on push to any branch and on pull requests targeting `main`.
 - **D-15:** Node 22 only, matching `.nvmrc` and `engines`.
 - **D-16:** Two jobs: `test-pglite` (no services) and `test-postgres` (Postgres 16 service
-  container, `ORGLET_DATABASE_URL` set). Both run `pnpm install --frozen-lockfile`, lint,
-  `tsc -b`, `pnpm test`.
+  container, `ORGLET_DATABASE_URL` set). Both run `pnpm install --frozen-lockfile`,
+  `pnpm build` (`tsc -b`), `pnpm lint`, `pnpm test`. Build runs before lint because package
+  `exports` resolve cross-package types from `dist/index.d.ts`, which does not exist on a
+  fresh checkout; verified by CI run 36831399404 (2026-10-01).
 - **D-17:** Conformance suites (jsforce, simple-salesforce) are not run in CI in this phase.
   Deferred to phase 7 or a later manual `workflow_dispatch`.
 - **D-18:** `scripts/sync-sigha.sh` is never invoked by CI (INFRA-07). The vendored copy in
