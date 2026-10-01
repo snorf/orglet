@@ -149,6 +149,21 @@ describe("describe", () => {
     expect(basic["objectDescribe"]).toMatchObject({ name: "Account" });
     expect((await get(`${V}/sobjects/Nope`)).statusCode).toBe(404);
   });
+
+  it("reports the persisted key prefix for a custom object and mints Ids with it", async () => {
+    const global = json(await get(`${V}/sobjects`));
+    expect((global["sobjects"] as Json[]).find((s) => s["name"] === "Project__c")).toMatchObject({ keyPrefix: "a0Z", custom: true });
+    expect(json(await get(`${V}/sobjects/Project__c/describe`))["keyPrefix"]).toBe("a0Z");
+
+    const acc = json(await post(`${V}/sobjects/Account`, { Name: "Prefix Co" }));
+    expect(acc["success"]).toBe(true);
+    const proj = json(await post(`${V}/sobjects/Project__c`, { Name: "Seeded", Account__c: acc["id"] }));
+    expect(proj["success"]).toBe(true);
+    expect(String(proj["id"])).toMatch(/^a0Z[0-9A-Za-z]{15}$/);
+
+    // The mapping only touches Project__c; standard prefixes stay documented values.
+    expect((global["sobjects"] as Json[]).find((s) => s["name"] === "Account")).toMatchObject({ keyPrefix: "001" });
+  });
 });
 
 describe("sobjects", () => {
