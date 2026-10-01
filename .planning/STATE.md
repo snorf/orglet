@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: ready_to_plan
 stopped_at: Completed 01-test-infrastructure-ci-04-PLAN.md
 last_updated: "2026-10-01T08:15:02.557Z"
 last_activity: 2026-10-01
@@ -29,7 +29,7 @@ rather than faked.
 
 Phase: 2
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Phase 1 verified and complete (PR #1 open); Phase 2 ready to discuss/plan
 Last activity: 2026-10-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -85,7 +85,6 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 1: GitHub repo creation and first push are outward-facing actions requiring explicit confirmation with Johan at execution time.
 - Phase 3: Key prefix and name-equivalent field for `IdeaTheme` (prefix, single-source) and `DandBCompany`/`Entitlement`/`ServiceContract`/`SocialPost` (name field, unconfirmed) need verification against the Object Reference before writing baseline JSON.
 - Phase 4: Exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js` needs reading from its `.d.ts` during implementation; not verified during research.
 - Phase 5: Roll-up reparent and undelete recompute triggers are not confirmed by a direct official Salesforce quote (scope is not in question, only edge-case sourcing).
