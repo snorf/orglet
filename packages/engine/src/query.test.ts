@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { createPool, databaseUrlFromEnv, migrate, quote, type Pool } from "@orglet/schema";
+import { migrate, quote, type Pool } from "@orglet/schema";
+import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
 import type { Session } from "./hooks.js";
@@ -10,6 +11,7 @@ import { runQuery } from "./query.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
+let testDb: TestDb;
 let pool: Pool;
 let schema: OrgSchema;
 let engine: DmlEngine;
@@ -19,7 +21,8 @@ const ids: Record<string, string> = {};
 const q = (soql: string, options = {}) => runQuery(engine, session, soql, { apiVersion: "60.0", ...options });
 
 beforeAll(async () => {
-  pool = createPool(databaseUrlFromEnv());
+  testDb = await openTestDb();
+  pool = testDb.pool;
   schema = (await loadOrgSchema({ projectDir: ACME })).schema;
   await migrate(pool, schema, { orgSchema });
   session = (await bootstrapOrg(pool, schema, { orgSchema })).session;
@@ -43,7 +46,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
-  await pool.end();
+  await testDb.close();
 });
 
 describe("runQuery", () => {

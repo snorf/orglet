@@ -55,6 +55,12 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
 - ✓ Johan's own Developer Edition retrieve (12 custom-touched objects, ~500 fields; now 23
   objects, 861 fields) loads and serves CRUD, hierarchy lookups and parent SOQL — verified
   2026-09-26 and re-verified 2026-09-29
+- ✓ Unit and integration tests run without Docker on embedded pglite (one instance per test file,
+  `test/db.ts`); `session_replication_role` and `information_schema` verified on pglite 0.5.8;
+  Docker Compose unchanged for the running server — Phase 1 (2026-10-01)
+- ✓ Public repository `snorf/orglet` with GitHub Actions jobs `test-pglite` and `test-postgres`
+  running build, lint and the full suite on every push and PR; `main` protected by a ruleset
+  requiring both checks and a PR — Phase 1 (2026-10-01)
 
 ### Active
 
@@ -75,10 +81,6 @@ Flows, no Apex in this milestone.
 - [ ] Custom-object key prefixes are persisted, so adding or renaming a custom object never
   changes the prefix (and therefore the Ids) of existing objects
 - [ ] Bulk API 2.0 jobs are persisted in Postgres and survive a server restart
-- [ ] Unit and integration tests run without Docker via an embedded Postgres (pglite), while the
-  Docker Compose path still works for the running server
-- [ ] The project lives in a public GitHub repository with GitHub Actions running lint,
-  typecheck and the full test suite on every push and pull request
 - [ ] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (today: 15)
 - [ ] Both conformance suites are re-run after the changes, stay green, and the numbers in
   `conformance/` are updated (the jsforce README predates Bulk API 2.0)
@@ -174,7 +176,8 @@ on port 8180 with the `devrandom` org schema.
 | No behaviour-diffing against a real org | Developer MSA | ✓ Good |
 | Milestone 1 = hardening only (TYPEOF, roll-ups, thin baselines, key-prefix persistence, Bulk persistence, pglite, GitHub + CI) | Small milestone that makes a real DE org load clean and makes the project public and CI-tested before the GUI | — Pending |
 | Persist custom-object key prefixes | Alphabetical recomputation shifts prefixes when objects are added; Ids must be stable | — Pending |
-| pglite for tests, Docker Compose for the running server | CI without Docker, contributors without Docker; server path unchanged | — Pending |
+| pglite for tests, Docker Compose for the running server | CI without Docker, contributors without Docker; server path unchanged | ✓ Good (Phase 1; needed `maxConnections` on pglite-socket and build-before-lint in CI) |
+| Phase branches with PR to a ruleset-protected `main` | Branch protection only means something if every change goes through CI | ✓ Good (Phase 1) |
 
 ## Evolution
 
@@ -194,4 +197,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-29 after initialization*
+*Last updated: 2026-10-01 after Phase 1*

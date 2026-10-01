@@ -22,7 +22,7 @@ suites.
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Test Infrastructure & CI** - Full test suite runs Docker-free via pglite; project is on GitHub with two CI jobs
+- [x] **Phase 1: Test Infrastructure & CI** - Full test suite runs Docker-free via pglite; project is on GitHub with two CI jobs (completed 2026-10-01)
 - [ ] **Phase 2: Custom-Object Key-Prefix Persistence** - Custom object key prefixes are stable across reload and rename
 - [ ] **Phase 3: Thin Standard-Object Baselines** - The 14 missing standard objects exist as reference-checkable baselines
 - [ ] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles
@@ -45,7 +45,12 @@ typecheck and the full test suite — against both pglite and real Postgres — 
   3. `orglet up` and the Docker Compose path continue to run against real Postgres 16, unaffected by the pglite test path.
   4. The project is live in a public GitHub repository under Johan's personal account with the repo-local git identity, its name and first push explicitly confirmed with Johan beforehand.
   5. GitHub Actions runs lint, typecheck and the full suite on every push/PR in two jobs — one against pglite, one against a Postgres 16 service container — and neither job ever invokes `scripts/sync-sigha.sh`.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 01-01-PLAN.md — pglite test backend (`test/db.ts`), D-19 compat test recorded first, five DB-backed files migrated, 5433 default moved to CLI
+- [x] 01-02-PLAN.md — `.github/workflows/ci.yml` (test-pglite, test-postgres), README badge + Docker-optional docs, .env.example/compose comments
+- [x] 01-03-PLAN.md — local pre-flight on both backends + `orglet up` smoke, Johan-confirmed repo creation and pushes, first CI run green
+- [x] 01-04-PLAN.md — Johan-confirmed ruleset on main, phase PR opened (not merged)
 **Research flag**: yes — verify `session_replication_role` and `information_schema` behavior against the pinned `pglite@0.5.8` directly; treated by research as genuinely unresolved, not settled.
 
 ### Phase 2: Custom-Object Key-Prefix Persistence
@@ -135,7 +140,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Test Infrastructure & CI | 0/TBD | Not started | - |
+| 1. Test Infrastructure & CI | 3/4 | Complete    | 2026-10-01 |
 | 2. Custom-Object Key-Prefix Persistence | 0/TBD | Not started | - |
 | 3. Thin Standard-Object Baselines | 0/TBD | Not started | - |
 | 4. Polymorphic Lookups & SOQL TYPEOF | 0/TBD | Not started | - |

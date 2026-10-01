@@ -19,7 +19,7 @@ pnpm test:watch        # vitest — watch mode
 ```
 There is no `pnpm test:coverage` script and no coverage tool configured (no `@vitest/coverage-*` dependency) — coverage is not measured or enforced.
 
-**Postgres prerequisite:** several test files (see below) need a real Postgres reachable at `ORGLET_DATABASE_URL` (default `postgres://orglet:orglet@localhost:5433/orglet`, see `.env.example`). Start it with `pnpm db:up` (`docker compose up -d postgres`, `docker-compose.yml`) before running `pnpm test`. Tests that need it fail fast in `beforeAll` with an explicit message if it isn't reachable (see Isolation below) rather than hanging or silently skipping.
+**Database backend:** `pnpm test` needs no Docker. Every Postgres-backed test file calls `openTestDb()` from `test/db.ts` in `beforeAll`: with `ORGLET_DATABASE_URL` unset it starts its own in-memory pglite (`@electric-sql/pglite` 0.5.8) behind `@electric-sql/pglite-socket` 0.2.11 on a free port and hands back an ordinary `pg` pool; with `ORGLET_DATABASE_URL` set it uses that Postgres instead (e.g. `pnpm db:up` then `ORGLET_DATABASE_URL=postgres://orglet:orglet@localhost:5433/orglet pnpm test`). `databaseUrlFromEnv()` has no default any more; the `localhost:5433` fallback lives only in the CLI (`packages/cli/src/main.ts`). CI runs the suite both ways (jobs `test-pglite` and `test-postgres`).
 
 ## Test File Organization
 
@@ -27,13 +27,14 @@ There is no `pnpm test:coverage` script and no coverage tool configured (no `@vi
 
 **Naming:** `<name>.test.ts` next to `<name>.ts`, e.g. `packages/engine/src/engine.test.ts` beside `packages/engine/src/engine.ts`, `packages/soql/src/compile.test.ts` beside `packages/soql/src/compile.ts`. `vitest.config.ts` globs `packages/*/src/**/*.test.ts` and `packages/*/src/test/**/*.test.ts`.
 
-**All test files in the repo (12), with line counts and DB dependency:**
+**All test files in the repo (13), with line counts and DB dependency:**
 
 | File | Lines | Needs Postgres |
 |---|---|---|
 | `packages/schema/src/ids.test.ts` | 49 | no |
 | `packages/sigha/src/engine/org-conformance.test.ts` | 72 | no |
 | `packages/metadata/src/sfdx.test.ts` | 83 | no |
+| `packages/schema/src/pglite-compat.test.ts` | 95 | **yes** |
 | `packages/formula/src/formula.test.ts` | 117 | no |
 | `packages/schema/src/migrate.test.ts` | 119 | **yes** |
 | `packages/engine/src/query.test.ts` | 128 | **yes** |
@@ -78,40 +79,50 @@ describe("compileFormula", () => {
 - Small local helper functions/closures defined above the `describe` blocks to keep test bodies terse (`rule(...)`, `field(...)`, `run(...)` in `formula.test.ts`; `one(sobject, input)` in `engine.test.ts`; `get/post/patch/del` HTTP helpers in `api.test.ts`).
 - `it.each([...])` for table-driven cases over fixed input/output pairs, e.g. known 15↔18-character Salesforce ID conversions in `packages/schema/src/ids.test.ts`.
 - Assertions read record data with bracket access (`record["Description"]`) matching the codebase's `Record<string, unknown>` record shape, not dot access.
-- No `describe.skip`/`it.skip`/`.only` anywhere in the suite — every test that exists is expected to pass on every run.
+- No static `describe.skip`/`it.skip`/`.only`. A test that only works on real Postgres calls `skip(usingPglite, "<reason>")` from its test context (`usingPglite` exported by `test/db.ts`, the one backend signal, D-21); it reports as skipped with the reason, never as passed. Example: the concurrent-transactions test in `pglite-compat.test.ts`.
 
 ## Postgres-Backed Tests: Isolation and Lifecycle
 
-Every Postgres-backed test file (`migrate.test.ts`, `query.test.ts`, `engine.test.ts`, `api.test.ts`, `bulk.test.ts`) follows the same exact pattern:
+Every Postgres-backed test file (`migrate.test.ts`, `query.test.ts`, `engine.test.ts`, `api.test.ts`, `bulk.test.ts`, `pglite-compat.test.ts`) follows the same exact pattern:
 
 ```typescript
 import { randomBytes } from "node:crypto";
-import { createPool, databaseUrlFromEnv, migrate, quote, type Pool } from "@orglet/schema";
+import { migrate, quote, type Pool } from "@orglet/schema";
+import { openTestDb, type TestDb } from "../../../test/db.js";
 
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;  // e.g. test_a1b2c3d4
+let testDb: TestDb;
 let pool: Pool;
 
 beforeAll(async () => {
-  pool = createPool(databaseUrlFromEnv());
-  try {
-    await pool.query("SELECT 1");
-  } catch (err) {
-    throw new Error(`Postgres not reachable at ${databaseUrlFromEnv()} (run \`pnpm db:up\`): ${String(err)}`);
-  }
+  testDb = await openTestDb();   // own pglite per file, or ORGLET_DATABASE_URL if set
+  pool = testDb.pool;
   // ... migrate(pool, schema, { orgSchema }) to build this test's own schema
 });
 
 afterAll(async () => {
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
-  await pool.end();
+  await testDb.close();
 });
 ```
 (`packages/schema/src/migrate.test.ts`, `packages/engine/src/engine.test.ts`, `packages/api/src/api.test.ts`)
 
-- **One randomly-named Postgres schema per test file** (`test_<8 hex chars>`, via `randomBytes(4)`), created fresh in `beforeAll` and dropped with `CASCADE` in `afterAll`. This is the entire isolation mechanism — tests never share a schema, never touch a developer's own org data, and can run concurrently against the same Postgres instance/database without colliding.
+- **One randomly-named Postgres schema per test file** (`test_<8 hex chars>`, via `randomBytes(4)`), created fresh in `beforeAll` and dropped with `CASCADE` in `afterAll`. This is the entire isolation mechanism on a shared Postgres — tests never share a schema, never touch a developer's own org data, and can run concurrently against the same Postgres instance/database without colliding.
 - No transaction-rollback-per-test isolation; state accumulates across `it()` blocks within one file and is asserted incrementally. Isolation is per-file, not per-test.
-- Connectivity is checked explicitly (`SELECT 1`) before anything else, with an error message that tells the developer exactly how to fix it (`pnpm db:up`) rather than a raw connection-refused stack trace.
+- On real Postgres, `openTestDb()` checks connectivity (`SELECT 1`) first and fails with a message naming the URL and the fix (`pnpm db:up`, or unset `ORGLET_DATABASE_URL`). On pglite each file has its own instance, so the `test_<hex>` schema is defence in depth there, and required isolation on a shared Postgres.
 - When adding a new Postgres-backed test file, copy this exact `beforeAll`/`afterAll` shape rather than inventing a new isolation strategy.
+
+## pglite Compatibility (D-19)
+
+**Outcome: PASS — 2026-09-30, `@electric-sql/pglite` 0.5.8 + `@electric-sql/pglite-socket` 0.2.11, `pg` 8.23.0, Node 22.**
+`packages/schema/src/pglite-compat.test.ts` verifies on pglite: the `information_schema.columns` query
+`migrate.ts` uses (exact types, lengths, precision/scale), `information_schema.tables`, the
+`pg_constraint` lookup, `SET LOCAL session_replication_role = replica` (transaction-scoped) and its
+effect of skipping FK checks for import mode, with FKs enforced (SQLSTATE 23503) outside it. No
+import-mode test needs the Postgres-only skip. Known pglite limitation: pglite-socket serialises all
+connections through one query queue, so a second open transaction waits for the first; tests that need
+real concurrency skip on pglite (see the last test in that file). Re-run this file first after any
+pglite or pglite-socket version bump.
 
 ## Fixtures
 
@@ -136,7 +147,7 @@ Distinct from the top-level `conformance/` suites (below): `packages/sigha` (the
 
 ## Conformance Suites (`conformance/`)
 
-Two **external, manually-run** suites that exercise a live orglet server over HTTP using real upstream Salesforce SDKs, as opposed to vitest unit/integration tests. They are not part of `pnpm test` / CI (there is no CI config in the repo) and require a running orglet instance plus network/tooling setup (Node+Jest for one, a Python venv for the other).
+Two **external, manually-run** suites that exercise a live orglet server over HTTP using real upstream Salesforce SDKs, as opposed to vitest unit/integration tests. They are not part of `pnpm test` / CI (CI in `.github/workflows/ci.yml` runs lint, build and `pnpm test` only) and require a running orglet instance plus network/tooling setup (Node+Jest for one, a Python venv for the other).
 
 **`conformance/python/` — simple-salesforce (Python SDK):**
 - `conformance/python/run.py` (self-contained script, no test framework) drives `simple_salesforce.Salesforce` against `BASE_URL = "http://localhost:8180"`, `USERNAME = "admin@orglet.local"`, `API_VERSION = "59.0"` (edit constants at the top of the file to point elsewhere).
@@ -168,4 +179,4 @@ Two **external, manually-run** suites that exercise a live orglet server over HT
 
 ---
 
-*Testing analysis: 2026-09-29*
+*Testing analysis: 2026-09-29, updated 2026-09-30 (phase 1: pglite backend)*

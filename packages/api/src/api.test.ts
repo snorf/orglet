@@ -3,7 +3,8 @@ import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { createPool, databaseUrlFromEnv, migrate, quote, type Pool } from "@orglet/schema";
+import { migrate, quote, type Pool } from "@orglet/schema";
+import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { createApiServer } from "./server.js";
 
@@ -11,6 +12,7 @@ const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
 const V = "/services/data/v59.0";
 
+let testDb: TestDb;
 let pool: Pool;
 let schema: OrgSchema;
 let app: FastifyInstance;
@@ -28,7 +30,8 @@ const patch = (url: string, body: unknown) => app.inject({ method: "PATCH", url,
 const del = (url: string) => app.inject({ method: "DELETE", url, headers: auth() });
 
 beforeAll(async () => {
-  pool = createPool(databaseUrlFromEnv());
+  testDb = await openTestDb();
+  pool = testDb.pool;
   schema = (await loadOrgSchema({ projectDir: ACME })).schema;
   await migrate(pool, schema, { orgSchema });
   const boot = await bootstrapOrg(pool, schema, { orgSchema });
@@ -47,7 +50,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await app.close();
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
-  await pool.end();
+  await testDb.close();
 });
 
 describe("ui", () => {

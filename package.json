@@ -21,6 +21,8 @@
     "db:down": "docker compose down"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-socket": "0.2.11",
     "@eslint/js": "^9.30.0",
     "@types/node": "^22.15.0",
     "eslint": "^9.30.0",

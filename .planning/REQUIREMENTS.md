@@ -12,22 +12,22 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Test Infrastructure & CI
 
-- [ ] **INFRA-01**: User can run the full unit and integration test suite with `pnpm test` on a
+- [x] **INFRA-01**: User can run the full unit and integration test suite with `pnpm test` on a
   machine without Docker; Postgres-backed tests run against an embedded pglite instance reached
   through the existing `pg` pool over the pglite socket server
-- [ ] **INFRA-02**: Import-mode behaviour (`SET LOCAL session_replication_role = replica`) and
+- [x] **INFRA-02**: Import-mode behaviour (`SET LOCAL session_replication_role = replica`) and
   the `information_schema` schema differ are verified to work on the pinned pglite version, or
   the affected tests are explicitly tagged to run only on real Postgres with the reason recorded
-- [ ] **INFRA-03**: `orglet up` and the Docker Compose path continue to use a real Postgres 16;
+- [x] **INFRA-03**: `orglet up` and the Docker Compose path continue to use a real Postgres 16;
   no production code path depends on pglite
-- [ ] **INFRA-04**: The project is published in a public GitHub repository under Johan's
+- [x] **INFRA-04**: The project is published in a public GitHub repository under Johan's
   personal account with the repo-local git identity, after explicit confirmation of the
   repository name and the first push
-- [ ] **INFRA-05**: GitHub Actions runs lint, typecheck (`tsc -b`) and the full test suite
+- [x] **INFRA-05**: GitHub Actions runs lint, typecheck (`tsc -b`) and the full test suite
   against pglite on every push and pull request
-- [ ] **INFRA-06**: A second GitHub Actions job runs the same test suite against a Postgres 16
+- [x] **INFRA-06**: A second GitHub Actions job runs the same test suite against a Postgres 16
   service container, so pglite-only regressions cannot go unnoticed
-- [ ] **INFRA-07**: The vendored `sigha` sync script is never executed in CI; the vendored copy is
+- [x] **INFRA-07**: The vendored `sigha` sync script is never executed in CI; the vendored copy is
   what gets built and tested
 
 ### Custom-Object Key Prefixes
@@ -185,13 +185,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
-| INFRA-03 | Phase 1 | Pending |
-| INFRA-04 | Phase 1 | Pending |
-| INFRA-05 | Phase 1 | Pending |
-| INFRA-06 | Phase 1 | Pending |
-| INFRA-07 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
+| INFRA-02 | Phase 1 | Complete |
+| INFRA-03 | Phase 1 | Complete |
+| INFRA-04 | Phase 1 | Complete |
+| INFRA-05 | Phase 1 | Complete |
+| INFRA-06 | Phase 1 | Complete |
+| INFRA-07 | Phase 1 | Complete |
 | PREFIX-01 | Phase 2 | Pending |
 | PREFIX-02 | Phase 2 | Pending |
 | PREFIX-03 | Phase 2 | Pending |
