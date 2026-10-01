@@ -36,19 +36,22 @@ created: 2026-10-01
 
 ## Per-Task Verification Map
 
-Task IDs are filled in by the planner. Test IDs (T1..T12) match `02-RESEARCH.md` §"Validation Architecture".
+Task IDs are `<plan>-T<n>` from the PLAN.md files (filled in by the planner 2026-10-01). Test IDs (T1..T12) match `02-RESEARCH.md` §"Validation Architecture". There is no separate Wave 0: each test is written RED-first inside the same TDD task that implements it (plan 02-01 for the schema module, 02-02 for the CLI), which satisfies the Nyquist rule because every task carries an `<automated>` verify.
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | 0 | PREFIX-01 | integration (T1 two-build drift, the gate) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "two-build"` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 0 | PREFIX-01 | integration (T2 removal, T3 rename) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "removal\|rename"` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 0 | PREFIX-02 | integration (T4 existing records, T5 newcomer sorts first) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "existing records\|sorts before"` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 0 | PREFIX-03 | unit (T6 planner collisions), integration (T7 nothing written) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "planKeyPrefixes\|nothing written"` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 0 | PREFIX-03 | unit (T8 mapping parser) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "parseKeyPrefixMapping"` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 0 | PREFIX-04 | unit, console spy (T9 `check` output) | `pnpm vitest run packages/cli/src/main.test.ts` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 0 | PREFIX-04 | integration (T10 reset keeps rows, `dropKeyPrefixes` per org) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "drop"` | ❌ W0 | ⬜ pending |
-| TBD | TBD | 1 | PREFIX-01 | integration (T11 describe shows persisted prefix) | `pnpm vitest run packages/api/src/api.test.ts -t "describe"` | ✅ file exists | ⬜ pending |
-| TBD | TBD | 1 | D-05 | integration, Postgres-only (T12 concurrency, optional) | `ORGLET_DATABASE_URL=... pnpm vitest run packages/schema/src/prefixes.test.ts -t "concurrent"` | ❌ optional | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | PREFIX-01 | integration (T1 two-build drift, the gate) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "two-build"` | ❌ written in 02-01-T1/T2 (TDD, RED first) | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | PREFIX-01 | integration (T2 removal, T3 rename) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "removal\|rename"` | ❌ written in 02-01-T2 | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | PREFIX-02 | integration (T4 existing records, T5 newcomer sorts first) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "existing records\|sorts before"` | ❌ written in 02-01-T2 | ⬜ pending |
+| 02-01-T1, 02-01-T2 | 02-01 | 1 | PREFIX-03 | unit (T6 planner collisions, 02-01-T1), integration (T7 nothing written, 02-01-T2) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "planKeyPrefixes\|nothing written"` | ❌ written in 02-01-T1/T2 | ⬜ pending |
+| 02-01-T1 | 02-01 | 1 | PREFIX-03 | unit (T8 mapping parser) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "parseKeyPrefixMapping"` | ❌ written in 02-01-T1 | ⬜ pending |
+| 02-02-T1 | 02-02 | 2 | PREFIX-04 | unit, console spy (T9 `check` output + USAGE) | `pnpm vitest run packages/cli/src/main.test.ts` | ❌ written in 02-02-T1 | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | PREFIX-04 | integration (T10 reset keeps rows, `dropKeyPrefixes` per org) | `pnpm vitest run packages/schema/src/prefixes.test.ts -t "drop"` | ❌ written in 02-01-T2 | ⬜ pending |
+| 02-03-T1 | 02-03 | 3 | PREFIX-01 | integration (T11 describe + REST Id show persisted prefix) | `pnpm vitest run packages/api/src/api.test.ts -t "describe"` | ✅ file exists, assertion added | ⬜ pending |
+| 02-01-T2 | 02-01 | 1 | D-05 | integration, Postgres-only (T12 concurrency, `skip(usingPglite)`) | `ORGLET_DATABASE_URL=postgres://orglet:orglet@localhost:5433/orglet pnpm vitest run packages/schema/src/prefixes.test.ts -t "concurrent"` | ❌ written in 02-01-T2 | ⬜ pending |
+| 02-02-T2 | 02-02 | 2 | PREFIX-04 (docs) | unit (retitled build.test) + grep on README | `pnpm vitest run packages/metadata/src/build.test.ts && grep -c '^## Custom-object key prefixes' README.md` | ✅ file exists | ⬜ pending |
+| 02-03-T2 | 02-03 | 3 | PREFIX-01..04 | full suite both backends + CLI smoke (automated shell sequence, `--org-schema smoke_phase2`) | `pnpm build && pnpm lint && pnpm test && ORGLET_DATABASE_URL=... pnpm test` | n/a | ⬜ pending |
+| 02-03-T3 | 02-03 | 3 | PREFIX-02 | checkpoint:human-verify (Johan's devrandom org) | manual, see 02-03-PLAN.md Task 3 | n/a | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
