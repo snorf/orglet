@@ -54,6 +54,36 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 validation rules, record types and value sets are read from it; standard objects come from the
 built-in baseline. Anything not supported is logged as `UNSUPPORTED:<area>` rather than faked.
 
+## Custom-object key prefixes
+
+The first three characters of a Salesforce Id identify the object (`001` is Account). Standard
+objects use their documented prefixes. Custom objects get `a00`, `a01`, ... assigned the first
+time `orglet up` sees them against a database, and the assignment is stored in the
+`_orglet.key_prefixes` table next to the org schema. From then on it is permanent for that object
+name in that org: adding, removing or renaming other custom objects never changes it, so no existing
+Id changes meaning. A database created before this feature keeps the prefixes its records already
+carry.
+
+- `orglet check` has no database, so the prefixes it prints are labelled `(provisional)`.
+- `orglet reset` drops the org's tables but keeps the prefix assignments; `orglet reset --drop-prefixes`
+  forgets them too (the next `up` assigns fresh ones).
+- A prefix that would collide with a standard object or with another custom object's assignment
+  fails `orglet up` with an error naming both objects. Nothing is written in that case.
+
+To import records from a real org and keep their Ids valid, seed the prefixes that org uses:
+
+```sh
+cat > key-prefixes.json <<'EOF'
+{ "Project__c": "a0X", "Milestone__c": "a0Y" }
+EOF
+node packages/cli/dist/index.js up --project my-sfdx-project --key-prefixes key-prefixes.json --import
+```
+
+The file maps custom-object API names to 3-character prefixes. It is consulted only for objects
+that have no assignment yet and never overrides a stored one. orglet never connects to Salesforce;
+read the values from your own org, for example
+`sf sobject describe --sobject Project__c --json | jq -r '.result.keyPrefix'`.
+
 ## Layout
 
 ```
@@ -63,7 +93,7 @@ packages/formula    Salesforce formula language bound to record context
 packages/soql       SOQL AST -> parameterised SQL, result shaping
 packages/engine     DML pipeline, order of execution, trigger hook interface
 packages/api        Salesforce-compatible REST and login endpoints
-packages/cli        orglet up / reload / reset
+packages/cli        orglet up / check / reset
 examples/           SFDX fixture projects used by tests
 conformance/        Runs upstream SDK test suites against orglet
 ```

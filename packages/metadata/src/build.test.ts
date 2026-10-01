@@ -68,7 +68,7 @@ describe("examples/acme merged onto the baseline", () => {
     result = await loadOrgSchema({ projectDir: ACME });
   });
 
-  it("assigns custom key prefixes in name order", () => {
+  it("assigns provisional custom key prefixes in name order", () => {
     expect(result.schema.getObject("BigTable__c")?.keyPrefix).toBe("a00");
     expect(result.schema.getObject("Milestone__c")?.keyPrefix).toBe("a01");
     expect(result.schema.getObject("Project__c")?.keyPrefix).toBe("a02");
