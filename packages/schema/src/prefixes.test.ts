@@ -2,12 +2,57 @@
  * Key-prefix persistence: the pure planner and mapping parser are exercised without a database;
  * the DB-backed reconcile/drop wrappers run against whichever backend test/db.ts provides.
  */
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
-import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { KeyPrefixError, planKeyPrefixes, parseKeyPrefixMapping, type KeyPrefixPlanInput } from "./prefixes.js";
+import { randomBytes } from "node:crypto";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type OrgSchema, type SourceObject, type SourceProject } from "@orglet/metadata";
+import { bootstrapOrg, DmlEngine } from "@orglet/engine";
+import { openTestDb, usingPglite, type TestDb } from "../../../test/db.js";
+import { quote } from "./columns.js";
+import type { Pool } from "./db.js";
+import { migrate } from "./migrate.js";
+import { KeyPrefixError, dropKeyPrefixes, planKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, type KeyPrefixPlanInput } from "./prefixes.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+
+let testDb: TestDb;
+let pool: Pool;
+let baseline: Baseline;
+let project: SourceProject;
+// Each DB test gets its own org schema; afterAll removes both the schema and its _orglet rows.
+const orgs: string[] = [];
+const freshOrg = () => {
+  const s = `test_${randomBytes(4).toString("hex")}`;
+  orgs.push(s);
+  return s;
+};
+const build = (objects: SourceObject[]) => buildOrgSchema(baseline, { ...project, objects }).schema;
+const minimal = (name: string): SourceObject => ({ name, fields: [], validationRules: [], recordTypes: [] });
+const rows = async (org: string) =>
+  new Map(
+    (
+      await pool.query<{ object_name: string; key_prefix: string; source: string }>(
+        `SELECT object_name, key_prefix, source FROM "_orglet"."key_prefixes" WHERE org_schema = $1 ORDER BY object_name`,
+        [org],
+      )
+    ).rows.map((r) => [r.object_name, { keyPrefix: r.key_prefix, source: r.source }]),
+  );
+const flatten = (assignments: { objectName: string; keyPrefix: string; source: string }[]) => assignments.map((a) => [a.objectName, a.keyPrefix, a.source]);
+
+beforeAll(async () => {
+  testDb = await openTestDb();
+  pool = testDb.pool;
+  baseline = await loadBaseline();
+  project = await readSourceProject(ACME);
+});
+
+afterAll(async () => {
+  for (const org of orgs) {
+    await dropKeyPrefixes(pool, org);
+    await pool.query(`DROP SCHEMA IF EXISTS ${quote(org)} CASCADE`);
+  }
+  await testDb.close();
+});
 
 function caught(fn: () => unknown): KeyPrefixError {
   try {
@@ -192,5 +237,153 @@ describe("parseKeyPrefixMapping", () => {
 
   it("canonicalises object-name casing", () => {
     expect(parseKeyPrefixMapping({ project__c: "a0X" }, schema)).toEqual({ Project__c: "a0X" });
+  });
+});
+
+describe("dropKeyPrefixes before any reconcile", () => {
+  it("drop: returns 0 for an org that never persisted a key prefix", async () => {
+    expect(await dropKeyPrefixes(pool, freshOrg())).toBe(0);
+  });
+});
+
+describe("reconcileKeyPrefixes", () => {
+  const orgA = freshOrg();
+
+  it("two-build: keeps every existing assignment when a newcomer shifts the provisional scheme", async () => {
+    const first = build(project.objects);
+    const r1 = await reconcileKeyPrefixes(pool, first, { orgSchema: orgA });
+    expect(flatten(r1.assignments)).toEqual([
+      ["BigTable__c", "a00", "provisional"],
+      ["Milestone__c", "a01", "provisional"],
+      ["Project__c", "a02", "provisional"],
+      ["UpsertTable__c", "a03", "provisional"],
+    ]);
+    expect(r1.warnings).toEqual([]);
+
+    const second = build([...project.objects, minimal("Aardvark__c")]);
+    // The provisional scheme really does shift: Aardvark__c sorts first and takes a00 in memory.
+    expect(second.getObject("Aardvark__c")?.keyPrefix).toBe("a00");
+    expect(second.getObject("BigTable__c")?.keyPrefix).toBe("a01");
+
+    const r2 = await reconcileKeyPrefixes(pool, second, { orgSchema: orgA });
+    expect(r2.assignments).toEqual([{ objectName: "Aardvark__c", keyPrefix: "a04", source: "next-free" }]);
+    expect(second.getObject("BigTable__c")?.keyPrefix).toBe("a00");
+    expect(second.getObject("Milestone__c")?.keyPrefix).toBe("a01");
+    expect(second.getObject("Project__c")?.keyPrefix).toBe("a02");
+    expect(second.getObject("UpsertTable__c")?.keyPrefix).toBe("a03");
+    expect(second.getObject("Aardvark__c")?.keyPrefix).toBe("a04");
+
+    const r3 = await reconcileKeyPrefixes(pool, build([...project.objects, minimal("Aardvark__c")]), { orgSchema: orgA });
+    expect(r3.assignments).toEqual([]);
+    expect((await rows(orgA)).size).toBe(5);
+  });
+
+  it("removal: keeps the removed object's row and hands the prefix back when it returns", async () => {
+    const removed = build(project.objects.filter((o) => o.name !== "BigTable__c"));
+    const r = await reconcileKeyPrefixes(pool, removed, { orgSchema: orgA });
+    expect(r.assignments).toEqual([]);
+    expect((await rows(orgA)).get("BigTable__c")).toEqual({ keyPrefix: "a00", source: "provisional" });
+    expect(removed.getObject("Milestone__c")?.keyPrefix).toBe("a01");
+
+    const back = build(project.objects);
+    const r2 = await reconcileKeyPrefixes(pool, back, { orgSchema: orgA });
+    expect(r2.assignments).toEqual([]);
+    expect(back.getObject("BigTable__c")?.keyPrefix).toBe("a00");
+  });
+
+  it("rename: treats the new name as a new object and keeps the old name's row", async () => {
+    const renamed = build([...project.objects.filter((o) => o.name !== "UpsertTable__c"), minimal("Renamed__c")]);
+    const r = await reconcileKeyPrefixes(pool, renamed, { orgSchema: orgA });
+    expect(r.assignments).toEqual([{ objectName: "Renamed__c", keyPrefix: "a05", source: "next-free" }]);
+    const persisted = await rows(orgA);
+    expect(persisted.has("UpsertTable__c")).toBe(true);
+    expect(persisted.size).toBe(6);
+  });
+
+  it("seeds from existing records when an upgraded org has no rows yet", async () => {
+    const orgB = freshOrg();
+    const first = build(project.objects);
+    await migrate(pool, first, { orgSchema: orgB });
+    const boot = await bootstrapOrg(pool, first, { orgSchema: orgB });
+    const engine = new DmlEngine(pool, first, { orgSchema: orgB });
+    const [big] = await engine.insert(boot.session, "BigTable__c", [{ Name: "legacy" }]);
+    expect(big?.success).toBe(true);
+    expect(big?.id).toMatch(/^a00/);
+    const [ups] = await engine.insert(boot.session, "UpsertTable__c", [{ Name: "legacy" }]);
+    expect(ups?.id).toMatch(/^a03/);
+    expect((await rows(orgB)).size).toBe(0);
+
+    const r = await reconcileKeyPrefixes(pool, first, { orgSchema: orgB });
+    expect(flatten(r.assignments)).toEqual([
+      ["BigTable__c", "a00", "records"],
+      ["Milestone__c", "a01", "provisional"],
+      ["Project__c", "a02", "provisional"],
+      ["UpsertTable__c", "a03", "records"],
+    ]);
+    const [upd] = await engine.update(boot.session, "BigTable__c", [{ Id: big?.id, Name: "still valid" }]);
+    expect(upd?.success).toBe(true);
+  });
+
+  it("sorts before: a newcomer that sorts first cannot steal a prefix existing records carry", async () => {
+    const orgB2 = freshOrg();
+    const first = build(project.objects);
+    await migrate(pool, first, { orgSchema: orgB2 });
+    const boot = await bootstrapOrg(pool, first, { orgSchema: orgB2 });
+    const engine = new DmlEngine(pool, first, { orgSchema: orgB2 });
+    const [big] = await engine.insert(boot.session, "BigTable__c", [{ Name: "legacy" }]);
+    expect(big?.id).toMatch(/^a00/);
+
+    const second = build([...project.objects, minimal("Aardvark__c")]);
+    const r = await reconcileKeyPrefixes(pool, second, { orgSchema: orgB2 });
+    expect(flatten(r.assignments)).toEqual([
+      ["Aardvark__c", "a01", "next-free"],
+      ["BigTable__c", "a00", "records"],
+      ["Milestone__c", "a02", "provisional"],
+      ["Project__c", "a03", "provisional"],
+      ["UpsertTable__c", "a04", "provisional"],
+    ]);
+    expect(second.getObject("BigTable__c")?.keyPrefix).toBe("a00");
+    expect(second.getObject("Aardvark__c")?.keyPrefix).toBe("a01");
+  });
+
+  it("nothing written: a colliding mapping on a fresh org rolls the whole reconcile back", async () => {
+    const orgC = freshOrg();
+    const first = build(project.objects);
+    const attempt = () => reconcileKeyPrefixes(pool, first, { orgSchema: orgC, mapping: { Project__c: "001" } });
+    await expect(attempt()).rejects.toThrow(KeyPrefixError);
+    await expect(attempt()).rejects.toThrow(/Account/);
+    await expect(attempt()).rejects.toThrow(/Project__c/);
+    expect((await rows(orgC)).size).toBe(0);
+    expect(first.getObject("Project__c")?.keyPrefix).toBe("a02");
+  });
+
+  it("concurrent: two reconciles of a fresh org agree and never duplicate a prefix", async ({ skip }) => {
+    skip(usingPglite, "Postgres-only: pglite-socket serialises connections, so two transactions cannot interleave");
+    const orgF = freshOrg();
+    const [ra, rb] = await Promise.all([
+      reconcileKeyPrefixes(pool, build(project.objects), { orgSchema: orgF }),
+      reconcileKeyPrefixes(pool, build(project.objects), { orgSchema: orgF }),
+    ]);
+    expect(ra.assignments.length + rb.assignments.length).toBe(4);
+    expect((await rows(orgF)).size).toBe(4);
+  });
+});
+
+describe("dropKeyPrefixes", () => {
+  it("drop: rows survive DROP SCHEMA of the org and dropKeyPrefixes removes only that org's rows", async () => {
+    const orgD = freshOrg();
+    const orgE = freshOrg();
+    const s = build(project.objects);
+    await migrate(pool, s, { orgSchema: orgD });
+    await reconcileKeyPrefixes(pool, s, { orgSchema: orgD });
+    await reconcileKeyPrefixes(pool, build(project.objects), { orgSchema: orgE });
+
+    await pool.query(`DROP SCHEMA ${quote(orgD)} CASCADE`);
+    expect((await rows(orgD)).size).toBe(4);
+
+    expect(await dropKeyPrefixes(pool, orgD)).toBe(4);
+    expect((await rows(orgD)).size).toBe(0);
+    expect((await rows(orgE)).size).toBe(4);
+    expect(await dropKeyPrefixes(pool, orgD)).toBe(0);
   });
 });
