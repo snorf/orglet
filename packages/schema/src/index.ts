@@ -19,3 +19,6 @@ export { planSchema, planTable } from "./ddl.js";
 export type { TablePlan, ForeignKeySpec, IndexSpec } from "./ddl.js";
 export { migrate } from "./migrate.js";
 export type { MigrateOptions, MigrateResult } from "./migrate.js";
+export { ensureInternalSchema } from "./internal.js";
+export { KeyPrefixError, planKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, dropKeyPrefixes } from "./prefixes.js";
+export type { KeyPrefixSource, KeyPrefixClaim, KeyPrefixAssignment, KeyPrefixPlanInput, KeyPrefixPlan, ReconcileKeyPrefixesOptions, ReconcileKeyPrefixesResult } from "./prefixes.js";
