@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { generateId, keyPrefixOf, normalizeId, toCaseSafeId } from "./ids.js";
 
 describe("case-safe ID checksum", () => {
@@ -41,6 +41,33 @@ describe("generateId", () => {
     expect(new Set(ids).size).toBe(ids.length);
     const sorted = [...ids].sort();
     expect(sorted).toEqual(ids);
+  });
+
+  it("keeps IDs increasing when the counter wraps inside one millisecond", () => {
+    // Freeze the clock so every ID lands in the same millisecond and the 3-character counter must wrap.
+    const frozen = Date.now();
+    const spy = vi.spyOn(Date, "now").mockReturnValue(frozen);
+    try {
+      const ids = Array.from({ length: 62 ** 3 + 1 }, () => generateId("001"));
+      expect(new Set(ids).size).toBe(ids.length);
+      expect([...ids].sort()).toEqual(ids);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("keeps IDs increasing when the wall clock steps backwards", () => {
+    const start = Date.now() + 10_000;
+    const spy = vi.spyOn(Date, "now");
+    try {
+      spy.mockReturnValue(start);
+      const first = generateId("001");
+      spy.mockReturnValue(start - 5_000);
+      const second = generateId("001");
+      expect(second > first).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it("rejects a bad key prefix", () => {

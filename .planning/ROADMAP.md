@@ -23,7 +23,7 @@ suites.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Test Infrastructure & CI** - Full test suite runs Docker-free via pglite; project is on GitHub with two CI jobs (completed 2026-10-01)
-- [ ] **Phase 2: Custom-Object Key-Prefix Persistence** - Custom object key prefixes are stable across reload and rename
+- [x] **Phase 2: Custom-Object Key-Prefix Persistence** - Custom object key prefixes are stable across reload and rename (completed 2026-10-02)
 - [ ] **Phase 3: Thin Standard-Object Baselines** - The 14 missing standard objects exist as reference-checkable baselines
 - [ ] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles
 - [ ] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only
@@ -63,7 +63,11 @@ renaming custom objects never shifts the Id-meaning of existing records.
   2. An org database whose prefixes were previously assigned by the old alphabetical scheme keeps those exact assignments as its initial persisted state on first upgrade.
   3. Assigning a prefix that would collide with a standard-object prefix or another custom object's persisted prefix fails the load with a clear error instead of silently overlapping.
   4. `orglet check` (no database) labels any prefix it reports as provisional, and `orglet reset` preserves persisted prefix assignments unless the user explicitly asks to drop them.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [x] 02-01-PLAN.md — `@orglet/schema` prefix module: `internal.ts` (ensureInternalSchema), `prefixes.ts` (KeyPrefixError, pure two-pass planKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, dropKeyPrefixes), `prefixes.test.ts` (T1-T8, T10, T12)
+- [x] 02-02-PLAN.md — CLI wiring (`up` reconcile + `--key-prefixes`, `check` provisional lines, `reset --drop-prefixes`, KeyPrefixError catch, USAGE) + `main.test.ts` (T9), `build.ts` doc comment, README section
+- [x] 02-03-PLAN.md — API describe assertion (T11), full suite on pglite + Docker Postgres, acme CLI smoke sequence, Johan's devrandom checkpoint
 
 ### Phase 3: Thin Standard-Object Baselines
 **Goal**: The 14 standard objects a Developer Edition references but the baseline lacks exist as
@@ -141,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Test Infrastructure & CI | 3/4 | Complete    | 2026-10-01 |
-| 2. Custom-Object Key-Prefix Persistence | 0/TBD | Not started | - |
+| 2. Custom-Object Key-Prefix Persistence | 3/3 | Complete | 2026-10-02 |
 | 3. Thin Standard-Object Baselines | 0/TBD | Not started | - |
 | 4. Polymorphic Lookups & SOQL TYPEOF | 0/TBD | Not started | - |
 | 5. Roll-Up Summary Fields | 0/TBD | Not started | - |

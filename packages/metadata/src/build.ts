@@ -397,7 +397,12 @@ function fromSourceObject(obj: SourceObject, keyPrefix: string, sets: ValueSets)
 
 // ---------------------------------------------------------------------------
 
-/** Custom objects get `a00`, `a01`, ... in name order, which is stable across reloads for the same project. */
+/**
+ * Provisional key prefix for the i-th custom object in name order (`a00`, `a01`, ...). This is what
+ * `orglet check` reports and what a brand-new org starts from; once `orglet up` has run, the
+ * assignment persisted in `_orglet.key_prefixes` (see `reconcileKeyPrefixes` in @orglet/schema)
+ * is the truth, so adding, removing or renaming objects never shifts an existing object's prefix.
+ */
 function customKeyPrefix(index: number): string {
   const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   const hi = alphabet[Math.floor(index / alphabet.length)];

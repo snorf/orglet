@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Completed 01-test-infrastructure-ci-04-PLAN.md
-last_updated: "2026-10-01T08:15:02.557Z"
-last_activity: 2026-10-01
+status: verifying
+stopped_at: "Completed 02-03-PLAN.md (phase 02 all 3 plans done; next: /gsd:verify-work 02)"
+last_updated: "2026-10-02T12:57:19.813Z"
+last_activity: 2026-10-02
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 1 — Test Infrastructure & CI
+**Current focus:** Phase 3 — Thin Standard-Object Baselines
 
 ## Current Position
 
-Phase: 2
+Phase: 3
 Plan: Not started
-Status: Phase 1 verified and complete (PR #1 open); Phase 2 ready to discuss/plan
-Last activity: 2026-10-01
+Status: Phase 2 verified and complete (branch not pushed, no PR yet); Phase 3 ready to discuss/plan
+Last activity: 2026-10-02
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,6 +58,9 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-test-infrastructure-ci P01 | 11min | 3 tasks | 11 files |
 | Phase 01-test-infrastructure-ci P03 | continuation | 3 tasks | 3 files |
 | Phase 01-test-infrastructure-ci P04 | 11min | 2 tasks | 1 files |
+| Phase 02-custom-object-key-prefix-persistence P01 | 8min | 2 tasks | 4 files |
+| Phase 02-custom-object-key-prefix-persistence P02 | 6min | 2 tasks | 5 files |
+| Phase 02-custom-object-key-prefix-persistence P03 | 6min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -78,10 +81,17 @@ Recent decisions affecting current work:
 - [Phase 01-test-infrastructure-ci]: snorf/orglet is public, main is default branch, gsd/phase-01-test-infrastructure-ci pushed with green CI (run 36832808542) on both test-pglite and test-postgres
 - [Phase 01-test-infrastructure-ci]: Ruleset 'require CI on main' (id 24295978) active on snorf/orglet main: pull_request + required_status_checks (test-pglite, test-postgres), strict policy true, bypass_actors empty
 - [Phase 01-test-infrastructure-ci]: PR snorf/orglet#1 (gsd/phase-01-test-infrastructure-ci -> main) open with both required checks green; not merged, awaiting Johan after /gsd:verify-work
+- [Phase 02-custom-object-key-prefix-persistence]: Task 2 stubs as non-async functions returning Promise.reject so @typescript-eslint/require-await stays green between TDD tasks
+- [Phase 02-custom-object-key-prefix-persistence]: PREFIX-04 not marked complete by plan 02-01: storage half done (rows survive DROP SCHEMA, dropKeyPrefixes per org), CLI half (check/reset --drop-prefixes) is plan 02-02
+- [Phase 02-custom-object-key-prefix-persistence]: BigTable__c.Name is an AutoNumber: record-seeding tests insert it with no fields (plan fixture { Name } was rejected by the engine)
+- [Phase 02-custom-object-key-prefix-persistence]: reconcileKeyPrefixes runs before migrate (D-04) so a prefix conflict on a fresh database leaves no tables behind
+- [Phase 02-custom-object-key-prefix-persistence]: KeyPrefixError in the CLI prints error: <message> plus one hint line and returns 1 without pool.end(), mirroring the Postgres-unreachable branch
+- [Phase 02-custom-object-key-prefix-persistence]: The --key-prefixes file is read and validated before createPool so a bad file fails without touching the database
+- [Phase 02-custom-object-key-prefix-persistence]: devrandom checkpoint approved 2026-10-02; both custom tables empty so the seed source was `provisional`, values identical to the old scheme
 
 ### Pending Todos
 
-None yet.
+- Reword ROADMAP phase 7 to validate against the DE retrieve, not the org (planning, 2026-10-01)
 
 ### Blockers/Concerns
 
@@ -91,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-10-01T08:08:05.700Z
-Stopped at: Completed 01-test-infrastructure-ci-04-PLAN.md
+Last session: 2026-10-02T11:32:57.870Z
+Stopped at: Completed 02-03-PLAN.md (phase 02 all 3 plans done; next: /gsd:verify-work 02)
 Resume file: None
