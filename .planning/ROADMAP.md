@@ -67,7 +67,7 @@ renaming custom objects never shifts the Id-meaning of existing records.
 Plans:
 - [x] 02-01-PLAN.md — `@orglet/schema` prefix module: `internal.ts` (ensureInternalSchema), `prefixes.ts` (KeyPrefixError, pure two-pass planKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, dropKeyPrefixes), `prefixes.test.ts` (T1-T8, T10, T12)
 - [x] 02-02-PLAN.md — CLI wiring (`up` reconcile + `--key-prefixes`, `check` provisional lines, `reset --drop-prefixes`, KeyPrefixError catch, USAGE) + `main.test.ts` (T9), `build.ts` doc comment, README section
-- [ ] 02-03-PLAN.md — API describe assertion (T11), full suite on pglite + Docker Postgres, acme CLI smoke sequence, Johan's devrandom checkpoint
+- [x] 02-03-PLAN.md — API describe assertion (T11), full suite on pglite + Docker Postgres, acme CLI smoke sequence, Johan's devrandom checkpoint
 
 ### Phase 3: Thin Standard-Object Baselines
 **Goal**: The 14 standard objects a Developer Edition references but the baseline lacks exist as
@@ -145,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Test Infrastructure & CI | 3/4 | Complete    | 2026-10-01 |
-| 2. Custom-Object Key-Prefix Persistence | 0/3 | Planned | - |
+| 2. Custom-Object Key-Prefix Persistence | 3/3 | Complete | 2026-10-02 |
 | 3. Thin Standard-Object Baselines | 0/TBD | Not started | - |
 | 4. Polymorphic Lookups & SOQL TYPEOF | 0/TBD | Not started | - |
 | 5. Roll-Up Summary Fields | 0/TBD | Not started | - |
