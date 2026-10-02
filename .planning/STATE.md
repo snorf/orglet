@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: ready_to_plan
 stopped_at: "Completed 02-03-PLAN.md (phase 02 all 3 plans done; next: /gsd:verify-work 02)"
-last_updated: "2026-10-02T11:32:57.877Z"
+last_updated: "2026-10-02T11:51:43.435Z"
 last_activity: 2026-10-02
 progress:
   total_phases: 7
@@ -23,13 +23,13 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 02 — Custom-Object Key-Prefix Persistence
+**Current focus:** Phase 3 — Thin Standard-Object Baselines
 
 ## Current Position
 
-Phase: 02 (Custom-Object Key-Prefix Persistence) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 3
+Plan: Not started
+Status: Phase 2 verified and complete (branch not pushed, no PR yet); Phase 3 ready to discuss/plan
 Last activity: 2026-10-02
 
 Progress: [░░░░░░░░░░] 0%

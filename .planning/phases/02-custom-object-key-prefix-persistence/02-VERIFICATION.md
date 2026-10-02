@@ -1,155 +1,157 @@
 ---
 phase: 02-custom-object-key-prefix-persistence
-verified: 2026-10-02T13:42:00Z
-status: gaps_found
-score: 4/5 must-haves verified
-gaps:
-  - truth: "A persisted custom prefix that equals a standard-object prefix in the loaded OrgSchema fails `orglet up` with a KeyPrefixError on every run (D-03, PREFIX-03 'can never collide')"
-    status: partial
-    reason: "planKeyPrefixes seeds `taken` with standard prefixes and then overwrites with persisted rows (prefixes.ts:104-105) without comparing the two sets. The collision check only runs for claims being assigned this run (records/mapping/provisional). A row persisted earlier (e.g. seeded via --key-prefixes with a non-`a` value, or hand-edited) that later matches a standard prefix added to the baseline (phase 3 adds 14) is accepted silently and two objects then share a prefix. Verified empirically: planKeyPrefixes({custom:[Foo__c], standard:[{BusinessHours,01m}], persisted:{foo__c:01m}}) returns {assignments:[]} with no error."
-    artifacts:
-      - path: "packages/schema/src/prefixes.ts"
-        issue: "No persisted-vs-standard comparison after building `taken` (lines 103-105); D-03's 'on every up' check is missing"
-      - path: "packages/schema/src/prefixes.test.ts"
-        issue: "No planner case covering a persisted row whose prefix equals a standard prefix"
-    missing:
-      - "In planKeyPrefixes, after seeding `taken` with standard prefixes, loop over input.persisted and throw KeyPrefixError(`key prefix X for Foo__c (persisted) collides with standard object Bar (X)`, [persistedClaim, standardClaim]) when taken.get(p.keyPrefix)?.source === 'standard', before any overwrite"
-      - "Planner unit test: persisted {foo__c: 01m} + standard {BusinessHours: 01m} throws KeyPrefixError naming Foo__c, BusinessHours and 01m; sibling test that a persisted prefix not in the standard set still produces no assignment"
-      - "Optional: make KEY_PREFIX_HINT in packages/cli/src/main.ts cover this case (the fix is `reset --drop-prefixes` or editing _orglet.key_prefixes, not a --key-prefixes entry)"
+verified: 2026-10-02T13:52:00Z
+status: passed
+score: 5/5 must-haves verified
+re_verification:
+  previous_status: gaps_found
+  previous_score: 4/5
+  gaps_closed:
+    - "A persisted custom prefix that equals a standard-object prefix in the loaded OrgSchema fails `orglet up` with a KeyPrefixError on every run (D-03, PREFIX-03 'can never collide') — fixed in 4ce2fe8"
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 02: Custom-Object Key-Prefix Persistence Verification Report
 
 **Phase Goal:** A custom object's key prefix is assigned once and persisted, so adding, removing or renaming custom objects never shifts the Id-meaning of existing records.
-**Verified:** 2026-10-02T13:42:00Z
-**Status:** gaps_found (one partial gap on CONTEXT decision D-03; all four ROADMAP success criteria verified)
-**Re-verification:** No — initial verification
+**Verified:** 2026-10-02T13:52:00Z
+**Status:** passed
+**Re-verification:** Yes — after gap closure (commit `4ce2fe8`, branch `gsd/phase-02-custom-object-key-prefix-persistence`). The initial report (2026-10-02T13:42:00Z, `gaps_found`, 4/5) found exactly one partial gap; this run verifies the fix in depth, re-checks the previously passed items for regressions, and keeps their evidence where nothing changed.
+
+## Gap Closure
+
+### Gap: D-03 persisted-vs-standard re-check (Truth 5, PREFIX-03)
+
+**Previous finding:** `planKeyPrefixes` seeded `taken` with standard prefixes and then overwrote with persisted rows without comparing the two sets; a persisted row whose prefix matched a standard prefix added later to the baseline was accepted silently.
+
+**Fix (`git show 4ce2fe8`, 3 files, +20/-2):**
+
+| File | Change | Verified |
+| ---- | ------ | -------- |
+| `packages/schema/src/prefixes.ts:105-113` | After seeding `taken` with standard prefixes, loops over `input.persisted.values()`; if `taken.get(p.keyPrefix)?.source === "standard"` throws `KeyPrefixError("persisted key prefix <p> of <Obj> collides with standard object <Std> (<p>)", [persistedClaim, standardClaim])`, otherwise sets the persisted claim as before | ✓ Read the code. The loop sits before `const decided = new Map(...)` and before pass 1 (`// Pass 1: claims backed by evidence`, line 118), so a bad persisted row fails the load even when there is no new object to plan. Uses the existing `describe(other)` helper (line 70) for the standard-object wording. |
+| `packages/schema/src/prefixes.test.ts:107-115` | New planner test "rejects a persisted prefix that a standard object now carries, naming both": persisted `Foo__c = 003` vs standard `Contact 003`; asserts `KeyPrefixError`, message `/persisted key prefix 003 of Foo__c/` and `/standard object Contact \(003\)/`, claim sources `["persisted", "standard"]` | ✓ Present, green (28 tests in file, 1 Postgres-only skip) |
+| `packages/cli/src/main.ts:60` | `KEY_PREFIX_HINT` now also names "the stored assignment in _orglet.key_prefixes" as a place to fix and says "all of the org's assignments can be removed with: orglet reset --drop-prefixes" | ✓ Read; same constant is printed by both existing `instanceof KeyPrefixError` catch sites (lines 99-103 mapping parse, 119-124 reconcile) |
+
+**Transactional safety (D-09):** `reconcileKeyPrefixes` (`prefixes.ts:242-290`) still calls `planKeyPrefixes` inside the `withTransaction` callback (line 264), after `ensureInternalSchema`, `CREATE TABLE IF NOT EXISTS`, the per-org advisory lock, and the persisted/table/observed reads, and before the INSERT loop (line 272). `withTransaction` (`db.ts:39-52`) issues `ROLLBACK` on any thrown error, so the new throw writes nothing and does not mutate `SObjectDef.keyPrefix` (mutation is after the inserts, line 277-281).
+
+**CLI path (D-18):** `main.ts:118-124` catches the error with `if (!(err instanceof KeyPrefixError)) throw err;`, prints `error: <message>` then `KEY_PREFIX_HINT`, returns 1. `grep -c "err.stack"` = 0 and `grep -c UNSUPPORTED` = 0 in `main.ts`, `prefixes.ts`, `prefixes.test.ts`. No changes to the catch sites were needed or made.
+
+**Empirical probe (tsx script against `planKeyPrefixes`, same inputs as the previous report's failing probe):**
+
+| Case | Input | Result |
+| ---- | ----- | ------ |
+| A — the previous failing probe | custom `Foo__c`, standard `BusinessHours 01m`, persisted `foo__c = 01m` | `KeyPrefixError: persisted key prefix 01m of Foo__c collides with standard object BusinessHours (01m)`, claims `["persisted","standard"]` (previously: `{ assignments: [] }`, no error) |
+| B — persisted row for an object no longer in the schema | custom `[]`, standard `BusinessHours 01m`, persisted `gone__c = 01m` | same `KeyPrefixError` — the check runs over every persisted row regardless of whether a new object exists, as D-03 "on every up" requires |
+| C — persisted prefix that does not collide | custom `Foo__c`, standard `BusinessHours 01m`, persisted `foo__c = a00` | `{ assignments: [], warnings: [] }` — unchanged behaviour, no false positive |
+
+Case B is a design consequence worth knowing (a stale row for a removed object can block `up` once a later baseline adds that standard prefix); the hint now names the two remedies (`_orglet.key_prefixes` row or `orglet reset --drop-prefixes`), so this is consistent with D-03 + D-13 and not a gap.
+
+**Gap status: RESOLVED** (commit `4ce2fe8`).
 
 ## Goal Achievement
 
 ### Observable Truths
 
-Truths 1-4 are the ROADMAP success criteria verbatim. Truth 5 is derived from 02-CONTEXT.md D-03 ("the collision check compares persisted custom prefixes against every standard prefix in the loaded OrgSchema on every `up`") and REQUIREMENTS PREFIX-03 ("A persisted custom prefix can never collide with a standard-object prefix").
+Truths 1-4 are the ROADMAP success criteria verbatim. Truth 5 is derived from 02-CONTEXT.md D-03 and REQUIREMENTS PREFIX-03.
 
 | #   | Truth | Status | Evidence |
 | --- | ----- | ------ | -------- |
-| 1   | A custom object's key prefix, once assigned on first `orglet up`, is unchanged across two consecutive reloads even when other custom objects are added, removed or renamed in between | ✓ VERIFIED | `prefixes.ts:233-282` reads persisted rows first, only plans objects without a row, never deletes; `prefixes.test.ts` "two-build" (Aardvark__c sorts first in memory as a00, persisted BigTable__c stays a00, Aardvark__c gets a04 next-free; third run writes 0 rows), "removal" (row kept, prefix handed back), "rename" (new name = new object, old row kept). `main.ts:118` calls `reconcileKeyPrefixes` before `migrate` (127), `bootstrapOrg` (132) and `new DmlEngine` (133). Ran green on pglite. |
-| 2   | An org database whose prefixes were previously assigned by the old alphabetical scheme keeps those exact assignments as its initial persisted state on first upgrade | ✓ VERIFIED | `prefixes.ts:251-259` scans `SELECT DISTINCT left(id, 3)` per existing custom table for objects without a row; `planKeyPrefixes` pass 1 gives `records` claims precedence over mapping/provisional. Test "seeds from existing records" (BigTable__c a00 / UpsertTable__c a03 from records, update by old Id still succeeds) and "sorts before" (newcomer cannot steal a00). Devrandom checkpoint approved by Johan: a00/a01 unchanged, second start silent (seed source `provisional` because both tables were empty, see 02-03-SUMMARY — not a defect). |
-| 3   | Assigning a prefix that would collide with a standard-object prefix or another custom object's persisted prefix fails the load with a clear error instead of silently overlapping | ✓ VERIFIED | `planKeyPrefixes` lines 116-157: ambiguous records, mapping-vs-records, claim-vs-taken (standard or persisted), mapping-vs-own-persisted all throw `KeyPrefixError` naming both parties and both prefixes; `withTransaction` (`db.ts:39-52`) rolls back so nothing is written. Tests: 5 planner collision cases, "nothing written" DB case (0 rows after a `Project__c: 001` mapping), smoke run exit 1 with `error: key prefix 001 for Project__c (from --key-prefixes) collides with standard object Account (001)` + hint, no stack. `UNIQUE (org_schema, key_prefix)` DDL as backstop. |
-| 4   | `orglet check` (no database) labels any prefix it reports as provisional, and `orglet reset` preserves persisted prefix assignments unless the user explicitly asks to drop them | ✓ VERIFIED | `main.ts:72-83` `check` never creates a pool, prints `  <Object>  <prefix>  (provisional)` per custom object plus the closing sentence, gated by `log()` (`--quiet`). `main.ts:158-171` `reset` drops only the org schema; `dropKeyPrefixes` runs only when `--drop-prefixes`. `_orglet` is a sibling schema (`internal.ts`), so `DROP SCHEMA <org> CASCADE` cannot reach it — test "drop: rows survive DROP SCHEMA ... removes only that org's rows". `main.test.ts` 3/3 green. |
-| 5   | A persisted custom prefix that equals a standard-object prefix in the loaded OrgSchema fails `orglet up` on every run (D-03) | ✗ FAILED (partial) | `prefixes.ts:104` seeds `taken` with standard prefixes, `:105` overwrites with persisted rows; no comparison between the two sets. Probe (`tsx` script against `planKeyPrefixes`): persisted `Foo__c=01m` + standard `BusinessHours=01m` returns `{ assignments: [] }` with no error. Only *new* claims are checked against standard prefixes. Narrow (requires a non-`a` prefix seeded via mapping or hand-edited rows, then a baseline that adds that standard prefix), but D-03 names this check explicitly and phase 3 adds 14 standard objects. |
+| 1   | A custom object's key prefix, once assigned on first `orglet up`, is unchanged across two consecutive reloads even when other custom objects are added, removed or renamed in between | ✓ VERIFIED (regression check: unchanged) | `reconcileKeyPrefixes` reads persisted rows first, plans only objects without a row, never deletes; tests "two-build", "removal", "rename" green on pglite this run. `main.ts:118` reconcile precedes `migrate` (127), `bootstrapOrg`, `new DmlEngine`. The fix touches only the persisted-vs-standard comparison; persisted rows that do not collide still flow unchanged into `obj.keyPrefix` (probe case C). |
+| 2   | An org database whose prefixes were previously assigned by the old alphabetical scheme keeps those exact assignments as its initial persisted state on first upgrade | ✓ VERIFIED (regression check: unchanged) | `prefixes.ts:254-260` records scan; pass 1 precedence untouched by the fix. Tests "seeds from existing records" and "sorts before" green this run. Devrandom checkpoint approved by Johan (02-03-SUMMARY). |
+| 3   | Assigning a prefix that would collide with a standard-object prefix or another custom object's persisted prefix fails the load with a clear error instead of silently overlapping | ✓ VERIFIED (regression check: unchanged, plus one more throw site) | Now 6 `KeyPrefixError` throw sites in the planner (ambiguous records, persisted-vs-standard, mapping-vs-records, claim-vs-taken, mapping-vs-own-persisted); all inside `withTransaction`, nothing written. Tests: 6 planner collision cases + "nothing written" DB case green. `UNIQUE (org_schema, key_prefix)` DDL backstop unchanged. |
+| 4   | `orglet check` (no database) labels any prefix it reports as provisional, and `orglet reset` preserves persisted prefix assignments unless the user explicitly asks to drop them | ✓ VERIFIED (regression check: unchanged) | `main.ts:72-83` `check` creates no pool, prints `(provisional)` lines; `reset` drops `_orglet` rows only under `--drop-prefixes`. `main.test.ts` 3/3 green this run; "drop: rows survive DROP SCHEMA" green. |
+| 5   | A persisted custom prefix that equals a standard-object prefix in the loaded OrgSchema fails `orglet up` on every run (D-03) | ✓ VERIFIED (gap closed) | `prefixes.ts:105-113` loop before pass 1; unit test "rejects a persisted prefix that a standard object now carries, naming both" green; probe cases A and B throw, C does not. Error surfaces through the existing `main.ts:119-124` catch as `error: persisted key prefix ... collides with standard object ... (...)` + widened hint, exit 1, no stack. |
 
-**Score:** 4/5 truths verified (all 4 ROADMAP success criteria pass; the failed truth is the D-03 "every up" re-check)
+**Score:** 5/5 truths verified
 
 ### Required Artifacts
 
+All artifacts passed in the initial verification; only the three files in `4ce2fe8` changed since. Re-checked those three at all levels; the rest got an existence/sanity check.
+
 | Artifact | Expected | Status | Details |
 | -------- | -------- | ------ | ------- |
-| `packages/schema/src/internal.ts` | `ensureInternalSchema(client)`: constant advisory lock + `CREATE SCHEMA IF NOT EXISTS "_orglet"` | ✓ VERIFIED | 15 lines, exactly that; imported and called at `prefixes.ts:237`; exported from barrel line 22 |
-| `packages/schema/src/prefixes.ts` | `KeyPrefixError`, `planKeyPrefixes`, `parseKeyPrefixMapping`, `reconcileKeyPrefixes`, `dropKeyPrefixes`; min 150 lines | ✓ VERIFIED | 290 lines, all five exported; wired from barrel, CLI (`main.ts:12`) and API test; substantive (two-pass planner, transaction, scan, insert, mutate) |
-| `packages/schema/src/prefixes.test.ts` | T1-T8, T10, T12; min 200 lines | ✓ VERIFIED | 389 lines, 27 tests (12 planner, 6 parser, 9 DB); 26 pass + 1 Postgres-only skip on pglite |
-| `packages/schema/src/index.ts` | explicit named exports | ✓ VERIFIED | lines 22-24: values and types on separate lines, no `export *` |
-| `packages/cli/src/main.ts` | `--key-prefixes`, `--drop-prefixes`, reconcile call, `KeyPrefixError` catch, provisional `check` output | ✓ VERIFIED | all present: parseArgs 185-186, reconcile 118, two `instanceof KeyPrefixError` catches (100, 120), `(provisional)` 78, `dropKeyPrefixes` 164; `UNSUPPORTED` count 0; no `err.stack` |
-| `packages/cli/src/main.test.ts` | T9 console-spy test; min 40 lines | ✓ VERIFIED | 51 lines, 3 tests, green |
-| `packages/metadata/src/build.ts` | `customKeyPrefix` doc comment says provisional | ✓ VERIFIED | comment at lines 400-405 ("Provisional key prefix for the i-th custom object..."); algorithm untouched. gsd-tools reports "Missing pattern: provisional" only because its match is case-sensitive and the comment capitalises the word — not a gap |
-| `README.md` | `## Custom-object key prefixes` section with `--key-prefixes` | ✓ VERIFIED | section at line 57, between Quick start (34) and Layout (87); covers assignment, storage, `(provisional)`, `reset --drop-prefixes`, collisions, mapping file + `sf sobject describe` recipe; Layout line reads `orglet up / check / reset` |
-| `packages/api/src/api.test.ts` | T11: reconcile with mapping in `beforeAll`, `dropKeyPrefixes` in `afterAll`, describe/Id assertion | ✓ VERIFIED | lines 37-38 (reconcile before migrate), 55-56 (drop before DROP SCHEMA), 159-166 (`keyPrefix: "a0Z"`, per-object describe, Id `/^a0Z[0-9A-Za-z]{15}$/`); 17/17 green on pglite |
+| `packages/schema/src/prefixes.ts` | `KeyPrefixError`, `planKeyPrefixes`, `parseKeyPrefixMapping`, `reconcileKeyPrefixes`, `dropKeyPrefixes`; D-03 persisted-vs-standard check | ✓ VERIFIED | 298 lines; new loop at 105-113 wired into the existing planner, which `reconcileKeyPrefixes` calls inside the transaction (264); exported from barrel, used by CLI and API test |
+| `packages/schema/src/prefixes.test.ts` | T1-T8, T10, T12 + persisted-vs-standard case | ✓ VERIFIED | 399 lines, 28 tests (13 planner, 6 parser, 9 DB); 27 pass + 1 Postgres-only skip on pglite |
+| `packages/cli/src/main.ts` | `--key-prefixes`, `--drop-prefixes`, reconcile call, `KeyPrefixError` catch, provisional `check` output, hint covering stored rows | ✓ VERIFIED | hint widened at line 60; catches 99-103 and 119-124 unchanged; `err.stack` 0, `UNSUPPORTED` 0 |
+| `packages/schema/src/internal.ts` | `ensureInternalSchema` | ✓ VERIFIED (unchanged) | still the first call inside the transaction (`prefixes.ts:245`) |
+| `packages/schema/src/index.ts` | explicit named exports | ✓ VERIFIED (unchanged) | |
+| `packages/cli/src/main.test.ts` | T9 console-spy test | ✓ VERIFIED (unchanged) | 3/3 green this run |
+| `packages/metadata/src/build.ts` | `customKeyPrefix` doc comment says provisional | ✓ VERIFIED (unchanged) | `build.test.ts` 15/15 green this run |
+| `README.md` | `## Custom-object key prefixes` section | ✓ VERIFIED (unchanged) | line 70 already states "A prefix that would collide with a standard object or with another custom object's assignment" fails the load — now true for persisted rows as well |
+| `packages/api/src/api.test.ts` | T11 reconcile/drop wiring + `a0Z` describe/Id assertion | ✓ VERIFIED (unchanged) | not re-run here; orchestrator's full `pnpm test` after the fix: 15 files, 154 passed, 2 skipped, 0 failed |
 
 ### Key Link Verification
 
-gsd-tools `verify key-links` reported most links unverified because the PLAN frontmatter patterns are double-escaped and the `from` fields carry function suffixes (`main.ts up()`), so the tool could not open the files. Every link was therefore checked manually with grep.
+All ten links from the initial report were re-checked by grep; none changed. The one link the fix touches is listed first.
 
 | From | To | Via | Status | Details |
 | ---- | -- | --- | ------ | ------- |
-| `prefixes.ts` | `internal.ts` | `await ensureInternalSchema(client)` first inside `withTransaction` | ✓ WIRED | line 237, first statement in the transaction callback |
-| `prefixes.ts` | `_orglet.key_prefixes` | `CREATE TABLE IF NOT EXISTS` + `INSERT` in same transaction | ✓ WIRED | lines 206-214 DDL, 238 create, 270 insert, all inside `withTransaction` |
-| `prefixes.ts` | `SObjectDef.keyPrefix` | in-place mutation after INSERTs | ✓ WIRED | line 277 `obj.keyPrefix = value` after the insert loop |
-| `prefixes.ts` | `pg_advisory_xact_lock` | per-org lock after constant lock, before reading rows | ✓ WIRED | line 239 `pg_advisory_xact_lock(hashtext($1), hashtext($2))`, after `ensureInternalSchema` (constant lock), before the `SELECT` at 245 |
-| `main.ts up()` | `reconcileKeyPrefixes` | between `SELECT 1` and `migrate(...)` | ✓ WIRED | `SELECT 1` line 110, reconcile 118, migrate 127 |
-| `main.ts up()` | `KeyPrefixError` | `instanceof` catch, `error:` + hint, return 1 | ✓ WIRED | lines 99-103 (mapping parse) and 119-124 (reconcile); hint constant line 60 |
-| `main.ts reset()` | `dropKeyPrefixes` | only when `--drop-prefixes` | ✓ WIRED | lines 163-166 inside `if (dropPrefixes)` |
-| `main.ts check()` | custom `SObjectDef.keyPrefix` | `(provisional)` log line | ✓ WIRED | lines 77-79, no pool created in `check` |
-| `api.test.ts beforeAll` | `reconcileKeyPrefixes` | before `migrate`, before bootstrap/engine | ✓ WIRED | line 37 precedes 38 (migrate), 39 (bootstrap), 42 (engine) |
-| `describe.ts objectSummary` | `SObjectDef.keyPrefix` | read at request time | ✓ WIRED | `describe.ts:196` `keyPrefix: obj.keyPrefix`; T11 asserts `a0Z` through REST |
+| `prefixes.ts planKeyPrefixes` | `KeyPrefixError` (persisted vs standard) | loop over `input.persisted` before pass 1 | ✓ WIRED | lines 105-113; uses `describe(other)`; thrown inside `withTransaction` via `reconcileKeyPrefixes` → ROLLBACK |
+| `main.ts up()` | `KeyPrefixError` | `instanceof` catch, `error:` + hint, return 1 | ✓ WIRED | 99-103, 119-124; hint constant 60 (widened) |
+| `prefixes.ts` | `internal.ts` | `ensureInternalSchema` first inside transaction | ✓ WIRED | 245 |
+| `prefixes.ts` | `_orglet.key_prefixes` | `CREATE TABLE IF NOT EXISTS` + `INSERT` in same transaction | ✓ WIRED | 246, 272 |
+| `prefixes.ts` | `SObjectDef.keyPrefix` | in-place mutation after INSERTs | ✓ WIRED | 277-281 |
+| `prefixes.ts` | `pg_advisory_xact_lock` | per-org lock after constant lock, before reads | ✓ WIRED | 247 |
+| `main.ts up()` | `reconcileKeyPrefixes` | between `SELECT 1` and `migrate` | ✓ WIRED | 110 / 118 / 127 |
+| `main.ts reset()` | `dropKeyPrefixes` | only when `--drop-prefixes` | ✓ WIRED | unchanged |
+| `main.ts check()` | `SObjectDef.keyPrefix` | `(provisional)` lines, no pool | ✓ WIRED | 77-79 |
+| `api.test.ts` / `describe.ts` | `reconcileKeyPrefixes` / `obj.keyPrefix` | before migrate / read at request time | ✓ WIRED | unchanged |
 
 ### Data-Flow Trace (Level 4)
 
-| Artifact | Data Variable | Source | Produces Real Data | Status |
-| -------- | ------------- | ------ | ------------------ | ------ |
-| `reconcileKeyPrefixes` | `persisted` | `SELECT object_name, key_prefix FROM _orglet.key_prefixes WHERE org_schema = $1` | Yes | ✓ FLOWING |
-| `reconcileKeyPrefixes` | `observed` | `SELECT DISTINCT left(id, 3)` per existing custom table (only for objects without a row) | Yes | ✓ FLOWING |
-| `reconcileKeyPrefixes` | `obj.keyPrefix` | `persisted ?? assigned` after INSERT | Yes | ✓ FLOWING |
-| `up()` log lines | `prefixes.assignments` | return value of reconcile | Yes | ✓ FLOWING |
-| `check()` lines | `o.keyPrefix` | `buildOrgSchema` provisional scheme (by design, no DB) | Yes | ✓ FLOWING |
-| REST describe | `obj.keyPrefix` | mutated `OrgSchema` shared with `DmlEngine`/`createApiServer` | Yes | ✓ FLOWING (T11) |
+Unchanged from the initial report; the fix adds no data variable. `persisted` (from `SELECT object_name, key_prefix FROM _orglet.key_prefixes WHERE org_schema = $1`) now additionally feeds the D-03 comparison before it feeds `obj.keyPrefix`. ✓ FLOWING.
 
 ### CONTEXT Decisions D-01..D-18
 
-| Decision | Status | Evidence |
-| -------- | ------ | -------- |
-| D-01 sibling `_orglet` schema, survives reset | ✓ | `internal.ts`, `INTERNAL_SCHEMA = "_orglet"`; test "rows survive DROP SCHEMA" |
-| D-02 PK `(org_schema, object_name)`, UNIQUE `(org_schema, key_prefix)`, case-insensitive match | ✓ | DDL lines 212-213; lower-cased map keys throughout; parser canonicalises casing |
-| D-03 only custom persisted; standard compared on every up | ⚠ PARTIAL | only custom rows written (✓); standard prefixes compared against *new* claims (✓) but not against already-persisted rows (✗, see gap) |
-| D-04 reconcile after `SELECT 1`, before migrate/bootstrap/engine; one transaction; `check` never touches DB | ✓ | `main.ts:110/118/127/132/133`; `withTransaction`; `check` has no pool |
-| D-05 `pg_advisory_xact_lock` keyed on org schema | ✓ | `prefixes.ts:239`; Postgres-only concurrency test exists (skipped on pglite, 02-03-SUMMARY reports it green on Docker) |
-| D-06 shared `ensureInternalSchema` helper | ✓ | `internal.ts`, exported from barrel |
-| D-07 `reset --drop-prefixes` deletes only that org's rows, schema left in place | ✓ | `dropKeyPrefixes` `DELETE ... WHERE org_schema = $1`; no `DROP SCHEMA _orglet` anywhere |
-| D-08 precedence persisted > records > mapping > provisional > next-free | ✓ | `planKeyPrefixes` pass 1 / pass 2; `persisted.get(lower)?.keyPrefix ?? assigned.get(lower)` |
-| D-09 every contradiction is a hard error, nothing written | ✓ | 5 throw sites, all `KeyPrefixError`; ROLLBACK via `withTransaction`; test "nothing written" |
-| D-10 one `SELECT DISTINCT left(id,3)` per table, only for objects without a row | ✓ | lines 254-259, `if (persisted.has(lower) || !tables.has(...)) continue` |
-| D-11 `--key-prefixes <file>` JSON, consulted only for objects without a row, never overrides | ✓ | `main.ts:88-105`; planner pass 1 skips persisted, pass 1b errors on disagreement; README recipe |
-| D-12 lowest free in a00..azz, not held by persisted or standard | ✓ | `nextFree(taken)` |
-| D-13 rows never removed by `up` | ✓ | no DELETE in `reconcileKeyPrefixes`; tests "removal", "rename" |
-| D-14 rename = new object | ✓ | test "rename"; no `--rename` flag |
-| D-15 `check` lines + closing sentence, standard objects not listed | ✓ | `main.ts:77-79`; `main.test.ts` asserts exactly 4 `(provisional)` lines |
-| D-16 `up` logs only new assignments with source, silent otherwise, respects `--quiet` | ✓ | `main.ts:126` via `log()`; `sourceSuffix` 63-70; smoke: second run 0 lines |
-| D-17 flag name `--drop-prefixes` | ✓ | `main.ts:186, 208` |
-| D-18 `KeyPrefixError`, `error: <msg>` + one hint, exit 1, no stack, not `UNSUPPORTED:*` | ✓ | `main.ts:60, 99-103, 119-124`; `UNSUPPORTED` count 0 in all three files; `err.stack` count 0 |
+| Decision | Status | Change since initial report |
+| -------- | ------ | --------------------------- |
+| D-03 only custom persisted; standard compared on every up | ✓ (was ⚠ PARTIAL) | persisted rows now compared against every standard prefix on every load (`prefixes.ts:105-113`); probe case B confirms it runs even with no custom objects to plan |
+| D-09 every contradiction is a hard error, nothing written | ✓ | one more throw site, same `withTransaction` rollback |
+| D-18 `KeyPrefixError`, `error: <msg>` + one hint, exit 1, no stack, not `UNSUPPORTED:*` | ✓ | hint text widened (only user-visible string change in the fix); still one hint line, same catch path |
+| D-01, D-02, D-04..D-08, D-10..D-17 | ✓ | untouched by `4ce2fe8` (diff limited to the planner loop, one test, one constant); supporting tests green this run |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 | -------- | ------- | ------ | ------ |
-| Prefix module, CLI and build tests pass | `pnpm vitest run packages/schema/src/prefixes.test.ts packages/cli/src/main.test.ts packages/metadata/src/build.test.ts` | 44 passed, 1 skipped (Postgres-only) | ✓ PASS |
-| REST describe/Id reflect persisted prefix | `pnpm vitest run packages/api/src/api.test.ts` | 17 passed | ✓ PASS |
-| Full suite on pglite | `pnpm test` | 15 files, 153 passed, 2 skipped, 0 failed | ✓ PASS |
-| Typecheck and lint | `pnpm build && pnpm lint` | both exit 0 | ✓ PASS |
-| Summary commits exist | `gsd-tools verify commits <10 hashes>` | 10/10 valid | ✓ PASS |
-| D-03 persisted-vs-standard re-check | `tsx` probe calling `planKeyPrefixes` with persisted `01m` and standard `BusinessHours 01m` | `NO ERROR; assignments: []` | ✗ FAIL |
-| Docker Postgres suite, CLI smoke, devrandom restart | not re-run here (no server start allowed; devrandom on 8180 left alone) | recorded in 02-03-SUMMARY (155/155, 0 skipped; smoke counts match; checkpoint approved) | ? SKIP (documented evidence accepted) |
+| Prefix module, CLI and build tests pass after the fix | `pnpm vitest run packages/schema/src/prefixes.test.ts packages/cli/src/main.test.ts packages/metadata/src/build.test.ts` | 3 files, 45 passed, 1 skipped (Postgres-only concurrency test), 0 failed | ✓ PASS |
+| D-03 persisted-vs-standard re-check (the previously failing probe) | `tsx` probe calling `planKeyPrefixes` with persisted `Foo__c 01m` + standard `BusinessHours 01m` | `KeyPrefixError: persisted key prefix 01m of Foo__c collides with standard object BusinessHours (01m)` | ✓ PASS (was ✗ FAIL) |
+| Non-colliding persisted prefix still silent | same probe, persisted `a00` | `{ assignments: [], warnings: [] }` | ✓ PASS |
+| Old hint wording no longer in source | `grep -rn "stale assignments can be removed" --include=*.ts` | 0 hits in code; only in 02-02-PLAN / 02-02-SUMMARY / 02-03-SUMMARY as historical smoke-run output | ✓ PASS |
+| Full suite, build, lint | orchestrator-run after the fix: `pnpm test` 15 files / 154 passed / 2 skipped / 0 failed; `pnpm build` 0; `pnpm lint` 0 | accepted as documented | ✓ PASS |
+| Docker Postgres suite, CLI smoke, devrandom restart | not re-run (no server start allowed; devrandom on 8180 and the `devrandom`/`org` schemas left alone) | recorded in 02-03-SUMMARY | ? SKIP (documented evidence accepted) |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 | ----------- | ----------- | ----------- | ------ | -------- |
-| PREFIX-01 | 02-01, 02-02, 02-03 | Prefix assigned on first `up`, stored in `_orglet`, reload with new/renamed object never changes an existing prefix | ✓ SATISFIED | Truth 1; two-build/removal/rename tests; CLI wiring; T11 |
-| PREFIX-02 | 02-01, 02-02, 02-03 | Existing org keeps old alphabetical assignments on first upgrade; no Id changes meaning | ✓ SATISFIED | Truth 2; records-seeding tests; devrandom checkpoint approved |
-| PREFIX-03 | 02-01, 02-03 | Persisted custom prefix can never collide with a standard or another custom prefix; collision fails load with clear error | ⚠ PARTIAL | Truth 3 satisfied for every assignment made by orglet (and DB UNIQUE backstop for custom-vs-custom); Truth 5 gap: an already-persisted row vs a standard prefix added later is not re-checked |
-| PREFIX-04 | 02-01, 02-02, 02-03 | `check` reports provisional and says so; `reset` keeps assignments unless asked to drop | ✓ SATISFIED | Truth 4; `main.test.ts`; `dropKeyPrefixes` test |
+| PREFIX-01 | 02-01, 02-02, 02-03 | Prefix assigned on first `up`, stored in `_orglet`, reload with new/renamed object never changes an existing prefix | ✓ SATISFIED | Truth 1 (unchanged) |
+| PREFIX-02 | 02-01, 02-02, 02-03 | Existing org keeps old alphabetical assignments on first upgrade | ✓ SATISFIED | Truth 2 (unchanged) |
+| PREFIX-03 | 02-01, 02-03 | Persisted custom prefix can never collide with a standard or another custom prefix; collision fails load with clear error | ✓ SATISFIED (was ⚠ PARTIAL) | Truth 3 + Truth 5: new claims and already-persisted rows are both checked against standard prefixes on every load; custom-vs-custom covered by planner + DB UNIQUE |
+| PREFIX-04 | 02-01, 02-02, 02-03 | `check` reports provisional; `reset` keeps assignments unless asked to drop | ✓ SATISFIED | Truth 4 (unchanged) |
 
-Orphaned requirements: none. REQUIREMENTS.md maps exactly PREFIX-01..04 to Phase 2 and every plan claims a subset of those four.
+Orphaned requirements: none.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 | ---- | ---- | ------- | -------- | ------ |
-| `packages/schema/src/prefixes.ts` | 104-105 | persisted rows overwrite standard entries in `taken` without a collision check | ⚠ Warning | D-03 "on every up" check missing (the gap above); no effect on the four success criteria |
-| `packages/schema/src/prefixes.ts` | 175, 280 | `warnings: []` always empty | ℹ Info | By design (every contradiction throws); kept in the contract for the CLI loop, documented in 02-01-SUMMARY |
+| `packages/schema/src/prefixes.ts` | 183, 288 | `warnings: []` always empty | ℹ Info | By design (every contradiction throws); kept in the contract for the CLI loop |
 | `packages/cli/src/main.ts` | 103, 123 | `return 1` without `pool.end()` | ℹ Info | Mirrors the existing Postgres-unreachable branch; `index.ts` exits the process |
+| `packages/schema/src/prefixes.ts` | 105-113 | persisted row for a *removed* custom object can still block `up` if a later baseline takes its prefix | ℹ Info | Correct per D-03 + D-13; hint names both remedies. Not a gap. |
 
-No TODO/FIXME/placeholder markers, no `UNSUPPORTED:*` strings, no stubbed returns in any phase file.
+The previous ⚠ Warning (persisted overwrite without check at 104-105) is gone. No TODO/FIXME/placeholder markers, no `UNSUPPORTED:*` strings, no `err.stack` in any phase file.
 
 ### Human Verification Required
 
-None beyond what Johan already approved (devrandom checkpoint, 02-03-SUMMARY). The Docker Postgres run and the CLI smoke sequence are documented with literal output in 02-03-SUMMARY and were not re-run here because the orchestrator asked that no server be started and the devrandom server on port 8180 be left alone.
+None. The devrandom checkpoint and the Docker/CLI smoke evidence from 02-03-SUMMARY remain valid: the fix changes no behaviour for orgs whose persisted prefixes are all in `a00..azz` (devrandom: `a00`, `a01`), which cannot collide with any standard prefix.
 
 ### Gaps Summary
 
-The phase goal is achieved: all four ROADMAP success criteria are verified against the code and by green tests on pglite (plus documented Docker Postgres, CLI smoke and real-org evidence). Storage, precedence, transactional rollback, advisory locking, CLI strings, `check`/`reset` semantics and documentation all match CONTEXT D-01..D-18 with one exception.
-
-**One partial gap, D-03 / PREFIX-03:** `planKeyPrefixes` checks every *new* claim against standard prefixes and persisted rows, but never checks the *already-persisted* rows against the standard prefixes of the currently loaded schema. The probe confirms a persisted `01m` for `Foo__c` coexists silently with a standard object using `01m`. This cannot happen through orglet's own `a00..azz` assignment (standard prefixes never start with `a`), so it needs a `--key-prefixes` seed with a non-`a` value or a hand-edited row followed by a baseline that adds that standard prefix — exactly the phase 3 scenario D-03 was written for ("cheap but mandatory"). Fix is a few lines in the planner plus one unit test; no CLI or schema changes needed.
+No gaps. The single partial gap from the initial verification (D-03 / PREFIX-03: persisted custom prefixes not re-checked against standard prefixes on every load) is closed by commit `4ce2fe8`: a loop in `planKeyPrefixes` placed before pass 1 rejects any persisted row whose prefix a standard object in the loaded schema carries, naming both parties; it throws inside the reconcile transaction so nothing is written; the CLI surfaces it through the existing `KeyPrefixError` path with a hint that now mentions the stored row. A unit test covers the case, the previously failing probe now throws, the non-colliding path is unchanged, and the three affected test files plus the orchestrator's full suite, build and lint are green. All five truths, all artifacts, all key links and all four requirements verified. Phase goal achieved.
 
 ---
 
-_Verified: 2026-10-02T13:42:00Z_
+_Verified: 2026-10-02T13:52:00Z_
 _Verifier: Claude (gsd-verifier)_

@@ -23,7 +23,7 @@ suites.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Test Infrastructure & CI** - Full test suite runs Docker-free via pglite; project is on GitHub with two CI jobs (completed 2026-10-01)
-- [ ] **Phase 2: Custom-Object Key-Prefix Persistence** - Custom object key prefixes are stable across reload and rename
+- [x] **Phase 2: Custom-Object Key-Prefix Persistence** - Custom object key prefixes are stable across reload and rename (completed 2026-10-02)
 - [ ] **Phase 3: Thin Standard-Object Baselines** - The 14 missing standard objects exist as reference-checkable baselines
 - [ ] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles
 - [ ] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only
