@@ -59,14 +59,19 @@ let counter = randomInt(0, 62 ** 3);
  * process (millisecond timestamp + counter), which mirrors Salesforce closely enough that
  * "later record has a greater ID" holds, and a random seed keeps separate processes apart.
  * Layout: prefix(3) + "00" (instance) + timestamp(7) + counter(3).
+ *
+ * The timestamp is a logical clock: it only moves forward. When the counter wraps inside one
+ * millisecond, or the wall clock steps backwards, the timestamp is advanced instead, so a
+ * later ID always sorts after an earlier one.
  */
 export function generateId(keyPrefix: string): string {
   if (!/^[0-9A-Za-z]{3}$/.test(keyPrefix)) throw new Error(`invalid key prefix: ${keyPrefix}`);
   const now = Date.now();
-  if (now === lastMillis) {
-    counter = (counter + 1) % 62 ** 3;
-  } else {
+  if (now > lastMillis) {
     lastMillis = now;
+  } else {
+    counter = (counter + 1) % 62 ** 3;
+    if (counter === 0) lastMillis++;
   }
-  return toCaseSafeId(`${keyPrefix}00${base62(now, 7)}${base62(counter, 3)}`);
+  return toCaseSafeId(`${keyPrefix}00${base62(lastMillis, 7)}${base62(counter, 3)}`);
 }
