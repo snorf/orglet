@@ -102,7 +102,15 @@ function nextFree(taken: Map<string, KeyPrefixClaim>): string {
 export function planKeyPrefixes(input: KeyPrefixPlanInput): KeyPrefixPlan {
   const taken = new Map<string, KeyPrefixClaim>();
   for (const s of input.standard) taken.set(s.keyPrefix, { objectName: s.name, keyPrefix: s.keyPrefix, source: "standard" });
-  for (const p of input.persisted.values()) taken.set(p.keyPrefix, { objectName: p.name, keyPrefix: p.keyPrefix, source: "persisted" });
+  // D-03: a row persisted before a baseline change may now overlap a standard prefix; re-check on every load.
+  for (const p of input.persisted.values()) {
+    const claim: KeyPrefixClaim = { objectName: p.name, keyPrefix: p.keyPrefix, source: "persisted" };
+    const other = taken.get(p.keyPrefix);
+    if (other !== undefined && other.source === "standard") {
+      throw new KeyPrefixError(`persisted key prefix ${p.keyPrefix} of ${p.name} collides with ${describe(other)}`, [claim, other]);
+    }
+    taken.set(p.keyPrefix, claim);
+  }
 
   const decided = new Map<string, KeyPrefixAssignment>();
 

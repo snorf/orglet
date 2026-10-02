@@ -104,6 +104,16 @@ describe("planKeyPrefixes", () => {
     expect(err.claims).toHaveLength(2);
   });
 
+  it("rejects a persisted prefix that a standard object now carries, naming both", () => {
+    const input = base();
+    input.persisted = new Map([["foo__c", { name: "Foo__c", keyPrefix: "003" }]]);
+    expect(() => planKeyPrefixes(input)).toThrow(KeyPrefixError);
+    const err = caught(() => planKeyPrefixes(input));
+    expect(err.message).toMatch(/persisted key prefix 003 of Foo__c/);
+    expect(err.message).toMatch(/standard object Contact \(003\)/);
+    expect(err.claims.map((c) => c.source)).toEqual(["persisted", "standard"]);
+  });
+
   it("rejects a mapping prefix that collides with another object's persisted prefix, naming both", () => {
     const input = base();
     input.persisted = new Map([["bar__c", { name: "Bar__c", keyPrefix: "a0X" }]]);

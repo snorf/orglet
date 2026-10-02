@@ -57,7 +57,7 @@ function log(c: { quiet: boolean }, ...args: unknown[]): void {
   if (!c.quiet) console.log(...args);
 }
 
-const KEY_PREFIX_HINT = "fix the conflicting --key-prefixes entry or the records that carry the prefix; stale assignments can be removed with: orglet reset --drop-prefixes   (this also drops the org's records)";
+const KEY_PREFIX_HINT = "fix the conflicting --key-prefixes entry, the records that carry the prefix, or the stored assignment in _orglet.key_prefixes; all of the org's assignments can be removed with: orglet reset --drop-prefixes   (this also drops the org's records)";
 
 /** D-16: only new assignments are logged, with where the value came from; position-derived ones need no suffix. */
 function sourceSuffix(source: ReconcileKeyPrefixesResult["assignments"][number]["source"]): string {
