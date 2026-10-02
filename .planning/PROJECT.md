@@ -61,6 +61,12 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
 - ✓ Public repository `snorf/orglet` with GitHub Actions jobs `test-pglite` and `test-postgres`
   running build, lint and the full suite on every push and PR; `main` protected by a ruleset
   requiring both checks and a PR — Phase 1 (2026-10-01)
+- ✓ Custom-object key prefixes are assigned once by `orglet up` and persisted in the sibling
+  `_orglet.key_prefixes` schema (keyed by org schema), seeded from existing records or a
+  `--key-prefixes` mapping, never shifted by adding, removing or renaming objects; every
+  contradiction with a standard or persisted prefix fails the load; `orglet check` reports
+  provisional prefixes and `orglet reset` keeps rows unless `--drop-prefixes` — Phase 2
+  (2026-10-02)
 
 ### Active
 
@@ -78,8 +84,6 @@ Flows, no Apex in this milestone.
   baseline lacks (BusinessHours, BusinessProcess, CallCenter, DandBCompany, Entitlement,
   ExternalDataSource, IdeaTheme, Individual, OperatingHours, OpportunityHistory,
   ServiceAppointment, ServiceContract, SocialPost, UserLicense) so lookups to them are checked
-- [ ] Custom-object key prefixes are persisted, so adding or renaming a custom object never
-  changes the prefix (and therefore the Ids) of existing objects
 - [ ] Bulk API 2.0 jobs are persisted in Postgres and survive a server restart
 - [ ] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (today: 15)
 - [ ] Both conformance suites are re-run after the changes, stay green, and the numbers in
@@ -175,7 +179,7 @@ on port 8180 with the `devrandom` org schema.
 | Phase 0 headless, GUI later | Conformance against SDKs is the real acceptance test | ✓ Good |
 | No behaviour-diffing against a real org | Developer MSA | ✓ Good |
 | Milestone 1 = hardening only (TYPEOF, roll-ups, thin baselines, key-prefix persistence, Bulk persistence, pglite, GitHub + CI) | Small milestone that makes a real DE org load clean and makes the project public and CI-tested before the GUI | — Pending |
-| Persist custom-object key prefixes | Alphabetical recomputation shifts prefixes when objects are added; Ids must be stable | — Pending |
+| Persist custom-object key prefixes | Alphabetical recomputation shifts prefixes when objects are added; Ids must be stable | ✓ Good (Phase 2; sibling `_orglet` schema so `reset` keeps rows, `--key-prefixes` seed for real-org Ids) |
 | pglite for tests, Docker Compose for the running server | CI without Docker, contributors without Docker; server path unchanged | ✓ Good (Phase 1; needed `maxConnections` on pglite-socket and build-before-lint in CI) |
 | Phase branches with PR to a ruleset-protected `main` | Branch protection only means something if every change goes through CI | ✓ Good (Phase 1) |
 
@@ -197,4 +201,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-01 after Phase 1*
+*Last updated: 2026-10-02 after Phase 2*
