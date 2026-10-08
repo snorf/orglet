@@ -102,6 +102,28 @@ any change to the write path (`checkReferences` is the reference behaviour).
   conformance stays in phase 7. The `conformance/describe-check` layout from phase 3 is the
   template.
 
+### Planning-time decisions (from 04-RESEARCH.md open questions, confirmed 2026-10-08)
+- **D-15:** Baseline metadata keeps `OwnerId` `referenceTo: ["User", "Group"]` on every owned
+  standard object. The Name-field restriction (D-01) and the formula colon rule (D-08) apply
+  wherever the lookup is polymorphic per metadata, Account/Contact/Opportunity included;
+  `formula.test.ts:43` is updated accordingly. Narrowing `OwnerId` per object is NOT done in
+  this phase; record a todo. Gate the polymorphic read path on `field.referenceTo.length > 1`
+  (not on `resolveRelationship().polymorphic`, which is false when only one target is
+  modelled, the D-13 case).
+- **D-16:** The formula half of POLY-01 ships as the D-09 fallback from the start: the
+  vendored sigha lexer rejects `:` and upstream has no support, so no upstream PR in this
+  phase. Formulas using `Owner:Group.Name` / `Owner:Queue.Name` raise `UNSUPPORTED:formula`
+  with a clear message; plain `Owner.Name` on a polymorphic lookup still fails compilation
+  (D-08). The gap is recorded in VERIFICATION with a todo against sigha. When the colon
+  syntax lands, `Queue` is accepted as an alias of `Group`.
+- **D-17:** Polymorphic parent traversal and `TYPEOF` inside child subqueries (the
+  `row_to_json` branch) are gated with `SoqlError` `UNSUPPORTED:polymorphic-subquery`, not
+  implemented in this phase. Likewise Name's `Profile`/`UserRole` pseudo-fields and chains
+  past a polymorphic parent (`Owner.Profile.Name`) are gated as `UNSUPPORTED:polymorphic-field`
+  / `UNSUPPORTED:polymorphic-traversal`.
+- **D-18:** D-05 is locked from the SOQL/SOSL Reference: a row whose concrete type matches no
+  `WHEN` and the query has no `ELSE` returns a `null` parent.
+
 ### Claude's Discretion
 - Internal shape model changes in `packages/soql/src/compile.ts` and `shape.ts` to carry
   per-target columns and the per-row type (for example a `polymorphic` shape kind).
