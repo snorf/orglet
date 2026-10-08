@@ -108,7 +108,7 @@ Plans:
 - [x] 04-04-PLAN.md — Polymorphic joins per target, Name pseudo-object, `<rel>.Type`, per-row attributes.type (wave 2)
 - [x] 04-05-PLAN.md — TYPEOF compile and per-row branch shaping (wave 3)
 - [x] 04-06-PLAN.md — Unmodelled-prefix warning plumbing, SC1 three-way and D-13 tests, REST log line (wave 4)
-- [ ] 04-07-PLAN.md — jsforce + simple-salesforce poly-check against live orglet; both backends green (wave 5)
+- [x] 04-07-PLAN.md — jsforce + simple-salesforce poly-check against live orglet; both backends green (wave 5)
 **Research flag**: yes — read the exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js`'s `.d.ts` during implementation, and confirm parser AST coverage for `WHERE <rel>.Type = '...'` independently of `TYPEOF`.
 
 ### Phase 5: Roll-Up Summary Fields
