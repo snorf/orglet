@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: ready_to_plan
 stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-10-08T18:28:22.291Z"
+last_updated: "2026-10-08T18:30:32.247Z"
 last_activity: 2026-10-08
 progress:
   total_phases: 7
@@ -23,13 +23,13 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 03 — Thin Standard-Object Baselines
+**Current focus:** Phase 4 — Polymorphic Lookups & SOQL TYPEOF
 
 ## Current Position
 
-Phase: 03 (Thin Standard-Object Baselines) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
+Phase: 4
+Plan: Not started
+Status: Phase 3 verified and complete (branch not pushed, no PR yet); Phase 4 ready to discuss/plan
 Last activity: 2026-10-08
 
 Progress: [░░░░░░░░░░] 0%
