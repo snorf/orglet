@@ -1,0 +1,15 @@
+{
+  "name": "CallCenter",
+  "label": "Call Center",
+  "labelPlural": "Call Centers",
+  "keyPrefix": "04v",
+  "createable": true,
+  "updateable": false,
+  "deletable": false,
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Call Center Name", "type": "Text", "length": 80, "nillable": false, "updateable": false, "idLookup": true, "nameField": true }
+  ]
+}

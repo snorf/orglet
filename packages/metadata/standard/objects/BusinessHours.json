@@ -1,0 +1,17 @@
+{
+  "name": "BusinessHours",
+  "label": "Business Hours",
+  "labelPlural": "Business Hours",
+  "keyPrefix": "01m",
+  "createable": true,
+  "updateable": true,
+  "deletable": false,
+  "undeletable": false,
+  "searchable": true,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Business Hours Name", "type": "Text", "length": 80, "nillable": false, "idLookup": true, "nameField": true },
+    { "name": "IsActive", "label": "Active", "type": "Checkbox" },
+    { "name": "IsDefault", "label": "Default Business Hours", "type": "Checkbox" }
+  ]
+}
