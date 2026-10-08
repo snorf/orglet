@@ -37,6 +37,8 @@ interface ExistingColumn {
   sqlType: string;
 }
 
+const isPgForeignKeyViolation = (err: unknown): boolean => typeof err === "object" && err !== null && (err as { code?: string }).code === "23503";
+
 async function existingColumns(client: PoolClient, orgSchema: string): Promise<ExistingColumn[]> {
   const res = await client.query<{ table_name: string; column_name: string; data_type: string; character_maximum_length: number | null; numeric_precision: number | null; numeric_scale: number | null }>(
     `SELECT table_name, column_name, data_type, character_maximum_length, numeric_precision, numeric_scale
@@ -149,7 +151,18 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
       for (const ix of plan.indexes) await run(indexSql(orgSchema, plan.table, ix));
       for (const fk of plan.foreignKeys) {
         if (constraints.has(fk.name)) continue;
-        await run(foreignKeySql(orgSchema, plan.table, fk));
+        try {
+          await run(foreignKeySql(orgSchema, plan.table, fk));
+        } catch (err) {
+          // Adding a foreign key validates existing rows. A lookup that was unchecked until now
+          // (its target object was not modelled yet, or rows came in through --import) can hold
+          // Ids with no target row; name the table and column instead of a bare constraint error.
+          if (!isPgForeignKeyViolation(err)) throw err;
+          throw new Error(
+            `cannot add foreign key ${fk.name}: ${orgSchema}.${plan.table}.${fk.column} holds values with no matching row in ${orgSchema}.${fk.referencesTable}; clear or correct those values (for example lookups loaded with --import whose target records were not imported) and run again`,
+            { cause: err },
+          );
+        }
       }
     }
   });
