@@ -191,6 +191,7 @@ function objectSummary(obj: SObjectDef, version: string): Json {
     deprecatedAndHidden: false,
     feedEnabled: false,
     hasSubtypes: false,
+    idEnabled: true,
     isInterface: false,
     isSubtype: false,
     keyPrefix: obj.keyPrefix,

@@ -65,6 +65,8 @@ export const Errors = {
     matchingIds: ids,
   }),
   invalidOperation: (message: string) => saveError("INVALID_OPERATION", message),
+  /** The sObject's createable/updateable/deletable/undeletable flag forbids the call (SOAP API StatusCode table). */
+  invalidTypeForOperation: (message: string) => saveError("INVALID_TYPE_FOR_OPERATION", message),
   unsupported: (area: string, message: string) => saveError("UNSUPPORTED", `UNSUPPORTED:${area} ${message}`),
 };
 

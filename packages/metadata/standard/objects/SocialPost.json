@@ -1,0 +1,15 @@
+{
+  "name": "SocialPost",
+  "label": "Social Post",
+  "labelPlural": "Social Posts",
+  "keyPrefix": "0ST",
+  "createable": true,
+  "updateable": true,
+  "deletable": true,
+  "undeletable": true,
+  "searchable": true,
+  "hasOwner": true,
+  "fields": [
+    { "name": "Name", "label": "Social Post Name", "type": "Text", "length": 255, "nillable": false, "idLookup": true, "nameField": true }
+  ]
+}

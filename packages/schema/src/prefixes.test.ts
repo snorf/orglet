@@ -208,6 +208,48 @@ describe("planKeyPrefixes", () => {
   });
 });
 
+describe("planKeyPrefixes against the real standard baseline", () => {
+  const standard = () => baseline.objects.map((o) => ({ name: o.name, keyPrefix: o.keyPrefix }));
+  it("standard: no standard prefix, including the 14 thin objects, starts with a or A", () => {
+    const prefixes = Object.fromEntries(standard().map((s) => [s.name, s.keyPrefix]));
+    expect(prefixes).toMatchObject({
+      BusinessHours: "01m",
+      BusinessProcess: "019",
+      CallCenter: "04v",
+      DandBCompany: "06E",
+      Entitlement: "550",
+      ExternalDataSource: "0XC",
+      IdeaTheme: "0Bg",
+      Individual: "0PK",
+      OperatingHours: "0OH",
+      OpportunityHistory: "008",
+      ServiceAppointment: "08p",
+      ServiceContract: "810",
+      SocialPost: "0ST",
+      UserLicense: "100",
+    });
+    expect(standard().filter((s) => /^[aA]/.test(s.keyPrefix))).toEqual([]);
+    expect(new Set(standard().map((s) => s.keyPrefix)).size).toBe(standard().length);
+  });
+  it("standard: a mapping that asks for a thin object's prefix is rejected naming that object", () => {
+    const input: KeyPrefixPlanInput = { custom: [{ name: "Foo__c", provisional: "a00" }], standard: standard(), persisted: new Map(), observed: new Map(), mapping: new Map([["foo__c", "01m"]]) };
+    const err = caught(() => planKeyPrefixes(input));
+    expect(err.message).toMatch(/Foo__c/);
+    expect(err.message).toMatch(/BusinessHours/);
+    expect(err.message).toMatch(/01m/);
+  });
+  it("standard: a persisted a00 plans without error next to every standard prefix", () => {
+    const input: KeyPrefixPlanInput = {
+      custom: [{ name: "Foo__c", provisional: "a00" }],
+      standard: standard(),
+      persisted: new Map([["foo__c", { name: "Foo__c", keyPrefix: "a00" }]]),
+      observed: new Map(),
+      mapping: new Map(),
+    };
+    expect(planKeyPrefixes(input)).toEqual({ assignments: [], warnings: [] });
+  });
+});
+
 describe("parseKeyPrefixMapping", () => {
   let schema: OrgSchema;
 

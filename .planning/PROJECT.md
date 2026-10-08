@@ -67,6 +67,15 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
   contradiction with a standard or persisted prefix fails the load; `orglet check` reports
   provisional prefixes and `orglet reset` keeps rows unless `--drop-prefixes` — Phase 2
   (2026-10-02)
+- ✓ Thin baselines for the 14 standard objects a Developer Edition references (BusinessHours,
+  BusinessProcess, CallCenter, DandBCompany, Entitlement, ExternalDataSource, IdeaTheme,
+  Individual, OperatingHours, OpportunityHistory, ServiceAppointment, ServiceContract,
+  SocialPost, UserLicense) with documented prefixes, name fields and explicit DML flags;
+  lookups to them are reference-checked; writes that violate a flag return
+  `INVALID_TYPE_FOR_OPERATION` (bypassed in import mode); bootstrap seeds a default
+  BusinessHours and a "Salesforce" UserLicense; describe verified through jsforce and
+  simple-salesforce via `conformance/describe-check`; the DE retrieve loads with zero
+  `UNSUPPORTED:reference-target` — Phase 3 (2026-10-08)
 
 ### Active
 
@@ -80,10 +89,6 @@ Flows, no Apex in this milestone.
 - [ ] Roll-up summary fields (`Summary` type: COUNT, SUM, MIN, MAX with filters) are loaded from
   metadata, recomputed in the save pipeline on child insert/update/delete/undelete, and readable
   via REST and SOQL
-- [ ] Thin baselines exist for the 14 standard objects a Developer Edition references but the
-  baseline lacks (BusinessHours, BusinessProcess, CallCenter, DandBCompany, Entitlement,
-  ExternalDataSource, IdeaTheme, Individual, OperatingHours, OpportunityHistory,
-  ServiceAppointment, ServiceContract, SocialPost, UserLicense) so lookups to them are checked
 - [ ] Bulk API 2.0 jobs are persisted in Postgres and survive a server restart
 - [ ] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (today: 15)
 - [ ] Both conformance suites are re-run after the changes, stay green, and the numbers in
@@ -201,4 +206,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-02 after Phase 2*
+*Last updated: 2026-10-08 after Phase 3*

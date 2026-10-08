@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { loadOrgSchema, OrgSchemaImpl, type FieldDef, type SObjectDef } from "@orglet/metadata";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, OrgSchemaImpl, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import type { Pool } from "./db.js";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { migrate } from "./migrate.js";
@@ -113,5 +113,63 @@ describe("migrate", () => {
     const after = await columns("project__c");
     expect(after.get("code__c")).toBe("character varying(20)");
     expect(after.has("extra__c")).toBe(false);
+  });
+});
+
+describe("migrate across the thin standard-object upgrade", () => {
+  const THIN = new Set(["BusinessHours", "BusinessProcess", "CallCenter", "DandBCompany", "Entitlement", "ExternalDataSource", "IdeaTheme", "Individual", "OperatingHours", "OpportunityHistory", "ServiceAppointment", "ServiceContract", "SocialPost", "UserLicense"]);
+  const FK_TO_THIN = ["fk_case_businesshoursid", "fk_recordtype_businessprocessid", "fk_user_callcenterid", "fk_account_dandbcompanyid", "fk_lead_dandbcompanyid", "fk_case_entitlementid", "fk_product2_externaldatasourceid", "fk_user_workspaceid", "fk_contact_individualid", "fk_lead_individualid", "fk_user_individualid", "fk_account_operatinghoursid", "fk_opportunity_lastamountchangedhistoryid", "fk_opportunity_lastclosedatechangedhistoryid", "fk_event_serviceappointmentid", "fk_case_servicecontractid", "fk_case_sourceid", "fk_profile_userlicenseid"];
+  const orgs: string[] = [];
+  let before: OrgSchema;
+  let after: OrgSchema;
+  const fkNames = async (org: string) =>
+    (await pool.query<{ conname: string }>(`SELECT conname FROM pg_constraint c JOIN pg_namespace n ON n.oid = c.connamespace WHERE n.nspname = $1 AND contype = 'f'`, [org])).rows.map((r) => r.conname);
+  const freshOrg = () => {
+    const s = `test_${randomBytes(4).toString("hex")}`;
+    orgs.push(s);
+    return s;
+  };
+
+  beforeAll(async () => {
+    const baseline = await loadBaseline();
+    before = buildOrgSchema({ ...baseline, objects: baseline.objects.filter((o) => !THIN.has(o.name)) }).schema;
+    after = buildOrgSchema(baseline).schema;
+  });
+
+  afterAll(async () => {
+    for (const org of orgs) await pool.query(`DROP SCHEMA IF EXISTS ${quote(org)} CASCADE`);
+  });
+
+  it("thin: upgrading an org migrated before the 14 objects existed creates their tables and adds the 18 foreign keys that point at them", async () => {
+    const org = freshOrg();
+    await migrate(pool, before, { orgSchema: org });
+    expect((await fkNames(org)).filter((n) => FK_TO_THIN.includes(n))).toEqual([]);
+    const up = await migrate(pool, after, { orgSchema: org });
+    expect(up.warnings).toEqual([]);
+    expect(up.statements.filter((s) => s.startsWith("CREATE TABLE")).length).toBe(14);
+    expect(await fkNames(org)).toEqual(expect.arrayContaining(FK_TO_THIN));
+  });
+
+  it("thin: an upgrade whose new foreign key meets a dangling Id fails naming table, column and target, and rolls back", async () => {
+    const org = freshOrg();
+    await migrate(pool, before, { orgSchema: org });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      // A row loaded by `up --import` while BusinessHours did not exist yet: no FK enforcement, like import mode.
+      await client.query("SET LOCAL session_replication_role = replica");
+      await client.query(
+        `INSERT INTO ${quote(org)}."case" ("id", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "businesshoursid") VALUES ($1, false, now(), $2, now(), $2, now(), $3)`,
+        ["500000000000001AAA", "005000000000001AAA", "01m000000000001AAA"],
+      );
+      await client.query("COMMIT");
+    } finally {
+      client.release();
+    }
+    await expect(migrate(pool, after, { orgSchema: org })).rejects.toThrow(
+      `cannot add foreign key fk_case_businesshoursid: ${org}.case.businesshoursid holds values with no matching row in ${org}.businesshours`,
+    );
+    const tables = await pool.query<{ n: string }>(`SELECT count(*)::text AS n FROM information_schema.tables WHERE table_schema = $1 AND table_name = 'businesshours'`, [org]);
+    expect(tables.rows[0]?.n).toBe("0"); // the whole upgrade rolled back
   });
 });

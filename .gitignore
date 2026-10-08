@@ -9,5 +9,6 @@ coverage/
 *.log
 .orglet/
 conformance/python/.venv/
+conformance/describe-check/.venv/
 conformance/jsforce/.cache/
 __pycache__/

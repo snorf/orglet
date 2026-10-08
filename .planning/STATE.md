@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: "Completed 02-03-PLAN.md (phase 02 all 3 plans done; next: /gsd:verify-work 02)"
-last_updated: "2026-10-02T12:57:19.813Z"
-last_activity: 2026-10-02
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-10-08T18:39:22.992Z"
+last_activity: 2026-10-08
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 3
+  total_plans: 11
+  completed_plans: 11
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 3 — Thin Standard-Object Baselines
+**Current focus:** Phase 4 — Polymorphic Lookups & SOQL TYPEOF
 
 ## Current Position
 
-Phase: 3
+Phase: 4
 Plan: Not started
-Status: Phase 2 verified and complete (branch not pushed, no PR yet); Phase 3 ready to discuss/plan
-Last activity: 2026-10-02
+Status: Phase 3 verified and complete (branch not pushed, no PR yet); Phase 4 ready to discuss/plan
+Last activity: 2026-10-08
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -61,6 +61,10 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-custom-object-key-prefix-persistence P01 | 8min | 2 tasks | 4 files |
 | Phase 02-custom-object-key-prefix-persistence P02 | 6min | 2 tasks | 5 files |
 | Phase 02-custom-object-key-prefix-persistence P03 | 6min | 3 tasks | 1 files |
+| Phase 03 P01 | 8min | 2 tasks | 19 files |
+| Phase 03 P02 | 12min | 3 tasks | 7 files |
+| Phase 03 P03 | 10min | 2 tasks | 5 files |
+| Phase 03 P04 | n/a | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -88,6 +92,15 @@ Recent decisions affecting current work:
 - [Phase 02-custom-object-key-prefix-persistence]: KeyPrefixError in the CLI prints error: <message> plus one hint line and returns 1 without pool.end(), mirroring the Postgres-unreachable branch
 - [Phase 02-custom-object-key-prefix-persistence]: The --key-prefixes file is read and validated before createPool so a bad file fails without touching the database
 - [Phase 02-custom-object-key-prefix-persistence]: devrandom checkpoint approved 2026-10-02; both custom tables empty so the seed source was `provisional`, values identical to the old scheme
+- [Phase 03]: Thin objects carry only name field, system fields, OwnerId when owned plus D-07 seed fields; flags explicit per JSON, no thin switch
+- [Phase 03]: BusinessHours and BusinessProcess are create/update only, no delete; REQUIREMENTS and ROADMAP corrected (D-04)
+- [Phase 03]: Object-flag violations return INVALID_TYPE_FOR_OPERATION (was INVALID_OPERATION); REST status stays 400; upsert needs createable+updateable, undelete needs undeletable
+- [Phase 03]: Import mode bypasses object flags (D-08) via one DmlEngine.refuse() guard
+- [Phase 03]: Bootstrap seeds Default BusinessHours and Salesforce UserLicense through Store, links admin profile only while UserLicenseId is NULL
+- [Phase 03]: migrate() wraps FK 23503 into an error naming table, column and target; no NOT VALID
+- [Phase 03]: SDK describe key sets live once in conformance/describe-check/contract.json, read by vitest and plan 03-04 scripts
+- [Phase 03]: idEnabled added to describe summaries; only jsforce key orglet omitted
+- [Phase 03]: devrandom upgrade approved 2026-10-08: 14 tables added, seed rows created once, FKs added without dangling-data errors, second start silent
 
 ### Pending Todos
 
@@ -101,6 +114,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-02T11:32:57.870Z
-Stopped at: Completed 02-03-PLAN.md (phase 02 all 3 plans done; next: /gsd:verify-work 02)
+Last session: 2026-10-08T18:28:22.288Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None

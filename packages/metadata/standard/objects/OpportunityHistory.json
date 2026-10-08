@@ -1,0 +1,13 @@
+{
+  "name": "OpportunityHistory",
+  "label": "Opportunity History",
+  "labelPlural": "Opportunity History",
+  "keyPrefix": "008",
+  "createable": false,
+  "updateable": false,
+  "deletable": false,
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": []
+}

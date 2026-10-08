@@ -1,0 +1,16 @@
+# Objects describe-check runs by default: the 14 thin standard objects of phase 3.
+# One API name per line; '#' starts a comment. Arguments to the scripts override this list.
+BusinessHours
+BusinessProcess
+CallCenter
+DandBCompany
+Entitlement
+ExternalDataSource
+IdeaTheme
+Individual
+OperatingHours
+OpportunityHistory
+ServiceAppointment
+ServiceContract
+SocialPost
+UserLicense

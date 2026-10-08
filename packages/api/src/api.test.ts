@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
@@ -28,6 +29,30 @@ const get = (url: string) => app.inject({ method: "GET", url, headers: auth() })
 const post = (url: string, body: unknown) => app.inject({ method: "POST", url, headers: auth(), payload: JSON.stringify(body) });
 const patch = (url: string, body: unknown) => app.inject({ method: "PATCH", url, headers: auth(), payload: JSON.stringify(body) });
 const del = (url: string) => app.inject({ method: "DELETE", url, headers: auth() });
+
+interface DescribeContract { globalSObjectKeys: string[]; sobjectDescribeKeys: string[]; fieldKeys: string[]; childRelationshipKeys: string[]; urlKeys: string[]; systemFields: string[] }
+// The SDK key sets and object list are shared with conformance/describe-check (D-11), so the CI test and the manual SDK run check the same contract.
+const DESCRIBE_CHECK = new URL("../../../conformance/describe-check/", import.meta.url);
+const contract = JSON.parse(readFileSync(new URL("contract.json", DESCRIBE_CHECK), "utf8")) as DescribeContract;
+const listedObjects = readFileSync(new URL("objects.txt", DESCRIBE_CHECK), "utf8").split("\n").map((l) => l.trim()).filter((l) => l !== "" && !l.startsWith("#"));
+type Thin = { keyPrefix: string; createable: boolean; updateable: boolean; deletable: boolean; undeletable: boolean; searchable: boolean; hasOwner: boolean; nameField: string | null; children: [string, string][] };
+const THIN: Record<string, Thin> = {
+  BusinessHours:      { keyPrefix: "01m", createable: true,  updateable: true,  deletable: false, undeletable: false, searchable: true,  hasOwner: false, nameField: "Name", children: [["Case", "BusinessHoursId"]] },
+  BusinessProcess:    { keyPrefix: "019", createable: true,  updateable: true,  deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: "Name", children: [["RecordType", "BusinessProcessId"]] },
+  CallCenter:         { keyPrefix: "04v", createable: true,  updateable: false, deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: "Name", children: [["User", "CallCenterId"]] },
+  DandBCompany:       { keyPrefix: "06E", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: false, nameField: "Name", children: [["Account", "DandbCompanyId"], ["Lead", "DandbCompanyId"]] },
+  Entitlement:        { keyPrefix: "550", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: false, nameField: "Name", children: [["Case", "EntitlementId"]] },
+  ExternalDataSource: { keyPrefix: "0XC", createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: "DeveloperName", children: [["Product2", "ExternalDataSourceId"]] },
+  IdeaTheme:          { keyPrefix: "0Bg", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: false, nameField: "Title", children: [["User", "WorkspaceId"]] },
+  Individual:         { keyPrefix: "0PK", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: true,  nameField: "Name", children: [["Contact", "IndividualId"], ["Lead", "IndividualId"], ["User", "IndividualId"]] },
+  OperatingHours:     { keyPrefix: "0OH", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: true,  nameField: "Name", children: [["Account", "OperatingHoursId"]] },
+  OpportunityHistory: { keyPrefix: "008", createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: null, children: [["Opportunity", "LastAmountChangedHistoryId"], ["Opportunity", "LastCloseDateChangedHistoryId"]] },
+  ServiceAppointment: { keyPrefix: "08p", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: true,  nameField: "AppointmentNumber", children: [["Event", "ServiceAppointmentId"]] },
+  ServiceContract:    { keyPrefix: "810", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: true,  nameField: "Name", children: [["Case", "ServiceContractId"]] },
+  SocialPost:         { keyPrefix: "0ST", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: true,  nameField: "Name", children: [["Case", "SourceId"]] },
+  UserLicense:        { keyPrefix: "100", createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: "Name", children: [["Profile", "UserLicenseId"]] },
+};
+const missingKeys = (obj: Json, keys: string[]) => keys.filter((k) => !(k in obj));
 
 beforeAll(async () => {
   testDb = await openTestDb();
@@ -322,5 +347,71 @@ describe("composite", () => {
   it("serves limits and an empty search result", async () => {
     expect(json(await get(`${V}/limits`))["DailyApiRequests"]).toMatchObject({ Max: 15000 });
     expect(json(await get(`${V}/search?q=${encodeURIComponent("FIND {Acme}")}`))).toEqual({ searchRecords: [] });
+  });
+});
+
+describe("thin objects", () => {
+  it("thin objects: objects.txt lists exactly the 14 thin objects", () => {
+    expect([...listedObjects].sort()).toEqual(Object.keys(THIN).sort());
+    expect(listedObjects).toHaveLength(14);
+  });
+
+  it("thin objects: global describe lists each with every DescribeGlobalSObjectResult key and the documented flags", async () => {
+    const sobjects = json(await get(`${V}/sobjects`))["sobjects"] as Json[];
+    for (const [name, t] of Object.entries(THIN)) {
+      const entry = sobjects.find((s) => s["name"] === name);
+      expect(entry, name).toBeDefined();
+      expect(missingKeys(entry as Json, contract.globalSObjectKeys), name).toEqual([]);
+      expect(entry).toMatchObject({
+        name, keyPrefix: t.keyPrefix, custom: false, queryable: true, idEnabled: true,
+        createable: t.createable, updateable: t.updateable, deletable: t.deletable, undeletable: t.undeletable, searchable: t.searchable,
+        urls: { sobject: `${V}/sobjects/${name}`, describe: `${V}/sobjects/${name}/describe`, rowTemplate: `${V}/sobjects/${name}/{ID}` },
+      });
+      expect(json(await get(`${V}/sobjects/${name}`))["objectDescribe"]).toMatchObject({ name, keyPrefix: t.keyPrefix });
+    }
+  });
+
+  it("thin objects: per-object describe carries the SDK key sets, system fields, owner and one or no name field", async () => {
+    for (const [name, t] of Object.entries(THIN)) {
+      const d = json(await get(`${V}/sobjects/${name}/describe`));
+      expect(missingKeys(d, [...contract.globalSObjectKeys, ...contract.sobjectDescribeKeys]), name).toEqual([]);
+      expect(missingKeys(d["urls"] as Json, contract.urlKeys), name).toEqual([]);
+      const fields = d["fields"] as Json[];
+      expect(fields.flatMap((f) => missingKeys(f, contract.fieldKeys).map((k) => `${String(f["name"])}.${k}`)), name).toEqual([]);
+      for (const s of contract.systemFields) expect(fields.filter((f) => f["name"] === s), `${name}.${s}`).toHaveLength(1);
+      expect(fields.filter((f) => f["name"] === "OwnerId"), `${name}.OwnerId`).toHaveLength(t.hasOwner ? 1 : 0);
+      expect(fields.filter((f) => f["nameField"] === true).map((f) => f["name"]), name).toEqual(t.nameField === null ? [] : [t.nameField]);
+      expect(d).toMatchObject({ name, keyPrefix: t.keyPrefix, createable: t.createable, updateable: t.updateable, deletable: t.deletable, undeletable: t.undeletable });
+    }
+  });
+
+  it("thin objects: childRelationships list the baseline lookups that point at each object", async () => {
+    for (const [name, t] of Object.entries(THIN)) {
+      const rels = json(await get(`${V}/sobjects/${name}/describe`))["childRelationships"] as Json[];
+      expect(rels.flatMap((r) => missingKeys(r, contract.childRelationshipKeys)), name).toEqual([]);
+      expect(rels, name).toEqual(expect.arrayContaining(t.children.map(([childSObject, field]) => expect.objectContaining({ childSObject, field }) as unknown)));
+    }
+    const licenseRels = json(await get(`${V}/sobjects/UserLicense/describe`))["childRelationships"] as Json[];
+    expect(licenseRels.find((r) => r["childSObject"] === "Profile")).toMatchObject({ field: "UserLicenseId", relationshipName: "Profiles" });
+  });
+});
+
+describe("write protection", () => {
+  it("write protection: REST refuses what a thin object's flags forbid with 400 INVALID_TYPE_FOR_OPERATION", async () => {
+    const refused = (res: { statusCode: number; body: string }, name: string, op: string) => {
+      expect(res.statusCode, `${name} ${op}`).toBe(400);
+      expect(arr(res)).toEqual([{ message: `entity type ${name} does not support ${op}`, errorCode: "INVALID_TYPE_FOR_OPERATION" }]);
+    };
+    refused(await post(`${V}/sobjects/UserLicense`, { Name: "x", MasterLabel: "x" }), "UserLicense", "insert");
+    const center = await post(`${V}/sobjects/CallCenter`, { Name: "REST Center" });
+    expect(center.statusCode).toBe(201);
+    refused(await patch(`${V}/sobjects/CallCenter/${String(json(center)["id"])}`, { Name: "Renamed" }), "CallCenter", "update");
+    refused(await patch(`${V}/sobjects/UserLicense/Name/Salesforce`, { MasterLabel: "x" }), "UserLicense", "upsert");
+    const hours = await post(`${V}/sobjects/BusinessHours`, { Name: "REST Hours" });
+    expect(hours.statusCode).toBe(201);
+    refused(await del(`${V}/sobjects/BusinessHours/${String(json(hours)["id"])}`), "BusinessHours", "delete");
+    const allowed = await post(`${V}/sobjects/Entitlement`, { Name: "Gold Support" });
+    expect(allowed.statusCode).toBe(201);
+    expect(String(json(allowed)["id"])).toMatch(/^550[0-9A-Za-z]{15}$/);
   });
 });
