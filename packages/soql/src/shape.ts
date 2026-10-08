@@ -1,6 +1,7 @@
 /**
  * Turns result rows into Salesforce record JSON according to a Shape.
  */
+import { keyPrefixOf } from "@orglet/schema";
 import type { AggregateShape, SObjectShape, Shape } from "./compile.js";
 
 export type Row = Record<string, unknown>;
@@ -8,6 +9,8 @@ export type Row = Record<string, unknown>;
 export interface ShapeOptions {
   /** e.g. "59.0"; used for `attributes.url`. */
   apiVersion: string;
+  /** Called with the key prefix of a polymorphic lookup value that matches no modelled object (D-07); the parent is returned as null. */
+  onUnmodelledPrefix?: (prefix: string) => void;
 }
 
 export interface QueryRecords {
@@ -21,9 +24,20 @@ export function attributes(type: string, id: unknown, apiVersion: string): Row {
 }
 
 export function shapeSObjectRow(shape: SObjectShape, row: Row, options: ShapeOptions): Row | null {
+  let type = shape.type;
+  if (shape.poly) {
+    // A polymorphic parent is typed per row from its Id prefix; a prefix no modelled object owns is a null parent, never a synthetic object (D-19).
+    const concrete = row[shape.poly.typeAlias];
+    if (typeof concrete !== "string") {
+      const fk = row[shape.poly.fkAlias];
+      if (typeof fk === "string") options.onUnmodelledPrefix?.(keyPrefixOf(fk));
+      return null;
+    }
+    type = concrete;
+  }
   const id = row[shape.idAlias];
   if (id === null || id === undefined) return null;
-  const record: Row = { attributes: attributes(shape.type, id, options.apiVersion) };
+  const record: Row = { attributes: attributes(type, id, options.apiVersion) };
   for (const f of shape.fields) {
     const v = row[f.alias];
     record[f.name] = f.labels && typeof v === "string" ? (f.labels.get(v) ?? v) : v;
