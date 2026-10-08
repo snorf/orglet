@@ -51,7 +51,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   ExternalDataSource, IdeaTheme, Individual, OperatingHours, OpportunityHistory,
   ServiceAppointment, ServiceContract, SocialPost, UserLicense) exist as baseline objects with
   their documented key prefix, Id, name-equivalent field and system fields
-- [ ] **BASE-02**: Lookups to any of the 14 objects are reference-checked on save
+- [x] **BASE-02**: Lookups to any of the 14 objects are reference-checked on save
   (`INVALID_CROSS_REFERENCE_KEY` on a bad Id) instead of accepted unchecked
 - [x] **BASE-03**: Each of the 14 objects exposes `createable`, `updateable` and `deletable`
   in describe exactly as the public Object Reference documents (ExternalDataSource,
@@ -198,7 +198,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PREFIX-03 | Phase 2 | Complete |
 | PREFIX-04 | Phase 2 | Complete |
 | BASE-01 | Phase 3 | Complete |
-| BASE-02 | Phase 3 | Pending |
+| BASE-02 | Phase 3 | Complete |
 | BASE-03 | Phase 3 | Complete |
 | BASE-04 | Phase 3 | Pending |
 | BASE-05 | Phase 3 | Complete |

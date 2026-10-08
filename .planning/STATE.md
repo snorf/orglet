@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-10-08T13:11:13.500Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-10-08T13:17:48.776Z"
 last_activity: 2026-10-08
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 03 (Thin Standard-Object Baselines) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-10-08
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-custom-object-key-prefix-persistence P02 | 6min | 2 tasks | 5 files |
 | Phase 02-custom-object-key-prefix-persistence P03 | 6min | 3 tasks | 1 files |
 | Phase 03 P01 | 8min | 2 tasks | 19 files |
+| Phase 03 P02 | 12min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,10 @@ Recent decisions affecting current work:
 - [Phase 02-custom-object-key-prefix-persistence]: devrandom checkpoint approved 2026-10-02; both custom tables empty so the seed source was `provisional`, values identical to the old scheme
 - [Phase 03]: Thin objects carry only name field, system fields, OwnerId when owned plus D-07 seed fields; flags explicit per JSON, no thin switch
 - [Phase 03]: BusinessHours and BusinessProcess are create/update only, no delete; REQUIREMENTS and ROADMAP corrected (D-04)
+- [Phase 03]: Object-flag violations return INVALID_TYPE_FOR_OPERATION (was INVALID_OPERATION); REST status stays 400; upsert needs createable+updateable, undelete needs undeletable
+- [Phase 03]: Import mode bypasses object flags (D-08) via one DmlEngine.refuse() guard
+- [Phase 03]: Bootstrap seeds Default BusinessHours and Salesforce UserLicense through Store, links admin profile only while UserLicenseId is NULL
+- [Phase 03]: migrate() wraps FK 23503 into an error naming table, column and target; no NOT VALID
 
 ### Pending Todos
 
@@ -104,6 +109,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T13:11:13.497Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-10-08T13:17:48.773Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
