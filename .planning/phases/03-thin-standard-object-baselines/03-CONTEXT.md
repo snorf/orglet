@@ -69,10 +69,9 @@ re-run (phase 7), polymorphic lookups (phase 4).
     the devrandom-heimdall org, 2026-10-08).
   - OperatingHours: prefix `0OH`, name field `Name`, owned. CONFIRMED (same run; settles the
     v56/v68 ownership conflict in favour of owned).
-  - IdeaTheme: NOT_FOUND in the Developer Edition (needs Ideas enabled), so it cannot be
-    confirmed there. Use the research's safe default and mark it UNVERIFIED in the SUMMARY of
-    the plan that writes its JSON: prefix `0Bg`, name field `Title`, not owned. No further
-    checkpoint is needed.
+  - IdeaTheme: prefix `0Bg`, name field `Title`, not owned. CONFIRMED (third run, 2026-10-08,
+    after enabling Ideas and Idea Themes in the devrandom-heimdall org).
+  All 14 objects are now fully confirmed; nothing is to be marked UNVERIFIED.
 
 ### Seed rows at bootstrap
 - **D-05:** `bootstrapOrg` seeds one `BusinessHours` row (`Name` "Default", `IsDefault` true,
