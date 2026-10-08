@@ -1,6 +1,6 @@
 # Phase 3: Thin Standard-Object Baselines - Context
 
-**Gathered:** 2026-10-08
+**Gathered:** 2026-10-08 (checkpoint D-03a added after research, same day)
 **Status:** Ready for planning
 
 <domain>
@@ -55,6 +55,23 @@ re-run (phase 7), polymorphic lookups (phase 4).
   and BusinessProcess have no `delete()`), the Object Reference wins and the REQUIREMENTS/ROADMAP
   wording is corrected in this phase.
 
+- **D-03a (checkpoint resolved 2026-10-08):** Research (03-RESEARCH.md §Fact Table) confirmed
+  all 14 flag sets and 13 of 14 prefixes from public sources. Johan answered the remaining
+  questions from his own Developer Edition's describe (his call; orglet never contacts an org;
+  record the source as "author's own DE describe, 2026-10-08" in the SUMMARY):
+  - Entitlement: prefix `550`, name field `Name`, not owned. CONFIRMED.
+  - ServiceContract: prefix `810`, name field `Name`, owned. CONFIRMED.
+  - ExternalDataSource: prefix `0XC`, name field `DeveloperName`, not owned. CONFIRMED.
+  - UserLicense: prefix `100`, name field `Name` (idLookup), not owned; `MasterLabel` exists
+    as a second field. CONFIRMED (supersedes the D-05/D-07 assumption that MasterLabel is the
+    name field; see D-07a).
+  - IdeaTheme, DandBCompany, OperatingHours: NOT_FOUND in a plain Developer Edition (they need
+    Ideas, Data.com and Field Service respectively), so they cannot be confirmed there. Use the
+    research's safe defaults and mark them UNVERIFIED in the SUMMARY and in a comment-equivalent
+    note next to the JSON (e.g. the plan's SUMMARY table): IdeaTheme prefix `0Bg`, name field
+    `Title`; DandBCompany name field `Name`, not owned; OperatingHours name field `Name`,
+    owned (per Object Reference v68). No further checkpoint is needed for these.
+
 ### Seed rows at bootstrap
 - **D-05:** `bootstrapOrg` seeds one `BusinessHours` row (`Name` "Default", `IsDefault` true,
   `IsActive` true) and one `UserLicense` row (`MasterLabel` "Salesforce") and points the
@@ -65,8 +82,12 @@ re-run (phase 7), polymorphic lookups (phase 4).
   `Profile.UserLicenseId` is set only when it is null. Same pattern as Organization/User today.
   Johan's devrandom org therefore gains the two rows on its next `up`.
 - **D-07:** The seed rows are the one explicit exception to D-01: BusinessHours carries
-  `IsDefault` and `IsActive`, UserLicense carries `MasterLabel` (its name field anyway), and
-  the existing `Profile.UserLicenseId` lookup becomes a real, checked reference to UserLicense.
+  `IsDefault` and `IsActive`, UserLicense carries `MasterLabel` in addition to its name field,
+  and the existing `Profile.UserLicenseId` lookup becomes a real, checked reference to UserLicense.
+- **D-07a:** Per D-03a, UserLicense's name field is `Name` (nameField, idLookup), with
+  `MasterLabel` as a second required text field. The seed row sets both to "Salesforce".
+  D-06's idempotency key for UserLicense stays `MasterLabel` as written (either field is
+  unique in practice; keep the decision stable).
 
 ### Write protection and import mode
 - **D-08:** Object-level flags are bypassed in import mode (`orglet up --import`), exactly as
