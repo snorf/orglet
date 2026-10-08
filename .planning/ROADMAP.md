@@ -102,7 +102,7 @@ and formula parent traversal — in agreement with the already-correct write pat
   5. The documented invalid TYPEOF forms (in `WHERE`, `GROUP BY`, `HAVING`, inside a semi-join, functions in `WHEN`, nested TYPEOF, with `COUNT()`) are rejected with a `MALFORMED_QUERY` error naming the restriction.
 **Plans**: 7 plans
 Plans:
-- [ ] 04-01-PLAN.md — Shared `matchTargetByPrefix` helper; checkReferences and loadParents use it (wave 1)
+- [x] 04-01-PLAN.md — Shared `matchTargetByPrefix` helper; checkReferences and loadParents use it (wave 1)
 - [ ] 04-02-PLAN.md — POLY-06: invalid TYPEOF forms rejected as MALFORMED_QUERY naming the restriction (wave 1)
 - [ ] 04-03-PLAN.md — Formula half of POLY-01 as the D-16 fallback; sigha and OwnerId todos (wave 1)
 - [ ] 04-04-PLAN.md — Polymorphic joins per target, Name pseudo-object, `<rel>.Type`, per-row attributes.type (wave 2)

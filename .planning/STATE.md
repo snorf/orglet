@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Phase 4 context gathered
-last_updated: "2026-10-08T19:04:18.057Z"
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-10-08T20:18:17.424Z"
 last_activity: 2026-10-08
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 18
+  completed_plans: 12
   percent: 0
 ---
 
@@ -23,13 +23,13 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 4 — Polymorphic Lookups & SOQL TYPEOF
+**Current focus:** Phase 04 — polymorphic-lookups-soql-typeof
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
-Status: Phase 3 verified and complete (branch not pushed, no PR yet); Phase 4 ready to discuss/plan
+Phase: 04 (polymorphic-lookups-soql-typeof) — EXECUTING
+Plan: 2 of 7
+Status: Ready to execute
 Last activity: 2026-10-08
 
 Progress: [░░░░░░░░░░] 0%
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03 P02 | 12min | 3 tasks | 7 files |
 | Phase 03 P03 | 10min | 2 tasks | 5 files |
 | Phase 03 P04 | n/a | 3 tasks | 4 files |
+| Phase 04 P01 | 10min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,7 @@ Recent decisions affecting current work:
 - [Phase 03]: SDK describe key sets live once in conformance/describe-check/contract.json, read by vitest and plan 03-04 scripts
 - [Phase 03]: idEnabled added to describe summaries; only jsforce key orglet omitted
 - [Phase 03]: devrandom upgrade approved 2026-10-08: 14 tables added, seed rows created once, FKs added without dangling-data errors, second start silent
+- [Phase 04]: loadParents stops at a polymorphic parent and gates on referenceTo.length > 1; one matchTargetByPrefix helper shared by write and read paths
 
 ### Pending Todos
 
@@ -114,6 +116,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T19:04:18.054Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-polymorphic-lookups-soql-typeof/04-CONTEXT.md
+Last session: 2026-10-08T20:18:17.421Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
