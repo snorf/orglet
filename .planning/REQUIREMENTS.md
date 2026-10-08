@@ -78,7 +78,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   END` compiles and returns per-row shaped results according to the matching branch
 - [ ] **POLY-05**: `<relationship>.Type` is selectable and filterable in `WHERE` as a string
   comparison against the concrete object name
-- [ ] **POLY-06**: The documented invalid TYPEOF forms (in `WHERE`, `GROUP BY`, `HAVING`, inside
+- [x] **POLY-06**: The documented invalid TYPEOF forms (in `WHERE`, `GROUP BY`, `HAVING`, inside
   a semi-join subquery, functions in `WHEN`, nested TYPEOF, with `COUNT()`) are rejected with a
   `MALFORMED_QUERY` error whose message names the restriction
 
@@ -207,7 +207,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POLY-03 | Phase 4 | Pending |
 | POLY-04 | Phase 4 | Pending |
 | POLY-05 | Phase 4 | Pending |
-| POLY-06 | Phase 4 | Pending |
+| POLY-06 | Phase 4 | Complete |
 | ROLL-01 | Phase 5 | Pending |
 | ROLL-02 | Phase 5 | Pending |
 | ROLL-03 | Phase 5 | Pending |
