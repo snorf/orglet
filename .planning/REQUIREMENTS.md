@@ -66,7 +66,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Polymorphic Lookups & SOQL TYPEOF
 
-- [ ] **POLY-01**: A polymorphic lookup (for example `OwnerId` → User or Group) resolves its
+- [x] **POLY-01**: A polymorphic lookup (for example `OwnerId` → User or Group) resolves its
   target object per row from the Id key prefix in SOQL parent traversal, result shaping and
   formula parent references; the write path already does this and is the reference behaviour
 - [ ] **POLY-02**: A polymorphic parent in a query result carries `attributes.type` of the
@@ -202,7 +202,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-03 | Phase 3 | Complete |
 | BASE-04 | Phase 3 | Complete |
 | BASE-05 | Phase 3 | Complete |
-| POLY-01 | Phase 4 | Pending |
+| POLY-01 | Phase 4 | Complete |
 | POLY-02 | Phase 4 | Pending |
 | POLY-03 | Phase 4 | Pending |
 | POLY-04 | Phase 4 | Pending |
