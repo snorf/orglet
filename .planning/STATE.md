@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 04-07-PLAN.md
-last_updated: "2026-10-08T21:26:50.838Z"
+status: ready_to_plan
+stopped_at: Phase 4 verified and complete; Phase 5 ready to discuss/plan
+last_updated: "2026-10-08T22:01:32.011Z"
 last_activity: 2026-10-08
 progress:
   total_phases: 7
@@ -23,12 +23,12 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 04 — polymorphic-lookups-soql-typeof
+**Current focus:** Phase 5 — Roll-Up Summary Fields
 
 ## Current Position
 
-Phase: 04 (polymorphic-lookups-soql-typeof) — EXECUTING
-Plan: 7 of 7
+Phase: 5
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-10-08
 
