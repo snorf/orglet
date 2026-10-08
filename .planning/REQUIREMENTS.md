@@ -55,7 +55,8 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   (`INVALID_CROSS_REFERENCE_KEY` on a bad Id) instead of accepted unchecked
 - [ ] **BASE-03**: Each of the 14 objects exposes `createable`, `updateable` and `deletable`
   in describe exactly as the public Object Reference documents (ExternalDataSource,
-  OpportunityHistory and UserLicense read-only; CallCenter create-only; the rest full CRUD),
+  OpportunityHistory and UserLicense read-only; CallCenter create-only; BusinessHours and
+  BusinessProcess create/update only, no delete; the rest full CRUD),
   and DML that violates a flag is rejected with the Salesforce error code
 - [ ] **BASE-04**: Describe for a thin object still contains everything `jsforce` and
   `simple-salesforce` read (`keyPrefix`, `nameField`/`name`, `urls`, `fields[]`,

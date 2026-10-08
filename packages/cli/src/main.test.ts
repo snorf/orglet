@@ -9,13 +9,17 @@ import { main } from "./main.js";
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 
 let logs: string[] = [];
+let warns: string[] = [];
 
 beforeEach(() => {
   logs = [];
+  warns = [];
   vi.spyOn(console, "log").mockImplementation((...args: unknown[]) => {
     logs.push(args.map(String).join(" "));
   });
-  vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+    warns.push(args.map(String).join(" "));
+  });
 });
 
 afterEach(() => {
@@ -32,6 +36,12 @@ describe("check", () => {
     expect(logs).toContain("  UpsertTable__c  a03  (provisional)");
     expect(logs).toContain("custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter");
     expect(logs.filter((l) => /\(provisional\)$/.test(l))).toHaveLength(4);
+  });
+
+  it("reports no reference-target warning, and no warning at all, for acme", async () => {
+    expect(await main(["check", "--project", ACME])).toBe(0);
+    expect(warns.filter((w) => w.includes("UNSUPPORTED:reference-target"))).toEqual([]);
+    expect(warns).toEqual([]);
   });
 
   it("prints nothing with --quiet", async () => {

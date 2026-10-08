@@ -77,7 +77,7 @@ correctly-described, reference-checkable baseline objects with documented DML re
 **Success Criteria** (what must be TRUE):
   1. All 14 named objects (BusinessHours, BusinessProcess, CallCenter, DandBCompany, Entitlement, ExternalDataSource, IdeaTheme, Individual, OperatingHours, OpportunityHistory, ServiceAppointment, ServiceContract, SocialPost, UserLicense) exist as baseline objects with their documented key prefix, name-equivalent field and system fields.
   2. A lookup pointing at any of the 14 objects with an invalid Id is rejected on save with `INVALID_CROSS_REFERENCE_KEY` instead of being accepted unchecked.
-  3. DML against each of the 14 objects respects its documented createable/updateable/deletable flags (ExternalDataSource, OpportunityHistory and UserLicense read-only; CallCenter create-only; the rest full CRUD), rejected with the correct Salesforce error code when violated.
+  3. DML against each of the 14 objects respects its documented createable/updateable/deletable flags (ExternalDataSource, OpportunityHistory and UserLicense read-only; CallCenter create-only; BusinessHours and BusinessProcess create/update only, no delete; the rest full CRUD), rejected with the correct Salesforce error code when violated.
   4. `describe()` for each thin object, exercised through both `jsforce` and `simple-salesforce`, returns everything those SDKs read (`keyPrefix`, `nameField`/`name`, `urls`, `fields[]`, `childRelationships[]`) without error.
   5. Loading Johan's Developer Edition retrieve produces zero `UNSUPPORTED:reference-target` warnings.
 **Plans**: 4 plans
