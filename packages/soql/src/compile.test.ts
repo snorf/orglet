@@ -327,3 +327,73 @@ describe("TYPEOF restrictions", () => {
     expect(e.message).not.toMatch(/TYPEOF/);
   });
 });
+
+describe("TYPEOF", () => {
+  const typeofOf = (soql: string, rel: string) => {
+    const q = compile(soql);
+    const t = q.shape.kind === "sobject" ? q.shape.typeofs?.get(rel) : undefined;
+    if (!t) throw new Error(`no TYPEOF shape for ${rel}`);
+    return { q, t };
+  };
+
+  it("compiles each WHEN into a branch shape on its own target and ELSE into a Name-object shape", () => {
+    const { q, t } = typeofOf("SELECT Id, TYPEOF Owner WHEN User THEN Alias, Email WHEN Group THEN Name, Type ELSE Name END FROM Case", "Owner");
+    expect([...t.branches.keys()]).toEqual(["User", "Group"]);
+    expect(t.branches.get("User")?.type).toBe("User");
+    expect(t.branches.get("User")?.fields.map((f) => f.name)).toEqual(["Alias", "Email"]);
+    expect(t.branches.get("Group")?.fields.map((f) => f.name)).toEqual(["Name", "Type"]);
+    // Inside WHEN Group, Type is Group's own column (Queue/Regular), not the Id-prefix CASE.
+    const groupType = t.branches.get("Group")?.fields.find((f) => f.name === "Type");
+    expect(q.sql).toContain(`t2."type" AS "${groupType?.alias ?? ""}"`);
+    expect(t.else?.fields.map((f) => f.name)).toEqual(["Name"]);
+    expect(t.else?.poly).toEqual({ typeAlias: t.typeAlias, fkAlias: t.fkAlias });
+    expect(t.typeAlias).toMatch(/^c\d+$/);
+    expect(t.fkAlias).toMatch(/^c\d+$/);
+    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(2);
+  });
+
+  it("TYPEOF shares the polymorphic joins with an Owner.Type filter", () => {
+    const { q } = typeofOf("SELECT TYPEOF Owner WHEN User THEN Alias END FROM Case WHERE Owner.Type = 'User'", "Owner");
+    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(2);
+    expect(q.params).toEqual(["User"]);
+  });
+
+  it("two TYPEOF expressions on different relationships each get their own joins and shape", () => {
+    const q = compile("SELECT TYPEOF What WHEN Account THEN Name END, TYPEOF Owner WHEN User THEN Alias END FROM Task");
+    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(9);
+    const typeofs = q.shape.kind === "sobject" ? q.shape.typeofs : undefined;
+    expect([...(typeofs?.keys() ?? [])]).toEqual(["What", "Owner"]);
+    expect(typeofs?.get("What")?.branches.get("Account")?.fields.map((f) => f.name)).toEqual(["Name"]);
+    expect(typeofs?.get("Owner")?.branches.get("User")?.fields.map((f) => f.name)).toEqual(["Alias"]);
+  });
+
+  it("TYPEOF on a non-polymorphic relationship is MALFORMED_QUERY", () => {
+    const e = rejected("SELECT TYPEOF Account WHEN Account THEN Name END FROM Contact");
+    expect(e.errorCode).toBe("MALFORMED_QUERY");
+    expect(e.message).toMatch(/polymorphic/);
+  });
+
+  it("a WHEN naming an object outside referenceTo is MALFORMED_QUERY", () => {
+    const e = rejected("SELECT TYPEOF Owner WHEN Contact THEN Name END FROM Case");
+    expect(e.errorCode).toBe("MALFORMED_QUERY");
+    expect(e.message).toMatch(/Contact/);
+  });
+
+  it("an ELSE field outside the Name pseudo-object is INVALID_FIELD on entity Name", () => {
+    const e = rejected("SELECT TYPEOF Owner WHEN User THEN Alias ELSE Department END FROM Case");
+    expect(e.errorCode).toBe("INVALID_FIELD");
+    expect(e.message).toMatch(/entity 'Name'/);
+  });
+
+  it("a relationship path inside a WHEN field list is UNSUPPORTED:polymorphic-traversal", () => {
+    const e = rejected("SELECT TYPEOF Owner WHEN User THEN Manager.Name END FROM Case");
+    expect(e.errorCode).toBe("UNSUPPORTED");
+    expect(e.message).toMatch(/UNSUPPORTED:polymorphic-traversal/);
+  });
+
+  it("an unknown field in a WHEN list is INVALID_FIELD on the branch's object", () => {
+    const e = rejected("SELECT TYPEOF Owner WHEN User THEN Nope END FROM Case");
+    expect(e.errorCode).toBe("INVALID_FIELD");
+    expect(e.message).toMatch(/entity 'User'/);
+  });
+});
