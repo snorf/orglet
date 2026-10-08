@@ -80,7 +80,12 @@ correctly-described, reference-checkable baseline objects with documented DML re
   3. DML against each of the 14 objects respects its documented createable/updateable/deletable flags (ExternalDataSource, OpportunityHistory and UserLicense read-only; CallCenter create-only; the rest full CRUD), rejected with the correct Salesforce error code when violated.
   4. `describe()` for each thin object, exercised through both `jsforce` and `simple-salesforce`, returns everything those SDKs read (`keyPrefix`, `nameField`/`name`, `urls`, `fields[]`, `childRelationships[]`) without error.
   5. Loading Johan's Developer Edition retrieve produces zero `UNSUPPORTED:reference-target` warnings.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 03-01-PLAN.md — 14 thin baseline JSON files (explicit flags), `build.test.ts` T1/T2 + name-field invariant, `main.test.ts` T3, `prefixes.test.ts` T12, BASE-03 wording fix
+- [ ] 03-02-PLAN.md — `Errors.invalidTypeForOperation` + object-flag guard for all five DML operations with import-mode bypass (T4/T5/T7/T8), bootstrap seed rows (`bootstrap.test.ts` T9), `migrate()` dangling-FK error (T13)
+- [ ] 03-03-PLAN.md — describe `idEnabled`, shared `conformance/describe-check` contract, `api.test.ts` T10 describe contract + T11 REST write protection, README section
+- [ ] 03-04-PLAN.md — describe-check scripts (jsforce, simple-salesforce), full suite both backends, M1/M2/M3, Johan's devrandom checkpoint
 **Research flag**: yes — confirm per-object key prefix and name-equivalent field against the Object Reference before writing each of the 14 JSON baselines; `IdeaTheme`'s prefix and `DandBCompany`/`Entitlement`/`ServiceContract`/`SocialPost`'s name fields are single-source or unconfirmed per research.
 
 ### Phase 4: Polymorphic Lookups & SOQL TYPEOF
@@ -146,7 +151,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Test Infrastructure & CI | 3/4 | Complete    | 2026-10-01 |
 | 2. Custom-Object Key-Prefix Persistence | 3/3 | Complete | 2026-10-02 |
-| 3. Thin Standard-Object Baselines | 0/TBD | Not started | - |
+| 3. Thin Standard-Object Baselines | 0/4 | Planned | - |
 | 4. Polymorphic Lookups & SOQL TYPEOF | 0/TBD | Not started | - |
 | 5. Roll-Up Summary Fields | 0/TBD | Not started | - |
 | 6. Bulk API 2.0 Persistence | 0/TBD | Not started | - |
