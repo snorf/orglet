@@ -21,8 +21,9 @@ export interface EngineOptions {
   executors?: TriggerExecutor[];
   /**
    * Data-migration mode: records may carry their original Id and audit fields, lookups are
-   * not checked (so parents and children can arrive in any order), and validation rules and
-   * hooks are bypassed. Postgres foreign keys are disabled for the session while it is on.
+   * not checked (so parents and children can arrive in any order), object- and field-level
+   * create/update/delete flags are not enforced, and validation rules and hooks are bypassed.
+   * Postgres foreign keys are disabled for the session while it is on.
    */
   importMode?: boolean;
 }
@@ -53,6 +54,8 @@ interface Globals {
   profile?: RecordData;
   organization?: RecordData;
 }
+
+type ObjectOperation = "insert" | "update" | "upsert" | "delete" | "undelete";
 
 const isPgUniqueViolation = (err: unknown): err is { code: string; constraint?: string } =>
   typeof err === "object" && err !== null && (err as { code?: string }).code === "23505";
@@ -87,12 +90,32 @@ export class DmlEngine {
     return obj;
   }
 
+  /**
+   * Object-level createable/updateable/deletable/undeletable flags (the Object Reference's
+   * Supported Calls; upsert needs both create and update). Import mode bypasses them, as
+   * coerce.ts bypasses field-level flags, so read-only objects can be migrated (D-08).
+   */
+  private refuse(obj: SObjectDef, operation: ObjectOperation, count: number): SaveResult[] | undefined {
+    if (this.importMode) return undefined;
+    const allowed: Record<ObjectOperation, boolean> = {
+      insert: obj.createable,
+      update: obj.updateable,
+      upsert: obj.createable && obj.updateable,
+      delete: obj.deletable,
+      undelete: obj.undeletable,
+    };
+    if (allowed[operation]) return undefined;
+    // A fresh error per result, so a caller that mutates one result cannot change another.
+    return Array.from({ length: count }, () => failure([Errors.invalidTypeForOperation(`entity type ${obj.name} does not support ${operation}`)]));
+  }
+
   // ---------------------------------------------------------------------------------------
   // Public DML
 
   async insert(session: Session, sobject: string, inputs: Record<string, unknown>[], options: DmlOptions = {}): Promise<SaveResult[]> {
     const obj = this.object(sobject);
-    if (!obj.createable) return inputs.map(() => failure([Errors.invalidOperation(`entity type ${obj.name} does not support insert`)]));
+    const refused = this.refuse(obj, "insert", inputs.length);
+    if (refused) return refused;
     return this.run(session, obj, "insert", options, async (client, globals) => {
       const work = inputs.map((input, index) => this.prepareInsert(obj, input, index));
       await this.saveBatch(client, session, obj, "insert", work, globals);
@@ -102,7 +125,8 @@ export class DmlEngine {
 
   async update(session: Session, sobject: string, inputs: Record<string, unknown>[], options: DmlOptions = {}): Promise<SaveResult[]> {
     const obj = this.object(sobject);
-    if (!obj.updateable) return inputs.map(() => failure([Errors.invalidOperation(`entity type ${obj.name} does not support update`)]));
+    const refused = this.refuse(obj, "update", inputs.length);
+    if (refused) return refused;
     return this.run(session, obj, "update", options, async (client, globals) => {
       const work = inputs.map((input, index) => this.prepareUpdate(obj, input, index));
       await this.attachOld(client, obj, work);
@@ -113,6 +137,8 @@ export class DmlEngine {
 
   async upsert(session: Session, sobject: string, externalIdField: string, inputs: Record<string, unknown>[], options: DmlOptions = {}): Promise<SaveResult[]> {
     const obj = this.object(sobject);
+    const refused = this.refuse(obj, "upsert", inputs.length);
+    if (refused) return refused;
     const extField = this.schema.getField(obj.name, externalIdField);
     if (!extField || !(extField.idLookup || extField.name === "Id")) {
       return inputs.map(() => failure([Errors.invalidField(externalIdField, obj.name)]));
@@ -155,7 +181,8 @@ export class DmlEngine {
 
   async delete(session: Session, sobject: string, ids: string[], options: DmlOptions = {}): Promise<SaveResult[]> {
     const obj = this.object(sobject);
-    if (!obj.deletable) return ids.map(() => failure([Errors.invalidOperation(`entity type ${obj.name} does not support delete`)]));
+    const refused = this.refuse(obj, "delete", ids.length);
+    if (refused) return refused;
     return this.run(session, obj, "delete", options, async (client, globals) => {
       const work = ids.map((raw, index) => this.prepareId(obj, raw, index));
       await this.attachOld(client, obj, work);
@@ -166,6 +193,8 @@ export class DmlEngine {
 
   async undelete(session: Session, sobject: string, ids: string[], options: DmlOptions = {}): Promise<SaveResult[]> {
     const obj = this.object(sobject);
+    const refused = this.refuse(obj, "undelete", ids.length);
+    if (refused) return refused;
     return this.run(session, obj, "undelete", options, async (client, globals) => {
       const work = ids.map((raw, index) => this.prepareId(obj, raw, index));
       await this.attachOld(client, obj, work, true);
