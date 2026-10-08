@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-10-08T21:17:59.434Z"
+stopped_at: Completed 04-06-PLAN.md
+last_updated: "2026-10-08T21:22:23.417Z"
 last_activity: 2026-10-08
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 04 (polymorphic-lookups-soql-typeof) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-10-08
 
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04 P03 | 10min | 2 tasks | 4 files |
 | Phase 04 P04 | 7min | 3 tasks | 6 files |
 | Phase 04 P05 | 8min | 3 tasks | 7 files |
+| Phase 04 P06 | 12min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,7 @@ Recent decisions affecting current work:
 - [Phase 04]: Polymorphic parent shape carries type '' and takes attributes.type from the per-row typeAlias column; a row without one is a null parent (D-02, D-19)
 - [Phase 04]: TYPEOF: a WHEN naming a declared but unmodelled target is dropped at compile time (D-13); Type inside WHEN Group is Group's own column
 - [Phase 04]: TYPEOF: an unmodelled prefix is a null parent with or without ELSE, never a synthetic object (D-19); onUnmodelledPrefix fires once per row
+- [Phase 04]: QueryPage.warnings is absent when nothing degraded; REST route logs it once per query via req.log.warn
 
 ### Pending Todos
 
@@ -126,6 +128,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T21:17:59.428Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-10-08T21:22:23.409Z
+Stopped at: Completed 04-06-PLAN.md
 Resume file: None
