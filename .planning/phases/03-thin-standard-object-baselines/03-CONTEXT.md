@@ -65,12 +65,14 @@ re-run (phase 7), polymorphic lookups (phase 4).
   - UserLicense: prefix `100`, name field `Name` (idLookup), not owned; `MasterLabel` exists
     as a second field. CONFIRMED (supersedes the D-05/D-07 assumption that MasterLabel is the
     name field; see D-07a).
-  - IdeaTheme, DandBCompany, OperatingHours: NOT_FOUND in a plain Developer Edition (they need
-    Ideas, Data.com and Field Service respectively), so they cannot be confirmed there. Use the
-    research's safe defaults and mark them UNVERIFIED in the SUMMARY and in a comment-equivalent
-    note next to the JSON (e.g. the plan's SUMMARY table): IdeaTheme prefix `0Bg`, name field
-    `Title`; DandBCompany name field `Name`, not owned; OperatingHours name field `Name`,
-    owned (per Object Reference v68). No further checkpoint is needed for these.
+  - DandBCompany: prefix `06E`, name field `Name`, not owned. CONFIRMED (second run against
+    the devrandom-heimdall org, 2026-10-08).
+  - OperatingHours: prefix `0OH`, name field `Name`, owned. CONFIRMED (same run; settles the
+    v56/v68 ownership conflict in favour of owned).
+  - IdeaTheme: NOT_FOUND in the Developer Edition (needs Ideas enabled), so it cannot be
+    confirmed there. Use the research's safe default and mark it UNVERIFIED in the SUMMARY of
+    the plan that writes its JSON: prefix `0Bg`, name field `Title`, not owned. No further
+    checkpoint is needed.
 
 ### Seed rows at bootstrap
 - **D-05:** `bootstrapOrg` seeds one `BusinessHours` row (`Name` "Default", `IsDefault` true,
