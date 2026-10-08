@@ -84,6 +84,39 @@ that have no assignment yet and never overrides a stored one. orglet never conne
 read the values from your own org, for example
 `sf sobject describe --sobject Project__c --json | jq -r '.result.keyPrefix'`.
 
+## Thin standard objects
+
+Besides the fully modelled standard objects, the baseline carries 14 objects a Developer Edition
+org references but orglet models only thinly: BusinessHours, BusinessProcess, CallCenter,
+DandBCompany, Entitlement, ExternalDataSource, IdeaTheme, Individual, OperatingHours,
+OpportunityHistory, ServiceAppointment, ServiceContract, SocialPost and UserLicense. Each has its
+documented key prefix, its name field (OpportunityHistory has none), the system fields and, where
+the object is owned, `OwnerId`; no other business fields yet. Lookups to them are checked on save
+like any other lookup.
+
+DML follows the Object Reference's supported calls. A call an object does not support fails with
+`INVALID_TYPE_FOR_OPERATION` (HTTP 400 over REST):
+
+| Object | create | update | delete |
+|---|---|---|---|
+| ExternalDataSource, OpportunityHistory, UserLicense | no | no | no |
+| CallCenter | yes | no | no |
+| BusinessHours, BusinessProcess | yes | yes | no |
+| the other eight | yes | yes | yes |
+
+- `orglet up --import` bypasses these rules, so rows of read-only objects can be migrated from a
+  real org.
+- `orglet up` creates one default BusinessHours ("Default") and one UserLicense ("Salesforce") and
+  points the System Administrator profile at it, once; existing rows are never changed.
+- Every object gets the same system fields, so BusinessHours, BusinessProcess, CallCenter and
+  UserLicense describe an `IsDeleted` field the real objects lack, UserLicense also `CreatedById`
+  and `LastModifiedById`, and OpportunityHistory `LastModifiedDate` and `LastModifiedById`.
+- Upgrading an existing database adds foreign keys for lookups that were unchecked before. If a
+  row already holds an Id with no matching record (typically a lookup loaded with `--import`
+  whose target was not imported), `orglet up` stops with
+  `cannot add foreign key <name>: <schema>.<table>.<column> holds values with no matching row in ...`;
+  clear or fix those values and run it again.
+
 ## Layout
 
 ```
