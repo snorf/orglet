@@ -100,7 +100,15 @@ and formula parent traversal — in agreement with the already-correct write pat
   3. A polymorphic value whose key prefix matches no modelled object degrades to a `null` parent (or the `ELSE` branch in TYPEOF) instead of throwing.
   4. `SELECT TYPEOF <field> WHEN <Object> THEN <fields> [WHEN ...] [ELSE <fields>] END` compiles and returns the matching branch's fields shaped per row, and `<relationship>.Type` is filterable in `WHERE` as a string comparison against the concrete object name.
   5. The documented invalid TYPEOF forms (in `WHERE`, `GROUP BY`, `HAVING`, inside a semi-join, functions in `WHEN`, nested TYPEOF, with `COUNT()`) are rejected with a `MALFORMED_QUERY` error naming the restriction.
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 04-01-PLAN.md — Shared `matchTargetByPrefix` helper; checkReferences and loadParents use it (wave 1)
+- [ ] 04-02-PLAN.md — POLY-06: invalid TYPEOF forms rejected as MALFORMED_QUERY naming the restriction (wave 1)
+- [ ] 04-03-PLAN.md — Formula half of POLY-01 as the D-16 fallback; sigha and OwnerId todos (wave 1)
+- [ ] 04-04-PLAN.md — Polymorphic joins per target, Name pseudo-object, `<rel>.Type`, per-row attributes.type (wave 2)
+- [ ] 04-05-PLAN.md — TYPEOF compile and per-row branch shaping (wave 3)
+- [ ] 04-06-PLAN.md — Unmodelled-prefix warning plumbing, SC1 three-way and D-13 tests, REST log line (wave 4)
+- [ ] 04-07-PLAN.md — jsforce + simple-salesforce poly-check against live orglet; both backends green (wave 5)
 **Research flag**: yes — read the exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js`'s `.d.ts` during implementation, and confirm parser AST coverage for `WHERE <rel>.Type = '...'` independently of `TYPEOF`.
 
 ### Phase 5: Roll-Up Summary Fields
