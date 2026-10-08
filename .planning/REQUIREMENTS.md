@@ -72,9 +72,9 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [x] **POLY-02**: A polymorphic parent in a query result carries `attributes.type` of the
   concrete object for that row, and parent fields that do not exist on that concrete object
   are returned as `null`
-- [ ] **POLY-03**: A polymorphic value whose key prefix maps to no object in the org schema
+- [x] **POLY-03**: A polymorphic value whose key prefix maps to no object in the org schema
   degrades to a `null` parent (and `ELSE` branch in TYPEOF) instead of erroring
-- [ ] **POLY-04**: `SELECT TYPEOF <field> WHEN <Object> THEN <fields> [WHEN ...] [ELSE <fields>]
+- [x] **POLY-04**: `SELECT TYPEOF <field> WHEN <Object> THEN <fields> [WHEN ...] [ELSE <fields>]
   END` compiles and returns per-row shaped results according to the matching branch
 - [x] **POLY-05**: `<relationship>.Type` is selectable and filterable in `WHERE` as a string
   comparison against the concrete object name
@@ -204,8 +204,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-05 | Phase 3 | Complete |
 | POLY-01 | Phase 4 | Complete |
 | POLY-02 | Phase 4 | Complete |
-| POLY-03 | Phase 4 | Pending |
-| POLY-04 | Phase 4 | Pending |
+| POLY-03 | Phase 4 | Complete |
+| POLY-04 | Phase 4 | Complete |
 | POLY-05 | Phase 4 | Complete |
 | POLY-06 | Phase 4 | Complete |
 | ROLL-01 | Phase 5 | Pending |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-10-08T21:07:41.664Z"
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-10-08T21:17:59.434Z"
 last_activity: 2026-10-08
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 18
-  completed_plans: 15
+  completed_plans: 16
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 04 (polymorphic-lookups-soql-typeof) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-10-08
 
@@ -69,6 +69,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04 P02 | 40min | 1 tasks | 3 files |
 | Phase 04 P03 | 10min | 2 tasks | 4 files |
 | Phase 04 P04 | 7min | 3 tasks | 6 files |
+| Phase 04 P05 | 8min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,8 @@ Recent decisions affecting current work:
 - [Phase 04]: Formula: polymorphism gated on declared referenceTo.length > 1; colon syntax classified UNSUPPORTED:formula from sigha's unexpected-character diagnostic (D-16 gap)
 - [Phase 04]: Owner.Type is answered by the Id-prefix CASE before any column lookup so Group's own Type column never leaks
 - [Phase 04]: Polymorphic parent shape carries type '' and takes attributes.type from the per-row typeAlias column; a row without one is a null parent (D-02, D-19)
+- [Phase 04]: TYPEOF: a WHEN naming a declared but unmodelled target is dropped at compile time (D-13); Type inside WHEN Group is Group's own column
+- [Phase 04]: TYPEOF: an unmodelled prefix is a null parent with or without ELSE, never a synthetic object (D-19); onUnmodelledPrefix fires once per row
 
 ### Pending Todos
 
@@ -123,6 +126,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T21:07:41.660Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-10-08T21:17:59.428Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None

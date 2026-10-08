@@ -106,7 +106,7 @@ Plans:
 - [x] 04-02-PLAN.md — POLY-06: invalid TYPEOF forms rejected as MALFORMED_QUERY naming the restriction (wave 1)
 - [x] 04-03-PLAN.md — Formula half of POLY-01 as the D-16 fallback; sigha and OwnerId todos (wave 1)
 - [x] 04-04-PLAN.md — Polymorphic joins per target, Name pseudo-object, `<rel>.Type`, per-row attributes.type (wave 2)
-- [ ] 04-05-PLAN.md — TYPEOF compile and per-row branch shaping (wave 3)
+- [x] 04-05-PLAN.md — TYPEOF compile and per-row branch shaping (wave 3)
 - [ ] 04-06-PLAN.md — Unmodelled-prefix warning plumbing, SC1 three-way and D-13 tests, REST log line (wave 4)
 - [ ] 04-07-PLAN.md — jsforce + simple-salesforce poly-check against live orglet; both backends green (wave 5)
 **Research flag**: yes — read the exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js`'s `.d.ts` during implementation, and confirm parser AST coverage for `WHERE <rel>.Type = '...'` independently of `TYPEOF`.
