@@ -170,7 +170,7 @@ describe("polymorphic relationships", () => {
 
   it("orders by the concrete owner's name through COALESCE over every target", () => {
     const q = compile("SELECT Id FROM Case ORDER BY Owner.Name");
-    expect(q.sql).toMatch(/ORDER BY lower\(COALESCE\([^)]*\)[^,]*, t2\."name"\)\) ASC NULLS FIRST/);
+    expect(q.sql).toContain("ORDER BY lower(COALESCE(NULLIF(concat_ws(' ', t1.\"firstname\", t1.\"lastname\"), ''), t2.\"name\")) ASC NULLS FIRST");
   });
 
   it("groups by the Type CASE and names the aggregate column Type", () => {

@@ -7,6 +7,7 @@ import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
 import { columnName, quote, tableName } from "@orglet/schema";
 import { dateLiteralRange, dateNLiteralRange, toIsoDate, type DateRange } from "./dates.js";
 import { invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
+import { NAME_OBJECT_FIELDS, pseudoField } from "./polymorphic.js";
 import { TYPEOF_RESTRICTIONS, assertTypeofAllowed, diagnoseTypeofParseError } from "./typeof.js";
 
 export interface CompileOptions {
@@ -61,11 +62,41 @@ const isText = (f: FieldDef) => TEXT_TYPES.has(f.type);
 const isDateTime = (f: FieldDef) => f.type === "DateTime";
 const isDate = (f: FieldDef) => f.type === "Date";
 
+interface PolyTarget {
+  obj: SObjectDef;
+  alias: string;
+  prefix: string;
+}
+
+/** A polymorphic lookup (declared referenceTo length > 1, D-15): one LEFT JOIN per modelled target. */
+interface PolyJoin {
+  rel: FieldDef;
+  fk: string;
+  targets: PolyTarget[];
+}
+
+interface Join {
+  alias: string;
+  obj: SObjectDef;
+  sql: string;
+  poly?: PolyJoin;
+}
+
 interface Scope {
   obj: SObjectDef;
   alias: string;
   /** Parent joins keyed by lower-cased relationship path from this scope. */
-  joins: Map<string, { alias: string; obj: SObjectDef; sql: string }>;
+  joins: Map<string, Join>;
+  /** Child subquery: polymorphic parents are refused (D-17). */
+  inChildSubquery?: boolean;
+}
+
+interface Resolved {
+  field: FieldDef;
+  obj: SObjectDef;
+  alias: string;
+  /** Per-row SQL for a polymorphic parent's field (COALESCE / CASE); overrides expr(). */
+  sql?: string;
 }
 
 class Compiler {
@@ -99,36 +130,81 @@ class Compiler {
   // Field resolution
 
   /** Resolve a possibly dotted field path within `scope`, adding parent joins as needed. */
-  private resolve(scope: Scope, path: string[]): { field: FieldDef; obj: SObjectDef; alias: string } {
+  private resolve(scope: Scope, path: string[]): Resolved {
     let obj = scope.obj;
     let alias = scope.alias;
     let key = "";
     for (let i = 0; i < path.length - 1; i++) {
       const seg = path[i] ?? "";
       key = key ? `${key}.${seg.toLowerCase()}` : seg.toLowerCase();
-      const existing = scope.joins.get(key);
-      if (existing) {
-        obj = existing.obj;
-        alias = existing.alias;
-        continue;
+      let join = scope.joins.get(key);
+      if (!join) {
+        const resolved = this.options.schema.resolveRelationship(obj.name, seg);
+        if (resolved === undefined) throw invalidRelationship(seg, obj.name);
+        const { field: rel, target, targets } = resolved;
+        const fk = `${alias}.${quote(columnName(rel))}`;
+        if ((rel.referenceTo?.length ?? 0) > 1) {
+          if (scope.inChildSubquery) throw unsupported("polymorphic-subquery", `polymorphic relationship ${rel.relationshipName ?? seg} in a child subquery is not supported yet`);
+          const polyTargets: PolyTarget[] = targets.map((t) => ({ obj: t, alias: this.nextAlias(), prefix: t.keyPrefix }));
+          const sql = polyTargets.map((t) => `LEFT JOIN ${this.table(t.obj)} ${t.alias} ON ${t.alias}.${quote("id")} = ${fk} AND left(${fk}, 3) = '${t.prefix}'`).join(" ");
+          join = { alias: polyTargets[0]?.alias ?? "", obj: target, sql, poly: { rel, fk, targets: polyTargets } };
+        } else {
+          const joinAlias = this.nextAlias();
+          join = { alias: joinAlias, obj: target, sql: `LEFT JOIN ${this.table(target)} ${joinAlias} ON ${joinAlias}.${quote("id")} = ${fk}` };
+        }
+        scope.joins.set(key, join);
       }
-      const resolved = this.options.schema.resolveRelationship(obj.name, seg);
-      if (resolved === undefined) throw invalidRelationship(seg, obj.name);
-      // Polymorphic lookups (Owner: User|Group, What, Who) join their first target until TYPEOF exists.
-      const { field: rel, target } = resolved;
-      const joinAlias = this.nextAlias();
-      scope.joins.set(key, {
-        alias: joinAlias,
-        obj: target,
-        sql: `LEFT JOIN ${this.table(target)} ${joinAlias} ON ${joinAlias}.${quote("id")} = ${alias}.${quote(columnName(rel))}`,
-      });
-      obj = target;
-      alias = joinAlias;
+      if (join.poly) {
+        if (i < path.length - 2) throw unsupported("polymorphic-traversal", `${path.join(".")}: fields past the polymorphic relationship ${seg} can't be traversed`);
+        return this.polyLeaf(join.poly, path[path.length - 1] ?? "");
+      }
+      obj = join.obj;
+      alias = join.alias;
     }
     const leaf = path[path.length - 1] ?? "";
     const field = this.options.schema.getField(obj.name, leaf);
     if (!field) throw invalidField(path.join("."), obj.name);
     return { field, obj, alias };
+  }
+
+  private sqlOf(r: Resolved): string {
+    return r.sql ?? this.expr(r.alias, r.obj, r.field);
+  }
+
+  // Prefixes and object names come from the schema (3 alphanumerics, API names), never from user
+  // input, so they are inlined as literals; params stay for user literals.
+  private typeCase(poly: PolyJoin): string {
+    return `CASE left(${poly.fk}, 3) ${poly.targets.map((t) => `WHEN '${t.prefix}' THEN '${t.obj.name}'`).join(" ")} END`;
+  }
+
+  private coalesce(parts: string[]): string {
+    return parts.length === 0 ? "NULL" : parts.length === 1 ? (parts[0] ?? "NULL") : `COALESCE(${parts.join(", ")})`;
+  }
+
+  private polyId(poly: PolyJoin): string {
+    return this.coalesce(poly.targets.map((t) => `${t.alias}.${quote("id")}`));
+  }
+
+  /** A field read through a polymorphic parent: the Name pseudo-object (D-01), each value from the row's concrete target. */
+  private polyLeaf(poly: PolyJoin, leaf: string): Resolved {
+    const first = poly.targets[0];
+    const relName = poly.rel.relationshipName ?? poly.rel.name;
+    if (!first) throw invalidRelationship(relName, poly.rel.name);
+    // Type is the concrete object's API name from the Id prefix (D-03); checked before any column
+    // lookup so Group's own Type column ('Queue') never answers Owner.Type.
+    if (leaf.toLowerCase() === "type") return { field: pseudoField("Type"), obj: first.obj, alias: first.alias, sql: this.typeCase(poly) };
+    const entry = NAME_OBJECT_FIELDS.get(leaf.toLowerCase());
+    if (!entry) throw invalidField(leaf, "Name");
+    if (entry.name === "Profile" || entry.name === "UserRole") throw unsupported("polymorphic-field", `${relName}.${entry.name} on a polymorphic relationship is not supported yet`);
+    if (entry.name === "Id") return { field: this.options.schema.getField(first.obj.name, "Id") ?? pseudoField("Id"), obj: first.obj, alias: first.alias, sql: this.polyId(poly) };
+    const contributors = poly.targets
+      .filter((t) => !entry.userOnly || t.obj.name === "User")
+      .flatMap((t) => {
+        const f = this.options.schema.getField(t.obj.name, entry.name);
+        return f && f.formula === undefined ? [{ t, f }] : [];
+      });
+    const sql = this.coalesce(contributors.map(({ t, f }) => this.expr(t.alias, t.obj, f)));
+    return { field: contributors[0]?.f ?? pseudoField(entry.name), obj: first.obj, alias: first.alias, sql };
   }
 
   /** SQL expression reading `field` from table alias `alias`, including virtual fields. */
@@ -341,7 +417,7 @@ class Compiler {
     const child = this.objectFor(rel.childSObject);
     const linkField = this.options.schema.getField(child.name, rel.field);
     if (!linkField) throw invalidRelationship(sub.relationshipName, parentScope.obj.name);
-    const scope: Scope = { obj: child, alias: this.nextAlias(), joins: new Map() };
+    const scope: Scope = { obj: child, alias: this.nextAlias(), joins: new Map(), inChildSubquery: true };
     const stripAlias = (name: string) => (sub.sObjectAlias && name.toLowerCase().startsWith(`${sub.sObjectAlias.toLowerCase()}.`) ? name.slice(sub.sObjectAlias.length + 1) : name);
     const selectItems: string[] = [];
     if (sub.fields?.some((f) => f.type === "FieldTypeof")) throw unsupported("polymorphic-subquery", `TYPEOF in child subquery ${sub.relationshipName} is not supported yet`);
@@ -371,7 +447,7 @@ class Compiler {
         const raw = f.type === "Field" ? stripAlias(f.field) : `${f.relationships.join(".")}.${f.field}`;
         const r = this.resolve(scope, raw.split("."));
         const col = this.nextColumn();
-        selectItems.push(`${this.expr(r.alias, r.obj, r.field)} AS ${quote(col)}`);
+        selectItems.push(`${this.sqlOf(r)} AS ${quote(col)}`);
         shape.columns.push({ name: ("alias" in f && f.alias) || r.field.name, alias: col });
       } else if (f.type === "FieldFunctionExpression") {
         const col = this.nextColumn();
@@ -390,7 +466,7 @@ class Compiler {
       const p = fn.parameters?.[0];
       if (typeof p !== "string") throw malformed(`${name}() needs a field argument`);
       const r = this.resolve(scope, stripAlias(p).split("."));
-      return this.expr(r.alias, r.obj, r.field);
+      return this.sqlOf(r);
     };
     switch (name) {
       case "COUNT":
@@ -495,7 +571,7 @@ class Compiler {
     } else {
       const r = this.resolve(scope, stripAlias(cond.field).split("."));
       field = r.field;
-      lhs = this.expr(r.alias, r.obj, r.field);
+      lhs = this.sqlOf(r);
     }
 
     if ("valueQuery" in cond) {
@@ -627,7 +703,7 @@ class Compiler {
       .map((g) => {
         if ("fn" in g) return this.compileFunction(scope, g.fn, stripAlias);
         const r = this.resolve(scope, stripAlias(g.field).split("."));
-        return this.expr(r.alias, r.obj, r.field);
+        return this.sqlOf(r);
       })
       .join(", ");
   }
@@ -643,7 +719,7 @@ class Compiler {
           expr = this.compileFunction(scope, o.fn, stripAlias);
         } else {
           const r = this.resolve(scope, stripAlias(o.field).split("."));
-          expr = this.expr(r.alias, r.obj, r.field);
+          expr = this.sqlOf(r);
           text = isText(r.field);
         }
         void aggregate;
