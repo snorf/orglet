@@ -124,6 +124,11 @@ any change to the write path (`checkReferences` is the reference behaviour).
 - **D-18:** D-05 is locked from the SOQL/SOSL Reference: a row whose concrete type matches no
   `WHEN` and the query has no `ELSE` returns a `null` parent.
 
+- **D-19:** Clarifies D-07 for TYPEOF: an Id whose prefix matches no modelled object yields a
+  `null` parent in every case, including when the TYPEOF has an `ELSE` branch. No synthetic
+  `attributes.type: "Name"` object is ever returned (D-02 holds without exception). The D-07
+  `UNSUPPORTED:reference-target` warning is still logged once per query.
+
 ### Claude's Discretion
 - Internal shape model changes in `packages/soql/src/compile.ts` and `shape.ts` to carry
   per-target columns and the per-row type (for example a `polymorphic` shape kind).
