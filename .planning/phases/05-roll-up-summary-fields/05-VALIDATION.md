@@ -42,7 +42,21 @@ See `05-RESEARCH.md` §"Validation Architecture" → "Phase Requirements to Test
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 05-XX-NN | XX | N | ROLL-XX | unit / integration | `pnpm vitest run <file>` | ❌ W0 | ⬜ pending |
+| 05-01-01 | 01 | 1 | ROLL-01 | unit | `pnpm vitest run packages/metadata/src && pnpm build` | update sfdx.test.ts | ⬜ pending |
+| 05-01-02 | 01 | 1 | ROLL-03 | unit | `pnpm vitest run packages/metadata/src/rollup.test.ts && pnpm lint` | ❌ W0 (new) | ⬜ pending |
+| 05-02-01 | 02 | 2 | ROLL-01, ROLL-02, ROLL-06 | unit | `pnpm vitest run packages/metadata/src && pnpm build` | extend build.test.ts | ⬜ pending |
+| 05-02-02 | 02 | 2 | ROLL-03, ROLL-09 | unit | `pnpm vitest run packages/metadata/src/build.test.ts -t "DE-shaped"`; `pnpm vitest run packages/metadata/src` | extend build.test.ts | ⬜ pending |
+| 05-03-01 | 03 | 3 | ROLL-03 | unit (pure SQL) | `pnpm vitest run packages/schema/src/rollup.test.ts && pnpm build` | ❌ W0 (new) | ⬜ pending |
+| 05-03-02 | 03 | 3 | ROLL-06, ROLL-08 (D-10) | integration (pg) | `pnpm vitest run packages/schema/src && pnpm lint && pnpm build` | extend migrate.test.ts | ⬜ pending |
+| 05-04-01 | 04 | 3 | ROLL-08, ROLL-09 | fixture + unit | `pnpm vitest run` | extend build.test.ts; acme fixture | ⬜ pending |
+| 05-04-02 | 04 | 3 | ROLL-07 | api | `pnpm vitest run packages/api/src && pnpm lint && pnpm build` | extend api.test.ts, bulk.test.ts | ⬜ pending |
+| 05-05-01 | 05 | 4 | ROLL-04 (D-04) | unit + integration | `pnpm vitest run packages/engine/src && pnpm lint` | ❌ W0 (new rollups.test.ts) | ⬜ pending |
+| 05-05-02 | 05 | 4 | ROLL-03, ROLL-04, ROLL-05, ROLL-06 (D-03, D-09) | integration (pg) | `pnpm vitest run packages/engine/src && pnpm vitest run packages/api/src && pnpm lint && pnpm build` | extend rollups.test.ts | ⬜ pending |
+| 05-06-01 | 06 | 5 | ROLL-04, ROLL-06 | integration (pg) | `pnpm vitest run packages/engine/src && pnpm lint` | extend rollups.test.ts | ⬜ pending |
+| 05-06-02 | 06 | 5 | ROLL-03, ROLL-06, ROLL-08 | integration (pg) | `pnpm vitest run packages/engine/src/rollups.test.ts && pnpm vitest run && pnpm lint && pnpm build` | extend rollups.test.ts | ⬜ pending |
+| 05-07-01 | 07 | 6 | ROLL-07, ROLL-08 | script syntax | `node --check conformance/rollup-check/jsforce.mjs && python3 -m py_compile conformance/rollup-check/sf_rollup.py` | ❌ W0 (new) | ⬜ pending |
+| 05-07-02 | 07 | 6 | ROLL-01..ROLL-09 | full suite both backends + SDK legs + DE check | `pnpm build && pnpm lint && pnpm test` (+ `ORGLET_DATABASE_URL=... pnpm test`) | n/a | ⬜ pending |
+| 05-07-03 | 07 | 6 | ROLL-09 (D-10 on devrandom) | manual checkpoint | human-verify (Johan) | n/a | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
