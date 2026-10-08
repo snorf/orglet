@@ -82,7 +82,7 @@ correctly-described, reference-checkable baseline objects with documented DML re
   5. Loading Johan's Developer Edition retrieve produces zero `UNSUPPORTED:reference-target` warnings.
 **Plans**: 4 plans
 Plans:
-- [ ] 03-01-PLAN.md — 14 thin baseline JSON files (explicit flags), `build.test.ts` T1/T2 + name-field invariant, `main.test.ts` T3, `prefixes.test.ts` T12, BASE-03 wording fix
+- [x] 03-01-PLAN.md — 14 thin baseline JSON files (explicit flags), `build.test.ts` T1/T2 + name-field invariant, `main.test.ts` T3, `prefixes.test.ts` T12, BASE-03 wording fix
 - [ ] 03-02-PLAN.md — `Errors.invalidTypeForOperation` + object-flag guard for all five DML operations with import-mode bypass (T4/T5/T7/T8), bootstrap seed rows (`bootstrap.test.ts` T9), `migrate()` dangling-FK error (T13)
 - [ ] 03-03-PLAN.md — describe `idEnabled`, shared `conformance/describe-check` contract, `api.test.ts` T10 describe contract + T11 REST write protection, README section
 - [ ] 03-04-PLAN.md — describe-check scripts (jsforce, simple-salesforce), full suite both backends, M1/M2/M3, Johan's devrandom checkpoint
