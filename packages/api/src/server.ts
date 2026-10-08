@@ -4,7 +4,7 @@
  * answers JSON with Salesforce's error envelopes.
  */
 import { readFile } from "node:fs/promises";
-import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest, type FastifyServerOptions } from "fastify";
 import formbody from "@fastify/formbody";
 import type { DmlEngine, Session } from "@orglet/engine";
 import { DmlError } from "@orglet/engine";
@@ -24,7 +24,7 @@ export interface ApiOptions {
   auth?: AuthConfig;
   /** Default API version for internally generated URLs. */
   defaultVersion?: string;
-  logger?: boolean;
+  logger?: FastifyServerOptions["logger"];
 }
 
 export interface ApiContext {

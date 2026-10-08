@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { dropKeyPrefixes, migrate, quote, reconcileKeyPrefixes, type Pool } from "@orglet/schema";
+import { dropKeyPrefixes, generateId, migrate, quote, reconcileKeyPrefixes, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { createApiServer } from "./server.js";
@@ -20,6 +20,8 @@ let app: FastifyInstance;
 let token = "";
 let orgId = "";
 let userId = "";
+let engine: DmlEngine;
+let recordTypeIds: ReadonlyMap<string, string>;
 
 type Json = Record<string, unknown>;
 const json = (res: { body: string }) => JSON.parse(res.body) as Json;
@@ -64,7 +66,8 @@ beforeAll(async () => {
   const boot = await bootstrapOrg(pool, schema, { orgSchema });
   orgId = boot.session.organizationId;
   userId = boot.session.userId;
-  const engine = new DmlEngine(pool, schema, { orgSchema });
+  engine = new DmlEngine(pool, schema, { orgSchema });
+  recordTypeIds = boot.recordTypeIds;
   app = createApiServer({
     engine,
     organizationId: orgId,
@@ -413,5 +416,59 @@ describe("write protection", () => {
     const allowed = await post(`${V}/sobjects/Entitlement`, { Name: "Gold Support" });
     expect(allowed.statusCode).toBe(201);
     expect(String(json(allowed)["id"])).toMatch(/^550[0-9A-Za-z]{15}$/);
+  });
+});
+
+describe("polymorphic query", () => {
+  const enc = (soql: string) => `${V}/query?q=${encodeURIComponent(soql)}`;
+  let groupId = "";
+
+  beforeAll(async () => {
+    const group = await post(`${V}/sobjects/Group`, { Name: "Api Queue", DeveloperName: "Api_Queue", Type: "Queue" });
+    expect(group.statusCode).toBe(201);
+    groupId = String(json(group)["id"]);
+    expect((await post(`${V}/sobjects/Case`, { Subject: "Api group case", OwnerId: groupId })).statusCode).toBe(201);
+    expect((await post(`${V}/sobjects/Case`, { Subject: "Api user case" })).statusCode).toBe(201);
+  });
+
+  it("REST query returns the concrete owner type per row and filters on Owner.Type", async () => {
+    const res = await get(enc("SELECT Subject, Owner.Type FROM Case WHERE Owner.Type = 'Group' AND Subject LIKE 'Api%'"));
+    expect(res.statusCode).toBe(200);
+    const records = json(res)["records"] as Json[];
+    expect(records).toHaveLength(1);
+    expect(records[0]?.["Owner"]).toMatchObject({ attributes: { type: "Group" }, Type: "Group" });
+  });
+
+  it("REST query logs one UNSUPPORTED:reference-target line per query for unmodelled owner prefixes", async () => {
+    const lines: string[] = [];
+    const app2 = createApiServer({
+      engine,
+      organizationId: orgId,
+      recordTypeIds,
+      auth: { mode: "list", users: [{ username: "admin@orglet.local", password: "secret" }] },
+      logger: { level: "warn", stream: { write: (l: string) => void lines.push(l) } },
+    });
+    try {
+      await app2.ready();
+      const login = await app2.inject({
+        method: "POST",
+        url: "/services/oauth2/token",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        payload: "grant_type=password&client_id=x&client_secret=y&username=admin%40orglet.local&password=secret",
+      });
+      const token2 = String(json(login)["access_token"]);
+      const extra = await post(`${V}/sobjects/Case`, { Subject: "Api user case two" });
+      expect(extra.statusCode).toBe(201);
+      await pool.query(`UPDATE ${quote(orgSchema)}."case" SET ownerid = $1 WHERE subject LIKE 'Api user case%'`, [generateId("zzz")]);
+      const res = await app2.inject({ method: "GET", url: enc("SELECT Subject, Owner.Name FROM Case WHERE Subject LIKE 'Api%' ORDER BY Subject"), headers: { authorization: `Bearer ${token2}` } });
+      expect(res.statusCode).toBe(200);
+      const records = json(res)["records"] as Json[];
+      expect(records.filter((r) => String(r["Subject"]).startsWith("Api user case")).map((r) => r["Owner"])).toEqual([null, null]);
+      const matching = lines.filter((l) => l.includes("UNSUPPORTED:reference-target zzz matches no object in the org schema"));
+      expect(matching).toHaveLength(1);
+      expect((JSON.parse(matching[0] ?? "{}") as Json)["level"]).toBe(40);
+    } finally {
+      await app2.close();
+    }
   });
 });

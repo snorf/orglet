@@ -2,12 +2,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
+import { generateId, migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
 import type { ChangeEvent } from "./events.js";
 import type { Session, TriggerContext } from "./hooks.js";
+import { loadParents } from "./parents.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
@@ -342,5 +343,23 @@ describe("import mode", () => {
     expect(codes((await engine.update(session, "CallCenter", [{ Id: centerId, Name: "x" }]))[0])).toEqual(["INVALID_TYPE_FOR_OPERATION"]);
     expect(codes((await engine.delete(session, "BusinessHours", [hoursId]))[0])).toEqual(["INVALID_TYPE_FOR_OPERATION"]);
     expect((await engine.retrieve(session, "CallCenter", [centerId])).get(centerId)).toMatchObject({ Name: "Renamed Center" });
+  });
+});
+
+describe("polymorphic parents", () => {
+  it("loadParents reads each polymorphic parent from the table its Id prefix names", async () => {
+    const groupId = await one("Group", { Name: "Support Queue", DeveloperName: "Support_Queue", Type: "Queue" });
+    const caseObj = schema.getObject("Case");
+    if (!caseObj) throw new Error("Case missing from schema");
+    const records: Record<string, unknown>[] = [{ OwnerId: groupId }, { OwnerId: session.userId }, { OwnerId: generateId("zzz") }];
+    const client = await pool.connect();
+    try {
+      await loadParents(client, engine.store, caseObj, records, [["Owner"]]);
+    } finally {
+      client.release();
+    }
+    expect(records[0]?.["Owner"]).toMatchObject({ Id: groupId, Name: "Support Queue" });
+    expect(records[1]?.["Owner"]).toMatchObject({ Id: session.userId, Alias: "admin" });
+    expect(records[2]?.["Owner"]).toBeNull();
   });
 });

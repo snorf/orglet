@@ -39,9 +39,17 @@ describe("compileFormula", () => {
     expect(c.references[0]).toMatchObject({ key: "Account.Industry", path: ["Account", "Industry"], type: "Picklist" });
   });
 
-  it("refuses polymorphic traversal and unknown globals explicitly", () => {
-    expect(rule("Owner.Alias = 'x'").references[0]?.key).toBe("Owner.Alias"); // User|Group: only User is defined
+  it("rejects plain traversal through a polymorphic lookup like a real org and keeps unknown globals explicit", () => {
+    expect(() => rule("Owner.Alias = 'x'")).toThrow("Field Owner.Alias does not exist. Check spelling."); // OwnerId is User|Group (D-08, D-15)
+    expect(() => rule("Owner.Name = 'x'", "Case")).toThrow("Field Owner.Name does not exist. Check spelling.");
     expect(() => rule("$Setup.Foo__c.Bar__c")).toThrow(/UNSUPPORTED:formula-global/);
+  });
+
+  it("reports the Owner:Object colon syntax as UNSUPPORTED:formula until sigha parses it", () => {
+    expect(() => rule("Owner:Group.Name = 'x'", "Case")).toThrow(FormulaCompileError);
+    expect(() => rule("Owner:Group.Name = 'x'", "Case")).toThrow(/^UNSUPPORTED:formula polymorphic reference Owner:Group\.Name /);
+    expect(() => rule("Owner:User.Alias = 'x'")).toThrow(/UNSUPPORTED:formula polymorphic reference Owner:User\.Alias/);
+    expect(() => rule("IF(ISBLANK(Name), TRUE")).toThrow(/^Syntax error in formula:/);
   });
 
   it("only allows record-state functions where Salesforce does", () => {

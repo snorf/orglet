@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-10-08T18:39:22.992Z"
+status: ready_to_plan
+stopped_at: Phase 4 verified and complete; Phase 5 ready to discuss/plan
+last_updated: "2026-10-08T22:01:32.011Z"
 last_activity: 2026-10-08
 progress:
   total_phases: 7
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  completed_phases: 4
+  total_plans: 18
+  completed_plans: 18
   percent: 0
 ---
 
@@ -23,13 +23,13 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 4 — Polymorphic Lookups & SOQL TYPEOF
+**Current focus:** Phase 5 — Roll-Up Summary Fields
 
 ## Current Position
 
-Phase: 4
+Phase: 5
 Plan: Not started
-Status: Phase 3 verified and complete (branch not pushed, no PR yet); Phase 4 ready to discuss/plan
+Status: Phase complete — ready for verification
 Last activity: 2026-10-08
 
 Progress: [░░░░░░░░░░] 0%
@@ -65,6 +65,13 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03 P02 | 12min | 3 tasks | 7 files |
 | Phase 03 P03 | 10min | 2 tasks | 5 files |
 | Phase 03 P04 | n/a | 3 tasks | 4 files |
+| Phase 04 P01 | 10min | 2 tasks | 7 files |
+| Phase 04 P02 | 40min | 1 tasks | 3 files |
+| Phase 04 P03 | 10min | 2 tasks | 4 files |
+| Phase 04 P04 | 7min | 3 tasks | 6 files |
+| Phase 04 P05 | 8min | 3 tasks | 7 files |
+| Phase 04 P06 | 12min | 2 tasks | 5 files |
+| Phase 04 P07 | 20min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -101,6 +108,15 @@ Recent decisions affecting current work:
 - [Phase 03]: SDK describe key sets live once in conformance/describe-check/contract.json, read by vitest and plan 03-04 scripts
 - [Phase 03]: idEnabled added to describe summaries; only jsforce key orglet omitted
 - [Phase 03]: devrandom upgrade approved 2026-10-08: 14 tables added, seed rows created once, FKs added without dangling-data errors, second start silent
+- [Phase 04]: loadParents stops at a polymorphic parent and gates on referenceTo.length > 1; one matchTargetByPrefix helper shared by write and read paths
+- [Phase 04]: TYPEOF parse errors diagnosed by text heuristic; child-subquery TYPEOF gated UNSUPPORTED:polymorphic-subquery
+- [Phase 04]: Formula: polymorphism gated on declared referenceTo.length > 1; colon syntax classified UNSUPPORTED:formula from sigha's unexpected-character diagnostic (D-16 gap)
+- [Phase 04]: Owner.Type is answered by the Id-prefix CASE before any column lookup so Group's own Type column never leaks
+- [Phase 04]: Polymorphic parent shape carries type '' and takes attributes.type from the per-row typeAlias column; a row without one is a null parent (D-02, D-19)
+- [Phase 04]: TYPEOF: a WHEN naming a declared but unmodelled target is dropped at compile time (D-13); Type inside WHEN Group is Group's own column
+- [Phase 04]: TYPEOF: an unmodelled prefix is a null parent with or without ELSE, never a synthetic object (D-19); onUnmodelledPrefix fires once per row
+- [Phase 04]: QueryPage.warnings is absent when nothing degraded; REST route logs it once per query via req.log.warn
+- [Phase 04]: POLY-01 recorded Partial (formula leg deferred per D-16); POLY-02..06 complete
 
 ### Pending Todos
 
@@ -114,6 +130,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T18:28:22.288Z
-Stopped at: Completed 03-04-PLAN.md
+Last session: 2026-10-08T21:26:50.835Z
+Stopped at: Completed 04-07-PLAN.md
 Resume file: None

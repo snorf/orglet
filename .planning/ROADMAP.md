@@ -25,7 +25,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Test Infrastructure & CI** - Full test suite runs Docker-free via pglite; project is on GitHub with two CI jobs (completed 2026-10-01)
 - [x] **Phase 2: Custom-Object Key-Prefix Persistence** - Custom object key prefixes are stable across reload and rename (completed 2026-10-02)
 - [x] **Phase 3: Thin Standard-Object Baselines** - The 14 missing standard objects exist as reference-checkable baselines (completed 2026-10-08)
-- [ ] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles
+- [x] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles (completed 2026-10-08)
 - [ ] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only
 - [ ] **Phase 6: Bulk API 2.0 Persistence** - Bulk jobs and results survive a server restart
 - [ ] **Phase 7: Conformance Re-Run & Milestone Acceptance** - Zero warnings on Johan's DE org; both conformance suites green and documented
@@ -100,7 +100,15 @@ and formula parent traversal — in agreement with the already-correct write pat
   3. A polymorphic value whose key prefix matches no modelled object degrades to a `null` parent (or the `ELSE` branch in TYPEOF) instead of throwing.
   4. `SELECT TYPEOF <field> WHEN <Object> THEN <fields> [WHEN ...] [ELSE <fields>] END` compiles and returns the matching branch's fields shaped per row, and `<relationship>.Type` is filterable in `WHERE` as a string comparison against the concrete object name.
   5. The documented invalid TYPEOF forms (in `WHERE`, `GROUP BY`, `HAVING`, inside a semi-join, functions in `WHEN`, nested TYPEOF, with `COUNT()`) are rejected with a `MALFORMED_QUERY` error naming the restriction.
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [x] 04-01-PLAN.md — Shared `matchTargetByPrefix` helper; checkReferences and loadParents use it (wave 1)
+- [x] 04-02-PLAN.md — POLY-06: invalid TYPEOF forms rejected as MALFORMED_QUERY naming the restriction (wave 1)
+- [x] 04-03-PLAN.md — Formula half of POLY-01 as the D-16 fallback; sigha and OwnerId todos (wave 1)
+- [x] 04-04-PLAN.md — Polymorphic joins per target, Name pseudo-object, `<rel>.Type`, per-row attributes.type (wave 2)
+- [x] 04-05-PLAN.md — TYPEOF compile and per-row branch shaping (wave 3)
+- [x] 04-06-PLAN.md — Unmodelled-prefix warning plumbing, SC1 three-way and D-13 tests, REST log line (wave 4)
+- [x] 04-07-PLAN.md — jsforce + simple-salesforce poly-check against live orglet; both backends green (wave 5)
 **Research flag**: yes — read the exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js`'s `.d.ts` during implementation, and confirm parser AST coverage for `WHERE <rel>.Type = '...'` independently of `TYPEOF`.
 
 ### Phase 5: Roll-Up Summary Fields
@@ -152,7 +160,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. Test Infrastructure & CI | 3/4 | Complete    | 2026-10-01 |
 | 2. Custom-Object Key-Prefix Persistence | 3/3 | Complete | 2026-10-02 |
 | 3. Thin Standard-Object Baselines | 4/4 | Complete | 2026-10-08 |
-| 4. Polymorphic Lookups & SOQL TYPEOF | 0/TBD | Not started | - |
+| 4. Polymorphic Lookups & SOQL TYPEOF | 7/7 | Complete | 2026-10-08 |
 | 5. Roll-Up Summary Fields | 0/TBD | Not started | - |
 | 6. Bulk API 2.0 Persistence | 0/TBD | Not started | - |
 | 7. Conformance Re-Run & Milestone Acceptance | 0/TBD | Not started | - |

@@ -36,6 +36,8 @@ export function registerQueryRoutes(app: FastifyInstance, ctx: ApiContext): void
     const batchHeader = req.headers["sforce-query-options"];
     const batchSize = typeof batchHeader === "string" ? Number(/batchSize=(\d+)/.exec(batchHeader)?.[1] ?? 2000) : 2000;
     const page = await runQuery(ctx.engine, session(req), soql, { includeDeleted: all, apiVersion: version, batchSize: Math.min(Math.max(batchSize, 200), 2000), offset });
+    // One line per query, not per row (D-07): a degraded polymorphic parent is never silent.
+    if (page.warnings) req.log.warn(page.warnings.join("; "));
     const body: Record<string, unknown> = { totalSize: page.totalSize, done: page.done, records: page.records };
     if (!page.done && page.nextOffset !== undefined) {
       body["nextRecordsUrl"] = `/services/data/v${version}/${all ? "queryAll" : "query"}/${issueLocator(ctx.locators, { q: soql, all }, page.nextOffset)}`;

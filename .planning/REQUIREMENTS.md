@@ -66,19 +66,21 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Polymorphic Lookups & SOQL TYPEOF
 
-- [ ] **POLY-01**: A polymorphic lookup (for example `OwnerId` → User or Group) resolves its
+- [x] **POLY-01**: A polymorphic lookup (for example `OwnerId` → User or Group) resolves its
   target object per row from the Id key prefix in SOQL parent traversal, result shaping and
   formula parent references; the write path already does this and is the reference behaviour
-- [ ] **POLY-02**: A polymorphic parent in a query result carries `attributes.type` of the
+  *Partial: SOQL traversal and shaping done in phase 4; formula parent references deferred per D-16 (sigha colon syntax todo).*
+- [x] **POLY-02**: A polymorphic parent in a query result carries `attributes.type` of the
   concrete object for that row, and parent fields that do not exist on that concrete object
   are returned as `null`
-- [ ] **POLY-03**: A polymorphic value whose key prefix maps to no object in the org schema
+- [x] **POLY-03**: A polymorphic value whose key prefix maps to no object in the org schema
   degrades to a `null` parent (and `ELSE` branch in TYPEOF) instead of erroring
-- [ ] **POLY-04**: `SELECT TYPEOF <field> WHEN <Object> THEN <fields> [WHEN ...] [ELSE <fields>]
+  *Per D-19: an unmodelled prefix is a null parent even when TYPEOF has ELSE; ELSE applies to modelled types not listed in a WHEN.*
+- [x] **POLY-04**: `SELECT TYPEOF <field> WHEN <Object> THEN <fields> [WHEN ...] [ELSE <fields>]
   END` compiles and returns per-row shaped results according to the matching branch
-- [ ] **POLY-05**: `<relationship>.Type` is selectable and filterable in `WHERE` as a string
+- [x] **POLY-05**: `<relationship>.Type` is selectable and filterable in `WHERE` as a string
   comparison against the concrete object name
-- [ ] **POLY-06**: The documented invalid TYPEOF forms (in `WHERE`, `GROUP BY`, `HAVING`, inside
+- [x] **POLY-06**: The documented invalid TYPEOF forms (in `WHERE`, `GROUP BY`, `HAVING`, inside
   a semi-join subquery, functions in `WHEN`, nested TYPEOF, with `COUNT()`) are rejected with a
   `MALFORMED_QUERY` error whose message names the restriction
 
@@ -202,12 +204,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-03 | Phase 3 | Complete |
 | BASE-04 | Phase 3 | Complete |
 | BASE-05 | Phase 3 | Complete |
-| POLY-01 | Phase 4 | Pending |
-| POLY-02 | Phase 4 | Pending |
-| POLY-03 | Phase 4 | Pending |
-| POLY-04 | Phase 4 | Pending |
-| POLY-05 | Phase 4 | Pending |
-| POLY-06 | Phase 4 | Pending |
+| POLY-01 | Phase 4 | Partial (formula leg deferred per D-16) |
+| POLY-02 | Phase 4 | Complete |
+| POLY-03 | Phase 4 | Complete |
+| POLY-04 | Phase 4 | Complete |
+| POLY-05 | Phase 4 | Complete |
+| POLY-06 | Phase 4 | Complete |
 | ROLL-01 | Phase 5 | Pending |
 | ROLL-02 | Phase 5 | Pending |
 | ROLL-03 | Phase 5 | Pending |

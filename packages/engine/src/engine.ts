@@ -6,7 +6,7 @@
  * success works, and allOrNone rolls the whole call back.
  */
 import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
-import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, type Pool, type PoolClient } from "@orglet/schema";
+import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchTargetByPrefix, type Pool, type PoolClient } from "@orglet/schema";
 import { asString, evaluateCompiled, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
@@ -523,7 +523,7 @@ export class DmlEngine {
         const id = w.next[field.name];
         if (typeof id !== "string") continue;
         const targets = (field.referenceTo ?? []).map((n) => this.schema.getObject(n)).filter((o): o is SObjectDef => o !== undefined);
-        const target = targets.find((t) => t.keyPrefix === keyPrefixOf(id));
+        const target = matchTargetByPrefix(targets, id);
         if (!target) {
           // Unknown target object (e.g. Group): accept unchecked. Known targets: wrong prefix is a bad reference.
           if (targets.length === (field.referenceTo ?? []).length) w.errors.push(Errors.invalidCrossReference(field.name));

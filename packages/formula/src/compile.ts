@@ -94,7 +94,9 @@ function resolvePath(schema: OrgSchema, objectName: string, path: readonly strin
     }
     const resolved = schema.resolveRelationship(current.name, segment);
     if (resolved === undefined) throw fieldNotFound(path.join("."));
-    // Polymorphic lookups resolve against their first target (Owner -> User) until TYPEOF-style handling exists.
+    // A polymorphic lookup (Owner: User|Group, What, Who) has no single parent object; Salesforce
+    // formulas reach it only as Owner:User.Field. Plain traversal fails like an unknown field (D-08).
+    if ((resolved.field.referenceTo?.length ?? 0) > 1) throw fieldNotFound(path.join("."));
     canonical.push(resolved.field.relationshipName ?? segment);
     current = resolved.target;
   }
@@ -168,6 +170,16 @@ function rewrite(node: Expr, r: Resolver): Expr {
 export function compileFormula(source: string, options: CompileOptions): CompiledFormula {
   const parsed = parse(source);
   const parseErrors = parsed.diagnostics.filter((d) => d.severity === "error");
+  // sigha cannot lex `Owner:User.Name` yet (D-16): report the polymorphic reference instead of a bare syntax error.
+  const colonRef = parseErrors.some((d) => d.code === "unexpected-character")
+    ? /\b([A-Za-z_]\w*:[A-Za-z_]\w*\.[A-Za-z_]\w*)/.exec(source.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""'))
+    : null;
+  if (colonRef) {
+    throw new FormulaCompileError(
+      `UNSUPPORTED:formula polymorphic reference ${colonRef[1] ?? ""} needs the Relationship:Object.Field syntax, which the vendored sigha formula parser does not support yet`,
+      parseErrors,
+    );
+  }
   if (parseErrors.length > 0) {
     throw new FormulaCompileError(`Syntax error in formula: ${parseErrors.map((d) => d.message).join("; ")}`, parseErrors);
   }

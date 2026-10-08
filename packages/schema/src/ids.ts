@@ -41,6 +41,17 @@ export function keyPrefixOf(id: string): string {
   return id.slice(0, 3);
 }
 
+/**
+ * The object a lookup value points at: the target whose key prefix is the Id's first three
+ * characters. This is the one rule for polymorphic lookups (Owner -> User|Group, What, Who):
+ * the write path's reference check, the formula parent loader and the SOQL compiler's
+ * prefix joins all agree on it. Undefined when no target in `targets` has that prefix.
+ */
+export function matchTargetByPrefix<T extends { readonly keyPrefix: string }>(targets: readonly T[], id: string): T | undefined {
+  const prefix = keyPrefixOf(id);
+  return targets.find((t) => t.keyPrefix === prefix);
+}
+
 function base62(n: number, width: number): string {
   let out = "";
   let v = n;

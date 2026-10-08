@@ -76,6 +76,17 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
   BusinessHours and a "Salesforce" UserLicense; describe verified through jsforce and
   simple-salesforce via `conformance/describe-check`; the DE retrieve loads with zero
   `UNSUPPORTED:reference-target` — Phase 3 (2026-10-08)
+- ✓ Polymorphic lookups resolve per row: one shared `matchTargetByPrefix` rule in `@orglet/schema`
+  used by the write path and formula parent loading; SOQL joins each modelled target with a key
+  prefix filter and shapes `attributes.type` from the concrete object; the Name pseudo-object
+  returns `null` for user-only fields on a Group owner; `<rel>.Type` is filterable in `WHERE`;
+  `TYPEOF ... WHEN ... THEN ... [ELSE ...] END` compiles and shapes the matching branch per
+  row; an unmodelled key prefix is a `null` parent (ELSE or not, D-19) plus one
+  `UNSUPPORTED:reference-target` warning per query; every documented invalid TYPEOF form is
+  `MALFORMED_QUERY` naming the restriction; proven through jsforce and simple-salesforce via
+  `conformance/poly-check`. Formula leg is a recorded partial: the vendored sigha lexer cannot
+  parse `Owner:Group.Name`, so it raises `UNSUPPORTED:formula` and plain `Owner.Name` through a
+  polymorphic lookup is rejected at compile time (D-16, todo pending) — Phase 4 (2026-10-08)
 
 ### Active
 
@@ -83,9 +94,6 @@ Milestone 1, "hardening": make a real Developer Edition retrieve load with zero 
 the project buildable and testable without Docker, and put it on GitHub with CI. No GUI, no
 Flows, no Apex in this milestone.
 
-- [ ] Polymorphic lookups (`OwnerId`, `WhoId`, `WhatId` style) resolve per row instead of to the
-  first defined target, and SOQL `TYPEOF ... WHEN ... THEN ... ELSE ... END` is supported in
-  `SELECT`
 - [ ] Roll-up summary fields (`Summary` type: COUNT, SUM, MIN, MAX with filters) are loaded from
   metadata, recomputed in the save pipeline on child insert/update/delete/undelete, and readable
   via REST and SOQL
@@ -187,6 +195,9 @@ on port 8180 with the `devrandom` org schema.
 | Persist custom-object key prefixes | Alphabetical recomputation shifts prefixes when objects are added; Ids must be stable | ✓ Good (Phase 2; sibling `_orglet` schema so `reset` keeps rows, `--key-prefixes` seed for real-org Ids) |
 | pglite for tests, Docker Compose for the running server | CI without Docker, contributors without Docker; server path unchanged | ✓ Good (Phase 1; needed `maxConnections` on pglite-socket and build-before-lint in CI) |
 | Phase branches with PR to a ruleset-protected `main` | Branch protection only means something if every change goes through CI | ✓ Good (Phase 1) |
+| Polymorphic target chosen by key prefix, one shared rule, per-target LEFT JOINs in SOQL | Read and write paths must agree on the concrete object; SQL cannot call TS, so both derive from `SObjectDef.keyPrefix` | ✓ Good (Phase 4) |
+| Unmodelled key prefix is always a `null` parent, never a synthetic object, even in TYPEOF ELSE | Faking an object the org does not model would break `UNSUPPORTED` honesty (D-02/D-19); warning logged once per query | ✓ Good (Phase 4) |
+| Polymorphic formula references deferred: colon syntax raises `UNSUPPORTED:formula`, plain traversal rejected at compile time | Vendored sigha lexer rejects `:`; no local rewriting of formula text; fix belongs upstream | — Pending (Phase 4, D-16, todo) |
 
 ## Evolution
 
@@ -206,4 +217,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-08 after Phase 3*
+*Last updated: 2026-10-09 after Phase 4*
