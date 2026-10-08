@@ -203,6 +203,60 @@ describe("polymorphic relationships", () => {
     expect(e.message).toMatch(/UNSUPPORTED:polymorphic-subquery/);
   });
 
+  it("selects a polymorphic parent's id, concrete type and raw lookup value per row", () => {
+    const q = compile("SELECT Owner.Name, Owner.Type FROM Case");
+    expect(q.sql).toContain(USER_JOIN);
+    expect(q.sql).toContain(GROUP_JOIN);
+    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(2);
+    const select = q.sql.slice(0, q.sql.indexOf(" FROM "));
+    expect(select).toContain(TYPE_CASE);
+    expect(select).toContain("COALESCE(NULLIF(concat_ws(' ', t1.\"firstname\", t1.\"lastname\"), ''), t2.\"name\")");
+    expect(select).toContain('COALESCE(t1."id", t2."id")');
+    expect(select).toContain('t0."ownerid" AS');
+    const owner = q.shape.kind === "sobject" ? q.shape.parents.get("Owner") : undefined;
+    expect(owner?.poly?.typeAlias).toMatch(/^c\d+$/);
+    expect(owner?.poly?.fkAlias).toMatch(/^c\d+$/);
+    expect(owner?.fields.map((f) => f.name)).toEqual(["Name", "Type"]);
+  });
+
+  it("selects user-only Name fields from the User target only", () => {
+    const q = compile("SELECT Owner.Email FROM Case");
+    expect(q.sql).toContain('t1."email"');
+    expect(q.sql).not.toContain('t2."email"');
+  });
+
+  it("rejects selecting a field outside the Name pseudo-object as INVALID_FIELD on entity Name", () => {
+    const e = rejected("SELECT Owner.Department FROM Case");
+    expect(e.errorCode).toBe("INVALID_FIELD");
+    expect(e.message).toContain("on entity 'Name'");
+  });
+
+  it("refuses selecting past a polymorphic parent as UNSUPPORTED:polymorphic-traversal", () => {
+    const e = rejected("SELECT Owner.Profile.Name FROM Case");
+    expect(e.errorCode).toBe("UNSUPPORTED");
+    expect(e.message).toMatch(/UNSUPPORTED:polymorphic-traversal/);
+  });
+
+  it("refuses Name's Profile and UserRole pseudo-fields as UNSUPPORTED:polymorphic-field", () => {
+    for (const soql of ["SELECT Owner.Profile FROM Case", "SELECT Owner.UserRole FROM Case"]) {
+      const e = rejected(soql);
+      expect(e.errorCode).toBe("UNSUPPORTED");
+      expect(e.message).toMatch(/UNSUPPORTED:polymorphic-field/);
+    }
+  });
+
+  it("refuses selecting a polymorphic parent inside a child subquery as UNSUPPORTED:polymorphic-subquery", () => {
+    const e = rejected("SELECT Id, (SELECT Id, What.Name FROM Tasks) FROM Account");
+    expect(e.errorCode).toBe("UNSUPPORTED");
+    expect(e.message).toMatch(/UNSUPPORTED:polymorphic-subquery/);
+  });
+
+  it("refuses functions on a polymorphic parent field as UNSUPPORTED:polymorphic-field", () => {
+    const e = rejected("SELECT toLabel(Owner.Type) FROM Case");
+    expect(e.errorCode).toBe("UNSUPPORTED");
+    expect(e.message).toMatch(/UNSUPPORTED:polymorphic-field/);
+  });
+
   it("emits the polymorphic joins inside a semi-join subquery", () => {
     const q = compile("SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Case WHERE Owner.Type = 'Group')");
     expect(q.sql).toContain('"org"."group"');
