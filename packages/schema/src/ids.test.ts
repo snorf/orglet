@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { generateId, keyPrefixOf, normalizeId, toCaseSafeId } from "./ids.js";
+import { generateId, keyPrefixOf, matchTargetByPrefix, normalizeId, toCaseSafeId } from "./ids.js";
 
 describe("case-safe ID checksum", () => {
   // Pairs published in Salesforce community answers and widely reused in test suites.
@@ -72,5 +72,24 @@ describe("generateId", () => {
 
   it("rejects a bad key prefix", () => {
     expect(() => generateId("00")).toThrow();
+  });
+});
+
+describe("matchTargetByPrefix", () => {
+  const user = { name: "User", keyPrefix: "005" };
+  const group = { name: "Group", keyPrefix: "00G" };
+
+  it("picks the target whose key prefix starts the Id, so a Group-owned Id resolves to Group", () => {
+    expect(matchTargetByPrefix([user, group], generateId("00G"))).toBe(group);
+    expect(matchTargetByPrefix([user, group], generateId("005"))).toBe(user);
+  });
+
+  it("returns undefined when no modelled target has the Id's prefix", () => {
+    expect(matchTargetByPrefix([user], generateId("00G"))).toBeUndefined();
+    expect(matchTargetByPrefix([], generateId("005"))).toBeUndefined();
+  });
+
+  it("compares prefixes case-sensitively like Salesforce Ids", () => {
+    expect(matchTargetByPrefix([user, group], "00g000000000001")).toBeUndefined();
   });
 });

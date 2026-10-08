@@ -1,5 +1,5 @@
 // @orglet/schema: OrgSchema -> Postgres DDL, migrations, Salesforce ID generation
-export { generateId, normalizeId, toCaseSafeId, keyPrefixOf } from "./ids.js";
+export { generateId, normalizeId, toCaseSafeId, keyPrefixOf, matchTargetByPrefix } from "./ids.js";
 export { createPool, databaseUrlFromEnv, formatSalesforceDatetime, withTransaction } from "./db.js";
 export type { Pool, PoolClient, Queryable } from "./db.js";
 export {
