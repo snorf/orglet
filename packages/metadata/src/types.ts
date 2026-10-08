@@ -194,8 +194,10 @@ export interface OrgSchema {
   childRelationships(objectName: string): ChildRelationship[];
   /**
    * Resolve a parent-side relationship name (`Account`, `Owner`, `Project__r`) on an object.
-   * For polymorphic lookups `target` is the first defined target (User for Owner), which is
-   * what SOQL and formulas use until TYPEOF is supported; `targets` lists all defined ones.
+   * For polymorphic lookups `target` is only the first defined target; per-row resolution uses
+   * `targets` with the Id's key prefix (`matchTargetByPrefix` in @orglet/schema). `polymorphic` counts
+   * defined targets only; callers that must treat a lookup as polymorphic even when some targets are not
+   * modelled check `field.referenceTo.length > 1`.
    */
   resolveRelationship(objectName: string, relationshipName: string): { field: FieldDef; target: SObjectDef; targets: SObjectDef[]; polymorphic: boolean } | undefined;
 }
