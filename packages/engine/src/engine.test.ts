@@ -60,6 +60,17 @@ async function one(sobject: string, input: Record<string, unknown>): Promise<str
   return r?.id as string;
 }
 
+/** Fact Table flags (createable, updateable, deletable, undeletable) for the 14 thin objects. */
+const THIN_FLAGS: Record<string, [boolean, boolean, boolean, boolean]> = {
+  BusinessHours: [true, true, false, false], BusinessProcess: [true, true, false, false], CallCenter: [true, false, false, false],
+  DandBCompany: [true, true, true, true], Entitlement: [true, true, true, true], ExternalDataSource: [false, false, false, false],
+  IdeaTheme: [true, true, true, true], Individual: [true, true, true, true], OperatingHours: [true, true, true, true],
+  OpportunityHistory: [false, false, false, false], ServiceAppointment: [true, true, true, true], ServiceContract: [true, true, true, true],
+  SocialPost: [true, true, true, true], UserLicense: [false, false, false, false],
+};
+const unknownId = (name: string) => toCaseSafeId(`${schema.getObject(name)?.keyPrefix ?? "000"}000000000099`);
+const codes = (r: { errors: { statusCode: string }[] } | undefined) => (r?.errors ?? []).map((e) => e.statusCode);
+
 describe("insert", () => {
   it("creates a record with system fields, owner and hook-populated defaults", async () => {
     const id = await one("Account", { Name: "Acme" });
@@ -224,6 +235,69 @@ describe("master-detail, delete and undelete", () => {
   });
 });
 
+describe("object flags", () => {
+  it("object flags: insert, update and delete forbidden by a thin object's flags fail with INVALID_TYPE_FOR_OPERATION, allowed ones never do", async () => {
+    for (const [name, [c, u, d]] of Object.entries(THIN_FLAGS)) {
+      for (const [op, allowed] of [["insert", c], ["update", u], ["delete", d]] as const) {
+        const result =
+          op === "insert"
+            ? await engine.insert(session, name, [{}])
+            : op === "update"
+              ? await engine.update(session, name, [{ Id: unknownId(name) }])
+              : await engine.delete(session, name, [unknownId(name)]);
+        if (allowed) {
+          expect(codes(result[0]), `${name} ${op}`).not.toContain("INVALID_TYPE_FOR_OPERATION");
+        } else {
+          expect(result[0]?.errors, `${name} ${op}`).toEqual([{ statusCode: "INVALID_TYPE_FOR_OPERATION", message: `entity type ${name} does not support ${op}`, fields: [] }]);
+        }
+      }
+    }
+  });
+
+  it("object flags: one error per record, each a separate object", async () => {
+    const rs = await engine.insert(session, "UserLicense", [{}, {}]);
+    expect(rs).toHaveLength(2);
+    expect(rs[0]?.errors[0]).not.toBe(rs[1]?.errors[0]);
+    expect(rs.every((r) => r.success === false)).toBe(true);
+  });
+
+  it("object flags: upsert needs both createable and updateable, undelete needs undeletable", async () => {
+    const [license] = await engine.upsert(session, "UserLicense", "Id", [{ Id: unknownId("UserLicense") }]);
+    expect(license?.errors).toEqual([{ statusCode: "INVALID_TYPE_FOR_OPERATION", message: "entity type UserLicense does not support upsert", fields: [] }]);
+    const [center] = await engine.upsert(session, "CallCenter", "Name", [{ Name: "Upserted Center" }]);
+    expect(center?.errors[0]).toMatchObject({ statusCode: "INVALID_TYPE_FOR_OPERATION", message: "entity type CallCenter does not support upsert" });
+    const [hours] = await engine.upsert(session, "BusinessHours", "Name", [{ Name: "Upsert Hours" }]);
+    expect(codes(hours)).not.toContain("INVALID_TYPE_FOR_OPERATION");
+    const [undeleteHours] = await engine.undelete(session, "BusinessHours", [unknownId("BusinessHours")]);
+    expect(undeleteHours?.errors).toEqual([{ statusCode: "INVALID_TYPE_FOR_OPERATION", message: "entity type BusinessHours does not support undelete", fields: [] }]);
+    const [undeleteEntitlement] = await engine.undelete(session, "Entitlement", [unknownId("Entitlement")]);
+    expect(codes(undeleteEntitlement)).not.toContain("INVALID_TYPE_FOR_OPERATION");
+  });
+});
+
+describe("thin object references", () => {
+  it("thin: a lookup to a thin object with an unknown or wrong-prefix Id is INVALID_CROSS_REFERENCE_KEY", async () => {
+    const [unknown, wrongPrefix] = await engine.insert(session, "Case", [
+      { Subject: "thin ref", BusinessHoursId: "01m000000000001AAA" },
+      { Subject: "thin ref", BusinessHoursId: "001000000000001AAA" },
+    ]);
+    expect(unknown?.errors[0]).toMatchObject({ statusCode: "INVALID_CROSS_REFERENCE_KEY", fields: ["BusinessHoursId"] });
+    expect(wrongPrefix?.errors[0]).toMatchObject({ statusCode: "INVALID_CROSS_REFERENCE_KEY", fields: ["BusinessHoursId"] });
+    const [contact] = await engine.insert(session, "Contact", [{ LastName: "Thin", IndividualId: toCaseSafeId("0PK000000000001") }]);
+    expect(contact?.errors[0]).toMatchObject({ statusCode: "INVALID_CROSS_REFERENCE_KEY", fields: ["IndividualId"] });
+  });
+
+  it("thin: a lookup to an existing thin-object row is accepted", async () => {
+    const hours = await one("BusinessHours", { Name: "Thin Ref Hours" });
+    const individual = await one("Individual", { FirstName: "Ada", LastName: "Thin" });
+    const caseId = await one("Case", { Subject: "thin ok", BusinessHoursId: hours });
+    const contactId = await one("Contact", { LastName: "Thin", IndividualId: individual });
+    expect((await engine.retrieve(session, "Case", [caseId])).get(caseId)?.["BusinessHoursId"]).toBe(hours);
+    expect((await engine.retrieve(session, "Contact", [contactId])).get(contactId)?.["IndividualId"]).toBe(individual);
+    expect((await engine.retrieve(session, "Individual", [individual])).get(individual)).toMatchObject({ Name: "Ada Thin" });
+  });
+});
+
 describe("import mode", () => {
   it("keeps supplied ids and audit fields, loads children before parents, and bypasses rules and hooks", async () => {
     const importer = new DmlEngine(pool, schema, { orgSchema, importMode: true, executors: [{ run: () => Promise.reject(new Error("hooks must not run")) }] });
@@ -246,5 +320,27 @@ describe("import mode", () => {
     // Outside import mode the same validation rule still fires and ids are not accepted.
     const [normal] = await engine.insert(session, "Account", [{ Id: toCaseSafeId("001000000000CCC"), Name: "Normal", Type: "Customer - Direct" }]);
     expect(normal?.errors.map((e) => e.statusCode)).toContain("FIELD_CUSTOM_VALIDATION_EXCEPTION");
+  });
+
+  it("object flags are bypassed in import mode for read-only, create-only and non-deletable thin objects", async () => {
+    const importer = new DmlEngine(pool, schema, { orgSchema, importMode: true });
+    const licenseId = toCaseSafeId("100000000000077");
+    const historyId = toCaseSafeId("008000000000077");
+    const sourceId = toCaseSafeId("0XC000000000077");
+    const centerId = toCaseSafeId("04v000000000077");
+    const hoursId = toCaseSafeId("01m000000000077");
+    expect(await importer.insert(session, "UserLicense", [{ Id: licenseId, Name: "Imported License", MasterLabel: "Imported License" }])).toMatchObject([{ id: licenseId, success: true }]);
+    expect(await importer.insert(session, "OpportunityHistory", [{ Id: historyId }])).toMatchObject([{ id: historyId, success: true }]);
+    expect(await importer.insert(session, "ExternalDataSource", [{ Id: sourceId, DeveloperName: "Imported_Source" }])).toMatchObject([{ id: sourceId, success: true }]);
+    expect(await importer.insert(session, "CallCenter", [{ Id: centerId, Name: "Imported Center" }])).toMatchObject([{ id: centerId, success: true }]);
+    expect(await importer.update(session, "CallCenter", [{ Id: centerId, Name: "Renamed Center" }])).toMatchObject([{ success: true }]);
+    expect(await importer.insert(session, "BusinessHours", [{ Id: hoursId, Name: "Imported Hours" }])).toMatchObject([{ id: hoursId, success: true }]);
+    expect(await importer.delete(session, "BusinessHours", [hoursId])).toMatchObject([{ success: true }]);
+    expect(await importer.undelete(session, "BusinessHours", [hoursId])).toMatchObject([{ success: true }]);
+    // The normal-mode engine still refuses the same calls.
+    expect(codes((await engine.insert(session, "UserLicense", [{ Name: "x", MasterLabel: "x" }]))[0])).toEqual(["INVALID_TYPE_FOR_OPERATION"]);
+    expect(codes((await engine.update(session, "CallCenter", [{ Id: centerId, Name: "x" }]))[0])).toEqual(["INVALID_TYPE_FOR_OPERATION"]);
+    expect(codes((await engine.delete(session, "BusinessHours", [hoursId]))[0])).toEqual(["INVALID_TYPE_FOR_OPERATION"]);
+    expect((await engine.retrieve(session, "CallCenter", [centerId])).get(centerId)).toMatchObject({ Name: "Renamed Center" });
   });
 });
