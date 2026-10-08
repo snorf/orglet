@@ -43,22 +43,24 @@ created: 2026-10-08
 | 4-02-01 | 02 | 1 | POLY-06 | unit (no DB) | `pnpm vitest run packages/soql/src/compile.test.ts` | ✅ (extend); `typeof.ts` new | ⬜ pending |
 | 4-03-01 | 03 | 1 | POLY-01 (formula half, D-16) | unit | `pnpm vitest run packages/formula/src/formula.test.ts` | ✅ (update line 42-45) | ⬜ pending |
 | 4-03-02 | 03 | 1 | POLY-01 (gap record) | file check | `test -f .planning/todos/pending/2026-10-08-sigha-colon-syntax-for-polymorphic-formula-references.md` | ❌ created by task | ⬜ pending |
-| 4-04-01 | 04 | 2 | POLY-01, POLY-02, POLY-05 | unit (generated SQL) | `pnpm vitest run packages/soql/src/compile.test.ts` | ✅ (update line 31 test + extend) | ⬜ pending |
-| 4-04-02 | 04 | 2 | POLY-01, POLY-02, POLY-05 | unit + integration (pg) | `pnpm vitest run packages/soql/src packages/engine/src/query.test.ts` | `shape.test.ts` ❌ created by task; `query.test.ts` ✅ | ⬜ pending |
-| 4-05-01 | 05 | 3 | POLY-04, POLY-03 | unit | `pnpm vitest run packages/soql/src` | ✅ | ⬜ pending |
-| 4-05-02 | 05 | 3 | POLY-04 | integration (pg) | `pnpm vitest run packages/engine/src/query.test.ts` | ✅ | ⬜ pending |
+| 4-04-01 | 04 | 2 | POLY-01, POLY-02, POLY-05 | unit (generated SQL: joins, WHERE/ORDER BY/GROUP BY) | `pnpm vitest run packages/soql/src/compile.test.ts` | ✅ (update line 31 test + extend); `polymorphic.ts` new | ⬜ pending |
+| 4-04-02 | 04 | 2 | POLY-01, POLY-02, POLY-05 | unit (generated SQL: SELECT-side shape) | `pnpm vitest run packages/soql/src/compile.test.ts` | ✅ | ⬜ pending |
+| 4-04-03 | 04 | 2 | POLY-01, POLY-02, POLY-05 | unit + integration (pg) | `pnpm vitest run packages/soql/src packages/engine/src/query.test.ts` (+ `packages/api/src/bulk.test.ts:171` must stay green) | `shape.test.ts` ❌ created by task; `query.test.ts` ✅ | ⬜ pending |
+| 4-05-01 | 05 | 3 | POLY-04 | unit (TYPEOF compile) | `pnpm vitest run packages/soql/src/compile.test.ts` | ✅ | ⬜ pending |
+| 4-05-02 | 05 | 3 | POLY-04, POLY-03 (D-18, D-19) | unit (TYPEOF shape) | `pnpm vitest run packages/soql/src` | ✅ (from 4-04-03) | ⬜ pending |
+| 4-05-03 | 05 | 3 | POLY-04 | integration (pg) | `pnpm vitest run packages/engine/src/query.test.ts` | ✅ | ⬜ pending |
 | 4-06-01 | 06 | 4 | POLY-01 (SC1 three-way), POLY-03 | integration (pg, second OrgSchema, import mode) | `pnpm vitest run packages/engine/src/query.test.ts` | ✅ | ⬜ pending |
 | 4-06-02 | 06 | 4 | POLY-03 (D-07 log), POLY-01/05 over REST | api | `pnpm vitest run packages/api/src/api.test.ts` | ✅ | ⬜ pending |
 | 4-07-01 | 07 | 5 | POLY-01..06 | syntax check | `node --check conformance/poly-check/jsforce.mjs && python3 -m py_compile conformance/poly-check/sf_poly.py` | ❌ created by task | ⬜ pending |
-| 4-07-02 | 07 | 5 | POLY-01..06 | full suite + live SDK | `pnpm build && pnpm lint && pnpm test` (+ Postgres run, + both SDK legs) | ✅ | ⬜ pending |
+| 4-07-02 | 07 | 5 | POLY-01..06 (POLY-01 recorded partial, D-16) | full suite + live SDK | `pnpm build && pnpm lint && pnpm test` (+ Postgres run, + both SDK legs, cleanup via `orglet reset --org-schema poly_check --drop-prefixes`) | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
 Success criteria to tests:
-- SC1 (three-way agreement on one Group-owned Case): 4-06-01 `owner type agrees across SOQL Owner.Type, attributes.type and the write-path prefix rule ...`; formula leg asserts the recorded D-16 outcome (UNSUPPORTED:formula).
-- SC2 (missing field -> null): 4-04-02 `user-only Name fields are null on a Group owner ...`; 4-05-02 ELSE `Name: null` on a Case.
-- SC3 (unmodelled prefix degrades): 4-04-02 shape unit, 4-05-01 shape unit, 4-06-01 second-schema test, 4-06-02 REST log line.
-- SC4 (TYPEOF + `.Type` filter): 4-04-01/02 (`Owner.Type` select/filter/sort/group), 4-05-01/02 (TYPEOF).
+- SC1 (three-way agreement on one Group-owned Case): 4-06-01 `owner type agrees across SOQL Owner.Type, attributes.type and the write-path prefix rule ...`; formula leg asserts the recorded D-16 outcome (UNSUPPORTED:formula); POLY-01 recorded as partial in 4-07-02.
+- SC2 (missing field -> null): 4-04-03 `user-only Name fields are null on a Group owner ...`; 4-05-03 ELSE `Name: null` on a Case.
+- SC3 (unmodelled prefix degrades): 4-04-03 shape unit, 4-05-02 shape unit (null even with ELSE, D-19), 4-06-01 second-schema test, 4-06-02 REST log line.
+- SC4 (TYPEOF + `.Type` filter): 4-04-01/02/03 (`Owner.Type` select/filter/sort/group), 4-05-01/02/03 (TYPEOF).
 - SC5 (invalid TYPEOF forms): 4-02-01 (12+ cases).
 
 ---
@@ -67,9 +69,9 @@ Success criteria to tests:
 
 No separate Wave 0 plan: every task writes its tests in the same task (RED first for `tdd="true"` tasks), on existing infrastructure (vitest, `test/db.ts` with embedded pglite).
 
-- [ ] `packages/soql/src/shape.test.ts` — new, created by 4-04-02 (pure row-shaping tests)
-- [ ] Group (Type Queue) + Group-owned / User-owned Case fixture in `packages/engine/src/query.test.ts` — created by 4-04-02, reused by 4-05-02 and 4-06-01
-- [ ] Task fixtures (WhatId -> Account / Opportunity / Case) — created by 4-05-02
+- [ ] `packages/soql/src/shape.test.ts` — new, created by 4-04-03 (pure row-shaping tests)
+- [ ] Group (Type Queue) + Group-owned / User-owned Case fixture in `packages/engine/src/query.test.ts` — created by 4-04-03, reused by 4-05-03 and 4-06-01
+- [ ] Task fixtures (WhatId -> Account / Opportunity / Case) — created by 4-05-03
 - [ ] Second in-memory `OrgSchema` without Group + import-mode engine — created by 4-06-01
 - [ ] `conformance/poly-check/` scaffold — created by 4-07-01
 
