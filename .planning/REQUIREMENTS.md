@@ -58,7 +58,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   OpportunityHistory and UserLicense read-only; CallCenter create-only; BusinessHours and
   BusinessProcess create/update only, no delete; the rest full CRUD),
   and DML that violates a flag is rejected with the Salesforce error code
-- [ ] **BASE-04**: Describe for a thin object still contains everything `jsforce` and
+- [x] **BASE-04**: Describe for a thin object still contains everything `jsforce` and
   `simple-salesforce` read (`keyPrefix`, `nameField`/`name`, `urls`, `fields[]`,
   `childRelationships[]`), so a thin object never breaks global describe or per-object describe
 - [x] **BASE-05**: Loading Johan's Developer Edition retrieve produces zero
@@ -200,7 +200,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE-01 | Phase 3 | Complete |
 | BASE-02 | Phase 3 | Complete |
 | BASE-03 | Phase 3 | Complete |
-| BASE-04 | Phase 3 | Pending |
+| BASE-04 | Phase 3 | Complete |
 | BASE-05 | Phase 3 | Complete |
 | POLY-01 | Phase 4 | Pending |
 | POLY-02 | Phase 4 | Pending |
