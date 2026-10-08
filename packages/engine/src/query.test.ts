@@ -1,8 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { migrate, quote, type Pool } from "@orglet/schema";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type OrgSchema } from "@orglet/metadata";
+import { compileFormula } from "@orglet/formula";
+import { generateId, matchTargetByPrefix, migrate, quote, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
@@ -167,6 +168,22 @@ describe("polymorphic lookups", () => {
     expect(await idsOf("SELECT Id FROM Case WHERE Owner.Type LIKE 'Gr%'")).toEqual([groupCase]);
   });
 
+  it("owner type agrees across SOQL Owner.Type, attributes.type and the write-path prefix rule for one Group-owned case", async () => {
+    const page = await q(`SELECT OwnerId, Owner.Name, Owner.Type FROM Case WHERE Id = '${groupCase}'`);
+    const row = page.records[0];
+    const owner = row?.["Owner"] as { Type: string; Name: string; attributes: { type: string } };
+    expect(owner.Type).toBe("Group");
+    expect(owner.attributes.type).toBe("Group");
+    expect(owner.Name).toBe("Support Queue");
+    const rel = schema.resolveRelationship("Case", "Owner");
+    if (!rel) throw new Error("Case.Owner relationship not found");
+    expect(matchTargetByPrefix(rel.targets, String(row?.["OwnerId"]))?.name).toBe("Group");
+    // Formula leg is the recorded D-16 gap: colon syntax is UNSUPPORTED, plain traversal is rejected.
+    expect(() => compileFormula("Owner:Group.Name = 'Support Queue'", { schema, objectName: "Case", context: "validation_rule" })).toThrow(/UNSUPPORTED:formula/);
+    expect(() => compileFormula("Owner.Name = 'Support Queue'", { schema, objectName: "Case", context: "validation_rule" })).toThrow("Field Owner.Name does not exist. Check spelling.");
+    expect("warnings" in page).toBe(false);
+  });
+
   it("filters and sorts on the concrete owner's name", async () => {
     expect(await idsOf("SELECT Id FROM Case WHERE Owner.Name = 'Support Queue'")).toEqual([groupCase]);
     expect(await idsOf("SELECT Id FROM Case ORDER BY Owner.Name")).toEqual([userCase, groupCase]);
@@ -222,5 +239,56 @@ describe("polymorphic lookups", () => {
       expect(page.records[0]?.["What"]).toMatchObject({ attributes: { type: "Account" }, Name: "Acme" });
       expect(page.records[0]?.["Owner"]).toMatchObject({ attributes: { type: "User" }, Alias: "admin" });
     });
+  });
+});
+
+describe("polymorphic lookups with an unmodelled target", () => {
+  const orgSchema2 = `test_${randomBytes(4).toString("hex")}`;
+  const warning = "UNSUPPORTED:reference-target 00G matches no object in the org schema";
+  let db2: TestDb;
+  let engine2: DmlEngine;
+  let session2: Session;
+  const q2 = (soql: string) => runQuery(engine2, session2, soql, { apiVersion: "60.0" });
+
+  beforeAll(async () => {
+    db2 = await openTestDb();
+    const baseline = await loadBaseline();
+    const project = await readSourceProject(ACME);
+    const noGroup = buildOrgSchema({ ...baseline, objects: baseline.objects.filter((o) => o.name !== "Group") }, project).schema;
+    await migrate(db2.pool, noGroup, { orgSchema: orgSchema2 });
+    const boot2 = await bootstrapOrg(db2.pool, noGroup, { orgSchema: orgSchema2 });
+    session2 = boot2.session;
+    engine2 = new DmlEngine(db2.pool, noGroup, { orgSchema: orgSchema2, importMode: true });
+    const results = await engine2.insert(session2, "Case", [
+      { Id: generateId("500"), Subject: "Orphan one", OwnerId: generateId("00G") },
+      { Id: generateId("500"), Subject: "Orphan two", OwnerId: generateId("00G") },
+    ]);
+    for (const r of results) expect(r.success, JSON.stringify(r.errors)).toBe(true);
+  });
+
+  afterAll(async () => {
+    await db2.pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema2)} CASCADE`);
+    await db2.close();
+  });
+
+  it("an owner Id whose prefix matches no modelled object is a null parent and one reference-target warning, never an error", async () => {
+    const page = await q2("SELECT Id, Owner.Name FROM Case");
+    expect(page.records).toHaveLength(2);
+    for (const r of page.records) expect(r["Owner"]).toBeNull();
+    expect(page.warnings).toEqual([warning]);
+  });
+
+  it("TYPEOF yields a null owner for an unmodelled prefix even with ELSE, never a synthetic object", async () => {
+    const withElse = await q2("SELECT Id, OwnerId, TYPEOF Owner WHEN User THEN Alias WHEN Group THEN Name ELSE Id END FROM Case");
+    expect(withElse.records).toHaveLength(2);
+    for (const r of withElse.records) {
+      expect(r["Owner"]).toBeNull();
+      expect(String(r["OwnerId"]).startsWith("00G")).toBe(true);
+    }
+    const withoutElse = await q2("SELECT Id, TYPEOF Owner WHEN User THEN Alias END FROM Case");
+    for (const r of withoutElse.records) expect(r["Owner"]).toBeNull();
+    expect(withElse.warnings).toEqual([warning]);
+    expect(withoutElse.warnings).toEqual([warning]);
+    expect(JSON.stringify([...withElse.records, ...withoutElse.records])).not.toContain('"type":"Name"');
   });
 });

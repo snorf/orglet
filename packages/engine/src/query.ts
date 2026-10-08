@@ -25,6 +25,8 @@ export interface QueryPage {
   records: Row[];
   /** Offset of the next page when `done` is false. */
   nextOffset?: number;
+  /** UNSUPPORTED:reference-target lines, one per distinct unmodelled key prefix seen while shaping (D-07); absent when none. */
+  warnings?: string[];
 }
 
 export async function runQuery(engine: DmlEngine, session: Session, soql: string, options: QueryOptions = {}): Promise<QueryPage> {
@@ -54,12 +56,14 @@ export async function runQuery(engine: DmlEngine, session: Session, soql: string
       totalSize = Number(count.rows[0]?.n ?? totalSize);
     }
 
-    const records = shapeRows(compiled.shape, rows, { apiVersion });
+    const unmodelled = new Set<string>();
+    const records = shapeRows(compiled.shape, rows, { apiVersion, onUnmodelledPrefix: (prefix) => unmodelled.add(prefix) });
     if (compiled.shape.kind === "sobject" && compiled.shape.computed.length > 0) {
       await computeFormulaFields(engine, client, session, compiled.shape, records);
     }
     const result: QueryPage = { totalSize, done: !hasMore, records };
     if (hasMore) result.nextOffset = offset + batchSize;
+    if (unmodelled.size > 0) result.warnings = [...unmodelled].sort().map((p) => `UNSUPPORTED:reference-target ${p} matches no object in the org schema`);
     return result;
   } finally {
     client.release();
