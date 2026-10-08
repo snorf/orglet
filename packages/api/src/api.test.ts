@@ -389,7 +389,7 @@ describe("thin objects", () => {
     for (const [name, t] of Object.entries(THIN)) {
       const rels = json(await get(`${V}/sobjects/${name}/describe`))["childRelationships"] as Json[];
       expect(rels.flatMap((r) => missingKeys(r, contract.childRelationshipKeys)), name).toEqual([]);
-      expect(rels, name).toEqual(expect.arrayContaining(t.children.map(([childSObject, field]) => expect.objectContaining({ childSObject, field }))));
+      expect(rels, name).toEqual(expect.arrayContaining(t.children.map(([childSObject, field]) => expect.objectContaining({ childSObject, field }) as unknown)));
     }
     const licenseRels = json(await get(`${V}/sobjects/UserLicense/describe`))["childRelationships"] as Json[];
     expect(licenseRels.find((r) => r["childSObject"] === "Profile")).toMatchObject({ field: "UserLicenseId", relationshipName: "Profiles" });
