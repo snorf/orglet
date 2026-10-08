@@ -7,6 +7,7 @@ import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
 import { columnName, quote, tableName } from "@orglet/schema";
 import { dateLiteralRange, dateNLiteralRange, toIsoDate, type DateRange } from "./dates.js";
 import { invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
+import { TYPEOF_RESTRICTIONS, assertTypeofAllowed, diagnoseTypeofParseError } from "./typeof.js";
 
 export interface CompileOptions {
   schema: OrgSchema;
@@ -168,9 +169,11 @@ class Compiler {
     try {
       query = parseQuery(soql.replace(/\s+ALL\s+ROWS\s*$/i, ""));
     } catch (err) {
-      throw malformed((err as Error).message);
+      const detail = (err as Error).message;
+      throw malformed(/\bTYPEOF\b/i.test(soql) ? (diagnoseTypeofParseError(soql) ?? detail) : detail);
     }
     if (!query.sObject) throw malformed("unexpected token: FROM");
+    assertTypeofAllowed(query);
     // FOR VIEW / FOR REFERENCE only touch LastViewedDate; FOR UPDATE locks rows for the
     // transaction, which a single-statement REST query never observes. All three are accepted.
     if (query.withDataCategory || query.withSecurityEnforced || query.withAccessLevel) throw unsupported("soql-with", "WITH clauses are not supported yet");
@@ -341,6 +344,7 @@ class Compiler {
     const scope: Scope = { obj: child, alias: this.nextAlias(), joins: new Map() };
     const stripAlias = (name: string) => (sub.sObjectAlias && name.toLowerCase().startsWith(`${sub.sObjectAlias.toLowerCase()}.`) ? name.slice(sub.sObjectAlias.length + 1) : name);
     const selectItems: string[] = [];
+    if (sub.fields?.some((f) => f.type === "FieldTypeof")) throw unsupported("polymorphic-subquery", `TYPEOF in child subquery ${sub.relationshipName} is not supported yet`);
     if (sub.fields?.some((f) => f.type === "FieldFunctionExpression" && f.isAggregateFn)) throw unsupported("soql-subquery-aggregate", "aggregate functions in child subqueries are not supported");
     const shape = this.compileSObjectSelect(scope, sub.fields ?? [], selectItems, stripAlias);
     if (shape.computed.length > 0) throw unsupported("soql-formula", `formula fields in child subquery ${sub.relationshipName} are not supported yet`);
@@ -502,6 +506,7 @@ class Compiler {
       if (!q.sObject) throw malformed("semi-join needs an object");
       const innerObj = this.objectFor(q.sObject);
       const innerScope: Scope = { obj: innerObj, alias: inner.nextAlias(), joins: new Map() };
+      if (q.fields?.some((f) => f.type === "FieldTypeof")) throw malformed(TYPEOF_RESTRICTIONS.semiJoin);
       const innerField = q.fields?.[0];
       if (!innerField || innerField.type !== "Field" || (q.fields?.length ?? 0) !== 1) throw malformed("semi-join subquery must select a single Id or lookup field");
       const r = inner.resolve(innerScope, [innerField.field]);

@@ -136,3 +136,76 @@ describe("compileSoql", () => {
     expect(compile("SELECT Id FROM Account FOR VIEW").sql).toContain('FROM "org"."account"');
   });
 });
+
+describe("TYPEOF restrictions", () => {
+  const rejected = (soql: string): SoqlError => {
+    try {
+      compile(soql);
+    } catch (e) {
+      if (e instanceof SoqlError) return e;
+      throw e;
+    }
+    throw new Error(`compiled without error: ${soql}`);
+  };
+  const malformedWith = (soql: string, message: RegExp) => {
+    const e = rejected(soql);
+    expect(e.errorCode).toBe("MALFORMED_QUERY");
+    expect(e.message).toMatch(message);
+  };
+
+  it("rejects TYPEOF in WHERE as MALFORMED_QUERY naming the SELECT-only rule", () => {
+    malformedWith("SELECT Id FROM Case WHERE TYPEOF Owner WHEN User THEN Name END != null", /TYPEOF is only allowed in the SELECT clause/);
+  });
+
+  it("rejects TYPEOF in ORDER BY as MALFORMED_QUERY naming the SELECT-only rule", () => {
+    malformedWith("SELECT Id FROM Case ORDER BY TYPEOF Owner WHEN User THEN Name END", /TYPEOF is only allowed in the SELECT clause/);
+  });
+
+  it("rejects TYPEOF in GROUP BY as MALFORMED_QUERY naming the grouping rule", () => {
+    malformedWith("SELECT COUNT(Id) FROM Case GROUP BY TYPEOF Owner WHEN User THEN Name END", /GROUP BY, GROUP BY ROLLUP, GROUP BY CUBE, and HAVING/);
+  });
+
+  it("rejects TYPEOF in HAVING as MALFORMED_QUERY naming the grouping rule", () => {
+    malformedWith("SELECT Status, COUNT(Id) FROM Case GROUP BY Status HAVING TYPEOF Owner WHEN User THEN Name END != null", /HAVING/);
+  });
+
+  it("rejects a function in a WHEN field list as MALFORMED_QUERY naming the function rule", () => {
+    malformedWith("SELECT TYPEOF Owner WHEN User THEN toLabel(Name) END FROM Case", /functions in the SELECT clause/);
+  });
+
+  it("rejects nested TYPEOF as MALFORMED_QUERY", () => {
+    malformedWith("SELECT TYPEOF What WHEN Account THEN TYPEOF Owner WHEN User THEN Name END END FROM Task", /can't be nested/);
+  });
+
+  it("rejects TYPEOF next to COUNT() before the count-only path runs", () => {
+    malformedWith("SELECT COUNT(), TYPEOF Owner WHEN User THEN Name END FROM Case", /such as COUNT\(\)/);
+  });
+
+  it("rejects TYPEOF in a semi-join subquery as MALFORMED_QUERY", () => {
+    malformedWith("SELECT Id FROM Account WHERE Id IN (SELECT TYPEOF What WHEN Account THEN Id END FROM Task)", /semi-join/);
+  });
+
+  it("rejects TYPEOF with GROUP BY before the aggregate path runs", () => {
+    malformedWith("SELECT TYPEOF Owner WHEN User THEN Name END FROM Case GROUP BY Id", /GROUP BY/);
+  });
+
+  it("rejects TYPEOF next to a function sibling in SELECT", () => {
+    malformedWith("SELECT toLabel(Status), TYPEOF Owner WHEN User THEN Name END FROM Case", /functions in the SELECT clause/);
+  });
+
+  it("rejects a relationship used both in TYPEOF and in the field list", () => {
+    malformedWith("SELECT Owner.Name, TYPEOF Owner WHEN User THEN Alias END FROM Case", /can't also be referenced/);
+  });
+
+  it("refuses TYPEOF inside a child subquery as UNSUPPORTED:polymorphic-subquery", () => {
+    const e = rejected("SELECT Id, (SELECT TYPEOF What WHEN Account THEN Name END FROM Tasks) FROM Account");
+    expect(e.errorCode).toBe("UNSUPPORTED");
+    expect(e.message).toMatch(/UNSUPPORTED:polymorphic-subquery/);
+  });
+
+  it("keeps the parser's own message for a parse error without TYPEOF", () => {
+    const e = rejected("SELECT Id FROM Account WHERE");
+    expect(e.errorCode).toBe("MALFORMED_QUERY");
+    expect(e.message).not.toMatch(/TYPEOF/);
+  });
+});
