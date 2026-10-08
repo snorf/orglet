@@ -175,4 +175,52 @@ describe("polymorphic lookups", () => {
   it("refuses traversal past a polymorphic parent as UNSUPPORTED:polymorphic-traversal", async () => {
     await expect(q("SELECT Owner.Profile.Name FROM Case")).rejects.toThrow(/UNSUPPORTED:polymorphic-traversal/);
   });
+
+  describe("TYPEOF", () => {
+    const url = (type: string, id: string) => `/services/data/v60.0/sobjects/${type}/${id}`;
+    let taskAcme = "";
+    let taskOpp = "";
+    let taskCase = "";
+
+    beforeAll(async () => {
+      taskAcme = await insert("Task", { Subject: "Call Acme", WhatId: ids["acme"] });
+      taskOpp = await insert("Task", { Subject: "Call Big", WhatId: ids["opp"] });
+      taskCase = await insert("Task", { Subject: "Call Case", WhatId: groupCase });
+    });
+
+    it("TYPEOF returns only the matching branch's fields for each owner", async () => {
+      const page = await q("SELECT Subject, TYPEOF Owner WHEN User THEN Alias, Email WHEN Group THEN Name, Type END FROM Case ORDER BY Subject");
+      expect(page.records.map((r) => r["Subject"])).toEqual(["Group case", "User case"]);
+      expect(page.records[0]?.["Owner"]).toEqual({ attributes: { type: "Group", url: url("Group", groupId) }, Name: "Support Queue", Type: "Queue" });
+      expect(page.records[1]?.["Owner"]).toEqual({ attributes: { type: "User", url: url("User", session.userId) }, Alias: "admin", Email: "admin@orglet.local" });
+    });
+
+    it("TYPEOF over What picks the Account or Opportunity branch per row and is null for an unlisted type without ELSE", async () => {
+      const page = await q("SELECT Id, Subject, TYPEOF What WHEN Account THEN Name, Industry WHEN Opportunity THEN Name, Amount END FROM Task ORDER BY Subject");
+      expect(page.records.map((r) => r["Id"])).toEqual([taskAcme, taskOpp, taskCase]);
+      expect(page.records[0]?.["What"]).toEqual({ attributes: { type: "Account", url: url("Account", ids["acme"] ?? "") }, Name: "Acme", Industry: "Energy" });
+      expect(page.records[1]?.["What"]).toEqual({ attributes: { type: "Opportunity", url: url("Opportunity", ids["opp"] ?? "") }, Name: "Big", Amount: 2000 });
+      expect(page.records[2]?.["What"]).toBeNull();
+    });
+
+    it("ELSE covers unlisted types with Name fields, null where the concrete object lacks the field", async () => {
+      const page = await q("SELECT Subject, TYPEOF What WHEN Account THEN Name ELSE Id, Name END FROM Task ORDER BY Subject");
+      expect(page.records[0]?.["What"]).toEqual({ attributes: { type: "Account", url: url("Account", ids["acme"] ?? "") }, Name: "Acme" });
+      expect(page.records[1]?.["What"]).toEqual({ attributes: { type: "Opportunity", url: url("Opportunity", ids["opp"] ?? "") }, Id: ids["opp"], Name: "Big" });
+      expect(page.records[2]?.["What"]).toEqual({ attributes: { type: "Case", url: url("Case", groupCase) }, Id: groupCase, Name: null });
+    });
+
+    it("TYPEOF combines with an Owner.Type filter", async () => {
+      const page = await q("SELECT Subject, TYPEOF Owner WHEN Group THEN Name END FROM Case WHERE Owner.Type = 'Group'");
+      expect(page.records).toHaveLength(1);
+      expect(page.records[0]?.["Owner"]).toEqual({ attributes: { type: "Group", url: url("Group", groupId) }, Name: "Support Queue" });
+    });
+
+    it("two TYPEOF expressions on different relationships shape independently", async () => {
+      const page = await q("SELECT Subject, TYPEOF What WHEN Account THEN Name END, TYPEOF Owner WHEN User THEN Alias END FROM Task WHERE Subject = 'Call Acme'");
+      expect(page.records).toHaveLength(1);
+      expect(page.records[0]?.["What"]).toMatchObject({ attributes: { type: "Account" }, Name: "Acme" });
+      expect(page.records[0]?.["Owner"]).toMatchObject({ attributes: { type: "User" }, Alias: "admin" });
+    });
+  });
 });
