@@ -2,7 +2,7 @@
  * Turns result rows into Salesforce record JSON according to a Shape.
  */
 import { keyPrefixOf } from "@orglet/schema";
-import type { AggregateShape, SObjectShape, Shape } from "./compile.js";
+import type { AggregateShape, SObjectShape, Shape, TypeofShape } from "./compile.js";
 
 export type Row = Record<string, unknown>;
 
@@ -43,6 +43,7 @@ export function shapeSObjectRow(shape: SObjectShape, row: Row, options: ShapeOpt
     record[f.name] = f.labels && typeof v === "string" ? (f.labels.get(v) ?? v) : v;
   }
   for (const [rel, parent] of shape.parents) record[rel] = shapeSObjectRow(parent, row, options);
+  for (const [rel, t] of shape.typeofs ?? []) record[rel] = shapeTypeof(t, row, options);
   for (const [rel, child] of shape.children) {
     const raw = row[child.alias];
     const rows = Array.isArray(raw) ? (raw as Row[]) : [];
@@ -50,6 +51,22 @@ export function shapeSObjectRow(shape: SObjectShape, row: Row, options: ShapeOpt
     record[rel] = rows.length === 0 ? null : { totalSize: records.length, done: true, records };
   }
   return record;
+}
+
+/** TYPEOF: the WHEN branch named by the row's concrete type, else ELSE, else null (D-04, D-18). */
+function shapeTypeof(t: TypeofShape, row: Row, options: ShapeOptions): Row | null {
+  const fk = row[t.fkAlias];
+  if (typeof fk !== "string") return null;
+  const type = row[t.typeAlias];
+  if (typeof type !== "string") {
+    // Prefix matches no modelled object: a null parent even with ELSE (D-19); reported so the caller logs D-07 once per query.
+    options.onUnmodelledPrefix?.(keyPrefixOf(fk));
+    return null;
+  }
+  const branch = t.branches.get(type);
+  if (branch) return shapeSObjectRow(branch, row, options);
+  // Only a modelled concrete type reaches the ELSE shape, so its own poly handling never reports a second time.
+  return t.else ? shapeSObjectRow(t.else, row, options) : null;
 }
 
 export function shapeAggregateRow(shape: AggregateShape, row: Row): Row {
