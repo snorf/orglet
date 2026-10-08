@@ -28,11 +28,12 @@ describe("compileSoql", () => {
     expect(compile("SELECT Id FROM Account", true).sql).not.toContain("isdeleted");
   });
 
-  it("joins parents once per relationship path and nests them in the shape", () => {
+  it("joins parents once per relationship path, a polymorphic owner once per target with a prefix filter, and nests them in the shape", () => {
     const q = compile("SELECT Id, Account.Name, Account.Industry, Account.Owner.Alias FROM Contact");
     expect(q.sql).toContain('LEFT JOIN "org"."account" t1 ON t1."id" = t0."accountid"');
-    expect(q.sql).toContain('LEFT JOIN "org"."user" t2 ON t2."id" = t1."ownerid"');
-    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(2);
+    expect(q.sql).toContain('LEFT JOIN "org"."user" t2 ON t2."id" = t1."ownerid" AND left(t1."ownerid", 3) = \'005\'');
+    expect(q.sql).toContain('LEFT JOIN "org"."group" t3 ON t3."id" = t1."ownerid" AND left(t1."ownerid", 3) = \'00G\'');
+    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(3);
     const shape = q.shape.kind === "sobject" ? q.shape : undefined;
     expect(shape?.parents.get("Account")?.fields.map((f) => f.name)).toEqual(["Name", "Industry"]);
     expect(shape?.parents.get("Account")?.parents.get("Owner")?.fields.map((f) => f.name)).toEqual(["Alias"]);
@@ -137,16 +138,79 @@ describe("compileSoql", () => {
   });
 });
 
+const rejected = (soql: string): SoqlError => {
+  try {
+    compile(soql);
+  } catch (e) {
+    if (e instanceof SoqlError) return e;
+    throw e;
+  }
+  throw new Error(`compiled without error: ${soql}`);
+};
+
+describe("polymorphic relationships", () => {
+  const USER_JOIN = 'LEFT JOIN "org"."user" t1 ON t1."id" = t0."ownerid" AND left(t0."ownerid", 3) = \'005\'';
+  const GROUP_JOIN = 'LEFT JOIN "org"."group" t2 ON t2."id" = t0."ownerid" AND left(t0."ownerid", 3) = \'00G\'';
+  const TYPE_CASE = 'CASE left(t0."ownerid", 3) WHEN \'005\' THEN \'User\' WHEN \'00G\' THEN \'Group\' END';
+
+  it("filters Owner.Type on the Id prefix CASE, never on Group's own Type column", () => {
+    const q = compile("SELECT Id FROM Case WHERE Owner.Type = 'Group'");
+    expect(q.sql).toContain(USER_JOIN);
+    expect(q.sql).toContain(GROUP_JOIN);
+    expect(q.sql).toContain(`lower(${TYPE_CASE}) = lower($1)`);
+    expect(q.sql).not.toContain('t2."type"');
+    expect(q.params).toEqual(["Group"]);
+  });
+
+  it("filters user-only Name fields on the User target only", () => {
+    const q = compile("SELECT Id FROM Case WHERE Owner.Email = 'a@b.se'");
+    expect(q.sql).toContain('t1."email"');
+    expect(q.sql).not.toContain('t2."email"');
+  });
+
+  it("orders by the concrete owner's name through COALESCE over every target", () => {
+    const q = compile("SELECT Id FROM Case ORDER BY Owner.Name");
+    expect(q.sql).toMatch(/ORDER BY lower\(COALESCE\([^)]*\)[^,]*, t2\."name"\)\) ASC NULLS FIRST/);
+  });
+
+  it("groups by the Type CASE and names the aggregate column Type", () => {
+    const q = compile("SELECT Owner.Type, COUNT(Id) FROM Case GROUP BY Owner.Type");
+    expect(q.sql).toContain(`GROUP BY ${TYPE_CASE}`);
+    expect(q.shape.kind === "aggregate" && q.shape.columns.map((c) => c.name)).toEqual(["Type", "expr0"]);
+  });
+
+  it("joins all seven What targets with prefix filters", () => {
+    const q = compile("SELECT Id FROM Task WHERE What.Name = 'Acme'");
+    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(7);
+    expect((q.sql.match(/AND left\(t0\."whatid", 3\) = '[0-9A-Za-z]{3}'/g) ?? []).length).toBe(7);
+  });
+
+  it("rejects a field outside the Name pseudo-object as INVALID_FIELD on entity Name", () => {
+    const e = rejected("SELECT Id FROM Case WHERE Owner.Department = 'x'");
+    expect(e.errorCode).toBe("INVALID_FIELD");
+    expect(e.message).toContain("on entity 'Name'");
+  });
+
+  it("refuses traversal past a polymorphic parent as UNSUPPORTED:polymorphic-traversal", () => {
+    const e = rejected("SELECT Id FROM Case WHERE Owner.Profile.Name = 'x'");
+    expect(e.errorCode).toBe("UNSUPPORTED");
+    expect(e.message).toMatch(/UNSUPPORTED:polymorphic-traversal/);
+  });
+
+  it("refuses a polymorphic parent inside a child subquery as UNSUPPORTED:polymorphic-subquery", () => {
+    const e = rejected("SELECT Id, (SELECT Id FROM Tasks WHERE What.Name = 'x') FROM Account");
+    expect(e.errorCode).toBe("UNSUPPORTED");
+    expect(e.message).toMatch(/UNSUPPORTED:polymorphic-subquery/);
+  });
+
+  it("emits the polymorphic joins inside a semi-join subquery", () => {
+    const q = compile("SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Case WHERE Owner.Type = 'Group')");
+    expect(q.sql).toContain('"org"."group"');
+    expect(q.sql).toMatch(/IN \(SELECT t\d+\."accountid" FROM "org"\."case" t\d+ LEFT JOIN "org"\."user" t\d+ ON .* LEFT JOIN "org"\."group" t\d+ ON .* WHERE TRUE/);
+  });
+});
+
 describe("TYPEOF restrictions", () => {
-  const rejected = (soql: string): SoqlError => {
-    try {
-      compile(soql);
-    } catch (e) {
-      if (e instanceof SoqlError) return e;
-      throw e;
-    }
-    throw new Error(`compiled without error: ${soql}`);
-  };
   const malformedWith = (soql: string, message: RegExp) => {
     const e = rejected(soql);
     expect(e.errorCode).toBe("MALFORMED_QUERY");
