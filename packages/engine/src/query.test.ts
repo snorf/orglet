@@ -17,8 +17,17 @@ let schema: OrgSchema;
 let engine: DmlEngine;
 let session: Session;
 const ids: Record<string, string> = {};
+let groupId = "";
+let groupCase = "";
+let userCase = "";
 
 const q = (soql: string, options = {}) => runQuery(engine, session, soql, { apiVersion: "60.0", ...options });
+
+const insert = async (sobject: string, input: Record<string, unknown>) => {
+  const [r] = await engine.insert(session, sobject, [input]);
+  if (!r?.success) throw new Error(JSON.stringify(r?.errors));
+  return r.id as string;
+};
 
 beforeAll(async () => {
   testDb = await openTestDb();
@@ -28,11 +37,6 @@ beforeAll(async () => {
   session = (await bootstrapOrg(pool, schema, { orgSchema })).session;
   engine = new DmlEngine(pool, schema, { orgSchema });
 
-  const insert = async (sobject: string, input: Record<string, unknown>) => {
-    const [r] = await engine.insert(session, sobject, [input]);
-    if (!r?.success) throw new Error(JSON.stringify(r?.errors));
-    return r.id as string;
-  };
   ids["acme"] = await insert("Account", { Name: "Acme", Industry: "Energy", AnnualRevenue: 1000, Website: "https://acme.se", BillingCity: "Stockholm", BillingCountry: "Sweden" });
   ids["beta"] = await insert("Account", { Name: "beta corp", Industry: "Other", AnnualRevenue: 50 });
   ids["gamma"] = await insert("Account", { Name: "Gamma", Industry: "Energy" });
@@ -127,5 +131,48 @@ describe("runQuery", () => {
   it("honours the query's own LIMIT under pagination", async () => {
     const page = await q("SELECT Id FROM Contact LIMIT 1", { batchSize: 2000 });
     expect(page).toMatchObject({ totalSize: 1, done: true });
+  });
+});
+
+describe("polymorphic lookups", () => {
+  beforeAll(async () => {
+    groupId = await insert("Group", { Name: "Support Queue", DeveloperName: "Support_Queue", Type: "Queue", Email: "queue@acme.se" });
+    groupCase = await insert("Case", { Subject: "Group case", OwnerId: groupId });
+    userCase = await insert("Case", { Subject: "User case" });
+  });
+
+  const idsOf = async (soql: string) => (await q(soql)).records.map((r) => r["Id"]);
+
+  it("owner name, type and attributes come from the concrete owner of each row", async () => {
+    const page = await q("SELECT Subject, Owner.Name, Owner.Type FROM Case ORDER BY Subject");
+    expect(page.records[0]?.["Owner"]).toEqual({ attributes: { type: "Group", url: `/services/data/v60.0/sobjects/Group/${groupId}` }, Name: "Support Queue", Type: "Group" });
+    expect(page.records[1]?.["Owner"]).toEqual({ attributes: { type: "User", url: `/services/data/v60.0/sobjects/User/${session.userId}` }, Name: "Admin User", Type: "User" });
+  });
+
+  it("user-only Name fields are null on a Group owner even though Group has an Email column", async () => {
+    const page = await q("SELECT Subject, Owner.Email, Owner.Alias, Owner.Title FROM Case ORDER BY Subject");
+    expect(page.records[0]?.["Owner"]).toMatchObject({ Email: null, Alias: null, Title: null });
+    expect(page.records[1]?.["Owner"]).toMatchObject({ Alias: "admin" });
+  });
+
+  it("a field outside the Name pseudo-object is INVALID_FIELD on entity Name", async () => {
+    await expect(q("SELECT Owner.Department FROM Case")).rejects.toMatchObject({ errorCode: "INVALID_FIELD", message: expect.stringContaining("entity 'Name'") as string });
+  });
+
+  it("Owner.Type filter returns exactly the Group-owned rows", async () => {
+    expect(await idsOf("SELECT Id FROM Case WHERE Owner.Type = 'Group'")).toEqual([groupCase]);
+    expect(await idsOf("SELECT Id FROM Case WHERE Owner.Type = 'group'")).toEqual([groupCase]);
+    expect(await idsOf("SELECT Id FROM Case WHERE Owner.Type != 'Group'")).toEqual([userCase]);
+    expect(await idsOf("SELECT Id FROM Case WHERE Owner.Type IN ('User')")).toEqual([userCase]);
+    expect(await idsOf("SELECT Id FROM Case WHERE Owner.Type LIKE 'Gr%'")).toEqual([groupCase]);
+  });
+
+  it("filters and sorts on the concrete owner's name", async () => {
+    expect(await idsOf("SELECT Id FROM Case WHERE Owner.Name = 'Support Queue'")).toEqual([groupCase]);
+    expect(await idsOf("SELECT Id FROM Case ORDER BY Owner.Name")).toEqual([userCase, groupCase]);
+  });
+
+  it("refuses traversal past a polymorphic parent as UNSUPPORTED:polymorphic-traversal", async () => {
+    await expect(q("SELECT Owner.Profile.Name FROM Case")).rejects.toThrow(/UNSUPPORTED:polymorphic-traversal/);
   });
 });
