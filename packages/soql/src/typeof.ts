@@ -18,6 +18,11 @@ export const TYPEOF_RESTRICTIONS = {
 export const alsoSelected = (relationship: string): string =>
   `TYPEOF ${relationship}: a relationship field used in TYPEOF can't also be referenced in the field list of the SELECT statement`;
 
+export const notPolymorphic = (relationship: string): string => `TYPEOF ${relationship}: TYPEOF can only be used with a polymorphic relationship field`;
+
+export const notATarget = (relationship: string, objectType: string, relSeg: string): string =>
+  `TYPEOF ${relationship}: ${objectType} is not a type of the polymorphic relationship ${relSeg}`;
+
 /**
  * The parser rejects some invalid TYPEOF forms with a generic message. Called only when parsing
  * failed and the text mentions TYPEOF; a text heuristic decides which documented restriction was

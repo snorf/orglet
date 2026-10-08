@@ -8,7 +8,7 @@ import { columnName, quote, tableName } from "@orglet/schema";
 import { dateLiteralRange, dateNLiteralRange, toIsoDate, type DateRange } from "./dates.js";
 import { invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
 import { NAME_OBJECT_FIELDS, pseudoField } from "./polymorphic.js";
-import { TYPEOF_RESTRICTIONS, assertTypeofAllowed, diagnoseTypeofParseError } from "./typeof.js";
+import { TYPEOF_RESTRICTIONS, assertTypeofAllowed, diagnoseTypeofParseError, notATarget, notPolymorphic } from "./typeof.js";
 
 export interface CompileOptions {
   schema: OrgSchema;
@@ -39,6 +39,20 @@ export interface SObjectShape {
   children: Map<string, { alias: string; shape: SObjectShape }>;
   /** Polymorphic parent (D-02): concrete type per row from typeAlias; fkAlias is the raw lookup value, so an Id whose prefix matches no modelled object can be reported (D-07) and shaped as a null parent (D-19). */
   poly?: { typeAlias: string; fkAlias: string };
+  /** TYPEOF items keyed by relationship name. */
+  typeofs?: Map<string, TypeofShape>;
+}
+
+/** A TYPEOF select item: the branch is chosen per row from the concrete type (D-04, D-18); no concrete type -> null (D-19). */
+export interface TypeofShape {
+  /** CASE over key prefixes: the concrete object name, null for an unmodelled prefix. */
+  typeAlias: string;
+  /** Raw lookup value; null means no parent. */
+  fkAlias: string;
+  /** WHEN branches keyed by object API name; each reads its own target's join alias. */
+  branches: Map<string, SObjectShape>;
+  /** ELSE: Name pseudo-object fields for a modelled type not listed in a WHEN (shape.poly set, type per row). */
+  else?: SObjectShape;
 }
 
 export interface AggregateShape {
@@ -425,8 +439,58 @@ class Compiler {
           }
           throw unsupported("soql-function", `${f.functionName}() in SELECT is not supported without GROUP BY`);
         }
-        case "FieldTypeof":
-          throw unsupported("soql-typeof", "TYPEOF is not supported yet");
+        case "FieldTypeof": {
+          const path = stripAlias(f.field).split(".");
+          const rels = path.length > 1 && path[0]?.toLowerCase() === scope.obj.name.toLowerCase() ? path.slice(1) : path;
+          const relSeg = rels[rels.length - 1] ?? "";
+          this.resolve(scope, [...rels, "Id"]);
+          const join = scope.joins.get(rels.map((s) => s.toLowerCase()).join("."));
+          if (!join?.poly) throw malformed(notPolymorphic(f.field));
+          const poly = join.poly;
+          const host = rels.length > 1 ? parentShape(rels.slice(0, -1)).shape : shape;
+          const key = poly.rel.relationshipName ?? relSeg;
+          const typeAlias = this.nextColumn();
+          selectItems.push(`${this.typeCase(poly)} AS ${quote(typeAlias)}`);
+          const fkAlias = this.nextColumn();
+          selectItems.push(`${poly.fk} AS ${quote(fkAlias)}`);
+          const branches = new Map<string, SObjectShape>();
+          let elseShape: SObjectShape | undefined;
+          for (const c of f.conditions) {
+            if (c.type === "WHEN") {
+              const wanted = (c.objectType ?? "").toLowerCase();
+              const declared = (poly.rel.referenceTo ?? []).find((n) => n.toLowerCase() === wanted);
+              if (!declared) throw malformed(notATarget(f.field, c.objectType ?? "", relSeg));
+              const target = poly.targets.find((t) => t.obj.name === declared);
+              // Declared but not modelled (D-13): no row can ever have this type, so the branch is dropped.
+              if (!target) continue;
+              const idAlias = this.nextColumn();
+              selectItems.push(`${target.alias}.${quote("id")} AS ${quote(idAlias)}`);
+              const branch: SObjectShape = { kind: "sobject", type: target.obj.name, idAlias, fields: [], computed: [], parents: new Map(), children: new Map() };
+              for (const name of c.fieldList) {
+                if (name.includes(".")) throw unsupported("polymorphic-traversal", `TYPEOF ${f.field} WHEN ${target.obj.name}: relationship path ${name} is not supported yet`);
+                const field = this.options.schema.getField(target.obj.name, name);
+                if (!field) throw invalidField(name, target.obj.name);
+                addField(branch, target.alias, target.obj, field);
+              }
+              branches.set(target.obj.name, branch);
+            } else {
+              const idAlias = this.nextColumn();
+              selectItems.push(`${this.polyId(poly)} AS ${quote(idAlias)}`);
+              // ELSE reads the Name pseudo-object; `type` stays "" because shape.ts takes it per row from typeAlias, and a row without one is a null parent (D-19).
+              elseShape = { kind: "sobject", type: "", idAlias, poly: { typeAlias, fkAlias }, fields: [], computed: [], parents: new Map(), children: new Map() };
+              for (const name of c.fieldList) {
+                const leaf = this.polyLeaf(poly, name);
+                if (elseShape.fields.some((sf) => sf.name === leaf.field.name)) continue;
+                const col = this.nextColumn();
+                selectItems.push(`${this.sqlOf(leaf)} AS ${quote(col)}`);
+                elseShape.fields.push({ name: leaf.field.name, alias: col });
+              }
+            }
+          }
+          host.typeofs ??= new Map();
+          host.typeofs.set(key, { typeAlias, fkAlias, branches, ...(elseShape ? { else: elseShape } : {}) });
+          break;
+        }
         default:
           throw unsupported("soql-select", `unsupported select item ${JSON.stringify(f)}`);
       }
