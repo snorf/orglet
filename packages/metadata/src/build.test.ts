@@ -1,8 +1,32 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { fileURLToPath } from "node:url";
-import { loadOrgSchema, type BuildResult } from "./index.js";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type BuildResult, type SourceObject } from "./index.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+
+const SYSTEM_FIELDS = ["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"];
+/** Objects the Object Reference gives no name-equivalent field (D-02); adding one must be a conscious act. */
+const NO_NAME_FIELD = ["OpportunityHistory"];
+/** 03-RESEARCH.md Fact Table as amended by CONTEXT D-03a. extra = fields beyond system fields and OwnerId. */
+const THIN: Record<
+  string,
+  { keyPrefix: string; hasOwner: boolean; createable: boolean; updateable: boolean; deletable: boolean; undeletable: boolean; searchable: boolean; nameField: string | null; extra: string[] }
+> = {
+  BusinessHours: { keyPrefix: "01m", hasOwner: false, createable: true, updateable: true, deletable: false, undeletable: false, searchable: true, nameField: "Name", extra: ["Name", "IsActive", "IsDefault"] },
+  BusinessProcess: { keyPrefix: "019", hasOwner: false, createable: true, updateable: true, deletable: false, undeletable: false, searchable: false, nameField: "Name", extra: ["Name"] },
+  CallCenter: { keyPrefix: "04v", hasOwner: false, createable: true, updateable: false, deletable: false, undeletable: false, searchable: false, nameField: "Name", extra: ["Name"] },
+  DandBCompany: { keyPrefix: "06E", hasOwner: false, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name"] },
+  Entitlement: { keyPrefix: "550", hasOwner: false, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name"] },
+  ExternalDataSource: { keyPrefix: "0XC", hasOwner: false, createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, nameField: "DeveloperName", extra: ["DeveloperName"] },
+  IdeaTheme: { keyPrefix: "0Bg", hasOwner: false, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Title", extra: ["Title"] },
+  Individual: { keyPrefix: "0PK", hasOwner: true, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name", "FirstName", "LastName"] },
+  OperatingHours: { keyPrefix: "0OH", hasOwner: true, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name"] },
+  OpportunityHistory: { keyPrefix: "008", hasOwner: false, createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, nameField: null, extra: [] },
+  ServiceAppointment: { keyPrefix: "08p", hasOwner: true, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "AppointmentNumber", extra: ["AppointmentNumber"] },
+  ServiceContract: { keyPrefix: "810", hasOwner: true, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name"] },
+  SocialPost: { keyPrefix: "0ST", hasOwner: true, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name"] },
+  UserLicense: { keyPrefix: "100", hasOwner: false, createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, nameField: "Name", extra: ["Name", "MasterLabel"] },
+};
 
 describe("standard baseline alone", () => {
   let result: BuildResult;
@@ -37,10 +61,69 @@ describe("standard baseline alone", () => {
     }
   });
 
-  it("marks exactly one name field per object", () => {
+  it("marks exactly one name field per object, except the objects the reference gives none", () => {
     for (const obj of result.schema.list()) {
-      expect(obj.fields.filter((f) => f.nameField).map((f) => f.name), obj.name).toHaveLength(1);
+      expect(obj.fields.filter((f) => f.nameField).map((f) => f.name), obj.name).toHaveLength(NO_NAME_FIELD.includes(obj.name) ? 0 : 1);
     }
+    expect(result.schema.list().filter((o) => !o.fields.some((f) => f.nameField)).map((o) => o.name)).toEqual(NO_NAME_FIELD);
+  });
+
+  it("thin: each of the 14 objects loads with its documented key prefix, owner and DML flags", () => {
+    expect(Object.keys(THIN)).toHaveLength(14);
+    for (const [name, f] of Object.entries(THIN)) {
+      expect(result.schema.getObject(name), name).toMatchObject({
+        name,
+        custom: false,
+        queryable: true,
+        keyPrefix: f.keyPrefix,
+        hasOwner: f.hasOwner,
+        createable: f.createable,
+        updateable: f.updateable,
+        deletable: f.deletable,
+        undeletable: f.undeletable,
+        searchable: f.searchable,
+      });
+    }
+  });
+
+  it("thin: each of the 14 objects has its documented name field, or none for OpportunityHistory", () => {
+    for (const [name, f] of Object.entries(THIN)) {
+      const obj = result.schema.getObject(name);
+      expect(obj?.fields.filter((x) => x.nameField).map((x) => x.name), name).toEqual(f.nameField === null ? [] : [f.nameField]);
+    }
+  });
+
+  it("thin: each of the 14 objects carries only Id, the system fields, OwnerId when owned and its name, seed or compound fields", () => {
+    for (const [name, f] of Object.entries(THIN)) {
+      const obj = result.schema.getObject(name);
+      expect(obj?.fields.map((x) => x.name).sort(), name).toEqual([...SYSTEM_FIELDS, ...(f.hasOwner ? ["OwnerId"] : []), ...f.extra].sort());
+    }
+  });
+
+  it("thin: field details follow the Object Reference", () => {
+    const g = (o: string, f: string) => result.schema.getField(o, f);
+    expect(g("Individual", "Name")).toMatchObject({ type: "Name", nameField: true, createable: false, updateable: false });
+    expect(g("Individual", "FirstName")).toMatchObject({ compoundFieldName: "Name", nameField: false, nillable: true });
+    expect(g("Individual", "LastName")).toMatchObject({ compoundFieldName: "Name", nillable: false });
+    expect(g("ServiceAppointment", "AppointmentNumber")).toMatchObject({
+      type: "AutoNumber",
+      displayFormat: "{00000000}",
+      idLookup: true,
+      createable: false,
+      updateable: false,
+      defaultedOnCreate: true,
+    });
+    expect(g("CallCenter", "Name")).toMatchObject({ createable: true, updateable: false, idLookup: true });
+    expect(g("UserLicense", "Name")).toMatchObject({ idLookup: true, createable: false, updateable: false, nillable: false });
+    expect(g("UserLicense", "MasterLabel")).toMatchObject({ nameField: false, createable: false, updateable: false, nillable: false });
+    expect(g("ExternalDataSource", "DeveloperName")).toMatchObject({ createable: false, updateable: false, idLookup: false });
+    expect(g("Entitlement", "Name")).toMatchObject({ groupable: false, sortable: false, idLookup: false });
+    expect(g("IdeaTheme", "Title")).toMatchObject({ idLookup: true, nillable: false });
+    for (const n of ["IsActive", "IsDefault"]) expect(g("BusinessHours", n)).toMatchObject({ type: "Checkbox", nillable: false, defaultValue: "false" });
+  });
+
+  it("reference: the baseline defines every reference target, so no reference-target warning remains", () => {
+    expect(result.warnings.filter((w) => w.startsWith("UNSUPPORTED:reference-target"))).toEqual([]);
   });
 
   it("resolves standard picklists from standard value sets", () => {
@@ -154,7 +237,23 @@ describe("examples/acme merged onto the baseline", () => {
     expect(result.schema.getField("Project__c", "Manager__c")).toMatchObject({ deleteConstraint: "SetNull", referenceTo: ["User"], childRelationshipName: "ManagedProjects__r" });
   });
 
-  it("reports unknown reference targets as warnings instead of failing", () => {
-    expect(result.warnings.some((w) => w.startsWith("UNSUPPORTED:reference-target BusinessProcess"))).toBe(true);
+  it("reference: acme merged onto the baseline produces no reference-target warning", () => {
+    expect(result.warnings.filter((w) => w.startsWith("UNSUPPORTED:reference-target"))).toEqual([]);
+  });
+
+  it("reference: a lookup to an undefined object still warns once instead of failing", async () => {
+    const baseline = await loadBaseline();
+    const project = await readSourceProject(ACME);
+    const dangler: SourceObject = {
+      name: "Dangler__c",
+      fields: [{ fullName: "Target__c", label: "Target", type: "Lookup", referenceTo: "NoSuchObject__c", relationshipName: "Target" }],
+      validationRules: [],
+      recordTypes: [],
+    };
+    const built = buildOrgSchema(baseline, { ...project, objects: [...project.objects, dangler] });
+    expect(built.warnings.filter((w) => w.startsWith("UNSUPPORTED:reference-target"))).toEqual([
+      "UNSUPPORTED:reference-target NoSuchObject__c is referenced but not defined; lookups to it are unchecked",
+    ]);
+    expect(built.schema.getObject("Dangler__c")).toBeDefined();
   });
 });
