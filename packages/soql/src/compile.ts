@@ -37,6 +37,8 @@ export interface SObjectShape {
   parents: Map<string, SObjectShape>;
   /** Child subqueries: column alias holding a JSON array of child rows (already shaped keys). */
   children: Map<string, { alias: string; shape: SObjectShape }>;
+  /** Polymorphic parent (D-02): concrete type per row from typeAlias; fkAlias is the raw lookup value, so an Id whose prefix matches no modelled object can be reported (D-07) and shaped as a null parent (D-19). */
+  poly?: { typeAlias: string; fkAlias: string };
 }
 
 export interface AggregateShape {
@@ -325,10 +327,11 @@ class Compiler {
       target.fields.push(sf);
     };
 
-    const parentShape = (path: string[]): { shape: SObjectShape; alias: string; obj: SObjectDef } => {
+    const parentShape = (path: string[]): { shape: SObjectShape; alias: string; obj: SObjectDef; poly?: PolyJoin } => {
       let current = shape;
       let obj = scope.obj;
       let alias = scope.alias;
+      let poly: PolyJoin | undefined;
       let key = "";
       for (const seg of path) {
         key = key ? `${key}.${seg.toLowerCase()}` : seg.toLowerCase();
@@ -343,15 +346,26 @@ class Compiler {
         let next = current.parents.get(rel.relationshipName);
         if (!next) {
           const pid = this.nextColumn();
-          selectItems.push(`${join.alias}.${quote("id")} AS ${quote(pid)}`);
-          next = { kind: "sobject", type: join.obj.name, idAlias: pid, fields: [], computed: [], parents: new Map(), children: new Map() };
+          if (join.poly) {
+            selectItems.push(`${this.polyId(join.poly)} AS ${quote(pid)}`);
+            const typeAlias = this.nextColumn();
+            selectItems.push(`${this.typeCase(join.poly)} AS ${quote(typeAlias)}`);
+            const fkAlias = this.nextColumn();
+            selectItems.push(`${join.poly.fk} AS ${quote(fkAlias)}`);
+            // `type` is never set for a poly shape: shape.ts takes it from typeAlias per row, and a row without one is a null parent (D-02, D-19).
+            next = { kind: "sobject", type: "", idAlias: pid, poly: { typeAlias, fkAlias }, fields: [], computed: [], parents: new Map(), children: new Map() };
+          } else {
+            selectItems.push(`${join.alias}.${quote("id")} AS ${quote(pid)}`);
+            next = { kind: "sobject", type: join.obj.name, idAlias: pid, fields: [], computed: [], parents: new Map(), children: new Map() };
+          }
           current.parents.set(rel.relationshipName, next);
         }
         current = next;
         obj = join.obj;
         alias = join.alias;
+        poly = join.poly;
       }
-      return { shape: current, alias, obj };
+      return poly ? { shape: current, alias, obj, poly } : { shape: current, alias, obj };
     };
 
     for (const f of fields) {
@@ -372,6 +386,14 @@ class Compiler {
             break;
           }
           const p = parentShape(rels);
+          if (p.poly) {
+            const r = this.polyLeaf(p.poly, f.field);
+            if (p.shape.fields.some((sf) => sf.name === r.field.name)) break;
+            const col = this.nextColumn();
+            selectItems.push(`${this.sqlOf(r)} AS ${quote(col)}`);
+            p.shape.fields.push({ name: r.field.name, alias: col });
+            break;
+          }
           const field = this.options.schema.getField(p.obj.name, f.field);
           if (!field) throw invalidField(f.rawValue ?? f.field, p.obj.name);
           addField(p.shape, p.alias, p.obj, field);
@@ -395,6 +417,7 @@ class Compiler {
             if (typeof name !== "string") throw malformed(`${f.functionName}() needs a field argument`);
             const path = stripAlias(name).split(".");
             const r = this.resolve(scope, path);
+            if (r.sql !== undefined) throw unsupported("polymorphic-field", `${f.functionName}() on a polymorphic relationship field is not supported yet`);
             const target = path.length > 1 ? parentShape(path.slice(0, -1)).shape : shape;
             const labels = fn === "TOLABEL" && r.field.picklist ? new Map(r.field.picklist.values.map((v) => [v.value, v.label])) : undefined;
             addField(target, r.alias, r.obj, r.field, labels);
