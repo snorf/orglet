@@ -40,6 +40,35 @@ export type DeleteConstraint = "SetNull" | "Restrict" | "Cascade";
 
 export type FormulaBlankTreatment = "BlankAsBlank" | "BlankAsZero";
 
+/** Metadata API `summaryOperation`, normalised to upper case. AVG does not exist for roll-ups. */
+export type RollupOperation = "COUNT" | "SUM" | "MIN" | "MAX";
+
+/** The `FilterOperation` values a roll-up filter supports (includes/excludes/within do not apply to roll-ups). */
+export type RollupFilterOperation = "equals" | "notEqual" | "lessThan" | "greaterThan" | "lessOrEqual" | "greaterOrEqual" | "contains" | "notContain" | "startsWith";
+
+/** One `summaryFilterItems` entry, resolved against the child object. Several filters are ANDed. */
+export interface RollupFilterDef {
+  /** Child field API name, canonical casing. */
+  field: string;
+  operation: RollupFilterOperation;
+  /** Tokenised literal(s), OR-ed for equals/contains/startsWith; [] means "blank". Checkbox tokens are "true"/"false". */
+  values: string[];
+  /** Field-to-field comparison: another field on the same child object, canonical casing. */
+  valueField?: string;
+}
+
+/** Roll-up summary definition (`type: Summary` in metadata), resolved by buildOrgSchema. */
+export interface RollupDef {
+  /** Child object API name, canonical casing. */
+  childObject: string;
+  /** The child's master-detail (or whitelisted lookup) field pointing at the parent. */
+  foreignKey: string;
+  /** Absent for COUNT. */
+  summarizedField?: string;
+  operation: RollupOperation;
+  filters: RollupFilterDef[];
+}
+
 export interface PicklistValue {
   value: string;
   label: string;
@@ -103,6 +132,8 @@ export interface FieldDef {
   /** Formula source. When set the field is calculated and never stored; `type` is the return type. */
   formula?: string;
   formulaTreatBlanksAs?: FormulaBlankTreatment;
+  /** Roll-up summary: a stored, read-only column the engine recomputes on child DML. `type` is the resolved result type. */
+  rollup?: RollupDef;
   /** Formula-syntax default value expression from metadata (`<defaultValue>`). */
   defaultValue?: string;
   /** AutoNumber display format, e.g. `A-{0000}`. */

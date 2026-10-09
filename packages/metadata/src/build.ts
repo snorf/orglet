@@ -254,6 +254,7 @@ function resolvePicklist(sf: SourceField, objectName: string, sets: ValueSets): 
 
 function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): FieldDef {
   if (sf.type === undefined) throw new Error(`${objectName}.${sf.fullName}: custom field without <type>`);
+  if (sf.type === "Summary") throw new Error(`${objectName}.${sf.fullName}: roll-up summary fields are resolved separately`);
   const f = baseField(sf.fullName, sf.label ?? sf.fullName, sf.type, true);
   const set = <K extends keyof FieldDef>(k: K, v: FieldDef[K] | undefined) => {
     if (v !== undefined) f[k] = v;
@@ -339,6 +340,11 @@ function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): 
   return f;
 }
 
+/** Interim until roll-up resolution lands: report Summary fields instead of dropping them silently. */
+function skipSummaries(objectName: string, fields: SourceField[], warnings: string[]): void {
+  for (const sf of fields) if (sf.type === "Summary") warnings.push(`UNSUPPORTED:field-type ${objectName}.${sf.fullName}: roll-up summary fields are not resolved yet; field skipped`);
+}
+
 function nameFieldFor(obj: SourceObject): FieldDef {
   const nf = obj.nameField ?? {};
   const label = nf.label ?? `${obj.label ?? obj.name} Name`;
@@ -372,7 +378,7 @@ function recordTypeField(): FieldDef {
 function fromSourceObject(obj: SourceObject, keyPrefix: string, sets: ValueSets): SObjectDef {
   const hasOwner = !obj.fields.some((f) => f.type === "MasterDetail");
   const sys = systemFields(hasOwner);
-  const custom = obj.fields.map((f) => fromSourceField(f, obj.name, sets));
+  const custom = obj.fields.filter((f) => f.type !== "Summary").map((f) => fromSourceField(f, obj.name, sets));
   if (obj.recordTypes.length > 0) custom.unshift(recordTypeField());
   const label = obj.label ?? obj.name.replace(/__c$/i, "");
   return {
@@ -425,6 +431,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
   const sourceObjects = project?.objects ?? [];
   const customObjects = sourceObjects.filter((o) => isCustomObjectName(o.name)).sort((a, b) => a.name.localeCompare(b.name));
   customObjects.forEach((o, i) => {
+    skipSummaries(o.name, o.fields, warnings);
     objects.set(o.name.toLowerCase(), fromSourceObject(o, customKeyPrefix(i), sets));
   });
 
@@ -440,6 +447,10 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     if (o.pluralLabel !== undefined) target.labelPlural = o.pluralLabel;
     if (o.sharingModel !== undefined) target.sharingModel = o.sharingModel;
     for (const sf of o.fields) {
+      if (sf.type === "Summary") {
+        skipSummaries(o.name, [sf], warnings);
+        continue;
+      }
       const existing = target.fields.find((f) => f.name.toLowerCase() === sf.fullName.toLowerCase());
       if (existing) {
         if (sf.inlineHelpText !== undefined) existing.inlineHelpText = sf.inlineHelpText;

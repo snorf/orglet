@@ -46,14 +46,68 @@ describe("readSourceProject", () => {
     expect(p.objects[0]?.fields[0]?.valueSet?.values).toEqual([{ value: "Only", label: "Only", default: true, active: true }]);
   });
 
-  it("skips roll-up summary fields with an UNSUPPORTED warning and keeps loading", async () => {
+  it("parses a COUNT roll-up with no summarized field and no filters", async () => {
     const root = await project({
-      "objects/Foo__c/fields/Total__c.field-meta.xml": field("<fullName>Total__c</fullName><type>Summary</type><summaryOperation>count</summaryOperation>"),
+      "objects/Foo__c/fields/Total__c.field-meta.xml": field(
+        "<fullName>Total__c</fullName><label>Total</label><type>Summary</type><summaryForeignKey>Child__c.Parent__c</summaryForeignKey><summaryOperation>count</summaryOperation>",
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.objects[0]?.fields[0]).toEqual({
+      fullName: "Total__c",
+      label: "Total",
+      type: "Summary",
+      summaryForeignKey: "Child__c.Parent__c",
+      summaryOperation: "count",
+      summaryFilterItems: [],
+    });
+    expect(p.warnings).toEqual([]);
+  });
+
+  it("reads checkbox, blank and multi-token filter values even though <value> parses as an array", async () => {
+    const item = (f: string, op: string, value: string) =>
+      `<summaryFilterItems><field>${f}</field><operation>${op}</operation>${value}</summaryFilterItems>`;
+    const root = await project({
+      "objects/Foo__c/fields/Total__c.field-meta.xml": field(
+        "<fullName>Total__c</fullName><type>Summary</type><summarizedField>Child__c.Amount__c</summarizedField>" +
+          "<summaryForeignKey>Child__c.Parent__c</summaryForeignKey><summaryOperation>sum</summaryOperation>" +
+          item("Child__c.Done__c", "equals", "<value>True</value>") +
+          item("Child__c.Status__c", "notEqual", "<value/>") +
+          item("Child__c.Status__c", "equals", '<value>Completed, "Closed, not Completed"</value>'),
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.objects[0]?.fields[0]).toMatchObject({
+      summarizedField: "Child__c.Amount__c",
+      summaryFilterItems: [
+        { field: "Child__c.Done__c", operation: "equals", value: "True" },
+        { field: "Child__c.Status__c", operation: "notEqual", value: "" },
+        { field: "Child__c.Status__c", operation: "equals", value: 'Completed, "Closed, not Completed"' },
+      ],
+    });
+  });
+
+  it("treats a missing <value> as blank and keeps <valueField>", async () => {
+    const root = await project({
+      "objects/Foo__c/fields/Total__c.field-meta.xml": field(
+        "<fullName>Total__c</fullName><type>Summary</type><summaryOperation>count</summaryOperation>" +
+          "<summaryFilterItems><field>Child__c.Due__c</field><operation>greaterThan</operation><valueField>Child__c.Planned__c</valueField></summaryFilterItems>",
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.objects[0]?.fields[0]?.summaryFilterItems).toEqual([
+      { field: "Child__c.Due__c", operation: "greaterThan", value: "", valueField: "Child__c.Planned__c" },
+    ]);
+  });
+
+  it("still skips ExternalLookup with an UNSUPPORTED:field-type warning", async () => {
+    const root = await project({
+      "objects/Foo__c/fields/Ext__c.field-meta.xml": field("<fullName>Ext__c</fullName><type>ExternalLookup</type>"),
       "objects/Foo__c/fields/Bar__c.field-meta.xml": field("<fullName>Bar__c</fullName><type>Text</type><length>10</length>"),
     });
     const p = await readSourceProject(root);
     expect(p.objects[0]?.fields.map((f) => f.fullName)).toEqual(["Bar__c"]);
-    expect(p.warnings).toEqual([expect.stringMatching(/^UNSUPPORTED:field-type .*Total__c.*Summary/)]);
+    expect(p.warnings).toEqual([expect.stringMatching(/^UNSUPPORTED:field-type .*ExternalLookup/)]);
   });
 
   it("reads Hierarchy fields as lookups", async () => {
