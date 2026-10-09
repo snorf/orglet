@@ -7,7 +7,7 @@
     <relationshipLabel>Milestones</relationshipLabel>
     <relationshipName>Milestones</relationshipName>
     <relationshipOrder>0</relationshipOrder>
-    <reparentableMasterDetail>false</reparentableMasterDetail>
+    <reparentableMasterDetail>true</reparentableMasterDetail>
     <type>MasterDetail</type>
     <writeRequiresMasterRead>false</writeRequiresMasterRead>
 </CustomField>

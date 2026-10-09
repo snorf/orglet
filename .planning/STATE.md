@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Phase 4 verified and complete; Phase 5 ready to discuss/plan
-last_updated: "2026-10-08T22:01:32.011Z"
-last_activity: 2026-10-08
+status: verifying
+stopped_at: "Phase 5 complete and verified (5/5); next /gsd:plan-phase 6"
+last_updated: "2026-10-09T09:04:31.047Z"
+last_activity: 2026-10-09
 progress:
   total_phases: 7
-  completed_phases: 4
-  total_plans: 18
-  completed_plans: 18
+  completed_phases: 5
+  total_plans: 25
+  completed_plans: 25
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 5 — Roll-Up Summary Fields
+**Current focus:** Phase 6 — Bulk API 2.0 Persistence (not yet planned)
 
 ## Current Position
 
-Phase: 5
+Phase: 6
 Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-10-08
+Status: Phase 5 verified; phase 6 ready for planning
+Last activity: 2026-10-09
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -72,6 +72,13 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04 P05 | 8min | 3 tasks | 7 files |
 | Phase 04 P06 | 12min | 2 tasks | 5 files |
 | Phase 04 P07 | 20min | 2 tasks | 5 files |
+| Phase 05 P01 | 5 min | 2 tasks | 7 files |
+| Phase 05 P02 | 8 min | 2 tasks | 3 files |
+| Phase 05 P03 | 9 min | 2 tasks | 5 files |
+| Phase 05 P04 | 8 min | 2 tasks | 12 files |
+| Phase 05 P05 | 9 min | 2 tasks | 3 files |
+| Phase 05 P06 | 8 min | 2 tasks | 2 files |
+| Phase 05 P07 | 10 min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -117,6 +124,20 @@ Recent decisions affecting current work:
 - [Phase 04]: TYPEOF: an unmodelled prefix is a null parent with or without ELSE, never a synthetic object (D-19); onUnmodelledPrefix fires once per row
 - [Phase 04]: QueryPage.warnings is absent when nothing degraded; REST route logs it once per query via req.log.warn
 - [Phase 04]: POLY-01 recorded Partial (formula leg deferred per D-16); POLY-02..06 complete
+- [Phase 05]: No Summary member in FieldType; resolved roll-up is a typed FieldDef carrying rollup — Keeps exhaustive switches in formula/schema intact
+- [Phase 05]: Roll-up resolver runs after both merge loops and before the dangling-reference pass; resolved roll-ups are pushed onto SObjectDef.fields so chains resolve in a fixpoint loop (rollup-cycle when stalled)
+- [Phase 05]: Roll-up filter on a child roll-up field or any valueField problem is rollup-filter; unknown filter field is rollup-target; date literals in roll-up filters deferred with a rollup-filter warning
+- [Phase 05]: ROLL-03/06/09 not marked complete by 05-02: load halves only; computation (05-03+) and the DE retrieve check (05-07) finish them
+- [Phase 05]: Roll-up SQL builder lives in @orglet/schema as correlated scalar subqueries (COUNT(*), COALESCE(SUM,0), plain MIN/MAX) with every literal a typed positional parameter; same expression serves engine SELECT and migrate UPDATE
+- [Phase 05]: migrate backfill of new roll-up columns is the last step of the transaction: a second UPDATE of a row in one transaction queues a deferred FK check and Postgres refuses DDL on that table until commit (pending trigger events)
+- [Phase 05]: ROLL-03 marked complete by 05-03 (aggregates and all operators computed on both backends); ROLL-06 and ROLL-08 withheld until engine recompute (05-05) and SOQL surface (05-06)
+- [Phase 05]: 05-04: roll-up fixture lives in examples/acme (blast-radius gate passed); describe calculated covers roll-ups; ROLL-08/09 withheld
+- [Phase 05]: 05-05: D-03 attribution via SAVEPOINT rollup_batch with bounded replay of surviving children; per-parent SAVEPOINT rollup_parent kept around the parent UPDATE and after-hooks
+- [Phase 05]: 05-05: roll-up recompute is SELECT-first (rollupSelectSql per parent object and chain level), writes only changed columns, skips unchanged parents (no hooks/rules), stamps no LastModifiedDate and publishes no ChangeBus event
+- [Phase 05]: 05-05: ROLL-05 and ROLL-06 marked complete (chain Milestone->Project->Account proven); ROLL-04 withheld until 05-06 wires delete/undelete
+- [Phase 05]: 05-06: deleteBatch carries a deleting skip set through the cascade (new Set([...deleting, ...ids])) so a parent being deleted is never recomputed, rule-checked or hooked; undeleteBatch recomputes with NO_IDS because the parent is made live before its children recompute
+- [Phase 05]: 05-06: ROLL-04 and ROLL-08 marked complete; reparent and undelete recompute triggers implemented per ROLL-04 without a primary Salesforce quote (ROADMAP research flag, note for verify-work); ROLL-09 stays with 05-07
+- [Phase 05]: 05-07: rollup-check SDK legs reuse describe-check venv; ROLL-09 left open until Johan's devrandom checkpoint
 
 ### Pending Todos
 
@@ -130,6 +151,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T21:26:50.835Z
-Stopped at: Completed 04-07-PLAN.md
+Last session: 2026-10-09T08:14:40.827Z
+Stopped at: 05-07 Tasks 1-2 done; awaiting Task 3 devrandom checkpoint
 Resume file: None

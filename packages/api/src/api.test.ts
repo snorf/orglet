@@ -472,3 +472,42 @@ describe("polymorphic query", () => {
     }
   });
 });
+
+describe("roll-up summary fields", () => {
+  const describeFields = async (name: string) => (json(await get(`${V}/sobjects/${name}/describe`))["fields"] as Json[]);
+
+  it("describe reports roll-ups as calculated and neither createable nor updateable", async () => {
+    const project = await describeFields("Project__c");
+    expect(project.find((f) => f["name"] === "Milestone_Count__c")).toMatchObject({
+      calculated: true,
+      calculatedFormula: null,
+      createable: false,
+      updateable: false,
+      nillable: true,
+      custom: true,
+      type: "double",
+    });
+    const account = await describeFields("Account");
+    expect(account.find((f) => f["name"] === "Total_Budget__c")).toMatchObject({ calculated: true, createable: false, updateable: false, type: "currency" });
+    expect(account.find((f) => f["name"] === "Last_Active_Project_Created__c")).toMatchObject({ calculated: true, type: "datetime" });
+    const overdue = project.find((f) => f["name"] === "Is_Overdue__c");
+    expect(overdue).toMatchObject({ calculated: true });
+    expect(overdue?.["calculatedFormula"]).not.toBeNull();
+    expect(project.find((f) => f["name"] === "Budget__c")).toMatchObject({ calculated: false });
+  });
+
+  it("REST create and update carrying a roll-up value fail with INVALID_FIELD_FOR_INSERT_UPDATE", async () => {
+    const bad = await post(`${V}/sobjects/Account`, { Name: "Rollup Write", Total_Budget__c: 5 });
+    expect(bad.statusCode).toBe(400);
+    expect(arr(bad)[0]).toMatchObject({ errorCode: "INVALID_FIELD_FOR_INSERT_UPDATE", fields: ["Total_Budget__c"] });
+
+    const created = await post(`${V}/sobjects/Account`, { Name: "Rollup Write Ok" });
+    expect(created.statusCode).toBe(201);
+    const id = String(json(created)["id"]);
+    const upd = await patch(`${V}/sobjects/Account/${id}`, { Total_Budget__c: 5 });
+    expect(upd.statusCode).toBe(400);
+    expect(arr(upd)[0]).toMatchObject({ errorCode: "INVALID_FIELD_FOR_INSERT_UPDATE", fields: ["Total_Budget__c"] });
+    const rec = json(await get(`${V}/sobjects/Account/${id}`));
+    expect(rec["Total_Budget__c"]).not.toBe(5);
+  });
+});

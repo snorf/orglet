@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Total_Budget__c</fullName>
+    <externalId>false</externalId>
+    <label>Total Budget</label>
+    <summarizedField>Project__c.Budget__c</summarizedField>
+    <summaryFilterItems>
+        <field>Project__c.Status__c</field>
+        <operation>notEqual</operation>
+        <value>Done</value>
+    </summaryFilterItems>
+    <summaryForeignKey>Project__c.Account__c</summaryForeignKey>
+    <summaryOperation>sum</summaryOperation>
+    <trackTrending>false</trackTrending>
+    <type>Summary</type>
+</CustomField>

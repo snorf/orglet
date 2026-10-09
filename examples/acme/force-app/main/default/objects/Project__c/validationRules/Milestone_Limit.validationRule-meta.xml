@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Milestone_Limit</fullName>
+    <active>true</active>
+    <description>Roll-up fixture: a parent rule that reads a roll-up summary field.</description>
+    <errorConditionFormula>AND(NOT(ISBLANK(Milestone_Count__c)), Milestone_Count__c &gt; 5)</errorConditionFormula>
+    <errorMessage>A project can have at most 5 milestones.</errorMessage>
+</ValidationRule>

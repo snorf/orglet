@@ -108,7 +108,7 @@ export function describeField(schema: OrgSchema, obj: SObjectDef, f: FieldDef): 
     aiPredictionField: false,
     autoNumber: f.type === "AutoNumber",
     byteLength: textual ? length * 3 : 0,
-    calculated: f.formula !== undefined,
+    calculated: f.formula !== undefined || f.rollup !== undefined,
     calculatedFormula: f.formula ?? null,
     cascadeDelete: cascade,
     caseSensitive: f.caseSensitive,

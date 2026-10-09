@@ -86,29 +86,31 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Roll-Up Summary Fields
 
-- [ ] **ROLL-01**: `Summary` fields are loaded from SFDX metadata (`summarizedField`,
+- [x] **ROLL-01**: `Summary` fields are loaded from SFDX metadata (`summarizedField`,
   `summaryForeignKey`, `summaryOperation`, `summaryFilterItems`) instead of being skipped,
   with the parent field typed as the summarised field's type (Number, Currency, Percent, Date
   or DateTime for MIN/MAX; Number for COUNT)
-- [ ] **ROLL-02**: A roll-up is only accepted on a master-detail relationship; a roll-up over a
+- [x] **ROLL-02**: A roll-up is only accepted on a master-detail relationship; a roll-up over a
   lookup fails metadata load with a clear error
-- [ ] **ROLL-03**: COUNT, SUM, MIN and MAX are computed with the documented filter operators
+  *Per D-05: Opportunity.AccountId, OpportunityLineItem.OpportunityId and CampaignMember.CampaignId are also accepted (Salesforce's documented standard roll-ups); any other lookup fails load.*
+- [x] **ROLL-03**: COUNT, SUM, MIN and MAX are computed with the documented filter operators
   (including field-to-field `valueField` comparisons) over non-deleted children
-- [ ] **ROLL-04**: A roll-up is recomputed inside the same transaction when a child is
+- [x] **ROLL-04**: A roll-up is recomputed inside the same transaction when a child is
   inserted, updated (including changes to filter-only fields), deleted, undeleted or moved to
   another parent, and in the reparent case both the old and the new parent are recomputed
-- [ ] **ROLL-05**: Roll-up recomputation happens in the app-side save pipeline after the child
+- [x] **ROLL-05**: Roll-up recomputation happens in the app-side save pipeline after the child
   record is written and before the parent's after-hooks, never as a Postgres trigger, and
   partial-success savepoints roll back the parent update together with the child
-- [ ] **ROLL-06**: Multi-level master-detail chains recompute upward (a roll-up whose parent is
+  *Recompute runs after the child's after-hooks; a refusing parent rolls back the children that point at it through a batch savepoint and replay (05-05), which keeps the "only committed children" guarantee.*
+- [x] **ROLL-06**: Multi-level master-detail chains recompute upward (a roll-up whose parent is
   itself a detail of a roll-up parent), and a roll-up that summarises another roll-up is
   handled without infinite recursion
-- [ ] **ROLL-07**: Roll-up fields are read-only via REST and Bulk (`createable: false`,
+- [x] **ROLL-07**: Roll-up fields are read-only via REST and Bulk (`createable: false`,
   `updateable: false`, `calculated: true` in describe); a client value is ignored or rejected
   exactly as Salesforce documents
-- [ ] **ROLL-08**: Roll-up values are stored as columns and are selectable, filterable and
+- [x] **ROLL-08**: Roll-up values are stored as columns and are selectable, filterable and
   sortable in SOQL like any other field
-- [ ] **ROLL-09**: Loading Johan's Developer Edition retrieve produces zero
+- [x] **ROLL-09**: Loading Johan's Developer Edition retrieve produces zero
   `UNSUPPORTED:field-type` warnings for `Summary` fields
 
 ### Bulk API 2.0 Persistence
@@ -210,15 +212,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POLY-04 | Phase 4 | Complete |
 | POLY-05 | Phase 4 | Complete |
 | POLY-06 | Phase 4 | Complete |
-| ROLL-01 | Phase 5 | Pending |
-| ROLL-02 | Phase 5 | Pending |
-| ROLL-03 | Phase 5 | Pending |
-| ROLL-04 | Phase 5 | Pending |
-| ROLL-05 | Phase 5 | Pending |
-| ROLL-06 | Phase 5 | Pending |
-| ROLL-07 | Phase 5 | Pending |
-| ROLL-08 | Phase 5 | Pending |
-| ROLL-09 | Phase 5 | Pending |
+| ROLL-01 | Phase 5 | Complete |
+| ROLL-02 | Phase 5 | Complete |
+| ROLL-03 | Phase 5 | Complete |
+| ROLL-04 | Phase 5 | Complete |
+| ROLL-05 | Phase 5 | Complete |
+| ROLL-06 | Phase 5 | Complete |
+| ROLL-07 | Phase 5 | Complete |
+| ROLL-08 | Phase 5 | Complete |
+| ROLL-09 | Phase 5 | Complete |
 | BULK-01 | Phase 6 | Pending |
 | BULK-02 | Phase 6 | Pending |
 | BULK-03 | Phase 6 | Pending |

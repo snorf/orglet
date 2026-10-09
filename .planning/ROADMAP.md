@@ -26,7 +26,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Custom-Object Key-Prefix Persistence** - Custom object key prefixes are stable across reload and rename (completed 2026-10-02)
 - [x] **Phase 3: Thin Standard-Object Baselines** - The 14 missing standard objects exist as reference-checkable baselines (completed 2026-10-08)
 - [x] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles (completed 2026-10-08)
-- [ ] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only
+- [x] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only (completed 2026-10-09)
 - [ ] **Phase 6: Bulk API 2.0 Persistence** - Bulk jobs and results survive a server restart
 - [ ] **Phase 7: Conformance Re-Run & Milestone Acceptance** - Zero warnings on Johan's DE org; both conformance suites green and documented
 
@@ -123,7 +123,15 @@ queryable like any other field.
   3. Multi-level master-detail chains recompute upward without infinite recursion, and a partial-success batch's roll-up value reflects only the children that actually committed (recompute happens inside the triggering child's savepoint).
   4. Roll-up fields are read-only via REST and Bulk (`createable: false`, `updateable: false`, `calculated: true` in describe) and are selectable, filterable and sortable in SOQL like any other stored field.
   5. Loading Johan's Developer Edition retrieve produces zero `UNSUPPORTED:field-type` warnings for `Summary` fields.
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [x] 05-01-PLAN.md — RollupDef contracts, Summary parsing (array-safe filter values), filter-value tokenizer
+- [x] 05-02-PLAN.md — resolveRollups: types, D-05 whitelist / D-08 lookup failure, D-06/D-07 warnings, chains/cycles, DE-shaped proxy
+- [x] 05-03-PLAN.md — roll-up SQL builder in @orglet/schema, migrate() backfill of new roll-up columns (D-10)
+- [x] 05-04-PLAN.md — acme roll-up fixture chain + parent rule, describe `calculated`, REST/Bulk read-only tests
+- [x] 05-05-PLAN.md — engine recompute on insert/update/upsert with parent rules and hooks, batch replay for D-03, D-04 defaults, D-09
+- [x] 05-06-PLAN.md — delete/undelete recompute (cascade-safe), chain and filter-operator integration, SOQL over roll-ups
+- [x] 05-07-PLAN.md — phase gate: both backends, jsforce + simple-salesforce rollup-check, DE check, devrandom checkpoint
 **Research flag**: yes — reparent and undelete recompute triggers are logically implied by Salesforce's documented behavior but not confirmed by a direct official quote; verify against Salesforce Help article `000391766` or equivalent before finalizing edge-case mechanics (scope itself is not in question).
 
 ### Phase 6: Bulk API 2.0 Persistence
@@ -161,6 +169,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 2. Custom-Object Key-Prefix Persistence | 3/3 | Complete | 2026-10-02 |
 | 3. Thin Standard-Object Baselines | 4/4 | Complete | 2026-10-08 |
 | 4. Polymorphic Lookups & SOQL TYPEOF | 7/7 | Complete | 2026-10-08 |
-| 5. Roll-Up Summary Fields | 0/TBD | Not started | - |
+| 5. Roll-Up Summary Fields | 7/7 | Complete | 2026-10-09 |
 | 6. Bulk API 2.0 Persistence | 0/TBD | Not started | - |
 | 7. Conformance Re-Run & Milestone Acceptance | 0/TBD | Not started | - |

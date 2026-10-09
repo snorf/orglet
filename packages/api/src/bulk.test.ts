@@ -62,6 +62,17 @@ afterAll(async () => {
 });
 
 describe("ingest jobs", () => {
+  it("an ingest row carrying a roll-up value fails with INVALID_FIELD_FOR_INSERT_UPDATE", async () => {
+    const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
+    const jobId = String(created["id"]);
+    expect((await putCsv(`${V}/jobs/ingest/${jobId}/batches`, writeCsv(["Name", "Total_Budget__c"], [["Bulk Rollup", "5"]]))).statusCode).toBe(201);
+    const done = json(await patch(`${V}/jobs/ingest/${jobId}`, { state: "UploadComplete" }));
+    expect(done).toMatchObject({ state: "JobComplete", numberRecordsFailed: 1 });
+    const failed = parseResult(await get(`${V}/jobs/ingest/${jobId}/failedResults`));
+    expect(failed.rows).toHaveLength(1);
+    expect(failed.rows[0]?.[1]).toContain("INVALID_FIELD_FOR_INSERT_UPDATE");
+  });
+
   it("inserts records through a CSV upload, reporting per-record success and failure", async () => {
     const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
     expect(created).toMatchObject({ operation: "insert", object: "Account", state: "Open", contentType: "CSV", concurrencyMode: "Parallel", jobType: "V2Ingest" });

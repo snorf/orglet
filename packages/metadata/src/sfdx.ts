@@ -17,11 +17,20 @@ import type {
   ValidationRuleDef,
 } from "./types.js";
 
+/** One `<summaryFilterItems>` entry as written in metadata; resolved into a RollupFilterDef by build.ts. */
+export interface SourceFilterItem {
+  field: string;
+  operation: string;
+  /** Raw `<value>` text; "" when the element is empty or absent ("blank"). */
+  value: string;
+  valueField?: string;
+}
+
 /** A field as declared in <Obj>/fields/<Field>.field-meta.xml. Standard-field overrides have only fullName. */
 export interface SourceField {
   fullName: string;
   label?: string;
-  type?: FieldType;
+  type?: FieldType | "Summary";
   length?: number;
   precision?: number;
   scale?: number;
@@ -42,6 +51,11 @@ export interface SourceField {
   visibleLines?: number;
   inlineHelpText?: string;
   description?: string;
+  summarizedField?: string;
+  summaryForeignKey?: string;
+  /** Raw metadata text (any case); normalised by the roll-up resolver. */
+  summaryOperation?: string;
+  summaryFilterItems?: SourceFilterItem[];
   valueSet?: {
     restricted?: boolean;
     valueSetName?: string;
@@ -151,6 +165,18 @@ function parsePicklistValues(nodes: XmlNode[]): PicklistValue[] {
   });
 }
 
+/** `value` is in xml.ts's always-array list (picklist values), so `<value>True</value>` arrives as ["True"] and `<value/>` as [""]. */
+function readFilterItems(node: XmlNode): SourceFilterItem[] {
+  return list(node, "summaryFilterItems").map((n) => {
+    const raw = n["value"];
+    const value = Array.isArray(raw) ? raw.map((v) => (typeof v === "string" ? v : "")).join(",") : (str(n, "value") ?? "");
+    const item: SourceFilterItem = { field: str(n, "field") ?? "", operation: str(n, "operation") ?? "", value };
+    const valueField = str(n, "valueField");
+    if (valueField !== undefined && valueField !== "") item.valueField = valueField;
+    return item;
+  });
+}
+
 /** Parse one field; unsupported field types are reported in `warnings` and skipped (undefined). */
 function parseField(node: XmlNode, file: string, warnings: string[]): SourceField | undefined {
   const fullName = str(node, "fullName");
@@ -159,12 +185,12 @@ function parseField(node: XmlNode, file: string, warnings: string[]): SourceFiel
   const type = str(node, "type");
   if (type !== undefined) {
     if (!CUSTOM_FIELD_TYPES.has(type)) throw new Error(`${file}: unknown field type ${type}`);
-    if (type === "Summary" || type === "ExternalLookup" || type === "IndirectLookup" || type === "MetadataRelationship") {
+    if (type === "ExternalLookup" || type === "IndirectLookup" || type === "MetadataRelationship") {
       warnings.push(`UNSUPPORTED:field-type ${file}: field type ${type} is not supported yet; field skipped`);
       return undefined;
     }
     // Hierarchy is a self-referencing lookup (Account.ParentId, User.ManagerId).
-    f.type = type === "Hierarchy" ? "Lookup" : (type as FieldType);
+    f.type = type === "Hierarchy" ? "Lookup" : (type as FieldType | "Summary");
   }
   const set = <K extends keyof SourceField>(key: K, value: SourceField[K] | undefined) => {
     if (value !== undefined) f[key] = value;
@@ -192,6 +218,12 @@ function parseField(node: XmlNode, file: string, warnings: string[]): SourceFiel
   set("visibleLines", num(node, "visibleLines"));
   set("inlineHelpText", str(node, "inlineHelpText"));
   set("description", str(node, "description"));
+  if (f.type === "Summary") {
+    set("summarizedField", str(node, "summarizedField"));
+    set("summaryForeignKey", str(node, "summaryForeignKey"));
+    set("summaryOperation", str(node, "summaryOperation"));
+    f.summaryFilterItems = readFilterItems(node);
+  }
 
   const valueSet = child(node, "valueSet");
   if (valueSet) {

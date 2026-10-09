@@ -11,5 +11,6 @@ coverage/
 conformance/python/.venv/
 conformance/describe-check/.venv/
 conformance/poly-check/.venv/
+conformance/rollup-check/.venv/
 conformance/jsforce/.cache/
 __pycache__/
