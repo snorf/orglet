@@ -265,6 +265,7 @@ const sourceField = (fullName: string, type: FieldType, extra: Partial<SourceFie
 const sourceObject = (name: string, fields: SourceField[]): SourceObject => ({ name, fields, validationRules: [], recordTypes: [] });
 const picklist = (fullName: string, ...values: string[]): SourceField =>
   sourceField(fullName, "Picklist", { valueSet: { restricted: false, values: values.map((v) => ({ value: v, label: v, default: false, active: true })) } });
+const filter = (field: string, operation: string, value: string, valueField?: string): SourceFilterItem => ({ field, operation, value, ...(valueField !== undefined ? { valueField } : {}) });
 const summary = (fullName: string, op: string | undefined, fk: string, summarized?: string, filters?: SourceFilterItem[]): SourceField => ({
   fullName,
   label: fullName,
@@ -429,5 +430,106 @@ describe("roll-up summary resolution", () => {
     expect(r.schema.getField("A__c", "Sum_B__c")).toBeUndefined();
     expect(r.schema.getField("B__c", "Sum_A__c")).toBeUndefined();
     expect(rollupWarnings(r).sort()).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-cycle A__c\.Sum_B__c: /), expect.stringMatching(/^UNSUPPORTED:rollup-cycle B__c\.Sum_A__c: /)]);
+  });
+});
+
+describe("roll-up summary filters", () => {
+  let baseline: Baseline;
+  beforeAll(async () => {
+    baseline = await loadBaseline();
+  });
+  const build = (objects: SourceObject[]): BuildResult => buildOrgSchema(baseline, { rootDir: "", packageDirectories: [], objects, globalValueSets: [], standardValueSets: [], warnings: [] });
+  /** One COUNT roll-up per filter item, named F0__c, F1__c, ... */
+  const counted = (...items: SourceFilterItem[]): BuildResult => build(parentChild(items.map((item, i) => summary(`F${i}__c`, "count", "Child__c.Parent__c", undefined, [item]))));
+
+  it("documented filters resolve to canonical field names and tokenised values", () => {
+    const r = counted(
+      filter("Child__c.done__c", "equals", "True"),
+      filter("Child__c.Status__c", "notEqual", 'Closed, "Open"'),
+      filter("Child__c.Status__c", "equals", ""),
+      filter("Child__c.Qty__c", "greaterOrEqual", "5"),
+      filter("Child__c.Due__c", "lessThan", "2026-01-31"),
+      filter("Child__c.Stamp__c", "greaterThan", "2026-01-31T10:00:00.000Z"),
+      filter("Child__c.Tag__c", "contains", "x_"),
+      filter("Child__c.Tag__c", "startsWith", "al"),
+      filter("Child__c.Tag__c", "notContain", "z"),
+    );
+    const filters = Array.from({ length: 9 }, (_, i) => r.schema.getField("Parent__c", `F${i}__c`)?.rollup?.filters);
+    expect(filters).toEqual([
+      [{ field: "Done__c", operation: "equals", values: ["true"] }],
+      [{ field: "Status__c", operation: "notEqual", values: ["Closed", "Open"] }],
+      [{ field: "Status__c", operation: "equals", values: [] }],
+      [{ field: "Qty__c", operation: "greaterOrEqual", values: ["5"] }],
+      [{ field: "Due__c", operation: "lessThan", values: ["2026-01-31"] }],
+      [{ field: "Stamp__c", operation: "greaterThan", values: ["2026-01-31T10:00:00.000Z"] }],
+      [{ field: "Tag__c", operation: "contains", values: ["x_"] }],
+      [{ field: "Tag__c", operation: "startsWith", values: ["al"] }],
+      [{ field: "Tag__c", operation: "notContain", values: ["z"] }],
+    ]);
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:"))).toEqual([]);
+  });
+
+  it("field-to-field filters accept Child.Field and bare names in the same type family", () => {
+    const r = counted(filter("Child__c.Due__c", "greaterThan", "", "Child__c.Planned__c"), filter("Child__c.Due__c", "greaterThan", "", "Planned__c"));
+    const expected = [{ field: "Due__c", operation: "greaterThan", values: [], valueField: "Planned__c" }];
+    expect(r.schema.getField("Parent__c", "F0__c")?.rollup?.filters).toEqual(expected);
+    expect(r.schema.getField("Parent__c", "F1__c")?.rollup?.filters).toEqual(expected);
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:"))).toEqual([]);
+  });
+
+  it("unsupported filters drop the whole field with rollup-filter, never the filter alone", () => {
+    const cases: [SourceFilterItem, RegExp?][] = [
+      [filter("Child__c.Status__c", "includes", "Open")],
+      [filter("Child__c.Due__c", "within", "2026-01-31")],
+      [filter("Child__c.Tag__c", "lessThan", "m")],
+      [filter("Child__c.Qty__c", "contains", "1")],
+      [filter("Child__c.Notes__c", "equals", "x")],
+      [filter("Child__c.Calc__c", "equals", "2")],
+      [filter("Child__c.Ref__c", "equals", "a00")],
+      [filter("Child__c.Done__c", "equals", "Yes")],
+      [filter("Child__c.Done__c", "equals", "True, False")],
+      [filter("Child__c.Qty__c", "equals", "abc")],
+      [filter("Child__c.Due__c", "equals", "TODAY"), /date literal/],
+      [filter("Child__c.Due__c", "greaterThan", "LAST_N_DAYS:30"), /date literal/],
+      [filter("Child__c.Qty__c", "greaterThan", "1, 2")],
+      [filter("Child__c.Qty__c", "equals", "", "Child__c.Tag__c")],
+      [filter("Child__c.Qty__c", "equals", "5", "Child__c.Qty__c")],
+      [filter("Child__c.Tag__c", "contains", "", "Child__c.Tag__c")],
+      [filter("Child__c.Tag__c", "startsWith", "")],
+    ];
+    const r = counted(...cases.map(([item]) => item));
+    const warnings = r.warnings.filter((w) => w.startsWith("UNSUPPORTED:"));
+    expect(warnings).toHaveLength(cases.length);
+    cases.forEach(([item, detail], i) => {
+      const name = `F${i}__c`;
+      expect(r.schema.getField("Parent__c", name), `${name} ${JSON.stringify(item)}`).toBeUndefined();
+      const own = warnings.filter((w) => w.startsWith(`UNSUPPORTED:rollup-filter Parent__c.${name}: `));
+      expect(own, `${name} ${JSON.stringify(item)}`).toHaveLength(1);
+      if (detail) expect(own[0]).toMatch(detail);
+    });
+  });
+
+  it("filter on an unknown child field is rollup-target", () => {
+    const r = counted(filter("Child__c.Nope__c", "equals", "x"));
+    expect(r.schema.getField("Parent__c", "F0__c")).toBeUndefined();
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:"))).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-target Parent__c\.F0__c: /)]);
+  });
+
+  it("DE-shaped: MAX over CreatedDate with one picklist equals filter over master-detail loads with zero warnings", () => {
+    // Neutral stand-in for the one Summary field in Johan's Developer Edition retrieve (ROLL-09); the real retrieve is checked locally in 05-07.
+    const backup = sourceObject("Backup__c", [summary("Last_Run__c", "max", "Backup_Run__c.Backup__c", "Backup_Run__c.CreatedDate", [filter("Backup_Run__c.Result__c", "equals", "Success")])]);
+    const run = sourceObject("Backup_Run__c", [sourceField("Backup__c", "MasterDetail", { referenceTo: "Backup__c", relationshipName: "Runs" }), picklist("Result__c", "Success", "Failure")]);
+    const r = build([backup, run]);
+    expect(r.schema.getField("Backup__c", "Last_Run__c")).toMatchObject({
+      type: "DateTime",
+      createable: false,
+      updateable: false,
+      rollup: { childObject: "Backup_Run__c", foreignKey: "Backup__c", operation: "MAX", summarizedField: "CreatedDate", filters: [{ field: "Result__c", operation: "equals", values: ["Success"] }] },
+    });
+    expect(r.warnings).toEqual([]);
+  });
+
+  it("acme still loads with zero warnings", async () => {
+    expect((await loadOrgSchema({ projectDir: ACME })).warnings).toEqual([]);
   });
 });
