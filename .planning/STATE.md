@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: "Phase 5 planned (7 plans, checker passed); next /gsd:execute-phase 5"
-last_updated: "2026-10-08T23:06:42.716Z"
-last_activity: 2026-10-08
+status: executing
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-10-09T07:17:18.779Z"
+last_activity: 2026-10-09
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 25
-  completed_plans: 18
+  completed_plans: 19
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 5 — Roll-Up Summary Fields
+**Current focus:** Phase 05 — roll-up-summary-fields
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-10-08
+Phase: 05 (roll-up-summary-fields) — EXECUTING
+Plan: 2 of 7
+Status: Ready to execute
+Last activity: 2026-10-09
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -72,6 +72,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04 P05 | 8min | 3 tasks | 7 files |
 | Phase 04 P06 | 12min | 2 tasks | 5 files |
 | Phase 04 P07 | 20min | 2 tasks | 5 files |
+| Phase 05 P01 | 5 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -117,6 +118,7 @@ Recent decisions affecting current work:
 - [Phase 04]: TYPEOF: an unmodelled prefix is a null parent with or without ELSE, never a synthetic object (D-19); onUnmodelledPrefix fires once per row
 - [Phase 04]: QueryPage.warnings is absent when nothing degraded; REST route logs it once per query via req.log.warn
 - [Phase 04]: POLY-01 recorded Partial (formula leg deferred per D-16); POLY-02..06 complete
+- [Phase 05]: No Summary member in FieldType; resolved roll-up is a typed FieldDef carrying rollup — Keeps exhaustive switches in formula/schema intact
 
 ### Pending Todos
 
@@ -130,6 +132,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T23:06:42.713Z
-Stopped at: Phase 5 planned (7 plans, checker passed); next /gsd:execute-phase 5
-Resume file: .planning/phases/05-roll-up-summary-fields/05-01-PLAN.md
+Last session: 2026-10-09T07:17:18.776Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
