@@ -126,7 +126,7 @@ queryable like any other field.
 **Plans**: 7 plans
 Plans:
 - [x] 05-01-PLAN.md — RollupDef contracts, Summary parsing (array-safe filter values), filter-value tokenizer
-- [ ] 05-02-PLAN.md — resolveRollups: types, D-05 whitelist / D-08 lookup failure, D-06/D-07 warnings, chains/cycles, DE-shaped proxy
+- [x] 05-02-PLAN.md — resolveRollups: types, D-05 whitelist / D-08 lookup failure, D-06/D-07 warnings, chains/cycles, DE-shaped proxy
 - [ ] 05-03-PLAN.md — roll-up SQL builder in @orglet/schema, migrate() backfill of new roll-up columns (D-10)
 - [ ] 05-04-PLAN.md — acme roll-up fixture chain + parent rule, describe `calculated`, REST/Bulk read-only tests
 - [ ] 05-05-PLAN.md — engine recompute on insert/update/upsert with parent rules and hooks, batch replay for D-03, D-04 defaults, D-09

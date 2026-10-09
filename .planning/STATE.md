@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-10-09T07:17:18.779Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-10-09T07:28:24.279Z"
 last_activity: 2026-10-09
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 25
-  completed_plans: 19
+  completed_plans: 20
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 05 (roll-up-summary-fields) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-10-09
 
@@ -73,6 +73,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04 P06 | 12min | 2 tasks | 5 files |
 | Phase 04 P07 | 20min | 2 tasks | 5 files |
 | Phase 05 P01 | 5 min | 2 tasks | 7 files |
+| Phase 05 P02 | 8 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,9 @@ Recent decisions affecting current work:
 - [Phase 04]: QueryPage.warnings is absent when nothing degraded; REST route logs it once per query via req.log.warn
 - [Phase 04]: POLY-01 recorded Partial (formula leg deferred per D-16); POLY-02..06 complete
 - [Phase 05]: No Summary member in FieldType; resolved roll-up is a typed FieldDef carrying rollup — Keeps exhaustive switches in formula/schema intact
+- [Phase 05]: Roll-up resolver runs after both merge loops and before the dangling-reference pass; resolved roll-ups are pushed onto SObjectDef.fields so chains resolve in a fixpoint loop (rollup-cycle when stalled)
+- [Phase 05]: Roll-up filter on a child roll-up field or any valueField problem is rollup-filter; unknown filter field is rollup-target; date literals in roll-up filters deferred with a rollup-filter warning
+- [Phase 05]: ROLL-03/06/09 not marked complete by 05-02: load halves only; computation (05-03+) and the DE retrieve check (05-07) finish them
 
 ### Pending Todos
 
@@ -132,6 +136,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T07:17:18.776Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-10-09T07:28:24.276Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None

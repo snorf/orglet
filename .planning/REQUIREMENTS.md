@@ -86,11 +86,11 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Roll-Up Summary Fields
 
-- [ ] **ROLL-01**: `Summary` fields are loaded from SFDX metadata (`summarizedField`,
+- [x] **ROLL-01**: `Summary` fields are loaded from SFDX metadata (`summarizedField`,
   `summaryForeignKey`, `summaryOperation`, `summaryFilterItems`) instead of being skipped,
   with the parent field typed as the summarised field's type (Number, Currency, Percent, Date
   or DateTime for MIN/MAX; Number for COUNT)
-- [ ] **ROLL-02**: A roll-up is only accepted on a master-detail relationship; a roll-up over a
+- [x] **ROLL-02**: A roll-up is only accepted on a master-detail relationship; a roll-up over a
   lookup fails metadata load with a clear error
 - [ ] **ROLL-03**: COUNT, SUM, MIN and MAX are computed with the documented filter operators
   (including field-to-field `valueField` comparisons) over non-deleted children
@@ -210,8 +210,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POLY-04 | Phase 4 | Complete |
 | POLY-05 | Phase 4 | Complete |
 | POLY-06 | Phase 4 | Complete |
-| ROLL-01 | Phase 5 | Pending |
-| ROLL-02 | Phase 5 | Pending |
+| ROLL-01 | Phase 5 | Complete |
+| ROLL-02 | Phase 5 | Complete |
 | ROLL-03 | Phase 5 | Pending |
 | ROLL-04 | Phase 5 | Pending |
 | ROLL-05 | Phase 5 | Pending |
