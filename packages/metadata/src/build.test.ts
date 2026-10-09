@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { fileURLToPath } from "node:url";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type BuildResult, type SourceObject } from "./index.js";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type FieldType, type SourceField, type SourceFilterItem, type SourceObject } from "./index.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 
@@ -255,5 +255,179 @@ describe("examples/acme merged onto the baseline", () => {
       "UNSUPPORTED:reference-target NoSuchObject__c is referenced but not defined; lookups to it are unchecked",
     ]);
     expect(built.schema.getObject("Dangler__c")).toBeDefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Roll-up summary resolution (phase 5). In-memory projects so edge cases never touch examples/acme.
+
+const sourceField = (fullName: string, type: FieldType, extra: Partial<SourceField> = {}): SourceField => ({ fullName, label: fullName, type, ...extra });
+const sourceObject = (name: string, fields: SourceField[]): SourceObject => ({ name, fields, validationRules: [], recordTypes: [] });
+const picklist = (fullName: string, ...values: string[]): SourceField =>
+  sourceField(fullName, "Picklist", { valueSet: { restricted: false, values: values.map((v) => ({ value: v, label: v, default: false, active: true })) } });
+const summary = (fullName: string, op: string | undefined, fk: string, summarized?: string, filters?: SourceFilterItem[]): SourceField => ({
+  fullName,
+  label: fullName,
+  type: "Summary",
+  summaryForeignKey: fk,
+  ...(op !== undefined ? { summaryOperation: op } : {}),
+  ...(summarized !== undefined ? { summarizedField: summarized } : {}),
+  ...(filters !== undefined ? { summaryFilterItems: filters } : {}),
+});
+const childFields = (): SourceField[] => [
+  sourceField("Parent__c", "MasterDetail", { referenceTo: "Parent__c", relationshipName: "Children" }),
+  sourceField("Amount__c", "Currency", { precision: 16, scale: 2 }),
+  sourceField("Qty__c", "Number", { precision: 10, scale: 0 }),
+  sourceField("Pct__c", "Percent", { precision: 5, scale: 2 }),
+  sourceField("Due__c", "Date"),
+  sourceField("Planned__c", "Date"),
+  sourceField("Stamp__c", "DateTime"),
+  sourceField("Done__c", "Checkbox"),
+  picklist("Status__c", "Open", "Closed"),
+  sourceField("Tag__c", "Text", { length: 40 }),
+  sourceField("Notes__c", "LongTextArea", { length: 1000 }),
+  sourceField("Calc__c", "Number", { precision: 18, scale: 0, formula: "Qty__c * 2" }),
+  sourceField("Ref__c", "Lookup", { referenceTo: "Parent__c", relationshipName: "RefChildren" }),
+];
+/** Parent__c with the given roll-ups over Child__c, plus any extra objects. */
+const parentChild = (parentFields: SourceField[], extra: SourceObject[] = []): SourceObject[] => [sourceObject("Parent__c", parentFields), sourceObject("Child__c", childFields()), ...extra];
+const rollupWarnings = (r: BuildResult) => r.warnings.filter((w) => w.startsWith("UNSUPPORTED:rollup") || w.startsWith("UNSUPPORTED:field-type"));
+
+describe("roll-up summary resolution", () => {
+  let baseline: Baseline;
+  beforeAll(async () => {
+    baseline = await loadBaseline();
+  });
+  const build = (objects: SourceObject[], b: Baseline = baseline): BuildResult =>
+    buildOrgSchema(b, { rootDir: "", packageDirectories: [], objects, globalValueSets: [], standardValueSets: [], warnings: [] });
+
+  it("a COUNT roll-up becomes a read-only Number(18,0) column carrying its definition", () => {
+    const r = build(parentChild([summary("Child_Count__c", "count", "Child__c.Parent__c")]));
+    const f = r.schema.getField("Parent__c", "Child_Count__c");
+    expect(f).toMatchObject({
+      type: "Number",
+      precision: 18,
+      scale: 0,
+      custom: true,
+      createable: false,
+      updateable: false,
+      nillable: true,
+      defaultedOnCreate: false,
+      rollup: { childObject: "Child__c", foreignKey: "Parent__c", operation: "COUNT", filters: [] },
+    });
+    expect(f?.rollup?.summarizedField).toBeUndefined();
+    expect(rollupWarnings(r)).toEqual([]);
+  });
+
+  it("SUM keeps the child type and scale with precision raised to 18", () => {
+    const r = build(parentChild([summary("Total__c", "sum", "Child__c.Parent__c", "Child__c.Amount__c"), summary("Pct_Total__c", "sum", "Child__c.Parent__c", "Child__c.Pct__c")]));
+    expect(r.schema.getField("Parent__c", "Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, rollup: { summarizedField: "Amount__c", operation: "SUM" } });
+    expect(r.schema.getField("Parent__c", "Pct_Total__c")).toMatchObject({ type: "Percent", precision: 18, scale: 2 });
+    expect(rollupWarnings(r)).toEqual([]);
+  });
+
+  it("MIN and MAX accept Date and DateTime, including the CreatedDate system field", () => {
+    const r = build(
+      parentChild([
+        summary("First_Due__c", "min", "Child__c.Parent__c", "Child__c.Due__c"),
+        summary("Last_Stamp__c", "max", "Child__c.Parent__c", "Child__c.Stamp__c"),
+        summary("Last_Created__c", "max", "Child__c.Parent__c", "Child__c.CreatedDate"),
+      ]),
+    );
+    expect(r.schema.getField("Parent__c", "First_Due__c")).toMatchObject({ type: "Date", rollup: { operation: "MIN", summarizedField: "Due__c" } });
+    expect(r.schema.getField("Parent__c", "First_Due__c")?.precision).toBeUndefined();
+    expect(r.schema.getField("Parent__c", "Last_Stamp__c")).toMatchObject({ type: "DateTime" });
+    expect(r.schema.getField("Parent__c", "Last_Created__c")).toMatchObject({ type: "DateTime", rollup: { summarizedField: "CreatedDate" } });
+    expect(rollupWarnings(r)).toEqual([]);
+  });
+
+  it("summaryOperation is case-insensitive", () => {
+    const r = build(parentChild([summary("A__c", "SUM", "Child__c.Parent__c", "Child__c.Amount__c"), summary("B__c", "Sum", "Child__c.Parent__c", "Child__c.Amount__c")]));
+    expect(r.schema.getField("Parent__c", "A__c")?.rollup?.operation).toBe("SUM");
+    expect(r.schema.getField("Parent__c", "B__c")?.rollup?.operation).toBe("SUM");
+  });
+
+  it("roll-ups on standard objects resolve over the three whitelisted lookups", () => {
+    const r = build([
+      sourceObject("Account", [summary("Opp_Total__c", "sum", "Opportunity.AccountId", "Opportunity.Amount")]),
+      sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")]),
+      sourceObject("Campaign", [summary("Member_Count__c", "count", "CampaignMember.CampaignId")]),
+    ]);
+    expect(r.schema.getField("Account", "Opp_Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, custom: true, rollup: { childObject: "Opportunity", foreignKey: "AccountId" } });
+    expect(r.schema.getField("Opportunity", "Items_Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, rollup: { childObject: "OpportunityLineItem", foreignKey: "OpportunityId" } });
+    expect(r.schema.getField("Campaign", "Member_Count__c")).toMatchObject({ type: "Number", precision: 18, scale: 0, rollup: { childObject: "CampaignMember", foreignKey: "CampaignId" } });
+    expect(rollupWarnings(r)).toEqual([]);
+  });
+
+  it("a roll-up over a plain lookup fails metadata load naming the field and the rule", () => {
+    expect(() => build([sourceObject("Account", [summary("Contact_Count__c", "count", "Contact.AccountId")])])).toThrowError(/Account\.Contact_Count__c.*Contact\.AccountId.*master-detail/);
+    expect(() => build(parentChild([summary("Ref_Count__c", "count", "Child__c.Ref__c")]))).toThrowError(/Parent__c\.Ref_Count__c.*Child__c\.Ref__c/);
+  });
+
+  it("a whitelisted child missing from the baseline degrades to rollup-target instead of failing", () => {
+    const thin: Baseline = { ...baseline, objects: baseline.objects.filter((o) => o.name !== "OpportunityLineItem") };
+    const r = build([sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")])], thin);
+    expect(r.schema.getField("Opportunity", "Items_Total__c")).toBeUndefined();
+    expect(rollupWarnings(r)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-target Opportunity\.Items_Total__c: /)]);
+  });
+
+  it("unresolvable references warn rollup-target and drop the field", () => {
+    const other = sourceObject("Other__c", [summary("Stray__c", "count", "Child__c.Parent__c")]);
+    const r = build(
+      parentChild(
+        [
+          summary("No_Child__c", "count", "Nope__c.Parent__c"),
+          summary("No_Fk__c", "count", "Child__c.Nope__c"),
+          summary("No_Field__c", "sum", "Child__c.Parent__c", "Child__c.Nope__c"),
+          summary("Wrong_Object__c", "sum", "Child__c.Parent__c", "Parent__c.Name"),
+        ],
+        [other],
+      ),
+    );
+    for (const name of ["No_Child__c", "No_Fk__c", "No_Field__c", "Wrong_Object__c"]) expect(r.schema.getField("Parent__c", name), name).toBeUndefined();
+    expect(r.schema.getField("Other__c", "Stray__c")).toBeUndefined();
+    const warnings = rollupWarnings(r).sort();
+    expect(warnings).toHaveLength(5);
+    for (const name of ["Parent__c.No_Child__c", "Parent__c.No_Fk__c", "Parent__c.No_Field__c", "Parent__c.Wrong_Object__c", "Other__c.Stray__c"]) {
+      expect(warnings.filter((w) => w.startsWith(`UNSUPPORTED:rollup-target ${name}: `)), name).toHaveLength(1);
+    }
+  });
+
+  it("disallowed operations and summarized types warn rollup-type and drop the field", () => {
+    const r = build(
+      parentChild([
+        summary("Avg__c", "avg", "Child__c.Parent__c", "Child__c.Amount__c"),
+        summary("No_Op__c", undefined, "Child__c.Parent__c", "Child__c.Amount__c"),
+        summary("Sum_Date__c", "sum", "Child__c.Parent__c", "Child__c.Due__c"),
+        summary("Max_Text__c", "max", "Child__c.Parent__c", "Child__c.Tag__c"),
+        summary("Sum_Formula__c", "sum", "Child__c.Parent__c", "Child__c.Calc__c"),
+        summary("Min_Nothing__c", "min", "Child__c.Parent__c"),
+      ]),
+    );
+    for (const name of ["Avg__c", "No_Op__c", "Sum_Date__c", "Max_Text__c", "Sum_Formula__c", "Min_Nothing__c"]) expect(r.schema.getField("Parent__c", name), name).toBeUndefined();
+    const warnings = rollupWarnings(r);
+    expect(warnings).toHaveLength(6);
+    for (const name of ["Avg__c", "No_Op__c", "Sum_Date__c", "Max_Text__c", "Sum_Formula__c"]) {
+      expect(warnings.filter((w) => w.startsWith(`UNSUPPORTED:rollup-type Parent__c.${name}: `)), name).toHaveLength(1);
+    }
+    expect(warnings.filter((w) => w.startsWith("UNSUPPORTED:rollup-target Parent__c.Min_Nothing__c: "))).toHaveLength(1);
+  });
+
+  it("a roll-up over another roll-up resolves regardless of declaration order", () => {
+    const grand = sourceObject("Grand__c", [summary("Total__c", "sum", "Parent__c.Grand__c", "Parent__c.Total__c")]);
+    const parent = sourceObject("Parent__c", [sourceField("Grand__c", "MasterDetail", { referenceTo: "Grand__c", relationshipName: "Parents" }), summary("Total__c", "sum", "Child__c.Parent__c", "Child__c.Amount__c")]);
+    const r = build([grand, parent, sourceObject("Child__c", childFields())]);
+    expect(r.schema.getField("Parent__c", "Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2 });
+    expect(r.schema.getField("Grand__c", "Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, rollup: { childObject: "Parent__c", foreignKey: "Grand__c", summarizedField: "Total__c" } });
+    expect(rollupWarnings(r)).toEqual([]);
+  });
+
+  it("roll-ups that summarise each other in a cycle warn rollup-cycle and are dropped", () => {
+    const a = sourceObject("A__c", [sourceField("B__c", "MasterDetail", { referenceTo: "B__c", relationshipName: "As" }), summary("Sum_B__c", "sum", "B__c.A__c", "B__c.Sum_A__c")]);
+    const b = sourceObject("B__c", [sourceField("A__c", "MasterDetail", { referenceTo: "A__c", relationshipName: "Bs" }), summary("Sum_A__c", "sum", "A__c.B__c", "A__c.Sum_B__c")]);
+    const r = build([a, b]);
+    expect(r.schema.getField("A__c", "Sum_B__c")).toBeUndefined();
+    expect(r.schema.getField("B__c", "Sum_A__c")).toBeUndefined();
+    expect(rollupWarnings(r).sort()).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-cycle A__c\.Sum_B__c: /), expect.stringMatching(/^UNSUPPORTED:rollup-cycle B__c\.Sum_A__c: /)]);
   });
 });

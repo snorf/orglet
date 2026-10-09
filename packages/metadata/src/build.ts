@@ -10,6 +10,7 @@ import type {
   GlobalValueSetDef,
   PicklistDef,
   PicklistValue,
+  RollupDef,
   SObjectDef,
   StandardFieldJson,
   StandardObjectJson,
@@ -17,6 +18,7 @@ import type {
 } from "./types.js";
 import type { SourceField, SourceObject, SourceProject } from "./sfdx.js";
 import { OrgSchemaImpl } from "./schema.js";
+import { resolveRollups, type PendingRollup, type RollupColumn } from "./rollup.js";
 
 const STANDARD_DIR = fileURLToPath(new URL("../standard/", import.meta.url));
 
@@ -340,9 +342,15 @@ function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): 
   return f;
 }
 
-/** Interim until roll-up resolution lands: report Summary fields instead of dropping them silently. */
-function skipSummaries(objectName: string, fields: SourceField[], warnings: string[]): void {
-  for (const sf of fields) if (sf.type === "Summary") warnings.push(`UNSUPPORTED:field-type ${objectName}.${sf.fullName}: roll-up summary fields are not resolved yet; field skipped`);
+/** A resolved roll-up: an ordinary stored column of the aggregate's type, read-only to clients (ROLL-07). */
+function rollupField(sf: SourceField, column: RollupColumn, rollup: RollupDef): FieldDef {
+  const f = readOnly(baseField(sf.fullName, sf.label ?? sf.fullName, column.type, true));
+  if (column.precision !== undefined) f.precision = column.precision;
+  if (column.scale !== undefined) f.scale = column.scale;
+  if (sf.description !== undefined) f.description = sf.description;
+  if (sf.inlineHelpText !== undefined) f.inlineHelpText = sf.inlineHelpText;
+  f.rollup = rollup;
+  return f;
 }
 
 function nameFieldFor(obj: SourceObject): FieldDef {
@@ -427,11 +435,13 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
 
   const objects = new Map<string, SObjectDef>();
   for (const j of baseline.objects) objects.set(j.name.toLowerCase(), fromStandardObject(j, standardValueSets));
+  // Summary fields need every object registered first; they are resolved after both merge loops.
+  const pending: PendingRollup[] = [];
 
   const sourceObjects = project?.objects ?? [];
   const customObjects = sourceObjects.filter((o) => isCustomObjectName(o.name)).sort((a, b) => a.name.localeCompare(b.name));
   customObjects.forEach((o, i) => {
-    skipSummaries(o.name, o.fields, warnings);
+    for (const sf of o.fields) if (sf.type === "Summary") pending.push({ objectName: o.name, field: sf });
     objects.set(o.name.toLowerCase(), fromSourceObject(o, customKeyPrefix(i), sets));
   });
 
@@ -448,7 +458,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     if (o.sharingModel !== undefined) target.sharingModel = o.sharingModel;
     for (const sf of o.fields) {
       if (sf.type === "Summary") {
-        skipSummaries(o.name, [sf], warnings);
+        pending.push({ objectName: target.name, field: sf });
         continue;
       }
       const existing = target.fields.find((f) => f.name.toLowerCase() === sf.fullName.toLowerCase());
@@ -469,6 +479,8 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     target.validationRules.push(...o.validationRules);
     target.recordTypes.push(...o.recordTypes);
   }
+
+  resolveRollups(objects, pending, warnings, rollupField);
 
   // Dangling references are allowed (e.g. Campaign not in phase 0) but reported once per target.
   const missing = new Set<string>();
