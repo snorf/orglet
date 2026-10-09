@@ -231,6 +231,36 @@ describe("examples/acme merged onto the baseline", () => {
     expect(project?.recordTypes.find((r) => r.name === "Internal")?.picklistValues[0]?.values.map((v) => v.value)).toEqual(["Planned", "Done"]);
   });
 
+  it("acme roll-ups resolve into read-only stored fields of the aggregate's type", () => {
+    const f = (o: string, n: string) => result.schema.getField(o, n);
+    expect(f("Project__c", "Milestone_Count__c")).toMatchObject({
+      type: "Number",
+      precision: 18,
+      scale: 0,
+      createable: false,
+      updateable: false,
+      rollup: { childObject: "Milestone__c", foreignKey: "Project__c", operation: "COUNT", filters: [] },
+    });
+    expect(f("Project__c", "Open_Milestones__c")?.rollup?.filters).toEqual([{ field: "Done__c", operation: "equals", values: ["false"] }]);
+    expect(f("Project__c", "Next_Due_Date__c")).toMatchObject({ type: "Date", rollup: { operation: "MIN", summarizedField: "Due_Date__c" } });
+    expect(f("Account", "Total_Budget__c")).toMatchObject({
+      type: "Currency",
+      precision: 18,
+      scale: 2,
+      rollup: {
+        childObject: "Project__c",
+        foreignKey: "Account__c",
+        operation: "SUM",
+        summarizedField: "Budget__c",
+        filters: [{ field: "Status__c", operation: "notEqual", values: ["Done"] }],
+      },
+    });
+    expect(f("Account", "Open_Project_Milestones__c")).toMatchObject({ type: "Number", rollup: { summarizedField: "Open_Milestones__c" } });
+    expect(f("Account", "Last_Active_Project_Created__c")).toMatchObject({ type: "DateTime", rollup: { operation: "MAX", summarizedField: "CreatedDate" } });
+    expect(result.warnings).toEqual([]);
+    expect(result.schema.getObject("Project__c")?.validationRules.map((r) => r.name)).toContain("Milestone_Limit");
+  });
+
   it("carries defaults and required flags", () => {
     expect(result.schema.getField("Milestone__c", "Due_Date__c")?.nillable).toBe(false);
     expect(result.schema.getField("Milestone__c", "Sort_Order__c")).toMatchObject({ defaultValue: "1", defaultedOnCreate: true, precision: 3, scale: 0 });
