@@ -92,7 +92,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   or DateTime for MIN/MAX; Number for COUNT)
 - [x] **ROLL-02**: A roll-up is only accepted on a master-detail relationship; a roll-up over a
   lookup fails metadata load with a clear error
-- [ ] **ROLL-03**: COUNT, SUM, MIN and MAX are computed with the documented filter operators
+- [x] **ROLL-03**: COUNT, SUM, MIN and MAX are computed with the documented filter operators
   (including field-to-field `valueField` comparisons) over non-deleted children
 - [ ] **ROLL-04**: A roll-up is recomputed inside the same transaction when a child is
   inserted, updated (including changes to filter-only fields), deleted, undeleted or moved to
@@ -212,7 +212,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POLY-06 | Phase 4 | Complete |
 | ROLL-01 | Phase 5 | Complete |
 | ROLL-02 | Phase 5 | Complete |
-| ROLL-03 | Phase 5 | Pending |
+| ROLL-03 | Phase 5 | Complete |
 | ROLL-04 | Phase 5 | Pending |
 | ROLL-05 | Phase 5 | Pending |
 | ROLL-06 | Phase 5 | Pending |
