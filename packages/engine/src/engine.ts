@@ -14,6 +14,7 @@ import { ChangeBus, type ChangeEvent, type ChangeType } from "./events.js";
 import { applyCompoundFields, applyFormulaFields, FormulaRegistry } from "./formulas.js";
 import type { DmlOperation, Session, TriggerContext, TriggerExecutor } from "./hooks.js";
 import { loadParents } from "./parents.js";
+import { RollupRegistry } from "./rollups.js";
 import { formatAutoNumber, Store } from "./store.js";
 
 export interface EngineOptions {
@@ -63,6 +64,7 @@ const isPgUniqueViolation = (err: unknown): err is { code: string; constraint?: 
 export class DmlEngine {
   readonly store: Store;
   readonly formulas: FormulaRegistry;
+  readonly rollups: RollupRegistry;
   readonly bus = new ChangeBus();
   readonly executors: TriggerExecutor[];
   readonly orgSchema: string;
@@ -76,6 +78,7 @@ export class DmlEngine {
     this.orgSchema = options.orgSchema ?? DEFAULT_ORG_SCHEMA;
     this.store = new Store(schema, this.orgSchema);
     this.formulas = new FormulaRegistry(schema);
+    this.rollups = new RollupRegistry(schema);
     this.executors = options.executors ?? [];
     this.importMode = options.importMode ?? false;
   }
@@ -414,20 +417,7 @@ export class DmlEngine {
     if (!this.importMode) await this.checkReferences(client, obj, live());
 
     // Custom validation rules (bypassed in import mode, like a data load with automation off).
-    const rules = this.importMode ? [] : this.formulas.validationRules(obj);
-    if (rules.length > 0) {
-      const candidates = live();
-      const rows = candidates.map((w) => ({ ...w.next }));
-      await loadParents(client, this.store, obj, rows, this.formulas.parentPaths(obj, ["rules"]));
-      candidates.forEach((w, i) => {
-        const ctx: EvaluationContext = { record: rows[i] as RecordData, isNew: operation === "insert", ...globals, ...(w.old ? { old: w.old } : {}) };
-        for (const { rule, compiled } of rules) {
-          const result = evaluateCompiled(compiled, ctx);
-          // A rule that errors at runtime blocks the save, like the platform does.
-          if (result.value === true || result.error !== undefined) w.errors.push(Errors.customValidation(rule.errorMessage, rule.errorDisplayField));
-        }
-      });
-    }
+    if (!this.importMode) await this.runValidationRules(client, obj, live(), operation === "insert", globals);
 
     // Write, one savepoint per record so a unique violation only fails that record.
     for (const w of live()) {
@@ -446,11 +436,30 @@ export class DmlEngine {
     if (!this.importMode) await this.runHooks(session, obj, operation, "after", live());
   }
 
+  /** Custom validation rules on prospective rows; failures go on each work item (shared by saveBatch and roll-up parents). */
+  private async runValidationRules(client: PoolClient, obj: SObjectDef, candidates: Work[], isNew: boolean, globals: Globals): Promise<void> {
+    const rules = this.formulas.validationRules(obj);
+    if (rules.length === 0 || candidates.length === 0) return;
+    const rows = candidates.map((w) => ({ ...w.next }));
+    await loadParents(client, this.store, obj, rows, this.formulas.parentPaths(obj, ["rules"]));
+    candidates.forEach((w, i) => {
+      const ctx: EvaluationContext = { record: rows[i] as RecordData, isNew, ...globals, ...(w.old ? { old: w.old } : {}) };
+      for (const { rule, compiled } of rules) {
+        const result = evaluateCompiled(compiled, ctx);
+        // A rule that errors at runtime blocks the save, like the platform does.
+        if (result.value === true || result.error !== undefined) w.errors.push(Errors.customValidation(rule.errorMessage, rule.errorDisplayField));
+      }
+    });
+  }
+
   private async defaults(client: PoolClient, obj: SObjectDef, changes: RecordData, session: Session, globals: Globals): Promise<RecordData> {
     const out: RecordData = {};
     for (const field of obj.fields) {
       if (changes[field.name] !== undefined && changes[field.name] !== null) continue;
-      if (field.type === "AutoNumber") {
+      if (field.rollup) {
+        // D-04: an empty parent counts and sums to 0; MIN/MAX stay null.
+        if (field.rollup.operation === "COUNT" || field.rollup.operation === "SUM") out[field.name] = 0;
+      } else if (field.type === "AutoNumber") {
         out[field.name] = formatAutoNumber(field.displayFormat, await this.store.nextAutoNumber(client, obj, field));
       } else if (field.type === "Checkbox") {
         out[field.name] = field.defaultValue === "true";
