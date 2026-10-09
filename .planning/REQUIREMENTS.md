@@ -110,7 +110,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   exactly as Salesforce documents
 - [x] **ROLL-08**: Roll-up values are stored as columns and are selectable, filterable and
   sortable in SOQL like any other field
-- [ ] **ROLL-09**: Loading Johan's Developer Edition retrieve produces zero
+- [x] **ROLL-09**: Loading Johan's Developer Edition retrieve produces zero
   `UNSUPPORTED:field-type` warnings for `Summary` fields
 
 ### Bulk API 2.0 Persistence
@@ -220,7 +220,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLL-06 | Phase 5 | Complete |
 | ROLL-07 | Phase 5 | Complete |
 | ROLL-08 | Phase 5 | Complete |
-| ROLL-09 | Phase 5 | Pending |
+| ROLL-09 | Phase 5 | Complete |
 | BULK-01 | Phase 6 | Pending |
 | BULK-02 | Phase 6 | Pending |
 | BULK-03 | Phase 6 | Pending |

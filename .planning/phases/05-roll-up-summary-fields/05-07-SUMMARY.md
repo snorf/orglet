@@ -28,12 +28,12 @@ key-files:
 
 key-decisions:
   - "The SDK legs reuse conformance/describe-check/.venv for simple-salesforce; no new venv was created"
-  - "ROLL-09 is not marked complete by this plan: it closes with Johan's Task 3 checkpoint (devrandom upgrade)"
+  - "ROLL-09 closed by Johan's Task 3 checkpoint: approved with a note (column already present, first-start line not observed, tables empty)"
 
 patterns-established:
   - "Phase gate scripts assert describe flags, recompute, SOQL filter/sort, rejected write and delete recompute through both SDKs"
 
-requirements-completed: []  # ROLL-01..ROLL-08 were marked by earlier plans; ROLL-09 closes after Task 3
+requirements-completed: [ROLL-09]  # ROLL-01..ROLL-08 were marked by earlier plans
 
 duration: 10 min
 completed: 2026-10-09
@@ -41,14 +41,14 @@ completed: 2026-10-09
 
 # Phase 5 Plan 07: Roll-up SDK gate, both backends and DE check Summary
 
-**jsforce and simple-salesforce both see roll-ups as calculated, read-only fields that recompute live on insert and delete and can be filtered and sorted in SOQL (5/5 each against a live acme org); the suite is green on pglite and Docker Postgres 16 and Johan's DE retrieve loads with zero warnings. Task 3 (devrandom upgrade) is pending Johan.**
+**jsforce and simple-salesforce both see roll-ups as calculated, read-only fields that recompute live on insert and delete and can be filtered and sorted in SOQL (5/5 each against a live acme org); the suite is green on pglite and Docker Postgres 16 and Johan's DE retrieve loads with zero warnings. Task 3 (devrandom upgrade) approved by Johan with a note.**
 
 ## Performance
 
 - **Duration:** 10 min
 - **Started:** 2026-10-09T08:04:00Z (approx.)
 - **Completed (Tasks 1-2):** 2026-10-09T08:14:00Z
-- **Tasks:** 2 of 3 executed (Task 3 is the blocking human checkpoint)
+- **Tasks:** 3 of 3 (Task 3 was the blocking human checkpoint, approved with a note)
 - **Files:** 3 created, 2 modified
 
 ## Task Commits
@@ -108,7 +108,16 @@ Afterwards: schema count for `rollup_check` = `0`, `_orglet.key_prefixes` rows f
 
 ## Task 3 outcome
 
-Pending Johan's reply (devrandom upgrade: roll-up column added and backfilled once, second start silent). Expected reply: "approved", "skip" or a description of the difference. ROLL-09 stays open until then.
+Johan's reply (2026-10-09, verbatim, Swedish): "Jag kan ha startat den tidigare när vi höll på och meckade så du kan approva med notering, om det är ett problem så löser vi det då".
+
+Recorded as **approved with a note**:
+
+- Johan's start of the devrandom server (`up --project ~/Development.nosync/devrandom-metadata --org-schema devrandom --port 8180`, without `--quiet`) printed `schema "devrandom": 0 change(s) applied`, no `error:` line and no `warning:` line, then the normal banner (37 objects, 2 custom).
+- Read-only check afterwards: `information_schema.columns` shows `devrandom.objectbackup__c.last_backup_run__c` present with type `timestamp with time zone` (MAX over `ObjectBackupRun__c.CreatedDate`). Both `objectbackup__c` and `objectbackuprun__c` hold 0 rows, so the backfill had nothing to write and the step-4 query returned no rows.
+- The expected `N >= 1` first-start line was not observed: the column had already been added by an earlier start. A node server was already listening on 8180 (PID 90076) when the checkpoint was reached; Johan may have started it during the day after a plan had rebuilt `dist/` (05-03 landed the backfill at ~07:40Z), which would have applied the column then. Not verifiable after the fact (Postgres does not timestamp columns).
+- This start therefore served as the step-5 "second start": silent, 0 changes, no warnings. The acme-based backfill tests (05-03) and the SDK gate (Task 2) stand as the backfill evidence. Johan: "if it is a problem we solve it then".
+
+ROLL-09 marked complete.
 
 ## Decisions
 
