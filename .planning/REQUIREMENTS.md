@@ -92,6 +92,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   or DateTime for MIN/MAX; Number for COUNT)
 - [x] **ROLL-02**: A roll-up is only accepted on a master-detail relationship; a roll-up over a
   lookup fails metadata load with a clear error
+  *Per D-05: Opportunity.AccountId, OpportunityLineItem.OpportunityId and CampaignMember.CampaignId are also accepted (Salesforce's documented standard roll-ups); any other lookup fails load.*
 - [x] **ROLL-03**: COUNT, SUM, MIN and MAX are computed with the documented filter operators
   (including field-to-field `valueField` comparisons) over non-deleted children
 - [x] **ROLL-04**: A roll-up is recomputed inside the same transaction when a child is
@@ -100,6 +101,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [x] **ROLL-05**: Roll-up recomputation happens in the app-side save pipeline after the child
   record is written and before the parent's after-hooks, never as a Postgres trigger, and
   partial-success savepoints roll back the parent update together with the child
+  *Recompute runs after the child's after-hooks; a refusing parent rolls back the children that point at it through a batch savepoint and replay (05-05), which keeps the "only committed children" guarantee.*
 - [x] **ROLL-06**: Multi-level master-detail chains recompute upward (a roll-up whose parent is
   itself a detail of a roll-up parent), and a roll-up that summarises another roll-up is
   handled without infinite recursion
