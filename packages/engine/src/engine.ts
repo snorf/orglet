@@ -3,18 +3,20 @@
  * delete and undelete, minus Apex and Flow (which plug in through TriggerExecutor).
  *
  * Per call: one transaction; each record is written under its own savepoint so partial
- * success works, and allOrNone rolls the whole call back.
+ * success works, and allOrNone rolls the whole call back. Roll-up summaries are recomputed after
+ * the batch's after-hooks, and a parent that refuses the recomputed row rolls back exactly the
+ * children that point at it.
  */
 import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
-import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchTargetByPrefix, type Pool, type PoolClient } from "@orglet/schema";
+import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchTargetByPrefix, rollupSelectSql, type Pool, type PoolClient } from "@orglet/schema";
 import { asString, evaluateCompiled, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
-import { Errors, failure, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
+import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
 import { ChangeBus, type ChangeEvent, type ChangeType } from "./events.js";
 import { applyCompoundFields, applyFormulaFields, FormulaRegistry } from "./formulas.js";
 import type { DmlOperation, Session, TriggerContext, TriggerExecutor } from "./hooks.js";
 import { loadParents } from "./parents.js";
-import { RollupRegistry } from "./rollups.js";
+import { affectedParents, RollupRegistry, type ParentGroup, type RollupKind } from "./rollups.js";
 import { formatAutoNumber, Store } from "./store.js";
 
 export interface EngineOptions {
@@ -60,6 +62,10 @@ type ObjectOperation = "insert" | "update" | "upsert" | "delete" | "undelete";
 
 const isPgUniqueViolation = (err: unknown): err is { code: string; constraint?: string } =>
   typeof err === "object" && err !== null && (err as { code?: string }).code === "23505";
+
+const NO_IDS: ReadonlySet<string> = new Set<string>();
+/** Chain levels a roll-up recompute may climb; load-time cycle detection makes this unreachable in practice. */
+const MAX_ROLLUP_DEPTH = 16;
 
 export class DmlEngine {
   readonly store: Store;
@@ -420,20 +426,130 @@ export class DmlEngine {
     if (!this.importMode) await this.runValidationRules(client, obj, live(), operation === "insert", globals);
 
     // Write, one savepoint per record so a unique violation only fails that record.
-    for (const w of live()) {
-      await client.query(`SAVEPOINT rec`);
-      try {
-        if (operation === "insert") await this.store.insert(client, obj, w.next);
-        else await this.store.update(client, obj, w.id as string, { ...w.changes, ...(this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now }) });
-        await client.query(`RELEASE SAVEPOINT rec`);
-      } catch (err) {
-        await client.query(`ROLLBACK TO SAVEPOINT rec`);
-        if (!isPgUniqueViolation(err)) throw err;
-        w.errors.push(await this.duplicateError(client, obj, w, err.constraint));
+    const write = async (): Promise<void> => {
+      for (const w of live()) {
+        await client.query(`SAVEPOINT rec`);
+        try {
+          if (operation === "insert") await this.store.insert(client, obj, w.next);
+          else await this.store.update(client, obj, w.id as string, { ...w.changes, ...(this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now }) });
+          await client.query(`RELEASE SAVEPOINT rec`);
+        } catch (err) {
+          await client.query(`ROLLBACK TO SAVEPOINT rec`);
+          if (!isPgUniqueViolation(err)) throw err;
+          w.errors.push(await this.duplicateError(client, obj, w, err.constraint));
+        }
       }
-    }
+      if (!this.importMode) await this.runHooks(session, obj, operation, "after", live());
+    };
+    // D-02: roll-ups recompute after the children's after-hooks.
+    await this.withRollups(client, obj, work.length, write, () => this.recomputeRollups(client, session, globals, obj, work, operation, NO_IDS));
+  }
 
-    if (!this.importMode) await this.runHooks(session, obj, operation, "after", live());
+  // ---------------------------------------------------------------------------------------
+  // Roll-up summaries
+
+  /**
+   * Runs a batch's writes and after-hooks together with the roll-up recompute under one savepoint. When a parent
+   * refuses (rule or hook), the children it blames now carry errors: roll the batch back and replay the survivors,
+   * so committed parents only ever reflect committed children (D-03). Terminates because every repeated pass
+   * fails at least one more child. Postgres resolves a repeated savepoint name to the most recent one, so nested
+   * batches (cascades) each get their own.
+   */
+  private async withRollups(client: PoolClient, obj: SObjectDef, size: number, body: () => Promise<void>, recompute: () => Promise<number>): Promise<void> {
+    if (this.importMode || this.rollups.forChild(obj).length === 0) return body();
+    for (let pass = 0; ; pass++) {
+      if (pass > size) throw new Error(`roll-up replay on ${obj.name} did not converge`);
+      await client.query("SAVEPOINT rollup_batch");
+      await body();
+      if ((await recompute()) === 0) {
+        await client.query("RELEASE SAVEPOINT rollup_batch");
+        return;
+      }
+      await client.query("ROLLBACK TO SAVEPOINT rollup_batch");
+      await client.query("RELEASE SAVEPOINT rollup_batch");
+    }
+  }
+
+  /**
+   * Recompute every parent the batch touched, level by level up the master-detail chain, and save each parent whose
+   * roll-up values changed through its own rules and hooks. A refusing parent puts its error on every child in the
+   * batch that points at it (old or new FK); the chain's blame resolves back to those original children. Returns
+   * how many children newly failed, so the caller can replay without them.
+   */
+  private async recomputeRollups(client: PoolClient, session: Session, globals: Globals, child: SObjectDef, works: Work[], kind: RollupKind, skip: ReadonlySet<string>): Promise<number> {
+    const failedBefore = new Set(works.filter((w) => w.errors.length > 0));
+    const newlyFailed = () => works.filter((w) => w.errors.length > 0 && !failedBefore.has(w)).length;
+    // Parent work -> the original child works it answers for.
+    const blame = new Map<Work, Set<Work>>();
+    const childrenOf = (s: Set<Work>): Set<Work> => new Set([...s].flatMap((w) => [...(blame.get(w) ?? [w])]));
+
+    let level = affectedParents(this.rollups.forChild(child), works, kind, skip);
+    for (let depth = 1; level.length > 0; depth++) {
+      if (depth > MAX_ROLLUP_DEPTH) throw new Error(`roll-up recompute on ${child.name} did not settle after ${MAX_ROLLUP_DEPTH} levels`);
+      const written = new Map<SObjectDef, Work[]>();
+      for (const group of level) {
+        const ids = [...group.ids.keys()];
+        const { sql, params } = rollupSelectSql(this.orgSchema, this.schema, group.parent, group.fields, ids);
+        const fresh = new Map((await client.query<RecordData>(sql, params)).rows.map((r) => [asString(r["Id"]), r]));
+        const current = await this.store.loadByIds(client, group.parent, ids);
+        for (const id of ids) {
+          const computed = fresh.get(id);
+          const row = current.get(id);
+          // A parent deleted meanwhile has nothing to recompute.
+          if (!computed || !row) continue;
+          const changes: RecordData = {};
+          for (const f of group.fields) {
+            const value = computed[f.name] ?? null;
+            if (value !== (row[f.name] ?? null)) changes[f.name] = value;
+          }
+          // Unchanged values: no parent save, so no parent hooks or rules either.
+          if (Object.keys(changes).length === 0) continue;
+          const pw: Work = { index: 0, errors: [], changes, old: row, next: { ...row, ...changes }, id };
+          const blamed = childrenOf(group.ids.get(id) ?? new Set<Work>());
+          blame.set(pw, blamed);
+          if (await this.saveRollupParent(client, session, globals, group.parent, pw)) {
+            written.set(group.parent, [...(written.get(group.parent) ?? []), pw]);
+          } else {
+            for (const w of blamed) if (w.errors.length === 0) w.errors.push(...pw.errors.map((e) => saveError(e.statusCode, e.message)));
+          }
+        }
+      }
+      // The pass is rolled back and replayed anyway; climbing further would only run hooks for nothing.
+      if (newlyFailed() > 0) break;
+      const next: ParentGroup<Work>[] = [];
+      for (const [parentObj, parents] of written) next.push(...affectedParents(this.rollups.forChild(parentObj), parents, "update", skip));
+      level = next;
+    }
+    return newlyFailed();
+  }
+
+  /** The parent's save procedure for a roll-up change (D-01, D-02): before-hooks, its rules, the UPDATE, after-hooks. No audit stamps. */
+  private async saveRollupParent(client: PoolClient, session: Session, globals: Globals, obj: SObjectDef, pw: Work): Promise<boolean> {
+    await this.runHooks(session, obj, "update", "before", [pw]);
+    for (const [k, v] of Object.entries(pw.next)) {
+      if (pw.old && !(k in pw.changes) && v !== pw.old[k] && typeof v !== "object") pw.changes[k] = v;
+    }
+    if (pw.errors.length === 0) await this.runValidationRules(client, obj, [pw], false, globals);
+    if (pw.errors.length > 0) return false;
+
+    await client.query("SAVEPOINT rollup_parent");
+    try {
+      await this.store.update(client, obj, pw.id as string, pw.changes);
+      await this.runHooks(session, obj, "update", "after", [pw]);
+    } catch (err) {
+      await client.query("ROLLBACK TO SAVEPOINT rollup_parent");
+      await client.query("RELEASE SAVEPOINT rollup_parent");
+      if (!isPgUniqueViolation(err)) throw err;
+      pw.errors.push(await this.duplicateError(client, obj, pw, err.constraint));
+      return false;
+    }
+    if (pw.errors.length > 0) {
+      await client.query("ROLLBACK TO SAVEPOINT rollup_parent");
+      await client.query("RELEASE SAVEPOINT rollup_parent");
+      return false;
+    }
+    await client.query("RELEASE SAVEPOINT rollup_parent");
+    return true;
   }
 
   /** Custom validation rules on prospective rows; failures go on each work item (shared by saveBatch and roll-up parents). */

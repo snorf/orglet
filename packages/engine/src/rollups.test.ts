@@ -142,3 +142,197 @@ describe("defaults (D-04)", () => {
     expect(await get("Account", aid)).toMatchObject({ Total_Budget__c: 0, Open_Project_Milestones__c: 0, Last_Active_Project_Created__c: null });
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+
+/** Live Milestone__c rows pointing at `pid`, straight from the table (what actually committed). */
+async function committedMilestones(pid: string): Promise<number> {
+  const res = await pool.query<{ n: number }>(`SELECT count(*)::int AS n FROM ${quote(orgSchema)}."milestone__c" WHERE "project__c" = $1 AND "isdeleted" = false`, [pid]);
+  return Number(res.rows[0]?.n);
+}
+
+async function project(account: string, extra: Record<string, unknown> = {}): Promise<string> {
+  return one("Project__c", { Name: `P-${randomBytes(2).toString("hex")}`, Account__c: account, Status__c: "Active", ...extra });
+}
+
+const milestone = (pid: string, due: string, done = false) => ({ Project__c: pid, Due_Date__c: due, Done__c: done });
+const RULE_MESSAGE = "A project can have at most 5 milestones.";
+
+describe("recompute on insert and update (ROLL-04)", () => {
+  let pid: string;
+  let openId: string;
+
+  it("insert_counts_children_and_applies_the_checkbox_filter", async () => {
+    pid = await project(await one("Account", { Name: "Counts" }));
+    const results = await engine.insert(session, "Milestone__c", [milestone(pid, "2026-03-01"), milestone(pid, "2026-01-15", true)]);
+    expect(results.map((r) => r.success)).toEqual([true, true]);
+    openId = results[0]?.id as string;
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 2, Open_Milestones__c: 1, Next_Due_Date__c: "2026-03-01" });
+  });
+
+  it("filter_only_update_recomputes_the_parent", async () => {
+    expect((await engine.update(session, "Milestone__c", [{ Id: openId, Done__c: true }]))[0]?.success).toBe(true);
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 2, Open_Milestones__c: 0, Next_Due_Date__c: null });
+  });
+
+  it("reparent_recomputes_old_and_new_parent", async () => {
+    const aid = await one("Account", { Name: "Reparent" });
+    const p1 = await project(aid);
+    const p2 = await project(aid);
+    const [moved] = await engine.insert(session, "Milestone__c", [milestone(p1, "2026-05-01"), milestone(p1, "2026-06-01")]);
+    expect(await get("Project__c", p1)).toMatchObject({ Milestone_Count__c: 2, Next_Due_Date__c: "2026-05-01" });
+    expect(await get("Project__c", p2)).toMatchObject({ Milestone_Count__c: 0, Next_Due_Date__c: null });
+    expect((await engine.update(session, "Milestone__c", [{ Id: moved?.id, Project__c: p2 }]))[0]?.success).toBe(true);
+    expect(await get("Project__c", p1)).toMatchObject({ Milestone_Count__c: 1, Open_Milestones__c: 1, Next_Due_Date__c: "2026-06-01" });
+    expect(await get("Project__c", p2)).toMatchObject({ Milestone_Count__c: 1, Open_Milestones__c: 1, Next_Due_Date__c: "2026-05-01" });
+  });
+
+  it("sum_ignores_children_failing_the_filter", async () => {
+    const aid = await one("Account", { Name: "Budgets" });
+    const active = await project(aid, { Budget__c: 100, Status__c: "Active" });
+    await project(aid, { Budget__c: 50, Status__c: "Done" });
+    const created = (await get("Project__c", active))["CreatedDate"];
+    expect(typeof created).toBe("string");
+    expect(await get("Account", aid)).toMatchObject({ Total_Budget__c: 100, Last_Active_Project_Created__c: created });
+    expect((await engine.update(session, "Project__c", [{ Id: active, Status__c: "Done" }]))[0]?.success).toBe(true);
+    expect(await get("Account", aid)).toMatchObject({ Total_Budget__c: 0, Last_Active_Project_Created__c: null });
+  });
+
+  it("milestone_changes_propagate_to_the_account", async () => {
+    const aid = await one("Account", { Name: "Chain" });
+    const p = await project(aid);
+    const [m] = await engine.insert(session, "Milestone__c", [milestone(p, "2026-07-01"), milestone(p, "2026-07-02")]);
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 2 });
+    expect((await engine.update(session, "Milestone__c", [{ Id: m?.id, Done__c: true }]))[0]?.success).toBe(true);
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 1 });
+  });
+
+  it("upsert_recomputes_like_insert_and_update", async () => {
+    const aid = await one("Account", { Name: "Upserts" });
+    const row = { Name: "Upserted", Code__c: "UPS-1", Account__c: aid, Status__c: "Active", Budget__c: 10 };
+    expect((await engine.upsert(session, "Project__c", "Code__c", [row]))[0]).toMatchObject({ success: true, created: true });
+    expect(await get("Account", aid)).toMatchObject({ Total_Budget__c: 10 });
+    expect((await engine.upsert(session, "Project__c", "Code__c", [{ ...row, Budget__c: 20 }]))[0]).toMatchObject({ success: true, created: false });
+    expect(await get("Account", aid)).toMatchObject({ Total_Budget__c: 20 });
+  });
+});
+
+describe("parent rules, hooks and failure attribution (ROLL-05, D-01..D-03)", () => {
+  it("parent_rule_blocks_the_child_insert_with_the_parent_message", async () => {
+    const p = await project(await one("Account", { Name: "Limit" }));
+    const five = await engine.insert(session, "Milestone__c", Array.from({ length: 5 }, (_, i) => milestone(p, `2026-08-0${i + 1}`)));
+    expect(five.map((r) => r.success)).toEqual([true, true, true, true, true]);
+    const [sixth] = await engine.insert(session, "Milestone__c", [milestone(p, "2026-08-06")]);
+    expect(sixth?.success).toBe(false);
+    expect(sixth?.errors).toEqual([{ statusCode: "FIELD_CUSTOM_VALIDATION_EXCEPTION", message: RULE_MESSAGE, fields: [] }]);
+    expect(await committedMilestones(p)).toBe(5);
+    expect(await get("Project__c", p)).toMatchObject({ Milestone_Count__c: 5 });
+  });
+
+  it("parent_hooks_run_after_the_child_after_hooks", async () => {
+    const aid = await one("Account", { Name: "Order" });
+    const p = await project(aid);
+    log.length = 0;
+    const [m] = await engine.insert(session, "Milestone__c", [milestone(p, "2026-09-01")]);
+    const at = (entry: string) => {
+      const i = log.indexOf(entry);
+      expect(i, `${entry} missing from ${JSON.stringify(log)}`).toBeGreaterThanOrEqual(0);
+      return i;
+    };
+    expect(at(`after:insert:Milestone__c:${m?.id}`)).toBeLessThan(at(`before:update:Project__c:${p}`));
+    expect(at(`before:update:Project__c:${p}`)).toBeLessThan(at(`after:update:Project__c:${p}`));
+    expect(at(`after:update:Project__c:${p}`)).toBeLessThan(at(`before:update:Account:${aid}`));
+  });
+
+  it("partial_success_batch_counts_only_committed_children", async () => {
+    const p = await project(await one("Account", { Name: "Partial" }));
+    const results = await engine.insert(session, "Milestone__c", [milestone(p, "2026-10-01"), { Project__c: p, Done__c: false }, milestone(p, "2026-10-03")]);
+    expect(results.map((r) => r.success)).toEqual([true, false, true]);
+    expect(results[1]?.errors.map((e) => e.statusCode)).toEqual(["REQUIRED_FIELD_MISSING"]);
+    expect(await get("Project__c", p)).toMatchObject({ Milestone_Count__c: 2 });
+    expect(await committedMilestones(p)).toBe(2);
+  });
+
+  it("failed_parent_rolls_back_only_its_own_children", async () => {
+    const aid = await one("Account", { Name: "Two Parents" });
+    const pa = await project(aid);
+    const pb = await project(aid);
+    await engine.insert(session, "Milestone__c", Array.from({ length: 5 }, (_, i) => milestone(pa, `2026-11-0${i + 1}`)));
+    const results = await engine.insert(session, "Milestone__c", [milestone(pa, "2026-11-06"), milestone(pb, "2026-11-07"), milestone(pa, "2026-11-08")]);
+    expect(results.map((r) => r.success)).toEqual([false, true, false]);
+    expect(results[0]?.errors.map((e) => e.message)).toEqual([RULE_MESSAGE]);
+    expect(results[2]?.errors.map((e) => e.message)).toEqual([RULE_MESSAGE]);
+    expect(await get("Project__c", pa)).toMatchObject({ Milestone_Count__c: 5 });
+    expect(await committedMilestones(pa)).toBe(5);
+    expect(await get("Project__c", pb)).toMatchObject({ Milestone_Count__c: 1 });
+    expect(await committedMilestones(pb)).toBe(1);
+  });
+
+  it("locked_parent_fails_its_children_through_the_hook_seam", async () => {
+    const p = await project(await one("Account", { Name: "Locked" }));
+    locked.add(p);
+    try {
+      const [m] = await engine.insert(session, "Milestone__c", [milestone(p, "2026-12-01")]);
+      expect(m?.success).toBe(false);
+      expect(m?.errors).toMatchObject([{ statusCode: "FIELD_CUSTOM_VALIDATION_EXCEPTION", message: "Project__c is locked" }]);
+      expect(await committedMilestones(p)).toBe(0);
+      expect(await get("Project__c", p)).toMatchObject({ Milestone_Count__c: 0 });
+    } finally {
+      locked.delete(p);
+    }
+  });
+
+  it("reparent_with_a_failing_old_parent_keeps_both_parents_unchanged", async () => {
+    const aid = await one("Account", { Name: "Stranded" });
+    const p1 = await project(aid);
+    const p2 = await project(aid);
+    const [m] = await engine.insert(session, "Milestone__c", [milestone(p1, "2027-01-01")]);
+    locked.add(p1);
+    try {
+      const [moved] = await engine.update(session, "Milestone__c", [{ Id: m?.id, Project__c: p2 }]);
+      expect(moved?.success).toBe(false);
+      expect(moved?.errors.map((e) => e.message)).toEqual(["Project__c is locked"]);
+      expect(await get("Milestone__c", m?.id as string)).toMatchObject({ Project__c: p1 });
+      expect(await get("Project__c", p1)).toMatchObject({ Milestone_Count__c: 1, Next_Due_Date__c: "2027-01-01" });
+      expect(await get("Project__c", p2)).toMatchObject({ Milestone_Count__c: 0, Next_Due_Date__c: null });
+      expect(await committedMilestones(p1)).toBe(1);
+      expect(await committedMilestones(p2)).toBe(0);
+    } finally {
+      locked.delete(p1);
+    }
+  });
+
+  it("recompute_does_not_stamp_the_parent_last_modified_date", async () => {
+    const p = await project(await one("Account", { Name: "Stamps" }));
+    const before = await get("Project__c", p);
+    await one("Milestone__c", milestone(p, "2027-02-01"));
+    const after = await get("Project__c", p);
+    expect(before["Milestone_Count__c"]).toBe(0);
+    expect(after["Milestone_Count__c"]).toBe(1);
+    expect(after["LastModifiedDate"]).toBe(before["LastModifiedDate"]);
+    expect(after["SystemModstamp"]).toBe(before["SystemModstamp"]);
+  });
+
+  it("unchanged_rollups_skip_the_parent_save", async () => {
+    const aid = await one("Account", { Name: "Quiet" });
+    log.length = 0;
+    await project(aid, { Status__c: "Planned" });
+    expect(log.filter((e) => e.startsWith("before:update:Account:"))).toEqual([]);
+    expect(log.filter((e) => e.startsWith("after:update:Account:"))).toEqual([]);
+    expect(await get("Account", aid)).toMatchObject({ Total_Budget__c: 0, Open_Project_Milestones__c: 0, Last_Active_Project_Created__c: null });
+  });
+});
+
+describe("import mode (D-09)", () => {
+  it("import_mode_keeps_supplied_rollup_values", async () => {
+    const importer = new DmlEngine(pool, schema, { orgSchema, importMode: true, executors: [{ run: () => Promise.reject(new Error("hooks must not run")) }] });
+    const aid = await one("Account", { Name: "Imported" });
+    const [p] = await importer.insert(session, "Project__c", [{ Name: "Imported", Account__c: aid, Status__c: "Active", Milestone_Count__c: 42 }]);
+    expect(p, JSON.stringify(p?.errors)).toMatchObject({ success: true });
+    const pid = p?.id as string;
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 42 });
+    const [m] = await importer.insert(session, "Milestone__c", [milestone(pid, "2027-03-01")]);
+    expect(m, JSON.stringify(m?.errors)).toMatchObject({ success: true });
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 42 });
+  });
+});
