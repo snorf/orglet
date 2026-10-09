@@ -677,55 +677,64 @@ export class DmlEngine {
   // ---------------------------------------------------------------------------------------
   // Delete / undelete
 
-  private async deleteBatch(client: PoolClient, session: Session, obj: SObjectDef, work: Work[], globals: Globals): Promise<void> {
+  /** `deleting`: ids being deleted up the cascade stack; those parents are about to be soft-deleted, so they are never recomputed, rule-checked or hooked. */
+  private async deleteBatch(client: PoolClient, session: Session, obj: SObjectDef, work: Work[], globals: Globals, deleting: ReadonlySet<string> = NO_IDS): Promise<void> {
     const live = () => work.filter((w) => w.errors.length === 0);
     await this.runHooks(session, obj, "delete", "before", live());
-    const ids = live().map((w) => w.id as string);
-    if (ids.length === 0) return;
+    if (live().length === 0) return;
 
-    for (const child of this.schema.childRelationships(obj.name)) {
-      const childObj = this.object(child.childSObject);
-      const field = this.schema.getField(childObj.name, child.field) as FieldDef;
-      const rows = await this.store.childrenOf(client, childObj, field, ids);
-      if (rows.length === 0) continue;
-      if (child.restrictedDelete) {
-        for (const w of live()) {
-          const mine = rows.filter((r) => r[field.name] === w.id).map((r) => asString(r["Id"]));
-          if (mine.length > 0) w.errors.push(Errors.deleteRestricted(asString(w.old?.["Name"]) || (w.id ?? ""), childObj.labelPlural, mine));
+    // Cascade + soft delete + after-hooks replay from the surviving state when a parent refuses the recompute (D-03).
+    await this.withRollups(client, obj, work.length, async () => {
+      const ids = live().map((w) => w.id as string);
+      if (ids.length === 0) return;
+      for (const child of this.schema.childRelationships(obj.name)) {
+        const childObj = this.object(child.childSObject);
+        const field = this.schema.getField(childObj.name, child.field) as FieldDef;
+        const rows = await this.store.childrenOf(client, childObj, field, ids);
+        if (rows.length === 0) continue;
+        if (child.restrictedDelete) {
+          for (const w of live()) {
+            const mine = rows.filter((r) => r[field.name] === w.id).map((r) => asString(r["Id"]));
+            if (mine.length > 0) w.errors.push(Errors.deleteRestricted(asString(w.old?.["Name"]) || (w.id ?? ""), childObj.labelPlural, mine));
+          }
+        } else if (child.cascadeDelete) {
+          const childWork: Work[] = rows.map((r, index) => ({ index, errors: [], changes: {}, next: {}, id: asString(r["Id"]), old: r }));
+          await this.deleteBatch(client, session, childObj, childWork, globals, new Set([...deleting, ...ids]));
+          const failed = childWork.filter((c) => c.errors.length > 0);
+          for (const c of failed) {
+            const parent = live().find((w) => w.id === c.old?.[field.name]);
+            parent?.errors.push(...c.errors);
+          }
+        } else {
+          await client.query(`UPDATE ${this.store.table(childObj)} SET "${field.name.toLowerCase()}" = NULL WHERE "${field.name.toLowerCase()}" = ANY($1)`, [ids]);
         }
-      } else if (child.cascadeDelete) {
-        const childWork: Work[] = rows.map((r, index) => ({ index, errors: [], changes: {}, next: {}, id: asString(r["Id"]), old: r }));
-        await this.deleteBatch(client, session, childObj, childWork, globals);
-        const failed = childWork.filter((c) => c.errors.length > 0);
-        for (const c of failed) {
-          const parent = live().find((w) => w.id === c.old?.[field.name]);
-          parent?.errors.push(...c.errors);
-        }
-      } else {
-        await client.query(`UPDATE ${this.store.table(childObj)} SET "${field.name.toLowerCase()}" = NULL WHERE "${field.name.toLowerCase()}" = ANY($1)`, [ids]);
       }
-    }
-    const stamp = { at: formatSalesforceDatetime(new Date()), by: session.userId };
-    await this.store.setDeleted(client, obj, live().map((w) => w.id as string), true, stamp);
-    await this.runHooks(session, obj, "delete", "after", live());
+      const stamp = { at: formatSalesforceDatetime(new Date()), by: session.userId };
+      await this.store.setDeleted(client, obj, live().map((w) => w.id as string), true, stamp);
+      await this.runHooks(session, obj, "delete", "after", live());
+    }, () => this.recomputeRollups(client, session, globals, obj, work, "delete", deleting));
   }
 
   private async undeleteBatch(client: PoolClient, session: Session, obj: SObjectDef, work: Work[], globals: Globals): Promise<void> {
     const live = () => work.filter((w) => w.errors.length === 0);
-    const ids = live().map((w) => w.id as string);
-    if (ids.length === 0) return;
-    const stamp = { at: formatSalesforceDatetime(new Date()), by: session.userId };
-    await this.store.setDeleted(client, obj, ids, false, stamp);
-    for (const child of this.schema.childRelationships(obj.name)) {
-      if (!child.cascadeDelete) continue;
-      const childObj = this.object(child.childSObject);
-      const field = this.schema.getField(childObj.name, child.field) as FieldDef;
-      const rows = (await this.store.childrenOf(client, childObj, field, ids, true)).filter((r) => r["IsDeleted"] === true);
-      if (rows.length === 0) continue;
-      const childWork: Work[] = rows.map((r, index) => ({ index, errors: [], changes: {}, next: {}, id: asString(r["Id"]), old: r }));
-      await this.undeleteBatch(client, session, childObj, childWork, globals);
-    }
-    await this.runHooks(session, obj, "undelete", "after", live());
+    if (live().length === 0) return;
+    // The parent is made live first, so a cascaded child's recompute already sees it; no skip set is needed.
+    await this.withRollups(client, obj, work.length, async () => {
+      const ids = live().map((w) => w.id as string);
+      if (ids.length === 0) return;
+      const stamp = { at: formatSalesforceDatetime(new Date()), by: session.userId };
+      await this.store.setDeleted(client, obj, ids, false, stamp);
+      for (const child of this.schema.childRelationships(obj.name)) {
+        if (!child.cascadeDelete) continue;
+        const childObj = this.object(child.childSObject);
+        const field = this.schema.getField(childObj.name, child.field) as FieldDef;
+        const rows = (await this.store.childrenOf(client, childObj, field, ids, true)).filter((r) => r["IsDeleted"] === true);
+        if (rows.length === 0) continue;
+        const childWork: Work[] = rows.map((r, index) => ({ index, errors: [], changes: {}, next: {}, id: asString(r["Id"]), old: r }));
+        await this.undeleteBatch(client, session, childObj, childWork, globals);
+      }
+      await this.runHooks(session, obj, "undelete", "after", live());
+    }, () => this.recomputeRollups(client, session, globals, obj, work, "undelete", NO_IDS));
   }
 
   // ---------------------------------------------------------------------------------------

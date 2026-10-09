@@ -336,3 +336,96 @@ describe("import mode (D-09)", () => {
     expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 42 });
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+
+describe("recompute on delete and undelete (ROLL-04)", () => {
+  let aid: string;
+  let pid: string;
+  let m1: string;
+  let m2: string;
+
+  it("delete_recomputes_the_parent", async () => {
+    aid = await one("Account", { Name: "Deletes" });
+    pid = await project(aid);
+    const [a, b] = await engine.insert(session, "Milestone__c", [milestone(pid, "2026-04-01"), milestone(pid, "2026-05-01")]);
+    m1 = a?.id as string;
+    m2 = b?.id as string;
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 2, Open_Milestones__c: 2, Next_Due_Date__c: "2026-04-01" });
+    expect((await engine.delete(session, "Milestone__c", [m1]))[0]?.success).toBe(true);
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 1, Open_Milestones__c: 1, Next_Due_Date__c: "2026-05-01" });
+  });
+
+  it("count_sum_zero_and_min_max_null_when_last_child_deleted", async () => {
+    expect((await engine.delete(session, "Milestone__c", [m2]))[0]?.success).toBe(true);
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 0, Open_Milestones__c: 0, Next_Due_Date__c: null });
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 0 });
+  });
+
+  it("count_excludes_soft_deleted_children", async () => {
+    const res = await pool.query<{ n: number }>(`SELECT count(*)::int AS n FROM ${quote(orgSchema)}."milestone__c" WHERE "project__c" = $1`, [pid]);
+    expect(Number(res.rows[0]?.n)).toBe(2);
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 0 });
+  });
+
+  it("undelete_recomputes_the_parent", async () => {
+    expect((await engine.undelete(session, "Milestone__c", [m1, m2])).map((r) => r.success)).toEqual([true, true]);
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 2, Open_Milestones__c: 2, Next_Due_Date__c: "2026-04-01" });
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 2 });
+  });
+
+  it("cascade_delete_of_a_project_skips_its_own_recompute_and_updates_the_account", async () => {
+    const acct = await one("Account", { Name: "Cascade Rollups" });
+    const p = await project(acct, { Budget__c: 70, Status__c: "Active" });
+    await engine.insert(session, "Milestone__c", [milestone(p, "2026-06-01"), milestone(p, "2026-06-02")]);
+    expect(await get("Account", acct)).toMatchObject({ Total_Budget__c: 70, Open_Project_Milestones__c: 2 });
+    log.length = 0;
+    expect((await engine.delete(session, "Project__c", [p]))[0]?.success).toBe(true);
+    expect(log.filter((e) => e.startsWith(`before:update:Project__c:${p}`) || e.startsWith(`after:update:Project__c:${p}`))).toEqual([]);
+    expect(log).toContain(`before:update:Account:${acct}`);
+    expect(await get("Account", acct)).toMatchObject({ Total_Budget__c: 0, Open_Project_Milestones__c: 0, Last_Active_Project_Created__c: null });
+    expect((await engine.undelete(session, "Project__c", [p]))[0]?.success).toBe(true);
+    expect(await get("Account", acct)).toMatchObject({ Total_Budget__c: 70, Open_Project_Milestones__c: 2 });
+    expect(await get("Project__c", p)).toMatchObject({ Milestone_Count__c: 2 });
+  });
+
+  it("delete_refused_by_the_parent_keeps_the_child", async () => {
+    locked.add(pid);
+    try {
+      const [r] = await engine.delete(session, "Milestone__c", [m1]);
+      expect(r?.success).toBe(false);
+      expect(r?.errors).toMatchObject([{ statusCode: "FIELD_CUSTOM_VALIDATION_EXCEPTION", message: "Project__c is locked" }]);
+      expect(await get("Milestone__c", m1)).toMatchObject({ IsDeleted: false });
+      expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 2 });
+      expect(await committedMilestones(pid)).toBe(2);
+    } finally {
+      locked.delete(pid);
+    }
+  });
+
+  it("undelete_refused_by_the_parent_keeps_the_child_deleted", async () => {
+    expect((await engine.delete(session, "Milestone__c", [m1]))[0]?.success).toBe(true);
+    expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 1 });
+    locked.add(pid);
+    try {
+      const [r] = await engine.undelete(session, "Milestone__c", [m1]);
+      expect(r?.success).toBe(false);
+      expect(r?.errors.map((e) => e.message)).toEqual(["Project__c is locked"]);
+      expect((await engine.retrieve(session, "Milestone__c", [m1], { includeDeleted: true })).get(m1)?.["IsDeleted"]).toBe(true);
+      expect(await get("Project__c", pid)).toMatchObject({ Milestone_Count__c: 1 });
+      expect(await committedMilestones(pid)).toBe(1);
+    } finally {
+      locked.delete(pid);
+    }
+  });
+
+  it("delete_of_an_account_cascades_without_recomputing_deleted_parents", async () => {
+    const acct = await one("Account", { Name: "Whole Chain" });
+    const p = await project(acct);
+    await one("Milestone__c", milestone(p, "2026-07-01"));
+    log.length = 0;
+    expect((await engine.delete(session, "Account", [acct]))[0]?.success).toBe(true);
+    expect(log.filter((e) => e.includes(`update:Project__c:${p}`) || e.includes(`update:Account:${acct}`))).toEqual([]);
+    expect(log.some((e) => e.startsWith("after:delete:Milestone__c:"))).toBe(true);
+  });
+});
