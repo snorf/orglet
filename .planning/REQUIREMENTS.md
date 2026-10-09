@@ -103,7 +103,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [ ] **ROLL-06**: Multi-level master-detail chains recompute upward (a roll-up whose parent is
   itself a detail of a roll-up parent), and a roll-up that summarises another roll-up is
   handled without infinite recursion
-- [ ] **ROLL-07**: Roll-up fields are read-only via REST and Bulk (`createable: false`,
+- [x] **ROLL-07**: Roll-up fields are read-only via REST and Bulk (`createable: false`,
   `updateable: false`, `calculated: true` in describe); a client value is ignored or rejected
   exactly as Salesforce documents
 - [ ] **ROLL-08**: Roll-up values are stored as columns and are selectable, filterable and
@@ -216,7 +216,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLL-04 | Phase 5 | Pending |
 | ROLL-05 | Phase 5 | Pending |
 | ROLL-06 | Phase 5 | Pending |
-| ROLL-07 | Phase 5 | Pending |
+| ROLL-07 | Phase 5 | Complete |
 | ROLL-08 | Phase 5 | Pending |
 | ROLL-09 | Phase 5 | Pending |
 | BULK-01 | Phase 6 | Pending |
