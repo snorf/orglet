@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-05-PLAN.md
-last_updated: "2026-10-09T07:58:37.140Z"
+stopped_at: Completed 05-06-PLAN.md
+last_updated: "2026-10-09T08:10:23.397Z"
 last_activity: 2026-10-09
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 05 (roll-up-summary-fields) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-10-09
 
@@ -77,6 +77,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05 P03 | 9 min | 2 tasks | 5 files |
 | Phase 05 P04 | 8 min | 2 tasks | 12 files |
 | Phase 05 P05 | 9 min | 2 tasks | 3 files |
+| Phase 05 P06 | 8 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -133,6 +134,8 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-05: D-03 attribution via SAVEPOINT rollup_batch with bounded replay of surviving children; per-parent SAVEPOINT rollup_parent kept around the parent UPDATE and after-hooks
 - [Phase 05]: 05-05: roll-up recompute is SELECT-first (rollupSelectSql per parent object and chain level), writes only changed columns, skips unchanged parents (no hooks/rules), stamps no LastModifiedDate and publishes no ChangeBus event
 - [Phase 05]: 05-05: ROLL-05 and ROLL-06 marked complete (chain Milestone->Project->Account proven); ROLL-04 withheld until 05-06 wires delete/undelete
+- [Phase 05]: 05-06: deleteBatch carries a deleting skip set through the cascade (new Set([...deleting, ...ids])) so a parent being deleted is never recomputed, rule-checked or hooked; undeleteBatch recomputes with NO_IDS because the parent is made live before its children recompute
+- [Phase 05]: 05-06: ROLL-04 and ROLL-08 marked complete; reparent and undelete recompute triggers implemented per ROLL-04 without a primary Salesforce quote (ROADMAP research flag, note for verify-work); ROLL-09 stays with 05-07
 
 ### Pending Todos
 
@@ -146,6 +149,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T07:58:37.137Z
-Stopped at: Completed 05-05-PLAN.md
+Last session: 2026-10-09T08:10:23.394Z
+Stopped at: Completed 05-06-PLAN.md
 Resume file: None

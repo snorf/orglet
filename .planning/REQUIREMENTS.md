@@ -94,7 +94,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   lookup fails metadata load with a clear error
 - [x] **ROLL-03**: COUNT, SUM, MIN and MAX are computed with the documented filter operators
   (including field-to-field `valueField` comparisons) over non-deleted children
-- [ ] **ROLL-04**: A roll-up is recomputed inside the same transaction when a child is
+- [x] **ROLL-04**: A roll-up is recomputed inside the same transaction when a child is
   inserted, updated (including changes to filter-only fields), deleted, undeleted or moved to
   another parent, and in the reparent case both the old and the new parent are recomputed
 - [x] **ROLL-05**: Roll-up recomputation happens in the app-side save pipeline after the child
@@ -106,7 +106,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [x] **ROLL-07**: Roll-up fields are read-only via REST and Bulk (`createable: false`,
   `updateable: false`, `calculated: true` in describe); a client value is ignored or rejected
   exactly as Salesforce documents
-- [ ] **ROLL-08**: Roll-up values are stored as columns and are selectable, filterable and
+- [x] **ROLL-08**: Roll-up values are stored as columns and are selectable, filterable and
   sortable in SOQL like any other field
 - [ ] **ROLL-09**: Loading Johan's Developer Edition retrieve produces zero
   `UNSUPPORTED:field-type` warnings for `Summary` fields
@@ -213,11 +213,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLL-01 | Phase 5 | Complete |
 | ROLL-02 | Phase 5 | Complete |
 | ROLL-03 | Phase 5 | Complete |
-| ROLL-04 | Phase 5 | Pending |
+| ROLL-04 | Phase 5 | Complete |
 | ROLL-05 | Phase 5 | Complete |
 | ROLL-06 | Phase 5 | Complete |
 | ROLL-07 | Phase 5 | Complete |
-| ROLL-08 | Phase 5 | Pending |
+| ROLL-08 | Phase 5 | Complete |
 | ROLL-09 | Phase 5 | Pending |
 | BULK-01 | Phase 6 | Pending |
 | BULK-02 | Phase 6 | Pending |
