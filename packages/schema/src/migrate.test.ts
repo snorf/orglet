@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, OrgSchemaImpl, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, OrgSchemaImpl, type FieldDef, type FieldType, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
 import type { Pool } from "./db.js";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { migrate } from "./migrate.js";
 import { quote } from "./columns.js";
+import { generateId } from "./ids.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 
@@ -171,5 +172,115 @@ describe("migrate across the thin standard-object upgrade", () => {
     );
     const tables = await pool.query<{ n: string }>(`SELECT count(*)::text AS n FROM information_schema.tables WHERE table_schema = $1 AND table_name = 'businesshours'`, [org]);
     expect(tables.rows[0]?.n).toBe("0"); // the whole upgrade rolled back
+  });
+});
+
+describe("roll-up backfill", () => {
+  const rollupSchema = `test_${randomBytes(4).toString("hex")}`;
+  const sourceField = (fullName: string, type: FieldType, extra: Partial<SourceField> = {}): SourceField => ({ fullName, label: fullName, type, ...extra });
+  const sourceObject = (name: string, fields: SourceField[]): SourceObject => ({ name, fields, validationRules: [], recordTypes: [] });
+  const filter = (field: string, operation: string, value: string, valueField?: string): SourceFilterItem => ({ field, operation, value, ...(valueField !== undefined ? { valueField } : {}) });
+  const summary = (fullName: string, op: string, fk: string, summarized?: string, filters?: SourceFilterItem[]): SourceField => ({
+    fullName,
+    label: fullName,
+    type: "Summary",
+    summaryForeignKey: fk,
+    summaryOperation: op,
+    ...(summarized !== undefined ? { summarizedField: summarized } : {}),
+    ...(filters !== undefined ? { summaryFilterItems: filters } : {}),
+  });
+  const NAMES = ["grand__c", "parent__c", "child__c"];
+  /** Only the three custom objects: no User table, so no audit foreign keys to satisfy. */
+  const only3 = (full: OrgSchema, keep: (f: FieldDef) => boolean): OrgSchema =>
+    new OrgSchemaImpl(
+      new Map(
+        NAMES.map((n) => {
+          const o = full.objects.get(n) as SObjectDef;
+          return [n, { ...o, fields: o.fields.filter(keep) }];
+        }),
+      ),
+      full.globalValueSets,
+      full.standardValueSets,
+    );
+  let full3: OrgSchema;
+  let before: OrgSchema;
+  const insert = async (obj: SObjectDef, { isdeleted = false, ...values }: Record<string, unknown>): Promise<string> => {
+    const id = generateId(obj.keyPrefix);
+    const cols = ["id", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", ...Object.keys(values)];
+    const vals = ["$1", "$2", "now()", "$3", "now()", "$3", "now()", ...Object.keys(values).map((_, i) => `$${i + 4}`)];
+    await pool.query(`INSERT INTO ${quote(rollupSchema)}.${quote(obj.name.toLowerCase())} (${cols.map(quote).join(", ")}) VALUES (${vals.join(", ")})`, [id, isdeleted, "005000000000001AAA", ...Object.values(values)]);
+    return id;
+  };
+
+  beforeAll(async () => {
+    const full = buildOrgSchema(await loadBaseline(), {
+      rootDir: "",
+      packageDirectories: [],
+      objects: [
+        sourceObject("Grand__c", [summary("Grand_Total__c", "sum", "Parent__c.Grand__c", "Parent__c.Total__c")]),
+        sourceObject("Parent__c", [
+          sourceField("Grand__c", "MasterDetail", { referenceTo: "Grand__c", relationshipName: "Parents" }),
+          summary("Child_Count__c", "count", "Child__c.Parent__c"),
+          summary("Open_Count__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Done__c", "equals", "False")]),
+          summary("Total__c", "sum", "Child__c.Parent__c", "Child__c.Amount__c"),
+          summary("Tagged__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Tag__c", "contains", "x_")]),
+          summary("Slipped__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Due__c", "greaterThan", "", "Child__c.Planned__c")]),
+          summary("Not_Alpha__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Tag__c", "notEqual", "alpha")]),
+          summary("Latest_Due__c", "max", "Child__c.Parent__c", "Child__c.Due__c"),
+        ]),
+        sourceObject("Child__c", [
+          sourceField("Parent__c", "MasterDetail", { referenceTo: "Parent__c", relationshipName: "Children" }),
+          sourceField("Amount__c", "Currency", { precision: 16, scale: 2 }),
+          sourceField("Done__c", "Checkbox"),
+          sourceField("Tag__c", "Text", { length: 40 }),
+          sourceField("Due__c", "Date"),
+          sourceField("Planned__c", "Date"),
+        ]),
+      ],
+      globalValueSets: [],
+      standardValueSets: [],
+      warnings: [],
+    });
+    expect(full.warnings.filter((w) => w.startsWith("UNSUPPORTED:rollup"))).toEqual([]);
+    full3 = only3(full.schema, () => true);
+    before = only3(full.schema, (f) => f.rollup === undefined);
+  });
+
+  afterAll(async () => {
+    await pool.query(`DROP SCHEMA IF EXISTS ${quote(rollupSchema)} CASCADE`);
+  });
+
+  it("adding roll-up columns to tables with rows backfills them once, lower chain levels first", async () => {
+    await migrate(pool, before, { orgSchema: rollupSchema });
+    const grand = full3.getObject("Grand__c") as SObjectDef;
+    const parent = full3.getObject("Parent__c") as SObjectDef;
+    const child = full3.getObject("Child__c") as SObjectDef;
+    const g = await insert(grand, {});
+    const p1 = await insert(parent, { grand__c: g });
+    const p2 = await insert(parent, { grand__c: g });
+    await insert(child, { parent__c: p1, amount__c: 10, done__c: false, tag__c: "x_1", due__c: "2026-02-01", planned__c: "2026-01-01" });
+    await insert(child, { parent__c: p1, amount__c: 5, done__c: true, tag__c: "xa", due__c: "2026-01-01", planned__c: "2026-01-01" });
+    await insert(child, { parent__c: p1, amount__c: 100, done__c: false, tag__c: "alpha", isdeleted: true });
+
+    const up = await migrate(pool, full3, { orgSchema: rollupSchema });
+    expect(up.warnings).toEqual([]);
+    const updates = up.statements.filter((s) => s.startsWith(`UPDATE "${rollupSchema}"."`));
+    expect(updates).toHaveLength(8);
+    expect(up.statements.findIndex((s) => s.includes(`SET "grand_total__c"`))).toBeGreaterThan(up.statements.findIndex((s) => s.includes(`SET "total__c"`)));
+
+    const parents = await pool.query<Record<string, unknown>>(
+      `SELECT id, child_count__c, open_count__c, total__c, tagged__c, slipped__c, not_alpha__c, latest_due__c FROM ${quote(rollupSchema)}."parent__c" ORDER BY id`,
+    );
+    const byId = new Map(parents.rows.map((r) => [r["id"], r]));
+    expect(byId.get(p1)).toEqual({ id: p1, child_count__c: 2, open_count__c: 1, total__c: 15, tagged__c: 1, slipped__c: 1, not_alpha__c: 2, latest_due__c: "2026-02-01" });
+    expect(byId.get(p2)).toEqual({ id: p2, child_count__c: 0, open_count__c: 0, total__c: 0, tagged__c: 0, slipped__c: 0, not_alpha__c: 0, latest_due__c: null });
+    const grands = await pool.query<{ grand_total__c: number }>(`SELECT grand_total__c FROM ${quote(rollupSchema)}."grand__c" WHERE id = $1`, [g]);
+    expect(grands.rows[0]?.grand_total__c).toBe(15);
+  });
+
+  it("a second migrate runs no backfill", async () => {
+    const again = await migrate(pool, full3, { orgSchema: rollupSchema });
+    expect(again.warnings).toEqual([]);
+    expect(again.statements.filter((s) => s.startsWith("UPDATE"))).toEqual([]);
   });
 });

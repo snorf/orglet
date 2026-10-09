@@ -3,9 +3,10 @@
  * sequences, indexes and foreign keys; widens columns whose type grew. Anything destructive
  * (dropping tables or columns, narrowing types) only happens with `force` and is otherwise
  * reported as an `UNSUPPORTED:schema-*` warning, so a reload never loses data by accident.
+ * Newly added roll-up summary columns are backfilled once.
  */
-import type { OrgSchema } from "@orglet/metadata";
-import { DEFAULT_ORG_SCHEMA, quote, type ColumnSpec } from "./columns.js";
+import type { FieldDef, OrgSchema } from "@orglet/metadata";
+import { DEFAULT_ORG_SCHEMA, columnName, quote, type ColumnSpec } from "./columns.js";
 import {
   addColumnSql,
   alterColumnTypeSql,
@@ -18,6 +19,7 @@ import {
 } from "./ddl.js";
 import type { Pool, PoolClient } from "./db.js";
 import { withTransaction } from "./db.js";
+import { rollupBackfillSql, rollupDepth } from "./rollup.js";
 
 export interface MigrateOptions {
   orgSchema?: string;
@@ -103,9 +105,9 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
   const warnings: string[] = [];
 
   await withTransaction(pool, async (client) => {
-    const run = async (sql: string) => {
+    const run = async (sql: string, params?: unknown[]) => {
       statements.push(sql);
-      await client.query(sql);
+      await client.query(sql, params);
     };
 
     await run(`CREATE SCHEMA IF NOT EXISTS ${quote(orgSchema)}`);
@@ -118,6 +120,7 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
     }
 
     // 1. Tables and columns.
+    const backfills: { plan: TablePlan; field: FieldDef }[] = [];
     for (const plan of plans) {
       const cols = existingTables.get(plan.table);
       if (!cols) {
@@ -128,6 +131,8 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
         const current = cols.get(column.name);
         if (!current) {
           await run(addColumnSql(orgSchema, plan.table, column));
+          const field = plan.object.fields.find((f) => f.rollup !== undefined && columnName(f) === column.name);
+          if (field) backfills.push({ plan, field });
         } else if (current.sqlType !== column.sqlType) {
           await reconcileType(plan, column, current, force, run, warnings, orgSchema);
         }
@@ -164,6 +169,17 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
           );
         }
       }
+    }
+
+    // 3. D-10: a roll-up column added to a table that may hold rows is computed once, lower chain levels
+    // first, with migration semantics (no hooks, no rules). Later changes come from the engine's recompute.
+    // Tables created in this run are empty and need nothing. This must stay the last step: updating a row a
+    // second time in one transaction queues a deferred foreign-key check on it, and Postgres then refuses
+    // DDL on that table ("has pending trigger events") until commit.
+    backfills.sort((a, b) => rollupDepth(schema, a.field) - rollupDepth(schema, b.field));
+    for (const { plan, field } of backfills) {
+      const { sql, params } = rollupBackfillSql(orgSchema, schema, plan.object, field);
+      await run(sql, params);
     }
   });
 
