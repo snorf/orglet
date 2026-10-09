@@ -88,15 +88,24 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
   parse `Owner:Group.Name`, so it raises `UNSUPPORTED:formula` and plain `Owner.Name` through a
   polymorphic lookup is rejected at compile time (D-16, todo pending) — Phase 4 (2026-10-08)
 
+- ✓ Roll-up summary fields: `Summary` metadata resolves into stored, read-only columns typed per
+  operation (COUNT/SUM/MIN/MAX, every documented filter operator incl. field-to-field, over
+  non-deleted children); a roll-up over a plain lookup fails load unless it is one of the three
+  documented standard relationships (D-05); recompute runs in the app-side save pipeline after the
+  child's after-hooks on insert, update (incl. filter-only and reparent, both parents), delete,
+  undelete and multi-level chains, through the parent's own hooks and validation rules under a
+  batch savepoint with replay so a refusing parent fails exactly the children that point at it
+  (D-01/D-03); `migrate()` backfills a newly added roll-up column once (D-10); describe reports
+  `calculated`, REST/Bulk reject client values, SOQL selects/filters/sorts them; proven through
+  jsforce and simple-salesforce via `conformance/rollup-check`, suite green on pglite and
+  Postgres 16, DE retrieve loads with zero warnings — Phase 5 (2026-10-09)
+
 ### Active
 
 Milestone 1, "hardening": make a real Developer Edition retrieve load with zero warnings, make
 the project buildable and testable without Docker, and put it on GitHub with CI. No GUI, no
 Flows, no Apex in this milestone.
 
-- [ ] Roll-up summary fields (`Summary` type: COUNT, SUM, MIN, MAX with filters) are loaded from
-  metadata, recomputed in the save pipeline on child insert/update/delete/undelete, and readable
-  via REST and SOQL
 - [ ] Bulk API 2.0 jobs are persisted in Postgres and survive a server restart
 - [ ] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (today: 15)
 - [ ] Both conformance suites are re-run after the changes, stay green, and the numbers in
@@ -198,6 +207,9 @@ on port 8180 with the `devrandom` org schema.
 | Polymorphic target chosen by key prefix, one shared rule, per-target LEFT JOINs in SOQL | Read and write paths must agree on the concrete object; SQL cannot call TS, so both derive from `SObjectDef.keyPrefix` | ✓ Good (Phase 4) |
 | Unmodelled key prefix is always a `null` parent, never a synthetic object, even in TYPEOF ELSE | Faking an object the org does not model would break `UNSUPPORTED` honesty (D-02/D-19); warning logged once per query | ✓ Good (Phase 4) |
 | Polymorphic formula references deferred: colon syntax raises `UNSUPPORTED:formula`, plain traversal rejected at compile time | Vendored sigha lexer rejects `:`; no local rewriting of formula text; fix belongs upstream | — Pending (Phase 4, D-16, todo) |
+| Roll-up recompute as SELECT-first correlated subqueries inside the child's batch savepoint, replaying survivors when a parent rule refuses | One SQL expression serves engine recompute and migrate backfill; a parent failure must blame exactly the children pointing at it (D-01/D-03) and a partial-success batch must count only committed children | ✓ Good (Phase 5) |
+| Roll-ups over a plain lookup fail load, except the three documented standard relationships (Opportunity.AccountId, OpportunityLineItem.OpportunityId, CampaignMember.CampaignId) | Salesforce only allows roll-ups on master-detail plus those standard cases; faking others would hide a metadata error (D-05) | ✓ Good (Phase 5) |
+| Migrate backfills a new roll-up column once as the last step of the migrate transaction; changing an existing roll-up's definition does not re-backfill | Deferred FK checks block `CREATE INDEX` after a second UPDATE of the same row, so backfill must come last; re-backfill deferred to a future `orglet rollup --recompute` (D-10) | ✓ Good (Phase 5; re-backfill pending) |
 
 ## Evolution
 
@@ -217,4 +229,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-09 after Phase 4*
+*Last updated: 2026-10-09 after Phase 5*
