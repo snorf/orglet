@@ -97,10 +97,10 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [ ] **ROLL-04**: A roll-up is recomputed inside the same transaction when a child is
   inserted, updated (including changes to filter-only fields), deleted, undeleted or moved to
   another parent, and in the reparent case both the old and the new parent are recomputed
-- [ ] **ROLL-05**: Roll-up recomputation happens in the app-side save pipeline after the child
+- [x] **ROLL-05**: Roll-up recomputation happens in the app-side save pipeline after the child
   record is written and before the parent's after-hooks, never as a Postgres trigger, and
   partial-success savepoints roll back the parent update together with the child
-- [ ] **ROLL-06**: Multi-level master-detail chains recompute upward (a roll-up whose parent is
+- [x] **ROLL-06**: Multi-level master-detail chains recompute upward (a roll-up whose parent is
   itself a detail of a roll-up parent), and a roll-up that summarises another roll-up is
   handled without infinite recursion
 - [x] **ROLL-07**: Roll-up fields are read-only via REST and Bulk (`createable: false`,
@@ -214,8 +214,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLL-02 | Phase 5 | Complete |
 | ROLL-03 | Phase 5 | Complete |
 | ROLL-04 | Phase 5 | Pending |
-| ROLL-05 | Phase 5 | Pending |
-| ROLL-06 | Phase 5 | Pending |
+| ROLL-05 | Phase 5 | Complete |
+| ROLL-06 | Phase 5 | Complete |
 | ROLL-07 | Phase 5 | Complete |
 | ROLL-08 | Phase 5 | Pending |
 | ROLL-09 | Phase 5 | Pending |

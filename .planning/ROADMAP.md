@@ -129,7 +129,7 @@ Plans:
 - [x] 05-02-PLAN.md — resolveRollups: types, D-05 whitelist / D-08 lookup failure, D-06/D-07 warnings, chains/cycles, DE-shaped proxy
 - [x] 05-03-PLAN.md — roll-up SQL builder in @orglet/schema, migrate() backfill of new roll-up columns (D-10)
 - [x] 05-04-PLAN.md — acme roll-up fixture chain + parent rule, describe `calculated`, REST/Bulk read-only tests
-- [ ] 05-05-PLAN.md — engine recompute on insert/update/upsert with parent rules and hooks, batch replay for D-03, D-04 defaults, D-09
+- [x] 05-05-PLAN.md — engine recompute on insert/update/upsert with parent rules and hooks, batch replay for D-03, D-04 defaults, D-09
 - [ ] 05-06-PLAN.md — delete/undelete recompute (cascade-safe), chain and filter-operator integration, SOQL over roll-ups
 - [ ] 05-07-PLAN.md — phase gate: both backends, jsforce + simple-salesforce rollup-check, DE check, devrandom checkpoint
 **Research flag**: yes — reparent and undelete recompute triggers are logically implied by Salesforce's documented behavior but not confirmed by a direct official quote; verify against Salesforce Help article `000391766` or equivalent before finalizing edge-case mechanics (scope itself is not in question).

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-04-PLAN.md
-last_updated: "2026-10-09T07:45:55.927Z"
+stopped_at: Completed 05-05-PLAN.md
+last_updated: "2026-10-09T07:58:37.140Z"
 last_activity: 2026-10-09
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 05 (roll-up-summary-fields) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-10-09
 
@@ -76,6 +76,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05 P02 | 8 min | 2 tasks | 3 files |
 | Phase 05 P03 | 9 min | 2 tasks | 5 files |
 | Phase 05 P04 | 8 min | 2 tasks | 12 files |
+| Phase 05 P05 | 9 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -129,6 +130,9 @@ Recent decisions affecting current work:
 - [Phase 05]: migrate backfill of new roll-up columns is the last step of the transaction: a second UPDATE of a row in one transaction queues a deferred FK check and Postgres refuses DDL on that table until commit (pending trigger events)
 - [Phase 05]: ROLL-03 marked complete by 05-03 (aggregates and all operators computed on both backends); ROLL-06 and ROLL-08 withheld until engine recompute (05-05) and SOQL surface (05-06)
 - [Phase 05]: 05-04: roll-up fixture lives in examples/acme (blast-radius gate passed); describe calculated covers roll-ups; ROLL-08/09 withheld
+- [Phase 05]: 05-05: D-03 attribution via SAVEPOINT rollup_batch with bounded replay of surviving children; per-parent SAVEPOINT rollup_parent kept around the parent UPDATE and after-hooks
+- [Phase 05]: 05-05: roll-up recompute is SELECT-first (rollupSelectSql per parent object and chain level), writes only changed columns, skips unchanged parents (no hooks/rules), stamps no LastModifiedDate and publishes no ChangeBus event
+- [Phase 05]: 05-05: ROLL-05 and ROLL-06 marked complete (chain Milestone->Project->Account proven); ROLL-04 withheld until 05-06 wires delete/undelete
 
 ### Pending Todos
 
@@ -142,6 +146,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T07:45:55.924Z
-Stopped at: Completed 05-04-PLAN.md
+Last session: 2026-10-09T07:58:37.137Z
+Stopped at: Completed 05-05-PLAN.md
 Resume file: None
