@@ -1,13 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { loadOrgSchema, type OrgSchema, type SObjectDef } from "@orglet/metadata";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
 import { migrate, quote, type Pool } from "@orglet/schema";
 import { asString } from "@orglet/formula";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
 import type { Session, TriggerContext } from "./hooks.js";
+import { runQuery } from "./query.js";
 import { affectedParents, RollupRegistry, type RollupBinding, type RollupWork } from "./rollups.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
@@ -427,5 +428,219 @@ describe("recompute on delete and undelete (ROLL-04)", () => {
     expect((await engine.delete(session, "Account", [acct]))[0]?.success).toBe(true);
     expect(log.filter((e) => e.includes(`update:Project__c:${p}`) || e.includes(`update:Account:${acct}`))).toEqual([]);
     expect(log.some((e) => e.startsWith("after:delete:Milestone__c:"))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+
+describe("multi-level chains (ROLL-06)", () => {
+  it("grandparent_follows_child_insert_update_delete_and_undelete", async () => {
+    const aid = await one("Account", { Name: "Grand" });
+    const p = await project(aid);
+    const m = await one("Milestone__c", milestone(p, "2026-03-15"));
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 1 });
+    expect((await engine.update(session, "Milestone__c", [{ Id: m, Done__c: true }]))[0]?.success).toBe(true);
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 0 });
+    expect((await engine.update(session, "Milestone__c", [{ Id: m, Done__c: false }]))[0]?.success).toBe(true);
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 1 });
+    expect((await engine.delete(session, "Milestone__c", [m]))[0]?.success).toBe(true);
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 0 });
+    expect((await engine.undelete(session, "Milestone__c", [m]))[0]?.success).toBe(true);
+    expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 1 });
+  });
+
+  it("refusing_grandparent_fails_the_child_and_rolls_back_the_parent", async () => {
+    const aid = await one("Account", { Name: "Locked Grand" });
+    const p = await project(aid);
+    locked.add(aid);
+    try {
+      const [m] = await engine.insert(session, "Milestone__c", [milestone(p, "2026-03-16")]);
+      expect(m?.success).toBe(false);
+      expect(m?.errors.map((e) => e.message)).toEqual(["Account is locked"]);
+      expect(await get("Project__c", p)).toMatchObject({ Milestone_Count__c: 0, Open_Milestones__c: 0, Next_Due_Date__c: null });
+      expect(await committedMilestones(p)).toBe(0);
+      expect(await get("Account", aid)).toMatchObject({ Open_Project_Milestones__c: 0 });
+    } finally {
+      locked.delete(aid);
+    }
+  });
+
+  it("two_projects_one_batch_one_locked_account", async () => {
+    const a1 = await one("Account", { Name: "A1 locked" });
+    const a2 = await one("Account", { Name: "A2 open" });
+    const p1 = await project(a1);
+    const p2 = await project(a2);
+    locked.add(a1);
+    try {
+      const results = await engine.insert(session, "Milestone__c", [milestone(p1, "2026-03-17"), milestone(p2, "2026-03-18")]);
+      expect(results.map((r) => r.success)).toEqual([false, true]);
+      expect(results[0]?.errors.map((e) => e.message)).toEqual(["Account is locked"]);
+      expect(await get("Project__c", p2)).toMatchObject({ Milestone_Count__c: 1, Open_Milestones__c: 1 });
+      expect(await get("Account", a2)).toMatchObject({ Open_Project_Milestones__c: 1 });
+      expect(await get("Project__c", p1)).toMatchObject({ Milestone_Count__c: 0 });
+      expect(await committedMilestones(p1)).toBe(0);
+      expect(await committedMilestones(p2)).toBe(1);
+    } finally {
+      locked.delete(a1);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+
+describe("filter operators against a real database (ROLL-03)", () => {
+  const orgSchema2 = `test_${randomBytes(4).toString("hex")}`;
+  let db2: TestDb;
+  let engine2: DmlEngine;
+  let session2: Session;
+  let pid: string;
+  const ms: string[] = [];
+
+  const filter = (field: string, operation: string, value = "", valueField?: string): SourceFilterItem => ({
+    field: `Milestone__c.${field}`,
+    operation,
+    value,
+    ...(valueField === undefined ? {} : { valueField: `Milestone__c.${valueField}` }),
+  });
+  const summary = (fullName: string, summaryOperation: string, summarizedField: string | undefined, filters: SourceFilterItem[] = []): SourceField => ({
+    fullName,
+    label: fullName,
+    type: "Summary",
+    summaryOperation,
+    summaryForeignKey: "Milestone__c.Project__c",
+    summaryFilterItems: filters,
+    ...(summarizedField === undefined ? {} : { summarizedField: `Milestone__c.${summarizedField}` }),
+  });
+  const EXTRA_SUMMARIES: SourceField[] = [
+    summary("Late_Count__c", "count", undefined, [filter("Due_Date__c", "greaterThan", "", "Planned_Date__c")]),
+    summary("Same_Day_Count__c", "count", undefined, [filter("Due_Date__c", "equals", "", "Planned_Date__c")]),
+    summary("Big_Count__c", "count", undefined, [filter("Sort_Order__c", "greaterThan", "2")]),
+    summary("Not_One_Count__c", "count", undefined, [filter("Sort_Order__c", "notEqual", "1")]),
+    summary("Ab_Count__c", "count", undefined, [filter("Tag__c", "equals", '"Alpha", "Beta"')]),
+    summary("Underscore_Count__c", "count", undefined, [filter("Tag__c", "contains", "x_")]),
+    summary("No_Z_Count__c", "count", undefined, [filter("Tag__c", "notContain", "z")]),
+    summary("Al_Count__c", "count", undefined, [filter("Tag__c", "startsWith", "al")]),
+    summary("Blank_Tag_Count__c", "count", undefined, [filter("Tag__c", "equals", "")]),
+    summary("Tagged_Count__c", "count", undefined, [filter("Tag__c", "notEqual", "")]),
+    summary("Early_Count__c", "count", undefined, [filter("Due_Date__c", "lessOrEqual", "2026-01-31")]),
+    summary("Max_Sort__c", "max", "Sort_Order__c"),
+    summary("Done_Sort_Sum__c", "sum", "Sort_Order__c", [filter("Done__c", "equals", "True")]),
+  ];
+
+  const get2 = async (sobject: string, id: string): Promise<Record<string, unknown>> => {
+    const rec = (await engine2.retrieve(session2, sobject, [id])).get(id);
+    expect(rec, `${sobject} ${id} not found`).toBeDefined();
+    return rec as Record<string, unknown>;
+  };
+
+  beforeAll(async () => {
+    db2 = await openTestDb();
+    const baseline = await loadBaseline();
+    // A fresh read: the acme schema used by the rest of this file must not see these extra fields.
+    const acme = await readSourceProject(ACME);
+    const extended = {
+      ...acme,
+      objects: acme.objects.map((o): SourceObject => {
+        if (o.name === "Milestone__c") return { ...o, fields: [...o.fields, { fullName: "Planned_Date__c", label: "Planned Date", type: "Date" }, { fullName: "Tag__c", label: "Tag", type: "Text", length: 40 }] };
+        if (o.name === "Project__c") return { ...o, fields: [...o.fields, ...EXTRA_SUMMARIES] };
+        return o;
+      }),
+    };
+    const built = buildOrgSchema(baseline, extended);
+    expect(built.warnings).toEqual([]);
+    await migrate(db2.pool, built.schema, { orgSchema: orgSchema2 });
+    session2 = (await bootstrapOrg(db2.pool, built.schema, { orgSchema: orgSchema2 })).session;
+    engine2 = new DmlEngine(db2.pool, built.schema, { orgSchema: orgSchema2 });
+
+    const [acct] = await engine2.insert(session2, "Account", [{ Name: "Operators" }]);
+    const [proj] = await engine2.insert(session2, "Project__c", [{ Name: "Ops", Account__c: acct?.id, Status__c: "Active" }]);
+    pid = proj?.id as string;
+    const row = (due: string, planned: string, sort: number | null, tag: string | null, done: boolean) => ({ Project__c: pid, Due_Date__c: due, Planned_Date__c: planned, Sort_Order__c: sort, Tag__c: tag, Done__c: done });
+    const results = await engine2.insert(session2, "Milestone__c", [
+      row("2026-01-10", "2026-01-10", 1, "alpha", false),
+      row("2026-02-10", "2026-01-20", 3, "BETA", true),
+      row("2026-03-10", "2026-03-01", 5, "x_ray", true),
+      row("2026-01-05", "2026-01-01", null, null, false),
+      row("2026-04-01", "2026-04-01", 2, "xa", false),
+    ]);
+    for (const r of results) expect(r.success, JSON.stringify(r.errors)).toBe(true);
+    ms.push(...results.map((r) => r.id as string));
+    // Sort_Order__c defaults to 1 on insert; m4 must really be NULL for the notEqual/MAX/SUM assertions.
+    expect((await engine2.update(session2, "Milestone__c", [{ Id: ms[3], Sort_Order__c: null }]))[0]?.success).toBe(true);
+    expect(await get2("Milestone__c", ms[3] as string)).toMatchObject({ Sort_Order__c: null, Tag__c: null });
+  });
+
+  afterAll(async () => {
+    await db2.pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema2)} CASCADE`);
+    await db2.close();
+  });
+
+  it("each documented filter operator counts exactly the matching live children", async () => {
+    expect(await get2("Project__c", pid)).toMatchObject({
+      Late_Count__c: 3,
+      Same_Day_Count__c: 2,
+      Big_Count__c: 2,
+      Not_One_Count__c: 4,
+      Ab_Count__c: 2,
+      Underscore_Count__c: 1,
+      No_Z_Count__c: 5,
+      Al_Count__c: 1,
+      Blank_Tag_Count__c: 1,
+      Tagged_Count__c: 4,
+      Early_Count__c: 2,
+      Max_Sort__c: 5,
+      Done_Sort_Sum__c: 8,
+      Milestone_Count__c: 5,
+    });
+  });
+
+  it("operator counts follow a delete", async () => {
+    expect((await engine2.delete(session2, "Milestone__c", [ms[2] as string]))[0]?.success).toBe(true);
+    expect(await get2("Project__c", pid)).toMatchObject({ Underscore_Count__c: 0, Big_Count__c: 1, Max_Sort__c: 3, Done_Sort_Sum__c: 3, Milestone_Count__c: 4 });
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+
+describe("SOQL over roll-up fields (ROLL-08)", () => {
+  let acct: string;
+  let small: string;
+  let big: string;
+  const q = (soql: string) => runQuery(engine, session, soql, { apiVersion: "60.0" });
+
+  beforeAll(async () => {
+    acct = await one("Account", { Name: "SOQL Rollups" });
+    small = await project(acct, { Name: "Small" });
+    big = await project(acct, { Name: "Big" });
+    await engine.insert(session, "Milestone__c", [milestone(small, "2026-02-01")]);
+    await engine.insert(session, "Milestone__c", [milestone(big, "2026-02-02"), milestone(big, "2026-02-03"), milestone(big, "2026-02-04")]);
+  });
+
+  it("selects_filters_and_sorts_by_a_rollup_column", async () => {
+    const page = await q(`SELECT Name, Milestone_Count__c FROM Project__c WHERE Account__c = '${acct}' AND Milestone_Count__c > 1 ORDER BY Milestone_Count__c DESC`);
+    expect(page.totalSize).toBe(1);
+    expect(page.records[0]).toMatchObject({ Name: "Big", Milestone_Count__c: 3 });
+  });
+
+  it("orders_by_a_rollup_ascending", async () => {
+    const page = await q(`SELECT Id FROM Project__c WHERE Account__c = '${acct}' ORDER BY Milestone_Count__c ASC`);
+    expect(page.records.map((r) => r["Id"])).toEqual([small, big]);
+  });
+
+  it("aggregates_over_a_rollup", async () => {
+    const page = await q(`SELECT SUM(Milestone_Count__c) total FROM Project__c WHERE Account__c = '${acct}'`);
+    expect(page.records).toEqual([{ attributes: { type: "AggregateResult" }, total: 4 }]);
+  });
+
+  it("returns_rollups_as_numbers_on_the_grandparent", async () => {
+    const page = await q(`SELECT Open_Project_Milestones__c, Total_Budget__c FROM Account WHERE Id = '${acct}'`);
+    expect(page.records[0]).toMatchObject({ Open_Project_Milestones__c: 4, Total_Budget__c: 0 });
+    expect(typeof page.records[0]?.["Open_Project_Milestones__c"]).toBe("number");
+    expect(typeof page.records[0]?.["Total_Budget__c"]).toBe("number");
+  });
+
+  it("filters_on_a_date_rollup", async () => {
+    const page = await q(`SELECT Id FROM Project__c WHERE Next_Due_Date__c < 2026-12-31 AND Account__c = '${acct}'`);
+    expect(page.records.map((r) => r["Id"]).sort()).toEqual([small, big].sort());
   });
 });
