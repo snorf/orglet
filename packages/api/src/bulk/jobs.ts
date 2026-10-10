@@ -1,6 +1,6 @@
 /**
  * Application-level Bulk API 2.0 job shapes and the state-transition rules. Jobs themselves live
- * in Postgres (see store.ts); only query jobs still sit in the in-memory `JobStore` until they move too.
+ * in Postgres (see store.ts).
  */
 import type { Session } from "@orglet/engine";
 import { generateId } from "@orglet/schema";
@@ -43,14 +43,9 @@ export interface QueryJob {
   state: JobState;
   createdDate: string;
   systemModstamp: string;
-  header: string[];
-  rows: string[][];
   numberRecordsProcessed: number;
   totalProcessingTime: number;
-}
-
-export class JobStore {
-  readonly query = new Map<string, QueryJob>();
+  errorMessage?: string;
 }
 
 /** Salesforce-looking 18-character job id with the Bulk API 2.0 key prefix. */

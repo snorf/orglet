@@ -9,7 +9,7 @@ import { withTransaction, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../../test/db.js";
 import { DELETABLE, newJobId } from "./jobs.js";
 import { dropBulkJobs, ensureBulkSchema } from "./schema.js";
-import { BulkStore, type NewIngestJob } from "./store.js";
+import { BulkStore, type NewIngestJob, type NewQueryJob } from "./store.js";
 
 let testDb: TestDb;
 let pool: Pool;
@@ -110,5 +110,62 @@ describe("ingest job store", () => {
     expect(await store.setState({ kind: "ingest", id: job.id, to: "InProgress" })).toBe(true);
     expect(await store.setState({ kind: "ingest", id: job.id, to: "JobComplete", totalProcessingTime: 42 })).toBe(true);
     expect(await store.findIngestJob(job.id)).toMatchObject({ state: "JobComplete", totalProcessingTime: 42 });
+  });
+});
+
+const newQuery = (over: Partial<NewQueryJob> = {}): NewQueryJob => ({
+  id: newJobId(),
+  session: USER_A,
+  operation: "query",
+  object: "Account",
+  query: "SELECT Id FROM Account",
+  lineEnding: "LF",
+  columnDelimiter: "COMMA",
+  apiVersion: "59.0",
+  ...over,
+});
+
+describe("query job store", () => {
+  it("query_job_is_born_upload_complete", async () => {
+    const job = await store.createQueryJob(newQuery());
+    expect(job).toMatchObject({ state: "UploadComplete", numberRecordsProcessed: 0, session: USER_A, contentType: "CSV" });
+    expect("errorMessage" in job).toBe(false);
+    expect(await store.findQueryJob(job.id)).toEqual(job);
+    expect(await store.setState({ kind: "query", id: job.id, to: "Open" })).toBe(false);
+  });
+
+  it("query_rows_page_by_offset", async () => {
+    const job = await store.createQueryJob(newQuery());
+    const rows = Array.from({ length: 2500 }, (_, i) => [String(i), `N${i}`]);
+    await withTransaction(pool, (c) => store.writeQueryResults(c, job.id, ["Id", "Name"], rows));
+    expect(await store.findQueryJob(job.id)).toMatchObject({ numberRecordsProcessed: 2500 });
+    const first = await store.readQueryPage(job.id, 0, 1000);
+    expect(first.rows).toHaveLength(1000);
+    expect(first.rows[0]).toEqual(["0", "N0"]);
+    expect(first.more).toBe(true);
+    expect(first.header).toEqual(["Id", "Name"]);
+    const last = await store.readQueryPage(job.id, 2000, 1000);
+    expect(last.rows).toHaveLength(500);
+    expect(last.more).toBe(false);
+    const all = await store.readQueryPage(job.id, 0, undefined);
+    expect(all.rows).toHaveLength(2500);
+    expect(all.more).toBe(false);
+    expect(await store.readQueryPage(job.id, 5000, 10)).toMatchObject({ rows: [], more: false });
+  });
+
+  it("empty_query_result_has_a_header_and_no_rows", async () => {
+    const job = await store.createQueryJob(newQuery());
+    await withTransaction(pool, (c) => store.writeQueryResults(c, job.id, [], []));
+    expect(await store.readQueryPage(job.id, 0, 10)).toEqual({ header: [], rows: [], more: false });
+    expect(await store.findQueryJob(job.id)).toMatchObject({ numberRecordsProcessed: 0 });
+  });
+
+  it("query_jobs_are_listed_per_user", async () => {
+    const org = new BulkStore(pool, `test_${randomBytes(4).toString("hex")}`);
+    const a1 = await org.createQueryJob(newQuery());
+    const a2 = await org.createQueryJob(newQuery());
+    await org.createQueryJob(newQuery({ session: USER_B }));
+    const listed = await org.listQueryJobs(USER_A.userId);
+    expect(listed.map((j) => j.id).sort()).toEqual([a1.id, a2.id].sort());
   });
 });
