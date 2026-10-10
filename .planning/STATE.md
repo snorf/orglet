@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-10-10T12:30:05.326Z"
+stopped_at: Completed 06-02-PLAN.md
+last_updated: "2026-10-10T12:30:40.135Z"
 last_activity: 2026-10-10
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 31
-  completed_plans: 26
+  completed_plans: 27
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 06 (bulk-api-2-0-persistence) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-10-10
 
@@ -80,6 +80,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05 P06 | 8 min | 2 tasks | 2 files |
 | Phase 05 P07 | 10 min | 2 tasks | 5 files |
 | Phase 06 P01 | 12min | 2 tasks | 3 files |
+| Phase 06 P02 | 8min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,7 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-06: ROLL-04 and ROLL-08 marked complete; reparent and undelete recompute triggers implemented per ROLL-04 without a primary Salesforce quote (ROADMAP research flag, note for verify-work); ROLL-09 stays with 05-07
 - [Phase 05]: 05-07: rollup-check SDK legs reuse describe-check venv; ROLL-09 left open until Johan's devrandom checkpoint
 - [Phase 06]: 06-01: DmlTransaction seam; DML joins caller transaction via SAVEPOINT dml_run, events published after outer COMMIT; import-mode replica role lasts until caller txn ends
+- [Phase 06]: 06-02: Bulk query rejection wording is orglet's own (guide documents no error shape); WHERE semi-joins now accepted; parser strips FROM alias itself
 
 ### Pending Todos
 
@@ -153,6 +155,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-10T12:30:05.317Z
-Stopped at: Completed 06-01-PLAN.md
+Last session: 2026-10-10T12:30:40.117Z
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None

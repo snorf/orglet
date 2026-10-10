@@ -123,7 +123,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [x] **BULK-03**: `successfulResults`, `failedResults` and `unprocessedrecords` return CSV
   with the documented `sf__Id`, `sf__Created`, `sf__Error` columns from persisted results
 - [ ] **BULK-04**: Jobs older than 7 days are purged, matching Salesforce retention
-- [ ] **BULK-05**: A Bulk query job rejects SOQL that Bulk API 2.0 does not support (TYPEOF,
+- [x] **BULK-05**: A Bulk query job rejects SOQL that Bulk API 2.0 does not support (TYPEOF,
   GROUP BY, OFFSET, aggregates, compound fields, child subqueries) with the documented error,
   using a rule set separate from REST SOQL
 
@@ -225,7 +225,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BULK-02 | Phase 6 | Pending |
 | BULK-03 | Phase 6 | Complete |
 | BULK-04 | Phase 6 | Pending |
-| BULK-05 | Phase 6 | Pending |
+| BULK-05 | Phase 6 | Complete |
 | ACCEPT-01 | Phase 7 | Pending |
 | ACCEPT-02 | Phase 7 | Pending |
 | ACCEPT-03 | Phase 7 | Pending |
