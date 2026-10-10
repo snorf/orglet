@@ -117,6 +117,31 @@ DML follows the Object Reference's supported calls. A call an object does not su
   `cannot add foreign key <name>: <schema>.<table>.<column> holds values with no matching row in ...`;
   clear or fix those values and run it again.
 
+## Bulk API 2.0
+
+Ingest jobs (insert, update, upsert, delete, hardDelete) and query jobs (query, queryAll) are served
+on `/services/data/vXX.X/jobs/ingest` and `/jobs/query`. Processing is synchronous inside the request
+that completes the upload or creates the query job, which answers with the final state. Bulk API v1
+(`/services/async`) is not implemented.
+
+- Jobs, the uploaded CSV and all results are stored in Postgres, in the `_orglet` schema
+  (`_orglet.bulk_ingest_jobs`, `bulk_ingest_results`, `bulk_query_jobs`, `bulk_query_rows`), keyed by
+  org schema, and survive a restart. Each 200-record chunk commits together with its results.
+- On startup `orglet up` marks jobs a previous run left in `UploadComplete` or `InProgress` as `Failed`
+  (message starting `ServerRestarted :`); `unprocessedrecords` then lists exactly the rows that were
+  not processed.
+- Jobs older than 7 days (from `createdDate`, in any state) are deleted at startup and on every `/jobs`
+  request, as Salesforce does. The window is not configurable.
+- `orglet reset` deletes the org's jobs along with its records; key prefixes still survive unless
+  `--drop-prefixes`.
+- Query jobs reject what Bulk API 2.0 does not support (TYPEOF, GROUP BY, OFFSET, aggregate functions,
+  compound address and geolocation fields, FIELDS(), parent-to-child subqueries) with
+  `400 FEATURE_NOT_ENABLED`; REST `/query` is unaffected.
+- Limit: a job's uploaded CSV is held in one Postgres `text` value and in memory while it is processed
+  (Postgres caps a value at 1 GB); split very large loads across jobs.
+- Security: job data, including uploaded CSV, now outlives restarts. With the default permissive login
+  anyone who can reach the port can read it; use `--users` outside a local machine.
+
 ## Layout
 
 ```
