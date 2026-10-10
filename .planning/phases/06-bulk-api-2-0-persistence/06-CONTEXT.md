@@ -104,6 +104,44 @@ of large payloads (requirements BULK-01..05; research SUMMARY.md Phase 6).
   regex is replaced. Which fields count as compound (Address- and Geolocation-typed fields,
   and whatever else the guide lists) is for the researcher to confirm.
 
+### Post-research decisions (2026-10-10, after 06-RESEARCH.md)
+- **D-16:** Boot reconciliation (D-07) covers rows left at `UploadComplete` as well as
+  `InProgress`, for both ingest and query jobs. Under D-05/D-13 `UploadComplete` is only a
+  transient step inside one request, so a persisted `UploadComplete` row at boot is always a
+  crash trace. Both become `Failed` with the same restart message.
+- **D-17:** Rejection of unsupported Bulk query SOQL (D-14): the guide documents the construct
+  list but no HTTP status, `errorCode` or wording, so the fallback is locked: `400` at
+  `POST .../jobs/query`, no job row created, `errorCode` `FEATURE_NOT_ENABLED`, message names
+  the construct (for example `Bulk API 2.0 query jobs do not support GROUP BY`). **No
+  `UNSUPPORTED:` prefix**: Salesforce rejects these too, so they are not an orglet gap; the
+  existing `UNSUPPORTED:bulk-subquery` text is retired. The wording is orglet's own and the plan
+  records it as undocumented.
+- **D-18:** Compound fields (D-15) follow the guide literally: a selected field whose
+  `FieldDef.type` is `Address` or `Location`, including through a parent relationship path,
+  and `FIELDS(...)` are rejected. Compound `Name` is **not** rejected. Retention basis (D-09)
+  is confirmed as `createdDate` for every state (Limits Quick Reference: "older than seven
+  days", terminal and non-terminal alike).
+- **D-19:** The atomicity window between a chunk's engine commit and its result write is
+  **fixed in this phase, not documented away**. Each chunk's DML and its `_orglet` result rows
+  (and counter update) commit in one Postgres transaction. The engine gains a way to run a DML
+  call on a caller-supplied client: research found no existing seam (`DmlEngine.run()` does
+  its own `pool.connect()`/`BEGIN`/`COMMIT`, `DmlOptions` has only `allOrNone`). Required
+  properties of the seam, exact shape is the planner's: no second `BEGIN` on the caller's
+  client; the engine's `allOrNone` rollback and error path must unwind only its own work
+  (savepoint) and never the caller's transaction; `ChangeBus` events for that call are
+  published only after the caller's `COMMIT`, never before; import mode's `SET LOCAL
+  session_replication_role` semantics are unchanged for the existing path; the same client is
+  used sequentially for engine work and the result write (never hold one pool client while the
+  engine takes another, pglite-socket serialises queries). This is the one deliberate step
+  outside `packages/api` in this phase; existing engine tests must stay green and the new
+  option must be covered by an engine-level test.
+- **D-20:** Heimdall compatibility constraints (see Specific Ideas) are hard requirements on
+  the query-job surface: every `GET .../jobs/query/{id}/results` response carries
+  `Sforce-Locator` (the literal string `null` on the last page) and an accurate
+  `Sforce-NumberOfRecords`; `maxRecords` paging stays offset-based; `Accept: application/json`
+  on the results endpoint is tolerated and still yields CSV; `lineEnding: LF` and `queryAll`
+  keep working. These hold today and must survive the move to Postgres-backed rows.
+
 ### Claude's Discretion
 - One table per job kind (`bulk_ingest_jobs`, `bulk_query_jobs`) as research sketches, or a
   shared table with a discriminator; column types; whether uploaded CSV is one accumulating
@@ -148,6 +186,11 @@ of large payloads (requirements BULK-01..05; research SUMMARY.md Phase 6).
 - `.planning/phases/04-polymorphic-lookups-soql-typeof/04-CONTEXT.md` D-06 — how invalid SOQL
   forms are rejected (`MALFORMED_QUERY`, message names the restriction); the Bulk rule set
   should read the same way where the guide gives no other wording.
+
+### Phase research
+- `.planning/phases/06-bulk-api-2-0-persistence/06-RESEARCH.md` — stack, SQL patterns, AST
+  node names for the rule check, four-table storage design, pitfalls, Validation
+  Architecture; its "Open Questions" are resolved by D-16..D-19 above.
 
 ### Requirements
 - `.planning/REQUIREMENTS.md` BULK-01..BULK-05.
@@ -219,6 +262,22 @@ of large payloads (requirements BULK-01..05; research SUMMARY.md Phase 6).
 - Retention is deliberately not configurable; fidelity beats dev convenience here.
 - The Bulk SOQL rules live beside the Bulk code, not inside the REST compiler, so REST SOQL
   behaviour cannot drift when Bulk rules change.
+- **Heimdall** (`../heimdall`, Johan's open-source Salesforce backup tool, Java 21 / Spring
+  Batch) is the intended first real Bulk API 2.0 client for orglet. What it does on the wire,
+  from a read-only scout: OAuth `client_credentials` (or JWT bearer) against
+  `/services/oauth2/token` on the same base URL; `POST /jobs/query` with
+  `{operation: query|queryAll, contentType: CSV, lineEnding: LF, query}`; polls
+  `GET /jobs/query/{id}` until `JobComplete|Failed|Aborted`; downloads
+  `GET /jobs/query/{id}/results?maxRecords=N[&locator=X]` with `Accept: application/json`,
+  requires the `Sforce-Locator` header on every page (crashes if absent), stops on the literal
+  `null`, and retries a page when its row count differs from `Sforce-NumberOfRecords`; builds
+  `SELECT <all describe fields except address/base64>, ..., Id FROM X WHERE
+  ((SystemModstamp = ts AND Id > 'id') OR SystemModstamp > ts) ORDER BY SystemModstamp ASC, Id
+  ASC LIMIT n` with `Id` as the last column; uses a WHERE semi-join (`IN (SELECT Id ...)`) for
+  ContentDocumentLink; never uses TYPEOF, GROUP BY, OFFSET, aggregates, FIELDS() or child
+  subqueries; no list/abort/delete calls. Also needs REST `describe`, `sobjects/`, `limits`,
+  `query/` and its own `Heimdall_Backup_Config__c` object. Phase 6 must not break any of the
+  query-job behaviours above (D-20); running Heimdall against orglet end to end is deferred.
 
 </specifics>
 
@@ -235,6 +294,11 @@ of large payloads (requirements BULK-01..05; research SUMMARY.md Phase 6).
   research Pitfall 21 classify each previously excluded test before broadening the filter.
 - Streaming large CSV payloads instead of buffering one column value: documented limit only
   (research Pitfall 17).
+- Running Heimdall (`../heimdall`) as an end-to-end backup of an orglet org: a later
+  conformance target (Phase 7 or a following milestone). Prerequisites outside this phase:
+  `client_credentials` grant on `/services/oauth2/token`, `/limits`, the
+  `Heimdall_Backup_Config__c` custom object and its tooling-API schema check, `ContentVersion`
+  `VersionData` download.
 
 ### Reviewed Todos (not folded)
 - "Narrow baseline OwnerId referenceTo per object" (metadata) — matched only on the keyword
