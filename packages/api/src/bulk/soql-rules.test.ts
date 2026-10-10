@@ -18,7 +18,7 @@ beforeAll(async () => {
   withLocation = {
     getField: (o, f) =>
       o.toLowerCase() === "account" && f.toLowerCase() === "site_location__c"
-        ? ({ ...(schema.getField("Account", "Name") as FieldDef), name: "Site_Location__c", type: "Location" } as FieldDef)
+        ? ({ ...(schema.getField("Account", "Name") as FieldDef), name: "Site_Location__c", type: "Location" })
         : schema.getField(o, f),
     resolveRelationship: (o, r) => schema.resolveRelationship(o, r),
   };
