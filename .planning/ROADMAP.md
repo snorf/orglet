@@ -151,7 +151,7 @@ Plans:
 - [x] 06-02-PLAN.md — Bulk SOQL rule set: AST check beside the Bulk code, parser dependency (BULK-05)
 - [x] 06-03-PLAN.md — `_orglet.bulk_*` tables, single state writer, boot reconcile, 7-day purge, reset; `orglet up`/`reset` wiring
 - [x] 06-04-PLAN.md — Ingest jobs on the Postgres store with per-chunk atomic results and per-request purge
-- [ ] 06-05-PLAN.md — Query jobs on the store: persisted lifecycle, offset paging (D-20), rule set wired
+- [x] 06-05-PLAN.md — Query jobs on the store: persisted lifecycle, offset paging (D-20), rule set wired
 - [ ] 06-06-PLAN.md — Restart/scoping/reset/reconcile/retention tests, README section, real restart smoke
 
 ### Phase 7: Conformance Re-Run & Milestone Acceptance
