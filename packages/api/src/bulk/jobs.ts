@@ -66,3 +66,25 @@ export class JobStore {
 export function newJobId(): string {
   return generateId("750");
 }
+
+export type JobKind = "ingest" | "query";
+
+/** Every state a job may move to from each state; the only source of truth for state changes (D-08). Boot reconciliation uses UploadComplete/InProgress -> Failed. */
+export const TRANSITIONS: Record<JobKind, Partial<Record<JobState, readonly JobState[]>>> = {
+  ingest: { Open: ["UploadComplete", "Aborted"], UploadComplete: ["InProgress", "Aborted", "Failed"], InProgress: ["JobComplete", "Failed"] },
+  query: { UploadComplete: ["InProgress", "Aborted", "Failed"], InProgress: ["JobComplete", "Failed", "Aborted"] },
+};
+
+/** The only states a client may request with PATCH. */
+export const CLIENT_SETTABLE: ReadonlySet<string> = new Set<JobState>(["UploadComplete", "Aborted"]);
+
+/** States in which DELETE is allowed (guide: Delete a Job / Delete a Query Job). */
+export const DELETABLE: Record<JobKind, readonly JobState[]> = {
+  ingest: ["UploadComplete", "JobComplete", "Aborted", "Failed"],
+  query: ["JobComplete", "Aborted", "Failed"],
+};
+
+/** States from which `to` is reachable. */
+export function allowedFrom(kind: JobKind, to: JobState): JobState[] {
+  return (Object.entries(TRANSITIONS[kind]) as [JobState, readonly JobState[]][]).filter(([, tos]) => tos.includes(to)).map(([from]) => from);
+}
