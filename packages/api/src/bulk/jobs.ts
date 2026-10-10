@@ -1,7 +1,6 @@
 /**
- * In-memory Bulk API 2.0 job store. Lives entirely in this module: `ApiContext` itself is
- * untouched, so each call to `registerBulkRoutes()` gets its own store, scoped to that
- * server instance (tests that spin up several servers never see each other's jobs).
+ * Application-level Bulk API 2.0 job shapes and the state-transition rules. Jobs themselves live
+ * in Postgres (see store.ts); only query jobs still sit in the in-memory `JobStore` until they move too.
  */
 import type { Session } from "@orglet/engine";
 import { generateId } from "@orglet/schema";
@@ -25,16 +24,9 @@ export interface IngestJob {
   state: JobState;
   createdDate: string;
   systemModstamp: string;
-  /** Raw CSV text appended by each `PUT .../batches` call, concatenated at UploadComplete. */
-  csvChunks: string[];
-  inputHeader: string[];
   numberRecordsProcessed: number;
   numberRecordsFailed: number;
   errorMessage?: string;
-  /** `sf__Id, sf__Created, <input columns>`, one row per succeeded record. */
-  successRows: string[][];
-  /** `sf__Id, sf__Error, <input columns>`, one row per failed record. */
-  failedRows: string[][];
   totalProcessingTime: number;
 }
 
@@ -58,7 +50,6 @@ export interface QueryJob {
 }
 
 export class JobStore {
-  readonly ingest = new Map<string, IngestJob>();
   readonly query = new Map<string, QueryJob>();
 }
 
