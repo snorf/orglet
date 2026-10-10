@@ -8,6 +8,7 @@ import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { createApiServer } from "./server.js";
 import { parseCsv, writeCsv } from "./bulk/csv.js";
+import { dropBulkJobs, prepareBulk } from "./bulk/schema.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
@@ -38,6 +39,7 @@ beforeAll(async () => {
   schema = (await loadOrgSchema({ projectDir: ACME })).schema;
   await migrate(pool, schema, { orgSchema });
   const boot = await bootstrapOrg(pool, schema, { orgSchema });
+  await prepareBulk(pool, orgSchema);
   const engine = new DmlEngine(pool, schema, { orgSchema });
   app = createApiServer({
     engine,
@@ -57,11 +59,48 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+  await dropBulkJobs(pool, orgSchema);
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
   await testDb.close();
 });
 
 describe("ingest jobs", () => {
+  it("only UploadComplete and Aborted can be requested by the client", async () => {
+    const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
+    const jobId = String(created["id"]);
+    for (const state of ["InProgress", "JobComplete", "Failed", "Open", "Bogus"]) {
+      const res = await patch(`${V}/jobs/ingest/${jobId}`, { state });
+      expect(res.statusCode).toBe(400);
+      expect(arr(res)[0]).toMatchObject({ errorCode: "INVALIDJOBSTATE" });
+    }
+    expect(json(await get(`${V}/jobs/ingest/${jobId}`))["state"]).toBe("Open");
+  });
+
+  it("an aborted job lists every uploaded row as unprocessed", async () => {
+    const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
+    const jobId = String(created["id"]);
+    await putCsv(`${V}/jobs/ingest/${jobId}/batches`, writeCsv(["Name"], [["Abort A"], ["Abort B"], ["Abort C"]]));
+    expect(json(await patch(`${V}/jobs/ingest/${jobId}`, { state: "Aborted" }))["state"]).toBe("Aborted");
+    const unprocessed = parseResult(await get(`${V}/jobs/ingest/${jobId}/unprocessedrecords`));
+    expect(unprocessed.header).toEqual(["Name"]);
+    expect(unprocessed.rows).toEqual([["Abort A"], ["Abort B"], ["Abort C"]]);
+    for (const kind of ["successfulResults", "failedResults"]) {
+      const r = parseResult(await get(`${V}/jobs/ingest/${jobId}/${kind}`));
+      expect(r.header.slice(2)).toEqual(["Name"]);
+      expect(r.rows).toHaveLength(0);
+    }
+  });
+
+  it("a second UploadComplete is refused", async () => {
+    const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
+    const jobId = String(created["id"]);
+    await putCsv(`${V}/jobs/ingest/${jobId}/batches`, writeCsv(["Name"], [["Twice"]]));
+    expect(json(await patch(`${V}/jobs/ingest/${jobId}`, { state: "UploadComplete" }))["state"]).toBe("JobComplete");
+    const again = await patch(`${V}/jobs/ingest/${jobId}`, { state: "UploadComplete" });
+    expect(again.statusCode).toBe(400);
+    expect(arr(again)[0]).toMatchObject({ errorCode: "INVALIDJOBSTATE", message: "InvalidJobState : cannot move to UploadComplete from JobComplete" });
+  });
+
   it("an ingest row carrying a roll-up value fails with INVALID_FIELD_FOR_INSERT_UPDATE", async () => {
     const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
     const jobId = String(created["id"]);
