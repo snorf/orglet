@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Thin Standard-Object Baselines** - The 14 missing standard objects exist as reference-checkable baselines (completed 2026-10-08)
 - [x] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles (completed 2026-10-08)
 - [x] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only (completed 2026-10-09)
-- [ ] **Phase 6: Bulk API 2.0 Persistence** - Bulk jobs and results survive a server restart
+- [x] **Phase 6: Bulk API 2.0 Persistence** - Bulk jobs and results survive a server restart (completed 2026-10-10)
 - [ ] **Phase 7: Conformance Re-Run & Milestone Acceptance** - Zero warnings on Johan's DE org; both conformance suites green and documented
 
 ## Phase Details
@@ -152,7 +152,7 @@ Plans:
 - [x] 06-03-PLAN.md — `_orglet.bulk_*` tables, single state writer, boot reconcile, 7-day purge, reset; `orglet up`/`reset` wiring
 - [x] 06-04-PLAN.md — Ingest jobs on the Postgres store with per-chunk atomic results and per-request purge
 - [x] 06-05-PLAN.md — Query jobs on the store: persisted lifecycle, offset paging (D-20), rule set wired
-- [ ] 06-06-PLAN.md — Restart/scoping/reset/reconcile/retention tests, README section, real restart smoke
+- [x] 06-06-PLAN.md — Restart/scoping/reset/reconcile/retention tests, README section, real restart smoke
 
 ### Phase 7: Conformance Re-Run & Milestone Acceptance
 **Goal**: The milestone's acceptance bar is verified directly against Johan's real Developer
@@ -177,5 +177,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. Thin Standard-Object Baselines | 4/4 | Complete | 2026-10-08 |
 | 4. Polymorphic Lookups & SOQL TYPEOF | 7/7 | Complete | 2026-10-08 |
 | 5. Roll-Up Summary Fields | 7/7 | Complete | 2026-10-09 |
-| 6. Bulk API 2.0 Persistence | 0/6 | Planned | - |
+| 6. Bulk API 2.0 Persistence | 6/6 | Complete   | 2026-10-10 |
 | 7. Conformance Re-Run & Milestone Acceptance | 0/TBD | Not started | - |
