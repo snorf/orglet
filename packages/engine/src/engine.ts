@@ -2,8 +2,9 @@
  * The save pipeline: Salesforce's documented order of execution for insert, update, upsert,
  * delete and undelete, minus Apex and Flow (which plug in through TriggerExecutor).
  *
- * Per call: one transaction; each record is written under its own savepoint so partial
- * success works, and allOrNone rolls the whole call back. Roll-up summaries are recomputed after
+ * Per call: one transaction, or a savepoint inside the caller's transaction when one is supplied
+ * (Bulk ingest commits a chunk and its results together); each record is written under its own
+ * savepoint so partial success works, and allOrNone rolls the whole call back. Roll-up summaries are recomputed after
  * the batch's after-hooks, and a parent that refuses the recomputed row rolls back exactly the
  * children that point at it.
  */
@@ -31,8 +32,22 @@ export interface EngineOptions {
   importMode?: boolean;
 }
 
+/**
+ * A caller-owned transaction a DML call can join. The engine runs on `client` inside
+ * `SAVEPOINT dml_run`, never issues BEGIN/COMMIT/ROLLBACK itself, and appends its change
+ * events to `events` instead of publishing them; whoever commits publishes them afterwards
+ * (DmlEngine.transaction does). In import mode the replica session_replication_role set by
+ * the call lasts until the caller's transaction ends.
+ */
+export interface DmlTransaction {
+  readonly client: PoolClient;
+  readonly events: ChangeEvent[];
+}
+
 export interface DmlOptions {
   allOrNone?: boolean;
+  /** Join the caller's open transaction instead of opening one (see DmlTransaction). */
+  transaction?: DmlTransaction;
 }
 
 export interface RetrieveOptions {
@@ -215,6 +230,25 @@ export class DmlEngine {
     });
   }
 
+  /** Run `fn` in one transaction that DML calls join via `{ transaction: tx }`; their change events are published after COMMIT. */
+  async transaction<T>(fn: (tx: DmlTransaction) => Promise<T>): Promise<T> {
+    const client = await this.pool.connect();
+    const tx: DmlTransaction = { client, events: [] };
+    let result: T;
+    try {
+      await client.query("BEGIN");
+      result = await fn(tx);
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw err;
+    } finally {
+      client.release();
+    }
+    await this.bus.publish(tx.events);
+    return result;
+  }
+
   /** Load records by ID with formula and compound fields computed; missing IDs are absent. */
   async retrieve(session: Session, sobject: string, ids: string[], options: RetrieveOptions = {}): Promise<Map<string, RecordData>> {
     const obj = this.object(sobject);
@@ -246,9 +280,13 @@ export class DmlEngine {
     const allOrNone = options.allOrNone ?? false;
     const events: ChangeEvent[] = [];
     let results: SaveResult[] = [];
-    const client = await this.pool.connect();
+    const external = options.transaction;
+    const client = external ? external.client : await this.pool.connect();
+    const begin = external ? "SAVEPOINT dml_run" : "BEGIN";
+    const commit = external ? "RELEASE SAVEPOINT dml_run" : "COMMIT";
+    const rollback = external ? ["ROLLBACK TO SAVEPOINT dml_run", "RELEASE SAVEPOINT dml_run"] : ["ROLLBACK"];
     try {
-      await client.query("BEGIN");
+      await client.query(begin);
       // Import mode: no FK enforcement, so a child can be loaded before its parent.
       if (this.importMode) await client.query("SET LOCAL session_replication_role = replica");
       const globals = await this.loadGlobals(client, session);
@@ -256,7 +294,7 @@ export class DmlEngine {
       work.sort((a, b) => a.index - b.index);
       const failed = work.some((w) => w.errors.length > 0);
       if (allOrNone && failed) {
-        await client.query("ROLLBACK");
+        for (const s of rollback) await client.query(s);
         results = work.map((w) => {
           if (w.errors.length > 0) {
             const f = failure(w.errors);
@@ -270,7 +308,7 @@ export class DmlEngine {
         });
         return results;
       }
-      await client.query("COMMIT");
+      await client.query(commit);
       results = work.map((w) => {
         if (w.errors.length > 0) {
           const f = failure(w.errors);
@@ -284,12 +322,13 @@ export class DmlEngine {
       });
       events.push(...this.eventsFor(obj, operation, work, session));
     } catch (err) {
-      await client.query("ROLLBACK").catch(() => undefined);
+      for (const s of rollback) await client.query(s).catch(() => undefined);
       throw err;
     } finally {
-      client.release();
+      if (!external) client.release();
     }
-    await this.bus.publish(events);
+    if (external) external.events.push(...events);
+    else await this.bus.publish(events);
     return results;
   }
 
