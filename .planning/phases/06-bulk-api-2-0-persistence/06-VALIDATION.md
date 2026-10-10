@@ -41,19 +41,20 @@ All commands need Node 22 and Corepack pnpm (`nvm use 22 && corepack enable pnpm
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 06-01-T1 | 06-01 | 1 | BULK-03 (D-19) | integration (RED) | `pnpm vitest run packages/engine/src/transaction.test.ts; test $? -ne 0` | ❌ created by task | ⬜ pending |
-| 06-01-T2 | 06-01 | 1 | BULK-03 (D-19) | integration | `pnpm vitest run packages/engine/src && pnpm build && pnpm exec eslint packages/engine/src` | ✅ after T1 | ⬜ pending |
+| 06-01-T2 | 06-01 | 1 | BULK-03 (D-19) | integration | `pnpm vitest run packages/engine/src && pnpm exec eslint packages/engine/src` | ✅ after T1 | ⬜ pending |
 | 06-02-T1 | 06-02 | 1 | BULK-05 | unit (RED) | `pnpm vitest run packages/api/src/bulk/soql-rules.test.ts; test $? -ne 0` | ❌ created by task | ⬜ pending |
-| 06-02-T2 | 06-02 | 1 | BULK-05 | unit | `pnpm vitest run packages/api/src/bulk/soql-rules.test.ts && pnpm exec eslint packages/api/src/bulk/soql-rules.ts packages/api/src/bulk/soql-rules.test.ts && pnpm build` | ✅ after T1 | ⬜ pending |
-| 06-03-T1 | 06-03 | 1 | BULK-01, BULK-02, BULK-04 | integration (SQL) | `pnpm vitest run packages/api/src/bulk/schema.test.ts && pnpm vitest run packages/api/src/bulk.test.ts` | ❌ created by task | ⬜ pending |
-| 06-03-T2 | 06-03 | 1 | BULK-01, BULK-02, BULK-04 | build + integration | `pnpm build && pnpm exec eslint <06-03 files> && pnpm vitest run packages/cli packages/api/src/bulk/schema.test.ts` | ✅ | ⬜ pending |
-| 06-04-T1 | 06-04 | 2 | BULK-01, BULK-03 | integration (store) | `pnpm vitest run packages/api/src/bulk/store.test.ts packages/api/src/bulk/schema.test.ts` | ❌ created by task | ⬜ pending |
-| 06-04-T2 | 06-04 | 2 | BULK-02, BULK-03, BULK-04 | integration (HTTP) | `pnpm vitest run packages/api/src/bulk.test.ts packages/api/src/bulk && pnpm build && pnpm lint` (incl. `-t "invalid job state"` / `"only UploadComplete and Aborted"`) | ✅ extends | ⬜ pending |
-| 06-04-T3 | 06-04 | 2 | BULK-03 (D-06, D-19) | integration (HTTP) | `pnpm vitest run packages/api/src/bulk-persistence.test.ts -t "per chunk" && pnpm vitest run packages/api/src/bulk-persistence.test.ts -t "result csv"` | ❌ created by task | ⬜ pending |
-| 06-05-T1 | 06-05 | 3 | BULK-01, BULK-02 | integration (store) | `pnpm vitest run packages/api/src/bulk/store.test.ts` | ✅ extends | ⬜ pending |
-| 06-05-T2 | 06-05 | 3 | BULK-05, D-20 | integration (HTTP) | `pnpm vitest run packages/api/src/bulk.test.ts -t "bulk query rules" && pnpm vitest run packages/api/src/bulk.test.ts packages/api/src/bulk packages/api/src/bulk-persistence.test.ts && pnpm build && pnpm lint` | ✅ extends | ⬜ pending |
-| 06-06-T1 | 06-06 | 4 | BULK-01 ("survives a restart", "per org and per user", "reset"), BULK-02 ("state machine", "reconcile"), BULK-04 ("retention") | integration (HTTP) | `pnpm vitest run packages/api/src/bulk-persistence.test.ts` (each `-t` name runnable alone) | ✅ extends | ⬜ pending |
-| 06-06-T2 | 06-06 | 4 | BULK-01..04 (docs) | grep | `grep -n "^## Bulk API 2.0" README.md && grep -n "_orglet.bulk_ingest_jobs" README.md && ...` | ✅ | ⬜ pending |
-| 06-06-T3 | 06-06 | 4 | Regression + manual-only row | full suite | `pnpm build && pnpm lint && pnpm test` (+ real Postgres leg and `orglet up` restart smoke when Docker is up) | ✅ | ⬜ pending |
+| 06-02-T2 | 06-02 | 1 | BULK-05 | unit | `pnpm vitest run packages/api/src/bulk/soql-rules.test.ts && pnpm exec eslint packages/api/src/bulk/soql-rules.ts packages/api/src/bulk/soql-rules.test.ts` | ✅ after T1 | ⬜ pending |
+| 06-03-T1 | 06-03 | 2 | BULK-01, BULK-02, BULK-04 | integration (SQL) | `pnpm vitest run packages/api/src/bulk/schema.test.ts && pnpm vitest run packages/api/src/bulk.test.ts` | ❌ created by task | ⬜ pending |
+| 06-03-T2 | 06-03 | 2 | BULK-01, BULK-02, BULK-04 | build + integration | `pnpm build && pnpm exec eslint <06-03 files> && pnpm vitest run packages/cli packages/api/src/bulk/schema.test.ts` | ✅ | ⬜ pending |
+| 06-04-T1 | 06-04 | 3 | BULK-01, BULK-03 | integration (store) | `pnpm vitest run packages/api/src/bulk/store.test.ts packages/api/src/bulk/schema.test.ts` | ❌ created by task | ⬜ pending |
+| 06-04-T2 | 06-04 | 3 | BULK-02, BULK-03, BULK-04 | integration (HTTP) | `pnpm vitest run packages/api/src/bulk.test.ts packages/api/src/bulk && pnpm build && pnpm lint` (incl. `-t "invalid job state"` / `"only UploadComplete and Aborted"`) | ✅ extends | ⬜ pending |
+| 06-04-T3 | 06-04 | 3 | BULK-03 (D-06, D-19) | integration (HTTP) | `pnpm vitest run packages/api/src/bulk-persistence.test.ts -t "per chunk" && pnpm vitest run packages/api/src/bulk-persistence.test.ts -t "result csv"` | ❌ created by task | ⬜ pending |
+| 06-05-T1 | 06-05 | 4 | BULK-01, BULK-02 | integration (store) | `pnpm vitest run packages/api/src/bulk/store.test.ts` | ✅ extends | ⬜ pending |
+| 06-05-T2 | 06-05 | 4 | BULK-05, D-20 | integration (HTTP) | `pnpm vitest run packages/api/src/bulk.test.ts -t "bulk query rules" && pnpm vitest run packages/api/src/bulk.test.ts packages/api/src/bulk packages/api/src/bulk-persistence.test.ts && pnpm build && pnpm lint` | ✅ extends | ⬜ pending |
+| 06-06-T1 | 06-06 | 5 | BULK-01 ("survives a restart", "per org and per user", "reset"), BULK-02 ("state machine", "reconcile"), BULK-04 ("retention") | integration (HTTP) | `pnpm vitest run packages/api/src/bulk-persistence.test.ts` (each `-t` name runnable alone) | ✅ extends | ⬜ pending |
+| 06-06-T2 | 06-06 | 5 | BULK-01..04 (docs) | grep | `grep -n "^## Bulk API 2.0" README.md && grep -n "_orglet.bulk_ingest_jobs" README.md && ...` | ✅ | ⬜ pending |
+| 06-06-T3 | 06-06 | 5 | Regression | full suite | `pnpm build && pnpm lint && pnpm test` (+ real Postgres leg when Docker is up) | ✅ | ⬜ pending |
+| 06-06-T4 | 06-06 | 5 | Manual-only row (real restart) | human checkpoint | `echo "human checkpoint: outcome recorded in 06-06-SUMMARY.md"` (steps in the plan's how-to-verify) | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
