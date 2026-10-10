@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
+status: executing
 stopped_at: Phase 6 context gathered
-last_updated: "2026-10-10T05:03:46.365Z"
-last_activity: 2026-10-09
+last_updated: "2026-10-10T12:23:14.697Z"
+last_activity: 2026-10-10 -- Phase 06 execution started
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 25
+  total_plans: 31
   completed_plans: 25
   percent: 0
 ---
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 6 — Bulk API 2.0 Persistence (not yet planned)
+**Current focus:** Phase 06 — bulk-api-2-0-persistence
 
 ## Current Position
 
-Phase: 6
-Plan: Not started
-Status: Phase 5 verified; phase 6 ready for planning
-Last activity: 2026-10-09
+Phase: 06 (bulk-api-2-0-persistence) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 06
+Last activity: 2026-10-10 -- Phase 06 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
