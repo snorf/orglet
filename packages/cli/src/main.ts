@@ -11,7 +11,7 @@ import { readFile } from "node:fs/promises";
 import { loadOrgSchema } from "@orglet/metadata";
 import { createPool, databaseUrlFromEnv, migrate, quote, DEFAULT_ORG_SCHEMA, KeyPrefixError, dropKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, type ReconcileKeyPrefixesResult } from "@orglet/schema";
 import { bootstrapOrg, DmlEngine, FormulaRegistry } from "@orglet/engine";
-import { createApiServer, type AuthConfig } from "@orglet/api";
+import { createApiServer, prepareBulk, dropBulkJobs, type AuthConfig } from "@orglet/api";
 
 const USAGE = `orglet - a self-hosted, Salesforce-compatible org
 
@@ -130,6 +130,10 @@ async function up(c: Common, port: number, force: boolean, auth: AuthConfig, imp
   log(c, `schema "${c.orgSchema}": ${changes} change(s) applied`);
 
   const boot = await bootstrapOrg(pool, loaded.schema, { orgSchema: c.orgSchema });
+  // Bulk jobs persist in _orglet: create the tables, fail jobs a previous run left mid-flight, drop expired ones (D-04).
+  const bulk = await prepareBulk(pool, c.orgSchema);
+  if (bulk.reconciled > 0) log(c, `bulk: marked ${bulk.reconciled} job(s) left in progress by a previous run as Failed`);
+  if (bulk.purged > 0) log(c, `bulk: purged ${bulk.purged} job(s) older than 7 days`);
   const engine = new DmlEngine(pool, loaded.schema, { orgSchema: c.orgSchema, importMode });
   for (const w of engine.warnings) console.warn(`warning: ${w}`);
   if (importMode) console.warn("import mode: Ids and audit fields are accepted; lookups, validation rules and hooks are not enforced");
@@ -160,6 +164,8 @@ async function reset(c: Common, dropPrefixes: boolean): Promise<number> {
   try {
     await pool.query(`DROP SCHEMA IF EXISTS ${quote(c.orgSchema)} CASCADE`);
     log(c, `dropped schema "${c.orgSchema}"`);
+    const jobs = await dropBulkJobs(pool, c.orgSchema);
+    log(c, `dropped ${jobs} bulk job(s) for schema "${c.orgSchema}"`);
     if (dropPrefixes) {
       const n = await dropKeyPrefixes(pool, c.orgSchema);
       log(c, `dropped ${n} key prefix assignment(s) for schema "${c.orgSchema}"`);
