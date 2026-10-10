@@ -147,7 +147,7 @@ restrictions preserved.
   4. A Bulk query job rejects SOQL that Bulk API 2.0 doesn't support (TYPEOF, GROUP BY, OFFSET, aggregates, compound fields, child subqueries) with the documented error, using a rule set kept separate from REST SOQL.
 **Plans**: 6 plans
 Plans:
-- [ ] 06-01-PLAN.md — Engine seam: DML on a caller-supplied transaction (savepoint, deferred events) (D-19)
+- [x] 06-01-PLAN.md — Engine seam: DML on a caller-supplied transaction (savepoint, deferred events) (D-19)
 - [ ] 06-02-PLAN.md — Bulk SOQL rule set: AST check beside the Bulk code, parser dependency (BULK-05)
 - [ ] 06-03-PLAN.md — `_orglet.bulk_*` tables, single state writer, boot reconcile, 7-day purge, reset; `orglet up`/`reset` wiring
 - [ ] 06-04-PLAN.md — Ingest jobs on the Postgres store with per-chunk atomic results and per-request purge
