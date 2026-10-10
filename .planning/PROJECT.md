@@ -44,8 +44,8 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
   query/queryAll/explain, composite (`/composite`, `/composite/batch`, `/composite/tree`,
   `/composite/sobjects`), `updated`/`deleted`, limits, `Sforce-Limit-Info` — existing
   (`packages/api`)
-- ✓ Bulk API 2.0 ingest and query jobs (in-memory, synchronous) — existing
-  (`packages/api/src/bulk`, `packages/api/src/routes/bulk.ts`)
+- ✓ Bulk API 2.0 ingest and query jobs, synchronous in-request processing — existing
+  (`packages/api/src/bulk`, `packages/api/src/routes/bulk.ts`); persisted since Phase 6
 - ✓ Import mode (`orglet up --import`): keeps supplied Ids and audit fields, skips lookup checks,
   rules and hooks, FKs off via `session_replication_role` — existing
 - ✓ CLI `orglet up | check | reset` and a built-in page at `/` with object browser and SOQL
@@ -99,6 +99,20 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
   `calculated`, REST/Bulk reject client values, SOQL selects/filters/sorts them; proven through
   jsforce and simple-salesforce via `conformance/rollup-check`, suite green on pglite and
   Postgres 16, DE retrieve loads with zero warnings — Phase 5 (2026-10-09)
+- ✓ Bulk API 2.0 jobs persist in Postgres and survive a restart: ingest and query jobs,
+  uploaded CSV, per-row results and query rows live in four `_orglet.bulk_*` tables keyed per
+  org (D-01); `orglet reset` deletes the org's jobs (D-02); one guarded `setJobState` is the
+  only writer of `state` and clients may set only `UploadComplete`/`Aborted` (D-08); each
+  200-row chunk's DML and its result rows commit in one transaction through the new
+  `DmlEngine.transaction` seam (D-19), so `unprocessedrecords` is crash-truthful; boot
+  reconciles `UploadComplete`/`InProgress` rows to `Failed` (D-07/D-16); jobs older than 7
+  days from `createdDate` are purged at boot and on every `/jobs` request, hard-coded
+  (D-09..D-12); Bulk query SOQL rejects TYPEOF, GROUP BY, OFFSET, aggregates,
+  Address/Location fields, `FIELDS()` and child subqueries via an AST check beside the Bulk
+  code with `400 FEATURE_NOT_ENABLED`, no `UNSUPPORTED:` prefix (D-14..D-18); results pages
+  always carry `Sforce-Locator`/`Sforce-NumberOfRecords` (D-20); proven by 11 HTTP restart,
+  scoping, reset, reconcile and retention tests plus a real `orglet up` kill/restart smoke,
+  suite green on pglite and Postgres 16 — Phase 6 (2026-10-10)
 
 ### Active
 
@@ -106,7 +120,6 @@ Milestone 1, "hardening": make a real Developer Edition retrieve load with zero 
 the project buildable and testable without Docker, and put it on GitHub with CI. No GUI, no
 Flows, no Apex in this milestone.
 
-- [ ] Bulk API 2.0 jobs are persisted in Postgres and survive a server restart
 - [ ] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (today: 15)
 - [ ] Both conformance suites are re-run after the changes, stay green, and the numbers in
   `conformance/` are updated (the jsforce README predates Bulk API 2.0)
@@ -147,7 +160,9 @@ CONVENTIONS, TESTING, CONCERNS).
 - ID counter is process-local and unsynchronised (`packages/schema/src/ids.ts`)
 - `/composite` with `allOrNone` does not roll back earlier committed subrequests
   (`packages/api/src/routes/composite.ts`)
-- Bulk jobs are in-memory and synchronous; session tokens are in-memory and unbounded
+- Bulk jobs are persisted but processed synchronously inside the request (no worker); uploaded
+  CSV and results are buffered in full (Postgres TOAST ceiling, no streaming); session tokens
+  are in-memory and unbounded
 - Default auth is permissive (any password); `sharingModel` is parsed but unused
 - Formula evaluation is per row after fetch, child relationships compile to correlated subqueries
 - No `.github`, no CI config, tests need Docker Postgres on port 5433
@@ -210,6 +225,10 @@ on port 8180 with the `devrandom` org schema.
 | Roll-up recompute as SELECT-first correlated subqueries inside the child's batch savepoint, replaying survivors when a parent rule refuses | One SQL expression serves engine recompute and migrate backfill; a parent failure must blame exactly the children pointing at it (D-01/D-03) and a partial-success batch must count only committed children | ✓ Good (Phase 5) |
 | Roll-ups over a plain lookup fail load, except the three documented standard relationships (Opportunity.AccountId, OpportunityLineItem.OpportunityId, CampaignMember.CampaignId) | Salesforce only allows roll-ups on master-detail plus those standard cases; faking others would hide a metadata error (D-05) | ✓ Good (Phase 5) |
 | Migrate backfills a new roll-up column once as the last step of the migrate transaction; changing an existing roll-up's definition does not re-backfill | Deferred FK checks block `CREATE INDEX` after a second UPDATE of the same row, so backfill must come last; re-backfill deferred to a future `orglet rollup --recompute` (D-10) | ✓ Good (Phase 5; re-backfill pending) |
+| Bulk jobs in `_orglet.bulk_*` tables owned by `packages/api/src/bulk`; `orglet reset` deletes the org's jobs, unlike key prefixes | Jobs are data pointing at the org's records, prefixes are identity; nothing outside `api` needs to know a job exists (D-01/D-02) | ✓ Good (Phase 6) |
+| `DmlEngine.transaction(fn)` lets a DML call join a caller transaction (savepoint-isolated, events published after the outer commit) | Per-chunk Bulk results must commit atomically with the chunk's DML or `unprocessedrecords` lies after a crash (D-19); the only deliberate engine change in the phase | ✓ Good (Phase 6) |
+| Bulk query restrictions as an AST check beside the Bulk code, `400 FEATURE_NOT_ENABLED` without `UNSUPPORTED:` prefix | REST SOQL must not drift when Bulk rules change; Salesforce rejects these constructs too, so they are not an orglet gap (D-15/D-17) | ✓ Good (Phase 6) |
+| Retention hard-coded to 7 days from `createdDate`, purged at boot and on every `/jobs` request, no override | A client must not be able to tell orglet from Salesforce; no timers, deterministic and testable by backdating rows (D-09..D-12) | ✓ Good (Phase 6) |
 
 ## Evolution
 
@@ -229,4 +248,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-09 after Phase 5*
+*Last updated: 2026-10-10 after Phase 6*
