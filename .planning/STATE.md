@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-10-10T12:34:15.123Z"
+stopped_at: Completed 06-04-PLAN.md
+last_updated: "2026-10-10T12:42:00.787Z"
 last_activity: 2026-10-10
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 31
-  completed_plans: 28
+  completed_plans: 29
   percent: 0
 ---
 
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 06 (bulk-api-2-0-persistence) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-10-10
 
@@ -82,6 +82,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 06 P01 | 12min | 2 tasks | 3 files |
 | Phase 06 P02 | 8min | 2 tasks | 4 files |
 | Phase 06 P03 | 15min | 2 tasks | 5 files |
+| Phase 06 P04 | 25min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -144,6 +145,7 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-01: DmlTransaction seam; DML joins caller transaction via SAVEPOINT dml_run, events published after outer COMMIT; import-mode replica role lasts until caller txn ends
 - [Phase 06]: 06-02: Bulk query rejection wording is orglet's own (guide documents no error shape); WHERE semi-joins now accepted; parser strips FROM alias itself
 - [Phase 06]: 06-03: setJobState is sole state writer (TRANSITIONS table); retention basis created_date, 7 days hard-coded; reconcile fails UploadComplete/InProgress with locked ServerRestarted messages
+- [Phase 06]: Bulk ingest processing errors roll back the chunk and set job Failed with InternalServerError message; DELETABLE.ingest includes UploadComplete
 
 ### Pending Todos
 
@@ -157,6 +159,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-10T12:34:15.113Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-10-10T12:42:00.778Z
+Stopped at: Completed 06-04-PLAN.md
 Resume file: None
