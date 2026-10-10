@@ -199,6 +199,9 @@ importers:
       '@fastify/formbody':
         specifier: ^9.0.0
         version: 9.0.0
+      '@jetstreamapp/soql-parser-js':
+        specifier: ^8.1.0
+        version: 8.1.0
       '@orglet/engine':
         specifier: workspace:*
         version: link:../engine

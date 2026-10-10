@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: "Phase 5 complete and verified (5/5); next /gsd:plan-phase 6"
-last_updated: "2026-10-09T09:04:31.047Z"
-last_activity: 2026-10-09
+stopped_at: "Phase 6 complete and verified (4/4) on gsd/phase-06-bulk-api-2-0-persistence; next: open PR, then /gsd:discuss-phase 7"
+last_updated: "2026-10-10T19:11:17.165Z"
+last_activity: 2026-10-10
 progress:
   total_phases: 7
-  completed_phases: 5
-  total_plans: 25
-  completed_plans: 25
+  completed_phases: 6
+  total_plans: 31
+  completed_plans: 31
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 6 — Bulk API 2.0 Persistence (not yet planned)
+**Current focus:** Phase 7 — Conformance Re-Run & Milestone Acceptance (not yet discussed)
 
 ## Current Position
 
-Phase: 6
+Phase: 7
 Plan: Not started
-Status: Phase 5 verified; phase 6 ready for planning
-Last activity: 2026-10-09
+Status: Phase 6 verified; phase 7 ready for discussion
+Last activity: 2026-10-10
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -79,6 +79,12 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 05 P05 | 9 min | 2 tasks | 3 files |
 | Phase 05 P06 | 8 min | 2 tasks | 2 files |
 | Phase 05 P07 | 10 min | 2 tasks | 5 files |
+| Phase 06 P01 | 12min | 2 tasks | 3 files |
+| Phase 06 P02 | 8min | 2 tasks | 4 files |
+| Phase 06 P03 | 15min | 2 tasks | 5 files |
+| Phase 06 P04 | 25min | 3 tasks | 6 files |
+| Phase 06 P05 | 20min | 2 tasks | 7 files |
+| Phase 06 P06 | n/a | 4 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -138,6 +144,11 @@ Recent decisions affecting current work:
 - [Phase 05]: 05-06: deleteBatch carries a deleting skip set through the cascade (new Set([...deleting, ...ids])) so a parent being deleted is never recomputed, rule-checked or hooked; undeleteBatch recomputes with NO_IDS because the parent is made live before its children recompute
 - [Phase 05]: 05-06: ROLL-04 and ROLL-08 marked complete; reparent and undelete recompute triggers implemented per ROLL-04 without a primary Salesforce quote (ROADMAP research flag, note for verify-work); ROLL-09 stays with 05-07
 - [Phase 05]: 05-07: rollup-check SDK legs reuse describe-check venv; ROLL-09 left open until Johan's devrandom checkpoint
+- [Phase 06]: 06-01: DmlTransaction seam; DML joins caller transaction via SAVEPOINT dml_run, events published after outer COMMIT; import-mode replica role lasts until caller txn ends
+- [Phase 06]: 06-02: Bulk query rejection wording is orglet's own (guide documents no error shape); WHERE semi-joins now accepted; parser strips FROM alias itself
+- [Phase 06]: 06-03: setJobState is sole state writer (TRANSITIONS table); retention basis created_date, 7 days hard-coded; reconcile fails UploadComplete/InProgress with locked ServerRestarted messages
+- [Phase 06]: Bulk ingest processing errors roll back the chunk and set job Failed with InternalServerError message; DELETABLE.ingest includes UploadComplete
+- [Phase 06]: Bulk query rejection wording is orglet's own (undocumented by Salesforce); semi-joins accepted; query abort from UploadComplete/InProgress, delete from JobComplete/Aborted/Failed
 
 ### Pending Todos
 
@@ -151,6 +162,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T08:14:40.827Z
-Stopped at: 05-07 Tasks 1-2 done; awaiting Task 3 devrandom checkpoint
-Resume file: None
+Last session: 2026-10-10T19:04:44.145Z
+Stopped at: Phase 6 complete and verified (4/4) on gsd/phase-06-bulk-api-2-0-persistence; next: open PR, then /gsd:discuss-phase 7
+Resume file: .planning/phases/06-bulk-api-2-0-persistence/06-VERIFICATION.md

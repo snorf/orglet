@@ -115,15 +115,15 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Bulk API 2.0 Persistence
 
-- [ ] **BULK-01**: Ingest and query jobs, uploaded CSV data and results are stored in Postgres
+- [x] **BULK-01**: Ingest and query jobs, uploaded CSV data and results are stored in Postgres
   (internal `_orglet` schema) and are retrievable after a server restart
-- [ ] **BULK-02**: The documented state machine is preserved (ingest: Open → UploadComplete →
+- [x] **BULK-02**: The documented state machine is preserved (ingest: Open → UploadComplete →
   InProgress → JobComplete | Failed | Aborted; query jobs start in UploadComplete); only
   `UploadComplete` and `Aborted` can be set by the client
-- [ ] **BULK-03**: `successfulResults`, `failedResults` and `unprocessedrecords` return CSV
+- [x] **BULK-03**: `successfulResults`, `failedResults` and `unprocessedrecords` return CSV
   with the documented `sf__Id`, `sf__Created`, `sf__Error` columns from persisted results
-- [ ] **BULK-04**: Jobs older than 7 days are purged, matching Salesforce retention
-- [ ] **BULK-05**: A Bulk query job rejects SOQL that Bulk API 2.0 does not support (TYPEOF,
+- [x] **BULK-04**: Jobs older than 7 days are purged, matching Salesforce retention
+- [x] **BULK-05**: A Bulk query job rejects SOQL that Bulk API 2.0 does not support (TYPEOF,
   GROUP BY, OFFSET, aggregates, compound fields, child subqueries) with the documented error,
   using a rule set separate from REST SOQL
 
@@ -221,11 +221,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLL-07 | Phase 5 | Complete |
 | ROLL-08 | Phase 5 | Complete |
 | ROLL-09 | Phase 5 | Complete |
-| BULK-01 | Phase 6 | Pending |
-| BULK-02 | Phase 6 | Pending |
-| BULK-03 | Phase 6 | Pending |
-| BULK-04 | Phase 6 | Pending |
-| BULK-05 | Phase 6 | Pending |
+| BULK-01 | Phase 6 | Complete |
+| BULK-02 | Phase 6 | Complete |
+| BULK-03 | Phase 6 | Complete |
+| BULK-04 | Phase 6 | Complete |
+| BULK-05 | Phase 6 | Complete |
 | ACCEPT-01 | Phase 7 | Pending |
 | ACCEPT-02 | Phase 7 | Pending |
 | ACCEPT-03 | Phase 7 | Pending |

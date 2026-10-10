@@ -1,16 +1,19 @@
 /**
  * Salesforce Bulk API 2.0: ingest jobs (CSV in, DML through the engine) and query jobs
- * (SOQL run eagerly, CSV out with offset-based paging). Everything is processed
- * synchronously within the request that triggers it; "Open" -> "UploadComplete" and
- * "query" job creation both do the real work before responding, which is allowed by the
- * spec ("synchronously is fine").
+ * (SOQL run eagerly, CSV out with offset-based paging). Ingest and query jobs persist in `_orglet`
+ * (bulk/store.ts); work still happens synchronously inside the triggering request, but every
+ * intermediate state is written first so a crash leaves an honest `InProgress` row that the next
+ * boot reconciles; each 200-record chunk commits together with its results.
  */
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { runQuery, type SaveError, type SaveResult, type Session } from "@orglet/engine";
-import { formatSalesforceDatetime } from "@orglet/schema";
+import { runQuery, type DmlTransaction, type SaveError, type SaveResult } from "@orglet/engine";
+import { compileSoql } from "@orglet/soql";
+import { withTransaction } from "@orglet/schema";
 import { apiError, sendErrors, session, NOT_FOUND, type ApiContext } from "../server.js";
-import { delimiterChar, lineEndingChars, parseCsv, writeCsv, type ColumnDelimiter, type LineEnding } from "../bulk/csv.js";
-import { JobStore, newJobId, type IngestJob, type IngestOperation, type QueryJob } from "../bulk/jobs.js";
+import { delimiterChar, lineEndingChars, writeCsv, type ColumnDelimiter, type LineEnding } from "../bulk/csv.js";
+import { CLIENT_SETTABLE, DELETABLE, newJobId, type IngestJob, type IngestOperation, type QueryJob } from "../bulk/jobs.js";
+import { BulkStore, type IngestResultRow } from "../bulk/store.js";
+import { bulkQueryViolation, parseBulkQuery } from "../bulk/soql-rules.js";
 
 type Json = Record<string, unknown>;
 
@@ -24,16 +27,6 @@ function parseColumnDelimiter(v: unknown): ColumnDelimiter {
 
 function parseLineEnding(v: unknown): LineEnding {
   return v === "CRLF" ? "CRLF" : "LF";
-}
-
-/** Look up a job by id, answering 404 (unknown or owned by a different session) otherwise. */
-function findJob<T extends { session: Session }>(map: Map<string, T>, reply: FastifyReply, id: string, userId: string): T | undefined {
-  const job = map.get(id);
-  if (!job || job.session.userId !== userId) {
-    void sendErrors(reply, 404, [NOT_FOUND]);
-    return undefined;
-  }
-  return job;
 }
 
 function ingestJobInfo(job: IngestJob): Json {
@@ -65,7 +58,7 @@ function ingestJobInfo(job: IngestJob): Json {
 }
 
 function queryJobInfo(job: QueryJob): Json {
-  return {
+  const info: Json = {
     id: job.id,
     operation: job.operation,
     object: job.object,
@@ -85,6 +78,8 @@ function queryJobInfo(job: QueryJob): Json {
     apexProcessingTime: 0,
     jobType: "V2Query",
   };
+  if (job.errorMessage) info["errorMessage"] = job.errorMessage;
+  return info;
 }
 
 function formatSaveError(e: SaveError | undefined): string {
@@ -116,68 +111,63 @@ function buildRecord(header: string[], row: string[], blankIsNull: boolean): Rec
   return record;
 }
 
-/** Process an ingest job's uploaded CSV through the engine, in chunks of 200 records. */
-async function processIngestJob(ctx: ApiContext, job: IngestJob): Promise<void> {
+/** Result row for one processed record; `created` is true for insert, false for update and delete, the engine's answer for upsert. */
+function toResultRow(job: IngestJob, r: SaveResult, rowIndex: number): IngestResultRow {
+  if (!r.success) return { rowIndex, success: false, recordId: null, created: null, error: formatSaveError(r.errors[0]) };
+  const created = job.operation === "insert" ? true : job.operation === "update" ? false : job.operation === "upsert" ? (r.created ?? false) : false;
+  return { rowIndex, success: true, recordId: r.id ?? "", created, error: null };
+}
+
+/** Run one chunk of CSV rows through the engine inside the caller's transaction. */
+async function runChunk(ctx: ApiContext, job: IngestJob, header: string[], chunk: string[][], tx: DmlTransaction): Promise<SaveResult[]> {
+  const options = { allOrNone: false, transaction: tx };
+  if (job.operation === "delete" || job.operation === "hardDelete") {
+    const idIndex = header.findIndex((h) => h.toLowerCase() === "id");
+    const ids = chunk.map((row) => (idIndex >= 0 ? (row[idIndex] ?? "") : ""));
+    return ctx.engine.delete(job.session, job.object, ids, options);
+  }
+  const records = chunk.map((row) => buildRecord(header, row, job.operation === "insert"));
+  if (job.operation === "insert") return ctx.engine.insert(job.session, job.object, records, options);
+  if (job.operation === "update") return ctx.engine.update(job.session, job.object, records, options);
+  return ctx.engine.upsert(job.session, job.object, job.externalIdFieldName ?? "Id", records, options);
+}
+
+/**
+ * Process an ingest job's uploaded CSV through the engine, in chunks of 200 records. Each chunk's DML,
+ * result rows and counters commit in one transaction; a thrown error rolls that chunk back and fails the job.
+ */
+async function processIngestJob(ctx: ApiContext, store: BulkStore, job: IngestJob, req: FastifyRequest): Promise<void> {
   const started = Date.now();
-  const combined = job.csvChunks.join("");
-  const parsed = parseCsv(combined, delimiterChar(job.columnDelimiter));
-  if (parsed.header.length === 0) {
-    job.state = "Failed";
-    job.errorMessage = "InvalidBatch : the uploaded CSV had no header row";
-    job.systemModstamp = formatSalesforceDatetime(new Date());
+  const input = await store.readIngestInput(job.id);
+  if (input.header.length === 0) {
+    await store.setState({ kind: "ingest", id: job.id, to: "Failed", errorMessage: "InvalidBatch : the uploaded CSV had no header row" });
     return;
   }
-  job.inputHeader = parsed.header;
-
-  const relationshipColumns = parsed.header.filter((h) => h.includes("."));
-  const isDelete = job.operation === "delete" || job.operation === "hardDelete";
-  const successRows: string[][] = [];
-  const failedRows: string[][] = [];
-
-  if (relationshipColumns.length > 0) {
-    const col = relationshipColumns[0] as string;
-    const error: SaveError = { statusCode: "INVALID_FIELD", message: `UNSUPPORTED:bulk-relationship-column ${col} is not supported`, fields: [col] };
-    for (const row of parsed.rows) failedRows.push(["", formatSaveError(error), ...row]);
-  } else if (isDelete) {
-    const idIndex = parsed.header.findIndex((h) => h.toLowerCase() === "id");
-    for (let start = 0; start < parsed.rows.length; start += CHUNK_SIZE) {
-      const chunk = parsed.rows.slice(start, start + CHUNK_SIZE);
-      const ids = chunk.map((row) => (idIndex >= 0 ? (row[idIndex] ?? "") : ""));
-      const results = await ctx.engine.delete(job.session, job.object, ids, { allOrNone: false });
-      results.forEach((r, i) => {
-        const row = chunk[i] as string[];
-        if (r.success) successRows.push([r.id ?? "", "false", ...row]);
-        else failedRows.push(["", formatSaveError(r.errors[0]), ...row]);
+  try {
+    const relationshipColumns = input.header.filter((h) => h.includes("."));
+    for (let start = 0; start < input.rows.length; start += CHUNK_SIZE) {
+      const chunk = input.rows.slice(start, start + CHUNK_SIZE);
+      if (relationshipColumns.length > 0) {
+        const col = relationshipColumns[0] as string;
+        const error: SaveError = { statusCode: "INVALID_FIELD", message: `UNSUPPORTED:bulk-relationship-column ${col} is not supported`, fields: [col] };
+        const rows = chunk.map((_, i): IngestResultRow => ({ rowIndex: start + i, success: false, recordId: null, created: null, error: formatSaveError(error) }));
+        await withTransaction(ctx.engine.pool, (client) => store.writeIngestChunk(client, job.id, rows));
+        continue;
+      }
+      await ctx.engine.transaction(async (tx) => {
+        const results = await runChunk(ctx, job, input.header, chunk, tx);
+        await store.writeIngestChunk(
+          tx.client,
+          job.id,
+          results.map((r, i) => toResultRow(job, r, start + i)),
+        );
       });
     }
-  } else {
-    const blankIsNull = job.operation === "insert";
-    for (let start = 0; start < parsed.rows.length; start += CHUNK_SIZE) {
-      const chunk = parsed.rows.slice(start, start + CHUNK_SIZE);
-      const records = chunk.map((row) => buildRecord(parsed.header, row, blankIsNull));
-      let results: SaveResult[];
-      if (job.operation === "insert") results = await ctx.engine.insert(job.session, job.object, records, { allOrNone: false });
-      else if (job.operation === "update") results = await ctx.engine.update(job.session, job.object, records, { allOrNone: false });
-      else results = await ctx.engine.upsert(job.session, job.object, job.externalIdFieldName ?? "Id", records, { allOrNone: false });
-      results.forEach((r, i) => {
-        const row = chunk[i] as string[];
-        if (r.success) {
-          const created = job.operation === "insert" ? true : job.operation === "update" ? false : (r.created ?? false);
-          successRows.push([r.id ?? "", String(created), ...row]);
-        } else {
-          failedRows.push(["", formatSaveError(r.errors[0]), ...row]);
-        }
-      });
-    }
+    await store.setState({ kind: "ingest", id: job.id, to: "JobComplete", totalProcessingTime: Date.now() - started });
+  } catch (err) {
+    req.log.error(err);
+    await store.setState({ kind: "ingest", id: job.id, to: "Failed", errorMessage: `InternalServerError : ${(err as Error).message}`, totalProcessingTime: Date.now() - started });
   }
-
-  job.successRows = successRows;
-  job.failedRows = failedRows;
-  job.numberRecordsProcessed = parsed.rows.length;
-  job.numberRecordsFailed = failedRows.length;
-  job.state = "JobComplete";
-  job.systemModstamp = formatSalesforceDatetime(new Date());
-  job.totalProcessingTime = Date.now() - started;
 }
 
 /** Does this shaped value look like a nested sobject (has `attributes`), not a leaf value? */
@@ -215,15 +205,38 @@ function flattenRow(record: Record<string, unknown>, header: string[]): string[]
 }
 
 export function registerBulkRoutes(app: FastifyInstance, ctx: ApiContext): void {
-  const store = new JobStore();
+  const store = new BulkStore(ctx.engine.pool, ctx.engine.orgSchema);
   const version = (req: FastifyRequest) => req.apiVersion ?? ctx.defaultVersion;
+  // Retention (D-10): every /jobs route first drops the org's expired jobs, so no restart is needed to see a 404.
+  const purgeExpired = async (): Promise<void> => {
+    await store.purgeExpired();
+  };
+  const opts = { preHandler: purgeExpired };
+
+  const findIngest = async (reply: FastifyReply, id: string, userId: string): Promise<IngestJob | undefined> => {
+    const job = await store.findIngestJob(id);
+    if (!job || job.session.userId !== userId) {
+      void sendErrors(reply, 404, [NOT_FOUND]);
+      return undefined;
+    }
+    return job;
+  };
+
+  const findQuery = async (reply: FastifyReply, id: string, userId: string): Promise<QueryJob | undefined> => {
+    const job = await store.findQueryJob(id);
+    if (!job || job.session.userId !== userId) {
+      void sendErrors(reply, 404, [NOT_FOUND]);
+      return undefined;
+    }
+    return job;
+  };
 
   // Salesforce clients PUT raw CSV bytes as the batch body.
   app.addContentTypeParser("text/csv", { parseAs: "string" }, (_req, body, done) => done(null, body));
 
   // ---- ingest jobs --------------------------------------------------------------------
 
-  app.post("/services/data/v:version/jobs/ingest", async (req, reply) => {
+  app.post("/services/data/v:version/jobs/ingest", opts, async (req, reply) => {
     const body = (req.body ?? {}) as Json;
     const objectName = typeof body["object"] === "string" ? body["object"] : "";
     const obj = ctx.engine.schema.getObject(objectName);
@@ -236,193 +249,186 @@ export function registerBulkRoutes(app: FastifyInstance, ctx: ApiContext): void 
     if (operation === "upsert" && !externalIdFieldName) {
       return sendErrors(reply, 400, [apiError("INVALIDJOB", "InvalidJob : externalIdFieldName is required for upsert jobs")]);
     }
-    const now = formatSalesforceDatetime(new Date());
-    const job: IngestJob = {
+    const job = await store.createIngestJob({
       id: newJobId(),
       session: session(req),
       operation,
       object: obj.name,
-      contentType: "CSV",
       lineEnding: parseLineEnding(body["lineEnding"]),
       columnDelimiter: parseColumnDelimiter(body["columnDelimiter"]),
       apiVersion: version(req),
-      state: "Open",
-      createdDate: now,
-      systemModstamp: now,
-      csvChunks: [],
-      inputHeader: [],
-      numberRecordsProcessed: 0,
-      numberRecordsFailed: 0,
-      successRows: [],
-      failedRows: [],
-      totalProcessingTime: 0,
       ...(externalIdFieldName ? { externalIdFieldName } : {}),
-    };
-    store.ingest.set(job.id, job);
+    });
     return reply.send(ingestJobInfo(job));
   });
 
-  app.put<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/batches", async (req, reply) => {
-    const job = findJob(store.ingest, reply, req.params.id, session(req).userId);
+  app.put<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/batches", opts, async (req, reply) => {
+    const job = await findIngest(reply, req.params.id, session(req).userId);
     if (!job) return;
-    if (job.state !== "Open") return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : batches can only be added while the job is Open (is ${job.state})`)]);
-    job.csvChunks.push(typeof req.body === "string" ? req.body : "");
+    if (!(await store.appendCsv(job.id, typeof req.body === "string" ? req.body : ""))) {
+      return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : batches can only be added while the job is Open (is ${job.state})`)]);
+    }
     return reply.code(201).send();
   });
 
-  app.patch<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id", async (req, reply) => {
-    const job = findJob(store.ingest, reply, req.params.id, session(req).userId);
+  app.patch<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id", opts, async (req, reply) => {
+    const job = await findIngest(reply, req.params.id, session(req).userId);
     if (!job) return;
     const state = (req.body as Json | undefined)?.["state"];
+    if (typeof state !== "string" || !CLIENT_SETTABLE.has(state)) {
+      return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : unsupported state ${String(state)}`)]);
+    }
     if (state === "UploadComplete") {
-      if (job.state !== "Open") return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : cannot move to UploadComplete from ${job.state}`)]);
-      await processIngestJob(ctx, job);
-      return reply.send(ingestJobInfo(job));
-    }
-    if (state === "Aborted") {
-      if (job.state !== "Open" && job.state !== "UploadComplete") {
-        return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : cannot abort a job in state ${job.state}`)]);
+      if (!(await store.setState({ kind: "ingest", id: job.id, to: "UploadComplete" }))) {
+        return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : cannot move to UploadComplete from ${job.state}`)]);
       }
-      job.state = "Aborted";
-      job.systemModstamp = formatSalesforceDatetime(new Date());
-      return reply.send(ingestJobInfo(job));
+      await store.setState({ kind: "ingest", id: job.id, to: "InProgress" });
+      await processIngestJob(ctx, store, job, req);
+    } else if (!(await store.setState({ kind: "ingest", id: job.id, to: "Aborted" }))) {
+      return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : cannot abort a job in state ${job.state}`)]);
     }
-    return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : unsupported state ${String(state)}`)]);
+    return reply.send(ingestJobInfo((await store.findIngestJob(job.id)) as IngestJob));
   });
 
-  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id", async (req, reply) => {
-    const job = findJob(store.ingest, reply, req.params.id, session(req).userId);
+  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id", opts, async (req, reply) => {
+    const job = await findIngest(reply, req.params.id, session(req).userId);
     if (!job) return;
     return reply.send(ingestJobInfo(job));
   });
 
-  app.get("/services/data/v:version/jobs/ingest", async (req, reply) => {
-    const userId = session(req).userId;
-    const records = [...store.ingest.values()].filter((j) => j.session.userId === userId).map(ingestJobInfo);
+  app.get("/services/data/v:version/jobs/ingest", opts, async (req, reply) => {
+    const records = (await store.listIngestJobs(session(req).userId)).map(ingestJobInfo);
     return reply.send({ done: true, records, nextRecordsUrl: null });
   });
 
-  app.delete<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id", async (req, reply) => {
-    const job = findJob(store.ingest, reply, req.params.id, session(req).userId);
+  app.delete<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id", opts, async (req, reply) => {
+    const job = await findIngest(reply, req.params.id, session(req).userId);
     if (!job) return;
-    if (job.state !== "JobComplete" && job.state !== "Failed" && job.state !== "Aborted") {
+    if (!(await store.deleteJob("ingest", job.id, DELETABLE.ingest))) {
       return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : cannot delete a job in state ${job.state}`)]);
     }
-    store.ingest.delete(job.id);
     return reply.code(204).send();
   });
 
-  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/successfulResults", async (req, reply) => {
-    const job = findJob(store.ingest, reply, req.params.id, session(req).userId);
+  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/successfulResults", opts, async (req, reply) => {
+    const job = await findIngest(reply, req.params.id, session(req).userId);
     if (!job) return;
-    const csv = writeCsv(["sf__Id", "sf__Created", ...job.inputHeader], job.successRows, delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
+    const input = await store.readIngestInput(job.id);
+    const rows = (await store.readIngestResults(job.id)).filter((r) => r.success).map((r) => [r.recordId ?? "", String(r.created ?? false), ...(input.rows[r.rowIndex] ?? [])]);
+    const csv = writeCsv(["sf__Id", "sf__Created", ...input.header], rows, delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
     return reply.type("text/csv;charset=UTF-8").send(csv);
   });
 
-  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/failedResults", async (req, reply) => {
-    const job = findJob(store.ingest, reply, req.params.id, session(req).userId);
+  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/failedResults", opts, async (req, reply) => {
+    const job = await findIngest(reply, req.params.id, session(req).userId);
     if (!job) return;
-    const csv = writeCsv(["sf__Id", "sf__Error", ...job.inputHeader], job.failedRows, delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
+    const input = await store.readIngestInput(job.id);
+    const rows = (await store.readIngestResults(job.id)).filter((r) => !r.success).map((r) => ["", r.error ?? "", ...(input.rows[r.rowIndex] ?? [])]);
+    const csv = writeCsv(["sf__Id", "sf__Error", ...input.header], rows, delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
     return reply.type("text/csv;charset=UTF-8").send(csv);
   });
 
-  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/unprocessedrecords", async (req, reply) => {
-    const job = findJob(store.ingest, reply, req.params.id, session(req).userId);
+  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/ingest/:id/unprocessedrecords", opts, async (req, reply) => {
+    const job = await findIngest(reply, req.params.id, session(req).userId);
     if (!job) return;
-    const csv = writeCsv(job.inputHeader, [], delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
+    const input = await store.readIngestInput(job.id);
+    const done = new Set((await store.readIngestResults(job.id)).map((r) => r.rowIndex));
+    const csv = writeCsv(input.header, input.rows.filter((_, i) => !done.has(i)), delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
     return reply.type("text/csv;charset=UTF-8").send(csv);
   });
 
   // ---- query jobs ----------------------------------------------------------------------
 
-  app.post("/services/data/v:version/jobs/query", async (req, reply) => {
+  app.post("/services/data/v:version/jobs/query", opts, async (req, reply) => {
     const body = (req.body ?? {}) as Json;
     const soql = typeof body["query"] === "string" ? body["query"] : "";
     const operation = body["operation"] === "queryAll" ? "queryAll" : "query";
-    if (/\(\s*select\b/i.test(soql)) {
-      return sendErrors(reply, 400, [apiError("FEATURE_NOT_ENABLED", "UNSUPPORTED:bulk-subquery child relationship subqueries are not supported in bulk query jobs")]);
-    }
-    const objectName = /\bfrom\s+([A-Za-z_]\w*)/i.exec(soql)?.[1] ?? "";
+    // Bulk has its own SOQL restrictions, separate from REST (D-15); a bad query must not leave a row behind.
+    const query = parseBulkQuery(soql);
+    const violation = bulkQueryViolation(query, ctx.engine.schema);
+    if (violation) return sendErrors(reply, 400, [apiError("FEATURE_NOT_ENABLED", violation.message)]);
+    compileSoql(soql, { schema: ctx.engine.schema, orgSchema: ctx.engine.orgSchema, includeDeleted: operation === "queryAll" });
     const apiVersion = version(req);
     const s = session(req);
-
-    const allRows: Record<string, unknown>[] = [];
-    let offset = 0;
-    for (;;) {
-      const page = await runQuery(ctx.engine, s, soql, { includeDeleted: operation === "queryAll", apiVersion, batchSize: 2000, offset });
-      allRows.push(...page.records);
-      if (page.done || page.nextOffset === undefined) break;
-      offset = page.nextOffset;
-    }
-
-    const header = allRows.length > 0 ? flattenHeader(allRows[0] as Record<string, unknown>) : [];
-    const rows = allRows.map((r) => flattenRow(r, header));
-    const now = formatSalesforceDatetime(new Date());
-    const job: QueryJob = {
+    const job = await store.createQueryJob({
       id: newJobId(),
       session: s,
       operation,
-      object: objectName,
+      object: ctx.engine.schema.getObject(query.sObject ?? "")?.name ?? query.sObject ?? "",
       query: soql,
-      contentType: "CSV",
       lineEnding: parseLineEnding(body["lineEnding"]),
       columnDelimiter: parseColumnDelimiter(body["columnDelimiter"]),
       apiVersion,
-      state: "JobComplete",
-      createdDate: now,
-      systemModstamp: now,
-      header,
-      rows,
-      numberRecordsProcessed: rows.length,
-      totalProcessingTime: 0,
-    };
-    store.query.set(job.id, job);
-    return reply.send(queryJobInfo(job));
+    });
+    await store.setState({ kind: "query", id: job.id, to: "InProgress" });
+    const started = Date.now();
+    try {
+      const allRows: Record<string, unknown>[] = [];
+      let offset = 0;
+      for (;;) {
+        const page = await runQuery(ctx.engine, s, soql, { includeDeleted: operation === "queryAll", apiVersion, batchSize: 2000, offset });
+        allRows.push(...page.records);
+        if (page.done || page.nextOffset === undefined) break;
+        offset = page.nextOffset;
+      }
+      const header = allRows.length > 0 ? flattenHeader(allRows[0] as Record<string, unknown>) : [];
+      const rows = allRows.map((r) => flattenRow(r, header));
+      await withTransaction(ctx.engine.pool, async (client) => {
+        await store.writeQueryResults(client, job.id, header, rows);
+        await store.setState({ kind: "query", id: job.id, to: "JobComplete", totalProcessingTime: Date.now() - started }, client);
+      });
+    } catch (err) {
+      req.log.error(err);
+      await store.setState({ kind: "query", id: job.id, to: "Failed", errorMessage: `InternalServerError : ${(err as Error).message}`, totalProcessingTime: Date.now() - started });
+    }
+    return reply.send(queryJobInfo((await store.findQueryJob(job.id)) as QueryJob));
   });
 
-  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id", async (req, reply) => {
-    const job = findJob(store.query, reply, req.params.id, session(req).userId);
+  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id", opts, async (req, reply) => {
+    const job = await findQuery(reply, req.params.id, session(req).userId);
     if (!job) return;
     return reply.send(queryJobInfo(job));
   });
 
-  app.get("/services/data/v:version/jobs/query", async (req, reply) => {
-    const userId = session(req).userId;
-    const records = [...store.query.values()].filter((j) => j.session.userId === userId).map(queryJobInfo);
+  app.get("/services/data/v:version/jobs/query", opts, async (req, reply) => {
+    const records = (await store.listQueryJobs(session(req).userId)).map(queryJobInfo);
     return reply.send({ done: true, records, nextRecordsUrl: null });
   });
 
-  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id/results", async (req, reply) => {
-    const job = findJob(store.query, reply, req.params.id, session(req).userId);
+  app.get<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id/results", opts, async (req, reply) => {
+    const job = await findQuery(reply, req.params.id, session(req).userId);
     if (!job) return;
     const q = req.query as { maxRecords?: string; locator?: string };
-    const offset = q.locator ? Number(q.locator) || 0 : 0;
-    const max = q.maxRecords !== undefined ? Number(q.maxRecords) : undefined;
-    const end = max !== undefined ? Math.min(job.rows.length, offset + max) : job.rows.length;
-    const page = job.rows.slice(offset, end);
-    const csv = writeCsv(job.header, page, delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
-    void reply.header("Sforce-NumberOfRecords", String(page.length));
-    void reply.header("Sforce-Locator", end < job.rows.length ? String(end) : "null");
+    const offset = q.locator !== undefined && /^\d+$/.test(q.locator) ? Number(q.locator) : 0;
+    const requested = q.maxRecords !== undefined && /^\d+$/.test(q.maxRecords) ? Number(q.maxRecords) : 0;
+    const max = requested > 0 ? requested : undefined;
+    const page = await store.readQueryPage(job.id, offset, max);
+    const csv = writeCsv(page.header, page.rows, delimiterChar(job.columnDelimiter), lineEndingChars(job.lineEnding));
+    void reply.header("Sforce-NumberOfRecords", String(page.rows.length));
+    void reply.header("Sforce-Locator", page.more ? String(offset + page.rows.length) : "null");
     return reply.type("text/csv;charset=UTF-8").send(csv);
   });
 
-  app.patch<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id", async (req, reply) => {
-    const job = findJob(store.query, reply, req.params.id, session(req).userId);
+  app.patch<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id", opts, async (req, reply) => {
+    const job = await findQuery(reply, req.params.id, session(req).userId);
     if (!job) return;
     const state = (req.body as Json | undefined)?.["state"];
-    if (state !== "Aborted") return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : unsupported state ${String(state)}`)]);
-    if (job.state !== "UploadComplete" && job.state !== "InProgress") {
-      return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : cannot abort a job in state ${job.state}`)]);
+    if (typeof state !== "string" || !CLIENT_SETTABLE.has(state) || state !== "Aborted") {
+      return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : unsupported state ${String(state)}`)]);
     }
-    job.state = "Aborted";
-    job.systemModstamp = formatSalesforceDatetime(new Date());
-    return reply.send(queryJobInfo(job));
+    if (!(await store.setState({ kind: "query", id: job.id, to: "Aborted" }))) {
+      const message = job.state === "JobComplete" ? "Aborting already Completed Job not allowed" : `InvalidJobState : cannot abort a job in state ${job.state}`;
+      return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", message)]);
+    }
+    return reply.send(queryJobInfo((await store.findQueryJob(job.id)) as QueryJob));
   });
 
-  app.delete<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id", async (req, reply) => {
-    const job = findJob(store.query, reply, req.params.id, session(req).userId);
+  app.delete<{ Params: { id: string } }>("/services/data/v:version/jobs/query/:id", opts, async (req, reply) => {
+    const job = await findQuery(reply, req.params.id, session(req).userId);
     if (!job) return;
-    store.query.delete(job.id);
+    if (!(await store.deleteJob("query", job.id, DELETABLE.query))) {
+      return sendErrors(reply, 400, [apiError("INVALIDJOBSTATE", `InvalidJobState : cannot delete a job in state ${job.state}`)]);
+    }
     return reply.code(204).send();
   });
 }

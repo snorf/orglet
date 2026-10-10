@@ -8,6 +8,7 @@ import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { createApiServer } from "./server.js";
 import { parseCsv, writeCsv } from "./bulk/csv.js";
+import { dropBulkJobs, prepareBulk } from "./bulk/schema.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
@@ -38,6 +39,7 @@ beforeAll(async () => {
   schema = (await loadOrgSchema({ projectDir: ACME })).schema;
   await migrate(pool, schema, { orgSchema });
   const boot = await bootstrapOrg(pool, schema, { orgSchema });
+  await prepareBulk(pool, orgSchema);
   const engine = new DmlEngine(pool, schema, { orgSchema });
   app = createApiServer({
     engine,
@@ -57,11 +59,48 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await app.close();
+  await dropBulkJobs(pool, orgSchema);
   await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
   await testDb.close();
 });
 
 describe("ingest jobs", () => {
+  it("only UploadComplete and Aborted can be requested by the client", async () => {
+    const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
+    const jobId = String(created["id"]);
+    for (const state of ["InProgress", "JobComplete", "Failed", "Open", "Bogus"]) {
+      const res = await patch(`${V}/jobs/ingest/${jobId}`, { state });
+      expect(res.statusCode).toBe(400);
+      expect(arr(res)[0]).toMatchObject({ errorCode: "INVALIDJOBSTATE" });
+    }
+    expect(json(await get(`${V}/jobs/ingest/${jobId}`))["state"]).toBe("Open");
+  });
+
+  it("an aborted job lists every uploaded row as unprocessed", async () => {
+    const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
+    const jobId = String(created["id"]);
+    await putCsv(`${V}/jobs/ingest/${jobId}/batches`, writeCsv(["Name"], [["Abort A"], ["Abort B"], ["Abort C"]]));
+    expect(json(await patch(`${V}/jobs/ingest/${jobId}`, { state: "Aborted" }))["state"]).toBe("Aborted");
+    const unprocessed = parseResult(await get(`${V}/jobs/ingest/${jobId}/unprocessedrecords`));
+    expect(unprocessed.header).toEqual(["Name"]);
+    expect(unprocessed.rows).toEqual([["Abort A"], ["Abort B"], ["Abort C"]]);
+    for (const kind of ["successfulResults", "failedResults"]) {
+      const r = parseResult(await get(`${V}/jobs/ingest/${jobId}/${kind}`));
+      expect(r.header.slice(2)).toEqual(["Name"]);
+      expect(r.rows).toHaveLength(0);
+    }
+  });
+
+  it("a second UploadComplete is refused", async () => {
+    const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
+    const jobId = String(created["id"]);
+    await putCsv(`${V}/jobs/ingest/${jobId}/batches`, writeCsv(["Name"], [["Twice"]]));
+    expect(json(await patch(`${V}/jobs/ingest/${jobId}`, { state: "UploadComplete" }))["state"]).toBe("JobComplete");
+    const again = await patch(`${V}/jobs/ingest/${jobId}`, { state: "UploadComplete" });
+    expect(again.statusCode).toBe(400);
+    expect(arr(again)[0]).toMatchObject({ errorCode: "INVALIDJOBSTATE", message: "InvalidJobState : cannot move to UploadComplete from JobComplete" });
+  });
+
   it("an ingest row carrying a roll-up value fails with INVALID_FIELD_FOR_INSERT_UPDATE", async () => {
     const created = json(await post(`${V}/jobs/ingest`, { object: "Account", operation: "insert", contentType: "CSV", lineEnding: "LF" }));
     const jobId = String(created["id"]);
@@ -219,11 +258,118 @@ describe("query jobs", () => {
   it("rejects child subqueries and invalid SOQL", async () => {
     const sub = await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Id, (SELECT Id FROM Contacts) FROM Account" });
     expect(sub.statusCode).toBe(400);
-    expect(arr(sub)[0]).toMatchObject({ errorCode: "FEATURE_NOT_ENABLED" });
+    expect(arr(sub)[0]).toMatchObject({ errorCode: "FEATURE_NOT_ENABLED", message: "Bulk API 2.0 query jobs do not support parent-to-child relationship subqueries" });
 
     const bad = await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Nope FROM Account" });
     expect(bad.statusCode).toBe(400);
     expect(arr(bad)[0]).toMatchObject({ errorCode: "INVALID_FIELD" });
+  });
+});
+
+const queryJobCount = async () =>
+  Number(((await pool.query(`SELECT count(*)::int AS n FROM "_orglet"."bulk_query_jobs" WHERE org_schema = $1`, [orgSchema])).rows[0] as { n: number }).n);
+
+describe("bulk query rules", () => {
+  it.each([
+    ["SELECT Id, TYPEOF Owner WHEN User THEN Alias END FROM Case", "TYPEOF"],
+    ["SELECT Industry FROM Account GROUP BY Industry", "GROUP BY"],
+    ["SELECT Id FROM Account OFFSET 1", "OFFSET"],
+    ["SELECT COUNT() FROM Account", "aggregate function COUNT"],
+    ["SELECT FIELDS(ALL) FROM Account LIMIT 200", "FIELDS()"],
+    ["SELECT Id, BillingAddress FROM Account", "compound field BillingAddress"],
+    ["SELECT Id, (SELECT Id FROM Contacts) FROM Account", "parent-to-child relationship subqueries"],
+  ])("%s is refused as FEATURE_NOT_ENABLED without creating a job", async (soql, construct) => {
+    const before = await queryJobCount();
+    const res = await post(`${V}/jobs/query`, { operation: "query", query: soql });
+    expect(res.statusCode).toBe(400);
+    expect(arr(res)).toEqual([{ errorCode: "FEATURE_NOT_ENABLED", message: `Bulk API 2.0 query jobs do not support ${construct}` }]);
+    expect(String(arr(res)[0]?.["message"])).not.toContain("UNSUPPORTED:");
+    expect(await queryJobCount()).toBe(before);
+  });
+
+  it("the REST query endpoint still accepts SOQL that Bulk rejects", async () => {
+    const count = await get(`${V}/query?q=SELECT+COUNT()+FROM+Account`);
+    expect(count.statusCode).toBe(200);
+    expect(typeof json(count)["totalSize"]).toBe("number");
+    expect((await get(`${V}/query?q=SELECT+Id,(SELECT+Id+FROM+Contacts)+FROM+Account`)).statusCode).toBe(200);
+  });
+
+  it("a WHERE semi-join is a legal bulk query", async () => {
+    const res = await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Contact)" });
+    expect(res.statusCode).toBe(200);
+    expect(json(res)).toMatchObject({ state: "JobComplete" });
+  });
+
+  it("invalid SOQL creates no job", async () => {
+    const before = await queryJobCount();
+    const bad = await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Nope FROM Account" });
+    expect(bad.statusCode).toBe(400);
+    expect(arr(bad)[0]).toMatchObject({ errorCode: "INVALID_FIELD" });
+    const malformed = await post(`${V}/jobs/query`, { operation: "query", query: "SELEKT Id FROM Account" });
+    expect(malformed.statusCode).toBe(400);
+    expect(arr(malformed)[0]).toMatchObject({ errorCode: "MALFORMED_QUERY" });
+    expect(await queryJobCount()).toBe(before);
+  });
+});
+
+describe("query results headers", () => {
+  it("every page carries Sforce-Locator and an accurate Sforce-NumberOfRecords", async () => {
+    for (const name of ["QH 0", "QH 1", "QH 2"]) await post(`${V}/sobjects/Account`, { Name: name });
+    const job = json(await post(`${V}/jobs/query`, { operation: "query", lineEnding: "LF", query: "SELECT Id, Name FROM Account WHERE Name LIKE 'QH %' ORDER BY Name" }));
+    const url = `${V}/jobs/query/${String(job["id"])}/results`;
+    const first = await app.inject({ method: "GET", url: `${url}?maxRecords=2`, headers: { ...auth(), accept: "application/json" } });
+    expect(first.headers["sforce-numberofrecords"]).toBe("2");
+    expect(String(first.headers["sforce-locator"])).toMatch(/^\d+$/);
+    expect(first.body).not.toContain("\r");
+    expect(String(first.headers["content-type"])).toMatch(/^text\/csv/);
+    expect(parseResult(first).rows).toHaveLength(2);
+    const second = await get(`${url}?maxRecords=2&locator=${String(first.headers["sforce-locator"])}`);
+    expect(second.headers["sforce-numberofrecords"]).toBe("1");
+    expect(second.headers["sforce-locator"]).toBe("null");
+  });
+
+  it("an empty result still answers with locator null and zero records", async () => {
+    const job = json(await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Id, Name FROM Account WHERE Name = 'QH none'" }));
+    const res = await get(`${V}/jobs/query/${String(job["id"])}/results?maxRecords=5`);
+    expect(res.headers["sforce-locator"]).toBe("null");
+    expect(res.headers["sforce-numberofrecords"]).toBe("0");
+    expect(parseResult(res).rows).toHaveLength(0);
+  });
+
+  it("a queryAll job pages deleted rows the same way", async () => {
+    for (const name of ["QH Gone 0", "QH Gone 1"]) {
+      const acc = json(await post(`${V}/sobjects/Account`, { Name: name }));
+      await del(`${V}/sobjects/Account/${String(acc["id"])}`);
+    }
+    const job = json(await post(`${V}/jobs/query`, { operation: "queryAll", query: "SELECT Id, Name FROM Account WHERE Name LIKE 'QH Gone %' ORDER BY Name" }));
+    const url = `${V}/jobs/query/${String(job["id"])}/results`;
+    const first = await get(`${url}?maxRecords=1`);
+    expect(first.headers["sforce-numberofrecords"]).toBe("1");
+    const second = await get(`${url}?maxRecords=1&locator=${String(first.headers["sforce-locator"])}`);
+    expect(parseResult(second).rows[0]?.[1]).toBe("QH Gone 1");
+    expect(second.headers["sforce-locator"]).toBe("null");
+  });
+});
+
+describe("query job states", () => {
+  it("aborting a completed query job is refused with the documented message", async () => {
+    const job = json(await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Id FROM Account LIMIT 1" }));
+    const res = await patch(`${V}/jobs/query/${String(job["id"])}`, { state: "Aborted" });
+    expect(res.statusCode).toBe(400);
+    expect(arr(res)).toEqual([{ errorCode: "INVALIDJOBSTATE", message: "Aborting already Completed Job not allowed" }]);
+  });
+
+  it("a completed query job can be deleted and is then 404", async () => {
+    const job = json(await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Id FROM Account LIMIT 1" }));
+    const url = `${V}/jobs/query/${String(job["id"])}`;
+    expect((await del(url)).statusCode).toBe(204);
+    expect((await get(url)).statusCode).toBe(404);
+  });
+
+  it("a query job is listed for its creator", async () => {
+    const job = json(await post(`${V}/jobs/query`, { operation: "query", query: "SELECT Id FROM Account LIMIT 1" }));
+    const list = json(await get(`${V}/jobs/query`));
+    expect((list["records"] as Json[]).map((r) => r["id"])).toContain(job["id"]);
   });
 });
 

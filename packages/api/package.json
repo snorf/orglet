@@ -19,11 +19,12 @@
   },
   "dependencies": {
     "@fastify/formbody": "^9.0.0",
+    "@jetstreamapp/soql-parser-js": "^8.1.0",
     "@orglet/engine": "workspace:*",
+    "@orglet/formula": "workspace:*",
     "@orglet/metadata": "workspace:*",
     "@orglet/schema": "workspace:*",
     "@orglet/soql": "workspace:*",
-    "fastify": "^5.12.5",
-    "@orglet/formula": "workspace:*"
+    "fastify": "^5.12.5"
   }
 }

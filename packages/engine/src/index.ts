@@ -1,6 +1,6 @@
 // @orglet/engine: DML pipeline implementing Salesforce order of execution
 export { DmlEngine } from "./engine.js";
-export type { EngineOptions, DmlOptions, RetrieveOptions } from "./engine.js";
+export type { EngineOptions, DmlOptions, DmlTransaction, RetrieveOptions } from "./engine.js";
 export { Errors, DmlError, saveError, failure, unknownSObject } from "./errors.js";
 export type { SaveError, SaveResult } from "./errors.js";
 export type { DmlOperation, Session, TriggerContext, TriggerExecutor } from "./hooks.js";
