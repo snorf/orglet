@@ -45,7 +45,7 @@ There is no `pnpm test:coverage` script and no coverage tool configured (no `@vi
 | `packages/api/src/bulk.test.ts` | 248 | **yes** |
 | `packages/api/src/api.test.ts` | 304 | **yes** |
 
-`packages/cli` has no test file — it's exercised end-to-end via manual/conformance runs, not vitest.
+`packages/cli` has `src/main.test.ts` (check output, `--strict` exit codes, usage); `up`/`reset` database paths are covered by schema/API tests and the conformance runs.
 
 ## Test Structure
 
@@ -147,23 +147,21 @@ Distinct from the top-level `conformance/` suites (below): `packages/sigha` (the
 
 ## Conformance Suites (`conformance/`)
 
-Two **external, manually-run** suites that exercise a live orglet server over HTTP using real upstream Salesforce SDKs, as opposed to vitest unit/integration tests. They are not part of `pnpm test` / CI (CI in `.github/workflows/ci.yml` runs lint, build and `pnpm test` only) and require a running orglet instance plus network/tooling setup (Node+Jest for one, a Python venv for the other).
+Two **external** suites that exercise a live orglet server over HTTP using real upstream Salesforce SDKs, as opposed to vitest unit/integration tests. They are not part of `pnpm test`, but CI runs them in the `conformance` job of `.github/workflows/ci.yml` via `conformance/run-all.sh` (on every push and PR; not a required status check). Locally they need a running orglet instance plus Node+Jest and a Python venv. `conformance/README.md` is the dated overview of every check.
 
 **`conformance/python/` — simple-salesforce (Python SDK):**
-- `conformance/python/run.py` (self-contained script, no test framework) drives `simple_salesforce.Salesforce` against `BASE_URL = "http://localhost:8180"`, `USERNAME = "admin@orglet.local"`, `API_VERSION = "59.0"` (edit constants at the top of the file to point elsewhere).
+- `conformance/python/run.py` (self-contained script, no test framework) drives `simple_salesforce.Salesforce`; `BASE_URL`, `ORGLET_USERNAME` and `API_VERSION` are read from the environment (defaults `http://localhost:8180`, `admin@orglet.local`, `59.0`).
 - Pattern: a `check(name)` context manager wraps each scenario, catches all exceptions, records `(name, "PASS"/"FAIL", detail)`, prints a `[PASS]`/`[FAIL]` line immediately, and never stops the run early — every check attempts to run regardless of earlier failures, ending in a summary table.
-- Covers: describe, CRUD, external-id upsert, nested/parent SOQL, `query_more`, validation rules, delete/undelete visibility, limits, search, composite, and error envelopes.
-- Dependencies pinned in `conformance/python/requirements.txt` (`simple-salesforce`, `cryptography==43.0.3` pinned for a macOS wheel issue — see the comment in that file).
-- Result as of the last documented run (`git log`): 26/26 pass.
-- Run manually: start orglet, activate the venv in `conformance/python/.venv`, `python run.py`.
+- Covers: describe, CRUD, external-id upsert, nested/parent SOQL, `query_more`, validation rules, delete/undelete visibility, limits, search, composite, error envelopes and Bulk API 2.0 (ingest and query).
+- Dependencies pinned in `conformance/python/requirements.txt` (`simple-salesforce==1.12.10`, `cryptography==43.0.3` pinned for a macOS wheel issue — see the comment in that file).
+- Result (2026-10-12): 29/29 pass (`conformance/python/README.md`).
 
 **`conformance/jsforce/` — jsforce (JS/TS SDK), e2e subset:**
-- `conformance/jsforce/run.sh` clones/updates upstream `jsforce` `main` into `conformance/jsforce/.cache/jsforce`, installs its deps, builds it, optionally seeds fixture data, then runs a curated subset of jsforce's own Jest e2e test files against a running orglet instance (not orglet's own tests — literally the upstream SDK's test suite, redirected at `orglet` instead of a real scratch org).
-- `conformance/jsforce/seed.mjs` seeds fixture rows (`BigTable__c`, Accounts/Contacts/Opportunities) that the upstream tests assume exist, via `POST`/`DELETE /composite/sobjects` (not Bulk API, since seeding predates/avoids that dependency).
-- Usage: `./run.sh <base-url> <access-token> [--seed] [-- <jest test paths/args>]` — see the full walkthrough (start server with a scratch `--org-schema`, obtain a bearer token via the password grant, run the suite, tear down) in `conformance/jsforce/README.md`.
-- Default file subset (`connection-crud.test.ts`, `query.test.ts`, `connection-meta.test.ts`, `sobject.test.ts`, `connection-session.test.ts`, `bulk.test.ts`) with a Jest `-t` name filter excluding known-out-of-scope tests (bulk, layouts, list views, tabs, theme, identity, search).
-- Documented last run (`conformance/jsforce/README.md`, verified 2026-09-25): **51 passed, 2 failed, 58 skipped by the filter**. Both failures depend on Bulk API v1 (`insertAccounts` in `bulk.test.ts` using `/services/async/50.0/job`) — note the top-level git history (`2fcdbc5 Add Bulk API 2.0 ingest and query jobs`) added Bulk API 2.0 support after this README was last verified, so this specific gap may be narrower now; re-run before relying on the exact counts.
-- The README documents a Jest/CommonJS import quirk (importing `bulk.test.ts` from another test file re-registers all its `it()`s) and a table of "expected/declared gaps" vs "other findings" — read `conformance/jsforce/README.md` in full before changing anything here; it is the most detailed single doc on what orglet does and doesn't support against a real SDK.
+- `conformance/jsforce/run.sh` checks out upstream `jsforce` at the pinned commit `9bae14e` (3.10.26) into `conformance/jsforce/.cache/jsforce`, builds it once per pin, optionally seeds fixture data, then runs two Jest invocations against a running orglet instance (literally the upstream SDK's test suite, redirected at orglet instead of a real scratch org): the core files (`connection-crud`, `connection-meta`, `sobject`, `query`) with `CORE_FILTER`, then `test/bulk2.test.ts` with `BULK2_FILTER`.
+- `conformance/jsforce/seed.mjs` seeds fixture rows (`BigTable__c`, Accounts/Contacts/Opportunities) that the upstream tests assume exist, via `POST`/`DELETE /composite/sobjects` (not Bulk API v1).
+- Usage: `./run.sh <base-url> <access-token> [--seed] [-- <jest test paths/args>]` — see the walkthrough in `conformance/jsforce/README.md`.
+- Result (2026-10-12): core 51 passed / 0 failed / 60 excluded by filter; Bulk API 2.0 12 passed / 0 failed / 5 excluded. Every exclusion is classified in the README.
+- The README documents a Jest/CommonJS import quirk (importing `bulk.test.ts` from another test file re-registers all its `it()`s), which is why there are two Jest invocations.
 
 ## What Is and Isn't Covered
 
@@ -172,11 +170,11 @@ Two **external, manually-run** suites that exercise a live orglet server over HT
 
 **Covered only by manual conformance runs, not vitest:**
 - Real-SDK-level behavior (jsforce, simple-salesforce) — quirks in HTTP status codes, header shapes, error envelope exact structure, trailing-slash handling, pagination against >2000 rows, composite/collection upsert semantics. These are the source of truth for several documented gaps (see `conformance/jsforce/README.md`'s "Other findings" table) that are not (yet) asserted by any vitest test.
-- `packages/cli` has zero automated test coverage of its own — `orglet up`/`check`/`reset` are only exercised indirectly (conformance runs start a real CLI-launched server) or manually.
+- `packages/cli`: `check` is unit-tested in `src/main.test.ts`; `up`/`reset` are exercised by the conformance runs and by schema/API tests.
 
 **Known gaps, called out explicitly in `conformance/jsforce/README.md` (treat as intentional scope boundaries, not bugs, unless asked to close them):**
 - SOSL/`/search` (stub, always empty results), `FOR VIEW` SOQL clause, recently-viewed items, `describeLayouts` family, `/tabs`, `/theme`, `explain=` query param handling, Streaming API, Metadata/Tooling API, Apex REST, Chatter.
 
 ---
 
-*Testing analysis: 2026-09-29, updated 2026-09-30 (phase 1: pglite backend)*
+*Testing analysis: 2026-09-29, updated 2026-09-30 (phase 1: pglite backend), updated 2026-10-12 (phase 7: conformance in CI)*

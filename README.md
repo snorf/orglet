@@ -12,6 +12,7 @@ CI, with the long-term goal of a small self-hosted CRM you can later migrate to 
 orglet is not affiliated with, sponsored by or endorsed by Salesforce, Inc. Salesforce, Apex,
 Lightning and SOQL are trademarks of Salesforce, Inc. Everything here is built from public
 documentation and open-source client SDKs; no Salesforce service is used for benchmarking.
+The author's own retrieved metadata is used as local test input only; no Salesforce org is contacted by orglet or its tests, and orglet's behaviour is never compared with an org's.
 
 ## Status
 
@@ -27,7 +28,7 @@ upstream SDK suites pass for everything phase 0 covers (see `conformance/`).
 | M4 | DML engine implementing the documented order of execution | done |
 | M5 | SOQL to SQL compiler with Salesforce result shaping | done |
 | M6 | REST API: login, sobjects, query, describe, composite | done |
-| M7 | Conformance: `simple-salesforce` 26/26, `jsforce` e2e subset 51 passing (Bulk, SOSL, layouts excluded) | done |
+| M7 | Conformance: `simple-salesforce` 29/29 incl. Bulk API 2.0, `jsforce` e2e subset 51 + 12 Bulk API 2.0 passing, 0 failing (Bulk v1, SOSL, UI API excluded; see [conformance/](conformance/README.md)) | done |
 
 Later phases: UI API + LWC/SLDS front end, Flows, change events to Kafka/SQS, Apex.
 

@@ -134,16 +134,13 @@ free-form path segment (e.g. `59.0`) captured into `req.apiVersion`.
 
 ## Known Gaps (declared, not accidental)
 
-Documented in `conformance/jsforce/README.md` as explicit phase-1 scope, verified against a
+Documented in `conformance/jsforce/README.md` (Exclusions), verified against a
 real upstream client suite:
 - SOSL search always empty (stub, not a real search)
 - Bulk API **v1** (`/services/async/*`) not implemented (Bulk 2.0 is)
 - Describe layouts family (`layouts`, named/compact/approval layouts), list views, `/tabs`,
   `/theme`, `/recent` (recently viewed) — all 404
-- `FOR VIEW` SOQL clause — explicit `UNSUPPORTED:soql-for` error
 - Streaming API, Metadata API, Tooling API, Apex REST, Chatter — not implemented at all
-- `explain=<soql>` query param on `GET /query` is ignored rather than answered or rejected
-  cleanly
 
 ## Vendored Third-Party Code
 
@@ -173,32 +170,32 @@ real Salesforce client SDKs and run their own test suites against a locally runn
 instance, to verify wire-compatibility.
 
 **jsforce** (`conformance/jsforce/`):
-- `run.sh` clones jsforce `main` into `.cache/jsforce` (git submodule-free, plain clone+build
-  each run), `npm ci`, `tsc` build, then runs a subset of jsforce's own Jest e2e suite
-  (`test/connection-crud.test.ts`, `test/query.test.ts`, `test/connection-meta.test.ts`,
-  `test/sobject.test.ts`, `test/connection-session.test.ts`, `test/bulk.test.ts`) against a
-  running orglet server via `SF_LOGIN_URL`/`SF_ACCESS_TOKEN` env vars
+- `run.sh` checks out jsforce at the pinned commit `9bae14e` (3.10.26) into `.cache/jsforce`, builds it once per
+  pin (stamp-guarded `npm ci` + `tsc`), then runs two Jest invocations of jsforce's own e2e suite against a
+  running orglet server via `SF_LOGIN_URL`/`SF_ACCESS_TOKEN` env vars: the core files (`test/connection-crud.test.ts`,
+  `test/connection-meta.test.ts`, `test/sobject.test.ts`, `test/query.test.ts`) with `CORE_FILTER`, and
+  `test/bulk2.test.ts` with `BULK2_FILTER`
 - `seed.mjs` seeds fixture data (2500 `BigTable__c` rows for pagination tests, 8 Accounts x 2
   Contacts x 2 Opportunities) via orglet's own `/composite/sobjects` REST endpoint, standing
   in for the Bulk API v1 seeding the upstream harness normally uses
 - Requires two custom objects added to the fixture org (`examples/acme/force-app/main/default/objects/`):
   `BigTable__c`, `UpsertTable__c`
-- Last verified result (phase 0, 2026-09-25, `conformance/jsforce/README.md`): 51 passed, 2
-  failed (both dependent on Bulk API v1), 58 skipped by an explicit Jest `-t` filter excluding
-  declared phase-1 gaps (bulk, layouts, list views, tabs, theme, SOSL, identity `https://`
-  assertion, one jsforce-only-satisfiable upsert assertion)
+- Last verified result (2026-10-12, `conformance/jsforce/README.md`): core 51 passed / 0 failed / 60 excluded
+  by filter; Bulk API 2.0 12 passed / 0 failed / 5 excluded. Exclusions (Bulk v1, SOSL, UI API, tabs/theme/recent,
+  identity `https://` assertion, test defects) are classified one by one in the README
+- `conformance/run-all.sh` runs every harness leg against one fresh server; the CI `conformance` job runs it
 
 **simple-salesforce** (`conformance/python/`):
-- `conformance/python/requirements.txt`: `simple_salesforce` (unpinned) plus `cryptography==43.0.3`
+- `conformance/python/requirements.txt`: `simple-salesforce==1.12.10` plus `cryptography==43.0.3`
   pinned specifically to avoid a macOS wheel/build issue
 - `conformance/python/run.py` - custom PASS/FAIL harness (not the SDK's own test suite,
   unlike jsforce): logs in via `SalesforceLogin` (SOAP), exercises `Salesforce`/`SFType`
-  against `BASE_URL = http://localhost:8180`, `USERNAME = admin@orglet.local`, `API_VERSION =
-  59.0`
+  and the Bulk API 2.0 client against `BASE_URL` (default `http://localhost:8180`), `ORGLET_USERNAME`
+  (default `admin@orglet.local`), `API_VERSION` (default `59.0`), all read from env
   - Includes an `HttpRewriteSession` shim that rewrites `https://` back to `http://`, because
     simple-salesforce hardcodes `https://` URL construction and orglet is served over plain
     HTTP locally
-- README.md reports `simple-salesforce` conformance as 26/26 passing (phase 0 milestone M7)
+- `conformance/python/README.md` reports 29/29 passing incl. Bulk API 2.0 (2026-10-12)
 
 ## Environment Configuration
 

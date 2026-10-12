@@ -11,8 +11,8 @@ new feature work lands on a Docker-free, CI-gated baseline), two small self-cont
 changes (polymorphic lookups/TYPEOF, then roll-up summary fields, in that order because TYPEOF's
 fix touches the same parent-loading code roll-ups also need), the most isolated feature last
 before acceptance (Bulk API 2.0 persistence), and a final conformance re-run that validates the
-sum of all six changes against Johan's real Developer Edition org and both SDK conformance
-suites.
+sum of all six changes
+against the metadata retrieved from Johan's Developer Edition and both SDK conformance suites.
 
 ## Phases
 
@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles (completed 2026-10-08)
 - [x] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only (completed 2026-10-09)
 - [x] **Phase 6: Bulk API 2.0 Persistence** - Bulk jobs and results survive a server restart (completed 2026-10-10)
-- [ ] **Phase 7: Conformance Re-Run & Milestone Acceptance** - Zero warnings on Johan's DE org; both conformance suites green and documented
+- [ ] **Phase 7: Conformance Re-Run & Milestone Acceptance** - Zero warnings on Johan's DE retrieve; both conformance suites green and documented
 
 ## Phase Details
 
@@ -155,8 +155,9 @@ Plans:
 - [x] 06-06-PLAN.md — Restart/scoping/reset/reconcile/retention tests, README section, real restart smoke
 
 ### Phase 7: Conformance Re-Run & Milestone Acceptance
-**Goal**: The milestone's acceptance bar is verified directly against Johan's real Developer
-Edition org and both SDK conformance suites, with results committed and dated.
+**Goal**: The milestone's acceptance bar is verified against the metadata retrieved from Johan's
+Developer Edition (loaded locally by `orglet check`; no org is contacted) and both SDK
+conformance suites, with results committed and dated.
 **Depends on**: Phase 6
 **Requirements**: ACCEPT-01, ACCEPT-02, ACCEPT-03
 **Success Criteria** (what must be TRUE):
