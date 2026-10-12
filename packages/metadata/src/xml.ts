@@ -25,12 +25,18 @@ const parser = new XMLParser({
 
 export type XmlNode = Record<string, unknown>;
 
-/** Parse a metadata XML document and return the single root element's content. */
-export function parseMetadataXml(xml: string, expectedRoot: string): XmlNode {
+/**
+ * Parse a metadata XML document and return the single root element's content.
+ * `file`, when given, prefixes the error so a failure in a large retrieve names the offending file.
+ */
+export function parseMetadataXml(xml: string, expectedRoot: string, file?: string): XmlNode {
   const doc = parser.parse(xml) as Record<string, unknown>;
   const root = doc[expectedRoot];
+  // An empty root (`<CustomObject xmlns="..."/>`, which `sf project retrieve` writes for standard
+  // objects when only their fields/rules/record types were retrieved) parses as "": an empty node.
+  if (root === "") return {};
   if (root === undefined || root === null || typeof root !== "object") {
-    throw new Error(`Expected <${expectedRoot}> root element, found: ${Object.keys(doc).join(", ") || "nothing"}`);
+    throw new Error(`${file ? `${file}: ` : ""}Expected <${expectedRoot}> root element, found: ${Object.keys(doc).join(", ") || "nothing"}`);
   }
   return root as XmlNode;
 }
