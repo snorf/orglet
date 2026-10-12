@@ -114,15 +114,22 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
   scoping, reset, reconcile and retention tests plus a real `orglet up` kill/restart smoke,
   suite green on pglite and Postgres 16 — Phase 6 (2026-10-10)
 
+- ✓ Milestone acceptance verified and dated (2026-10-12): `orglet check --strict` (new flag, exit 1
+  on any warning) against Johan's Developer Edition retrieve reports exit 0 and 0 warnings
+  (`37 objects (2 custom), 983 fields`; baseline 2026-09-29: 15 warnings); jsforce e2e subset
+  51/0/60 (core) plus Bulk API 2.0 `bulk2.test.ts` 12/0/5 with every exclusion classified
+  (Bulk v1 by design, Data.com `Jigsaw*` fields, empty-upload semantics undocumented, two
+  upstream test defects); simple-salesforce 29/29 incl. three Bulk 2.0 checks; describe/poly/
+  rollup checks green on both SDKs; `conformance/run-all.sh` runs all eight legs in a new,
+  non-required CI job `conformance` (green on first run); `conformance/README.md` holds the
+  dated overview and both harness READMEs carry dated tables with a reason per exclusion;
+  jsforce pinned to sha `9bae14e`, `simple-salesforce==1.12.10`; Bulk 2.0 `sf__Error`
+  separator fixed to `:Name --` — Phase 7 (2026-10-12)
+
 ### Active
 
-Milestone 1, "hardening": make a real Developer Edition retrieve load with zero warnings, make
-the project buildable and testable without Docker, and put it on GitHub with CI. No GUI, no
-Flows, no Apex in this milestone.
-
-- [x] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (baseline 2026-09-29: 15; 0 since 2026-10-09)
-- [x] Both conformance suites are re-run after the changes, stay green, and the numbers in
-  `conformance/` are updated (jsforce subset now includes Bulk API 2.0 via `bulk2.test.ts`; simple-salesforce has Bulk 2.0 checks)
+Milestone 1, "hardening", is complete: all phase goals validated above. No active requirements
+until the next milestone is defined (`/gsd:complete-milestone`, then `/gsd:new-milestone`).
 
 ### Out of Scope
 
@@ -215,7 +222,7 @@ on port 8180 with the `devrandom` org schema.
 | Schema diff via information_schema, no own state table | Database is the source of truth; simpler reload | ✓ Good |
 | Phase 0 headless, GUI later | Conformance against SDKs is the real acceptance test | ✓ Good |
 | No behaviour-diffing against a real org | Developer MSA | ✓ Good |
-| Milestone 1 = hardening only (TYPEOF, roll-ups, thin baselines, key-prefix persistence, Bulk persistence, pglite, GitHub + CI) | Small milestone that makes a real DE org load clean and makes the project public and CI-tested before the GUI | — Pending |
+| Milestone 1 = hardening only (TYPEOF, roll-ups, thin baselines, key-prefix persistence, Bulk persistence, pglite, GitHub + CI) | Small milestone that makes a real DE retrieve load clean and makes the project public and CI-tested before the GUI | ✓ Good (all 7 phases complete 2026-10-12; DE retrieve 0 warnings, both SDK suites green and dated) |
 | Persist custom-object key prefixes | Alphabetical recomputation shifts prefixes when objects are added; Ids must be stable | ✓ Good (Phase 2; sibling `_orglet` schema so `reset` keeps rows, `--key-prefixes` seed for real-org Ids) |
 | pglite for tests, Docker Compose for the running server | CI without Docker, contributors without Docker; server path unchanged | ✓ Good (Phase 1; needed `maxConnections` on pglite-socket and build-before-lint in CI) |
 | Phase branches with PR to a ruleset-protected `main` | Branch protection only means something if every change goes through CI | ✓ Good (Phase 1) |
@@ -229,6 +236,10 @@ on port 8180 with the `devrandom` org schema.
 | `DmlEngine.transaction(fn)` lets a DML call join a caller transaction (savepoint-isolated, events published after the outer commit) | Per-chunk Bulk results must commit atomically with the chunk's DML or `unprocessedrecords` lies after a crash (D-19); the only deliberate engine change in the phase | ✓ Good (Phase 6) |
 | Bulk query restrictions as an AST check beside the Bulk code, `400 FEATURE_NOT_ENABLED` without `UNSUPPORTED:` prefix | REST SOQL must not drift when Bulk rules change; Salesforce rejects these constructs too, so they are not an orglet gap (D-15/D-17) | ✓ Good (Phase 6) |
 | Retention hard-coded to 7 days from `createdDate`, purged at boot and on every `/jobs` request, no override | A client must not be able to tell orglet from Salesforce; no timers, deterministic and testable by backdating rows (D-09..D-12) | ✓ Good (Phase 6) |
+| Conformance acceptance is measured, dated and reproducible: pinned SDK versions, `run.sh` default run equals the README run (two Jest invocations because Jest's `-t` filter cannot separate identically named v1/v2 tests), `conformance/run-all.sh` shared by CI and local runs | Numbers in a README are only evidence if the command that produced them is fixed and re-runnable (D-04/D-05/D-20) | ✓ Good (Phase 7) |
+| Every excluded upstream test carries a classification and reason; no upstream test files are patched; fidelity bugs the suites expose are fixed only with a documented Salesforce basis (the `sf__Error` separator was; empty-upload semantics were not, so excluded) | Keeps the `UNSUPPORTED`/honesty principle for the conformance record itself (D-02/D-21) | ✓ Good (Phase 7) |
+| `orglet check --strict` exits 1 on any warning; the DE retrieve check is run locally only, recording exit code, warning count and the summary line | Gives users and the acceptance record a machine-checkable gate without putting Level 1 metadata in the repo or CI (D-16/D-17) | ✓ Good (Phase 7) |
+| CI `conformance` job added but not a required check on `main` yet | New job; promote to required once stable, as an explicit ruleset change (D-14) | — Pending |
 
 ## Evolution
 
@@ -248,4 +259,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-10 after Phase 6*
+*Last updated: 2026-10-12 after Phase 7 (milestone 1 complete)*
