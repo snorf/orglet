@@ -51,7 +51,7 @@ created: 2026-10-12
 | 07-05-02 | 07-05 | 4 | ACCEPT-02 | grep / actionlint | `grep -nE '^  (test-pglite\|test-postgres\|conformance):$' .github/workflows/ci.yml` | ✅ (extend) | ⬜ pending |
 | 07-05-03 | 07-05 | 4 | ACCEPT-02 | checkpoint:decision (push) | `grep -cE 'Johan: (push\|defer)' 07-05-SUMMARY.md` | n/a | ⬜ pending |
 | 07-05-04 | 07-05 | 4 | ACCEPT-02 | CI job `conformance` | `gh run list --branch gsd/phase-07-conformance-re-run-milestone-acceptance --workflow CI --limit 1 --json conclusion` | n/a | ⬜ pending |
-| 07-06-01 | 07-06 | 5 | ACCEPT-03 | grep sweep (stale text) | `grep -rnE "soql-for\|Bulk API is not implemented\|today: 15\|real Developer Edition org" README.md conformance .planning/ROADMAP.md .planning/PROJECT.md .planning/codebase` (expect none) | ✅ | ⬜ pending |
+| 07-06-01 | 07-06 | 5 | ACCEPT-03 | grep sweep (stale text) | `grep -rnE "soql-for\|Bulk API is not implemented\|today: 15\|real Developer Edition org" README.md conformance .planning/ROADMAP.md .planning/PROJECT.md .planning/codebase --exclude-dir=.cache --exclude-dir=.venv --exclude-dir=node_modules` (expect none) | ✅ | ⬜ pending |
 | 07-06-02 | 07-06 | 5 | ACCEPT-02, ACCEPT-03 | full suite + external re-run on final code (`final7` :8094) | `pnpm build && pnpm lint && pnpm test && PORT=8094 ORG_SCHEMA=final7 PYTHON=conformance/describe-check/.venv/bin/python conformance/run-all.sh` | ❌ conformance/README.md new | ⬜ pending |
 | 07-06-03 | 07-06 | 5 | ACCEPT-01 | manual-local (DE retrieve, LAST) | `node packages/cli/dist/index.js check --strict --project ~/Development.nosync/devrandom-metadata` | n/a | ⬜ pending |
 
