@@ -134,4 +134,31 @@ describe("readSourceProject", () => {
     expect(p.objects[0]?.fields.map((f) => f.fullName)).toEqual(["A__c"]);
     expect(p.objects[0]?.validationRules[0]?.name).toBe("R");
   });
+
+  it.each([
+    ["self-closing", "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"/>"],
+    ["open and close", "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\"></CustomObject>"],
+    ["whitespace-only", "<CustomObject xmlns=\"http://soap.sforce.com/2006/04/metadata\">\n  \n</CustomObject>"],
+  ])("treats an empty <CustomObject/> (%s) as an object with no metadata of its own, still reading its fields", async (_form, objectXml) => {
+    // `sf project retrieve` writes these for standard objects when only their children were retrieved.
+    const root = await project({
+      "objects/Account/Account.object-meta.xml": `<?xml version="1.0" encoding="UTF-8"?>\n${objectXml}`,
+      "objects/Account/fields/Foo__c.field-meta.xml": field("<fullName>Foo__c</fullName><type>Text</type><length>10</length>"),
+    });
+    const p = await readSourceProject(root);
+    expect(p.objects).toHaveLength(1);
+    expect(p.objects[0]?.name).toBe("Account");
+    expect(p.objects[0]?.label).toBeUndefined();
+    expect(p.objects[0]?.fields.map((f) => f.fullName)).toEqual(["Foo__c"]);
+    expect(p.objects[0]?.validationRules).toEqual([]);
+    expect(p.objects[0]?.recordTypes).toEqual([]);
+    expect(p.warnings).toEqual([]);
+  });
+
+  it("names the object file when its root element is not <CustomObject>", async () => {
+    const root = await project({
+      "objects/Foo__c/Foo__c.object-meta.xml": field("<fullName>X__c</fullName>"),
+    });
+    await expect(readSourceProject(root)).rejects.toThrow(/Foo__c\.object-meta\.xml: Expected <CustomObject> root element, found: CustomField/);
+  });
 });
