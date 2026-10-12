@@ -15,6 +15,21 @@ tests and CI, and eventually a small self-hosted CRM that can be migrated to the
 A Salesforce client pointed at orglet cannot tell the difference for the surface orglet claims to
 support, and anything it does not support is logged as `UNSUPPORTED:<area>` rather than faked.
 
+## Current State
+
+**Shipped:** v1.0 "hardening" on 2026-10-12 (phases 1-7, 37 plans, PRs #1-#7; archive in
+`.planning/milestones/`). The headless Salesforce-compatible API on Postgres loads Johan's Developer
+Edition retrieve with zero `UNSUPPORTED` warnings under `orglet check --strict`, runs its 427-test suite
+on embedded pglite without Docker, and is verified by pinned jsforce and simple-salesforce conformance
+runs (jsforce 51/0/60 + Bulk 2.0 12/0/5, simple-salesforce 29/29) executed in CI on every push.
+
+**Next milestone:** not yet defined (`/gsd:new-milestone`). Candidates, in the order the original plan
+suggested: UI API + LWC/SLDS 1 front end (the "small self-hosted CRM" promise), the security model
+(profiles, permission sets, FLS, OWD), Flow interpreter and CDC/Platform Events, Apex runtime behind
+`TriggerExecutor`. Carry-over tech debt from the v1.0 audit: POLY-01 formula leg (sigha colon syntax),
+combined Bulk-ingest + roll-up test, roll-up re-backfill (`orglet rollup --recompute`), OwnerId
+narrowing, `conformance` CI job as a required check.
+
 ## Requirements
 
 ### Validated
@@ -128,8 +143,7 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
 
 ### Active
 
-Milestone 1, "hardening", is complete: all phase goals validated above. No active requirements
-until the next milestone is defined (`/gsd:complete-milestone`, then `/gsd:new-milestone`).
+None. v1.0 shipped 2026-10-12; the next milestone's requirements are defined by `/gsd:new-milestone`.
 
 ### Out of Scope
 
@@ -150,29 +164,26 @@ until the next milestone is defined (`/gsd:complete-milestone`, then `/gsd:new-m
 
 ## Context
 
-**Codebase.** pnpm monorepo, TypeScript strict, Node 22, ESM. Layered packages
+**Codebase (after v1.0).** pnpm monorepo, TypeScript strict, Node 22, ESM. Layered packages
 `metadata → schema → {formula, soql} → engine → api → cli`, plus the vendored `sigha` formula
-engine synced by `scripts/sync-sigha.sh` and never hand-edited. 17 commits before GSD, 119 unit
-tests in 12 files (vitest), five of them Postgres-backed using one random `test_<hex>` schema per
-file. Full map in `.planning/codebase/` (STACK, INTEGRATIONS, ARCHITECTURE, STRUCTURE,
-CONVENTIONS, TESTING, CONCERNS).
+engine synced by `scripts/sync-sigha.sh` and never hand-edited. ~14 600 lines of source (excl. sigha),
+427 tests in 25 files (vitest) running on embedded pglite by default and on Postgres 16 when
+`ORGLET_DATABASE_URL` is set. CI: `test-pglite`, `test-postgres`, `conformance`. Conformance harnesses
+under `conformance/` (jsforce pinned to `9bae14e`, `simple-salesforce==1.12.10`, describe/poly/rollup
+checks, `run-all.sh`). Full map in `.planning/codebase/` (STACK, INTEGRATIONS, ARCHITECTURE, STRUCTURE,
+CONVENTIONS, TESTING, CONCERNS); the codebase map predates v1.0 in places.
 
-**Known gaps found by the codebase map** (`.planning/codebase/CONCERNS.md`):
-- Polymorphic targets resolve to the first defined target in
-  `packages/soql/src/compile.ts` and `packages/formula/src/compile.ts`
-- `Summary`, `ExternalLookup`, `IndirectLookup`, `MetadataRelationship` field types are skipped
-  at load in `packages/metadata/src/sfdx.ts`
-- Custom-object key prefixes are recomputed by alphabetical index on every schema build in
-  `packages/metadata/src/build.ts` with no persistence
-- ID counter is process-local and unsynchronised (`packages/schema/src/ids.ts`)
-- `/composite` with `allOrNone` does not roll back earlier committed subrequests
-  (`packages/api/src/routes/composite.ts`)
-- Bulk jobs are persisted but processed synchronously inside the request (no worker); uploaded
-  CSV and results are buffered in full (Postgres TOAST ceiling, no streaming); session tokens
-  are in-memory and unbounded
-- Default auth is permissive (any password); `sharingModel` is parsed but unused
-- Formula evaluation is per row after fetch, child relationships compile to correlated subqueries
-- No `.github`, no CI config, tests need Docker Postgres on port 5433
+**Known gaps (updated after v1.0).** Closed in v1.0: polymorphic first-target resolution (phase 4),
+`Summary` fields skipped at load (phase 5), alphabetical key-prefix recomputation (phase 2), no CI /
+Docker-only tests (phase 1), in-memory Bulk jobs (phase 6). Still open:
+- `ExternalLookup`, `IndirectLookup`, `MetadataRelationship` field types are skipped at load
+  (`UNSUPPORTED:field-type`)
+- ID counter is process-local (monotonic logical clock since phase 2, still unsynchronised across processes)
+- `/composite` with `allOrNone` does not roll back earlier committed subrequests (`UNSUPPORTED:composite-rollback`)
+- Bulk jobs are processed synchronously inside the request (no worker); CSV and results buffered in full
+- Default auth is permissive (any password); session tokens in-memory and unbounded; `sharingModel` unused
+- Formula evaluation is per row after fetch; polymorphic formula references need sigha colon syntax (D-16)
+- Roll-ups: no re-backfill on definition change, no date-literal filters, no parent row locking
 
 **Verified baseline 2026-09-29.** `orglet check` against Johan's Developer Edition retrieve
 (`~/Development.nosync/devrandom-metadata`, Level 1 data): 23 objects (2 custom), 861 fields,
@@ -259,4 +270,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-12 after Phase 7 (milestone 1 complete)*
+*Last updated: 2026-10-12 after v1.0 milestone*
