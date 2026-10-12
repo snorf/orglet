@@ -120,8 +120,8 @@ Milestone 1, "hardening": make a real Developer Edition retrieve load with zero 
 the project buildable and testable without Docker, and put it on GitHub with CI. No GUI, no
 Flows, no Apex in this milestone.
 
-- [ ] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (baseline 2026-09-29: 15; 0 since 2026-10-09)
-- [ ] Both conformance suites are re-run after the changes, stay green, and the numbers in
+- [x] Johan's Developer Edition retrieve loads with zero `UNSUPPORTED` warnings (baseline 2026-09-29: 15; 0 since 2026-10-09)
+- [x] Both conformance suites are re-run after the changes, stay green, and the numbers in
   `conformance/` are updated (jsforce subset now includes Bulk API 2.0 via `bulk2.test.ts`; simple-salesforce has Bulk 2.0 checks)
 
 ### Out of Scope
