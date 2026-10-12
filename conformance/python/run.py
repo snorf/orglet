@@ -3,12 +3,18 @@
 Conformance check of orglet (a Salesforce-compatible emulator) against the
 simple-salesforce Python SDK.
 
-The orglet server must already be listening at BASE_URL with permissive auth
-(any password for USERNAME). This script never stops at the first failure:
+The orglet server must already be listening at BASE_URL (env, default
+http://localhost:8180) with permissive auth (any password for ORGLET_USERNAME,
+default admin@orglet.local). API_VERSION (env, default 59.0) selects the REST
+version. This script never stops at the first failure:
 every check runs in isolation, exceptions are caught, and a PASS/FAIL line is
 printed for each one, followed by a final summary table.
 """
+import csv
+import io
+import os
 import sys
+import time
 import traceback
 from contextlib import contextmanager
 
@@ -20,9 +26,9 @@ from simple_salesforce.exceptions import (
     SalesforceResourceNotFound,
 )
 
-BASE_URL = "http://localhost:8180"
-USERNAME = "admin@orglet.local"
-API_VERSION = "59.0"
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:8180")
+USERNAME = os.environ.get("ORGLET_USERNAME", "admin@orglet.local")
+API_VERSION = os.environ.get("API_VERSION", "59.0")
 
 results = []  # (name, "PASS"/"FAIL", detail)
 
@@ -71,13 +77,7 @@ def main():
     sf = Salesforce(session_id=session_id, instance_url=BASE_URL, version=API_VERSION, session=session)
 
     def composite_create(type_name, records):
-        """Create records via composite/sobjects. Used only to arrange fixtures
-        for checks below that don't themselves test SFType.create() -- see the
-        note on 2a/2b: SFType.create()/metadata() POST/GET to a URL with a
-        trailing slash, which orglet's router 404s on, so relying on
-        sf.<Type>.create() to set up later fixtures would cascade-fail
-        unrelated checks. composite/sobjects has no trailing slash and is
-        independently verified working in 9a."""
+        """Create records via composite/sobjects to arrange fixtures for later checks, so a failure in a create check does not cascade into unrelated ones."""
         payload = {"allOrNone": True, "records": [{"attributes": {"type": type_name}, **r} for r in records]}
         res = sf.restful("composite/sobjects", method="POST", json=payload)
         for r in res:
@@ -100,12 +100,6 @@ def main():
         assert "objectDescribe" in m, m
 
     # ---- 2. create Account + Contact -------------------------------------------------
-    # These two checks are graded literally as specified. Note: SFType.create() POSTs to
-    # self.base_url, which simple_salesforce builds WITH a trailing slash
-    # (".../sobjects/Account/"); orglet's Fastify router only registers the no-slash path
-    # and 404s on this, so both are expected to FAIL -- see the report for detail. Fixture
-    # data for later checks is arranged via composite_create() instead, so this bug does
-    # not cascade into unrelated checks below.
     with check("2a create Account -> id starts with 001"):
         res = sf.Account.create({"Name": "Acme Energy Co", "Industry": "Energy", "Website": "https://acme.example.com"})
         assert res["success"] is True, res
@@ -116,7 +110,7 @@ def main():
         assert res["success"] is True, res
         assert res["id"].startswith("003"), res["id"]
 
-    # Fixtures for checks 3-5, arranged via composite_create (unaffected by the 2a/2b bug).
+    # Fixtures for checks 3-5, arranged via composite_create.
     account_id = None
     contact_id = None
     try:
@@ -177,8 +171,7 @@ def main():
     with check("5d query_more via nextRecordsUrl (forced batchSize=200)"):
         prefix = "PageTest-"
         total = 210
-        # Seeded via composite_create (chunked at 200, matching the real Collections API
-        # limit) rather than a loop of sf.Account.create(), which hits the 2a/2b bug.
+        # Seeded via composite_create, chunked at 200 (the Collections API limit).
         pending = [{"Name": f"{prefix}{i:04d}"} for i in range(total)]
         while pending:
             composite_create("Account", pending[:200])
@@ -206,8 +199,7 @@ def main():
             assert errs[0]["message"] == "Website is required for direct customers.", errs
 
     # ---- 7. delete -----------------------------------------------------------------
-    # Fixture arranged via composite_create (sf.Account.delete() itself uses urljoin,
-    # like update()/upsert() above, and is unaffected by the 2a/2b trailing-slash bug).
+    # Fixture arranged via composite_create.
     delete_id = None
     with check("7a Account.delete -> 204"):
         delete_id = composite_create("Account", [{"Name": "ToDelete Inc"}])[0]
@@ -299,6 +291,41 @@ def main():
             raise AssertionError("expected SalesforceExpiredSession")
         except SalesforceExpiredSession:
             pass
+
+    # ---- 11. Bulk API 2.0 (simple-salesforce bulk2 client) ------------------------------
+    tag = f"Bulk2Py-{int(time.time())}"
+    bulk_job_id = None
+    bulk_ids = []
+    with check("11a bulk2 insert -> per-row successful and failed results"):
+        # Two columns: with a single column a blank Name serialises to an empty CSV line, which is skipped rather than failed.
+        rows = [{"Name": f"{tag}-{i}", "Industry": "Energy"} for i in range(1, 4)] + [{"Name": "", "Industry": "Energy"}]
+        summary = sf.bulk2.Account.insert(records=rows, wait=1)
+        assert len(summary) == 1, summary
+        bulk_job_id = summary[0]["job_id"]
+        assert summary[0]["numberRecordsProcessed"] == 4, summary
+        assert summary[0]["numberRecordsFailed"] == 1, summary
+        ok = list(csv.DictReader(io.StringIO(sf.bulk2.Account.get_successful_records(bulk_job_id))))
+        assert sorted(r["Name"] for r in ok) == [f"{tag}-1", f"{tag}-2", f"{tag}-3"], ok
+        assert all(r["sf__Id"].startswith("001") and r["sf__Created"] == "true" for r in ok), ok
+        bulk_ids = [r["sf__Id"] for r in ok]
+        failed = list(csv.DictReader(io.StringIO(sf.bulk2.Account.get_failed_records(bulk_job_id))))
+        assert len(failed) == 1, failed
+        assert failed[0]["sf__Error"].startswith("REQUIRED_FIELD_MISSING:"), failed
+
+    with check("11b bulk2 query job returns exactly the inserted rows"):
+        assert bulk_ids
+        chunks = list(sf.bulk2.Account.query(f"SELECT Id, Name FROM Account WHERE Name LIKE '{tag}-%'", wait=1))
+        got = [r for chunk in chunks for r in csv.DictReader(io.StringIO(chunk))]
+        assert sorted(r["Id"] for r in got) == sorted(bulk_ids), got
+        assert sorted(r["Name"] for r in got) == [f"{tag}-1", f"{tag}-2", f"{tag}-3"], got
+
+    with check("11c bulk2 delete by Id -> all processed, REST query no longer finds them"):
+        assert bulk_ids
+        summary = sf.bulk2.Account.delete(records=[{"Id": i} for i in bulk_ids], wait=1)
+        assert sum(s["numberRecordsProcessed"] for s in summary) == 3, summary
+        assert sum(s["numberRecordsFailed"] for s in summary) == 0, summary
+        res = sf.query(f"SELECT Id FROM Account WHERE Name LIKE '{tag}-%'")
+        assert res["totalSize"] == 0, res
 
     # ---- summary -----------------------------------------------------------------
     print("\n=== Summary ===")

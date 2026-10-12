@@ -146,7 +146,7 @@ describe("ingest jobs", () => {
     const failed = parseResult(await get(`${V}/jobs/ingest/${jobId}/failedResults`));
     expect(failed.header).toEqual(["sf__Id", "sf__Error", "Name", "Industry"]);
     expect(failed.rows).toHaveLength(1);
-    expect(failed.rows[0]?.[1]).toContain("REQUIRED_FIELD_MISSING");
+    expect(failed.rows[0]?.[1]).toBe("REQUIRED_FIELD_MISSING:Required fields are missing: [Name]:Name --");
 
     const unprocessed = parseResult(await get(`${V}/jobs/ingest/${jobId}/unprocessedrecords`));
     expect(unprocessed.header).toEqual(["Name", "Industry"]);

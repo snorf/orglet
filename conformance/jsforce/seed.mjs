@@ -13,7 +13,8 @@
 // sobject.test.ts's relationship-based find/select/sort tests (needs
 // Accounts with related Contacts and Opportunities) to have real data to
 // run against, using orglet's SObject Collections API
-// (POST/DELETE /composite/sobjects) since the Bulk API is not implemented.
+// (POST/DELETE /composite/sobjects)
+// (independent of the Bulk API, so seeding works whatever the bulk test results are).
 //
 // Usage:
 //   BASE_URL=http://localhost:8081 TOKEN=<access_token> node seed.mjs

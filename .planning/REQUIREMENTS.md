@@ -129,12 +129,12 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Acceptance
 
-- [ ] **ACCEPT-01**: `orglet check` against Johan's Developer Edition retrieve reports zero
+- [x] **ACCEPT-01**: `orglet check` against Johan's Developer Edition retrieve reports zero
   `UNSUPPORTED` warnings (baseline 2026-09-29: 15)
-- [ ] **ACCEPT-02**: The `simple-salesforce` conformance script and the `jsforce` e2e subset
+- [x] **ACCEPT-02**: The `simple-salesforce` conformance script and the `jsforce` e2e subset
   are re-run after all changes and stay green; previously excluded Bulk tests are included
   where Bulk API 2.0 now covers them
-- [ ] **ACCEPT-03**: `conformance/` READMEs are updated with the current pass/fail/excluded
+- [x] **ACCEPT-03**: `conformance/` READMEs are updated with the current pass/fail/excluded
   numbers and the reason for every remaining exclusion
 
 ## v2 Requirements
@@ -226,9 +226,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BULK-03 | Phase 6 | Complete |
 | BULK-04 | Phase 6 | Complete |
 | BULK-05 | Phase 6 | Complete |
-| ACCEPT-01 | Phase 7 | Pending |
-| ACCEPT-02 | Phase 7 | Pending |
-| ACCEPT-03 | Phase 7 | Pending |
+| ACCEPT-01 | Phase 7 | Complete |
+| ACCEPT-02 | Phase 7 | Complete |
+| ACCEPT-03 | Phase 7 | Complete |
 
 **Coverage:**
 - v1 requirements: 39 total

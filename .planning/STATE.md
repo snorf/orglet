@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: "Phase 6 complete and verified (4/4) on gsd/phase-06-bulk-api-2-0-persistence; next: open PR, then /gsd:discuss-phase 7"
-last_updated: "2026-10-10T19:11:17.165Z"
-last_activity: 2026-10-10
+stopped_at: Completed 07-06-PLAN.md
+last_updated: "2026-10-12T12:27:28.276Z"
+last_activity: 2026-10-12
 progress:
   total_phases: 7
-  completed_phases: 6
-  total_plans: 31
-  completed_plans: 31
+  completed_phases: 7
+  total_plans: 37
+  completed_plans: 37
   percent: 0
 ---
 
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-09-29)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 7 — Conformance Re-Run & Milestone Acceptance (not yet discussed)
+**Current focus:** Phase 07 — conformance-re-run-milestone-acceptance
 
 ## Current Position
 
-Phase: 7
+Phase: 07
 Plan: Not started
-Status: Phase 6 verified; phase 7 ready for discussion
-Last activity: 2026-10-10
+Status: Phase complete — ready for verification
+Last activity: 2026-10-12
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -85,6 +85,11 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 06 P04 | 25min | 3 tasks | 6 files |
 | Phase 06 P05 | 20min | 2 tasks | 7 files |
 | Phase 06 P06 | n/a | 4 tasks | 2 files |
+| Phase 07 P02 | 15min | 2 tasks | 3 files |
+| Phase 07 P01 | 10min | 2 tasks | 5 files |
+| Phase 07 P03 | n/a | 3 tasks | 1 files |
+| Phase 07 P04 | 15min | 2 tasks | 3 files |
+| Phase 07 P06 | 20min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -149,6 +154,8 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-03: setJobState is sole state writer (TRANSITIONS table); retention basis created_date, 7 days hard-coded; reconcile fails UploadComplete/InProgress with locked ServerRestarted messages
 - [Phase 06]: Bulk ingest processing errors roll back the chunk and set job Failed with InternalServerError message; DELETABLE.ingest includes UploadComplete
 - [Phase 06]: Bulk query rejection wording is orglet's own (undocumented by Salesforce); semi-joins accepted; query abort from UploadComplete/InProgress, delete from JobComplete/Aborted/Failed
+- [Phase 07]: 07-01: --strict only affects check; Bulk sf__Error format is 'CODE:message:fields --'
+- [Phase 07]: 07-03: empty Bulk 2.0 upload and Jigsaw* tests excluded as not-implemented, upsert-without-Id as test-defect; no orglet code change (07-04 branch B)
 
 ### Pending Todos
 
@@ -162,6 +169,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-10T19:04:44.145Z
-Stopped at: Phase 6 complete and verified (4/4) on gsd/phase-06-bulk-api-2-0-persistence; next: open PR, then /gsd:discuss-phase 7
-Resume file: .planning/phases/06-bulk-api-2-0-persistence/06-VERIFICATION.md
+Last session: 2026-10-12T12:25:12.498Z
+Stopped at: Completed 07-06-PLAN.md
+Resume file: None

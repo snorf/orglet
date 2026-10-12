@@ -11,8 +11,8 @@ new feature work lands on a Docker-free, CI-gated baseline), two small self-cont
 changes (polymorphic lookups/TYPEOF, then roll-up summary fields, in that order because TYPEOF's
 fix touches the same parent-loading code roll-ups also need), the most isolated feature last
 before acceptance (Bulk API 2.0 persistence), and a final conformance re-run that validates the
-sum of all six changes against Johan's real Developer Edition org and both SDK conformance
-suites.
+sum of all six changes
+against the metadata retrieved from Johan's Developer Edition and both SDK conformance suites.
 
 ## Phases
 
@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Polymorphic Lookups & SOQL TYPEOF** - Polymorphic reads agree with the write path; TYPEOF compiles (completed 2026-10-08)
 - [x] **Phase 5: Roll-Up Summary Fields** - Summary fields load, recompute correctly, and are read-only (completed 2026-10-09)
 - [x] **Phase 6: Bulk API 2.0 Persistence** - Bulk jobs and results survive a server restart (completed 2026-10-10)
-- [ ] **Phase 7: Conformance Re-Run & Milestone Acceptance** - Zero warnings on Johan's DE org; both conformance suites green and documented
+- [ ] **Phase 7: Conformance Re-Run & Milestone Acceptance** - Zero warnings on Johan's DE retrieve; both conformance suites green and documented
 
 ## Phase Details
 
@@ -155,15 +155,23 @@ Plans:
 - [x] 06-06-PLAN.md — Restart/scoping/reset/reconcile/retention tests, README section, real restart smoke
 
 ### Phase 7: Conformance Re-Run & Milestone Acceptance
-**Goal**: The milestone's acceptance bar is verified directly against Johan's real Developer
-Edition org and both SDK conformance suites, with results committed and dated.
+**Goal**: The milestone's acceptance bar is verified against the metadata retrieved from Johan's
+Developer Edition (loaded locally by `orglet check`; no org is contacted) and both SDK
+conformance suites, with results committed and dated.
 **Depends on**: Phase 6
 **Requirements**: ACCEPT-01, ACCEPT-02, ACCEPT-03
 **Success Criteria** (what must be TRUE):
   1. `orglet check` against Johan's Developer Edition retrieve reports zero `UNSUPPORTED` warnings of any kind (baseline 2026-09-29: 15).
   2. The `simple-salesforce` conformance script and the `jsforce` e2e subset are both re-run after all milestone changes and stay green, with previously-excluded Bulk tests classified (v1-still-excluded vs v2-now-included) and included where Bulk API 2.0 now covers them.
   3. Both `conformance/` READMEs are updated with current, dated pass/fail/excluded numbers and the reason for every remaining exclusion.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [x] 07-01-PLAN.md — `orglet check --strict` (CLI + usage + tests) and the Bulk 2.0 `sf__Error` separator fix (` --`)
+- [x] 07-02-PLAN.md — simple-salesforce harness: env vars, three Bulk 2.0 checks, `simple-salesforce==1.12.10` pin, new README with measured numbers
+- [x] 07-03-PLAN.md — jsforce `run.sh`: pinned sha, stamp-guarded build, two Jest invocations; unfiltered bulk2 run; Johan's empty-CSV/disposition decision
+- [x] 07-04-PLAN.md — apply the decision (empty-CSV fix or exclusion), final BULK2_FILTER, measured green run, jsforce README rewrite
+- [x] 07-05-PLAN.md — `conformance/run-all.sh`, CI `conformance` job (cache on pinned sha, not required), targeted-check READMEs, push with Johan's OK
+- [x] 07-06-PLAN.md — stale-doc corrections, final re-run, `conformance/README.md` overview, DE retrieve check last, ACCEPT ticks
 
 ## Progress
 
@@ -178,4 +186,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Polymorphic Lookups & SOQL TYPEOF | 7/7 | Complete | 2026-10-08 |
 | 5. Roll-Up Summary Fields | 7/7 | Complete | 2026-10-09 |
 | 6. Bulk API 2.0 Persistence | 6/6 | Complete    | 2026-10-10 |
-| 7. Conformance Re-Run & Milestone Acceptance | 0/TBD | Not started | - |
+| 7. Conformance Re-Run & Milestone Acceptance | 0/6 | Planned | - |

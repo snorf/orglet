@@ -82,9 +82,10 @@ function queryJobInfo(job: QueryJob): Json {
   return info;
 }
 
+/** Bulk 2.0 failedResults sf__Error: "CODE:message:fields --" (space before the trailing "--", as Salesforce returns it). */
 function formatSaveError(e: SaveError | undefined): string {
   const err = e ?? { statusCode: "UNKNOWN_EXCEPTION", message: "", fields: [] };
-  return `${err.statusCode}:${err.message}:${err.fields.join(",")}--`;
+  return `${err.statusCode}:${err.message}:${err.fields.join(",")} --`;
 }
 
 /**

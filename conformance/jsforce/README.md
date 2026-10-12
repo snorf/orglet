@@ -10,10 +10,14 @@ Salesforce scratch org.
   the tests assume exists. A real scratch org used by upstream jsforce e2e tests is created
   with `hasSampleData: true` and has its `BigTable__c` bulk-loaded by
   `scripts/org-setup.mjs`; orglet has neither, so this script does the equivalent seeding
-  over the REST API (`POST/DELETE /composite/sobjects`, since orglet doesn't implement the
-  Bulk API the upstream script uses).
-- `run.sh` — clones/updates jsforce `main` into `.cache/jsforce`, installs deps, builds it,
-  optionally seeds fixture data, and runs the test file subset below.
+  over the REST API (`POST/DELETE /composite/sobjects`); the upstream script uses Bulk API v1, which orglet does not implement.
+- `run.sh` — checks out jsforce at a pinned commit (`JSFORCE_SHA` in run.sh: `9bae14e`, jsforce 3.10.26) into
+  `.cache/jsforce`, builds it once per pin (stamp file `.orglet-built`), optionally seeds, then runs two Jest
+  invocations: the four core files with `CORE_FILTER`, then `test/bulk2.test.ts` with `BULK2_FILTER`. The default
+  run is the run documented below. Upgrading the pin is a deliberate change that re-measures this README.
+
+CI runs the default `run.sh` in the `conformance` job of `.github/workflows/ci.yml` on every push and pull
+request (not a required check).
 
 ## Custom metadata added for this
 
@@ -59,11 +63,12 @@ cd conformance/jsforce
 ./run.sh http://localhost:8081 "$TOKEN" --seed
 ```
 
-`--seed` runs `seed.mjs` first. Omit it on repeat runs against the same org/schema if you
+`./run.sh` with no extra arguments reproduces the numbers below. `--seed` runs `seed.mjs` first. Omit it on repeat runs against the same org/schema if you
 don't want more BigTable\_\_c/Account/Contact/Opportunity rows piled on top of the previous
 run's (reset the schema instead — see step 1 — if you want a clean slate).
 
-To run a different file subset, pass test paths after `--`:
+Arguments after `--` replace BOTH default runs with one `npx jest --forceExit <args>` (a broader run; its
+numbers are not the documented ones), e.g. a different file subset:
 
 ```sh
 ./run.sh http://localhost:8081 "$TOKEN" -- test/query.test.ts
@@ -71,9 +76,8 @@ To run a different file subset, pass test paths after `--`:
 
 ### 4. Stop the server
 
-```sh
-pkill -f 'packages/cli/dist/index.js up'
-```
+Stop the server with `kill <pid>` of the `up` process and clean up with
+`node packages/cli/dist/index.js reset --org-schema jsconf --drop-prefixes`.
 
 ## Env vars jsforce's own test harness reads
 
@@ -86,104 +90,60 @@ From `test/helper/env.ts` / `test/config/index.ts`, picked up automatically by
 | `SF_ACCESS_TOKEN` | `accessToken` |
 | `SF_USERNAME` / `SF_PASSWORD` | only used by the SOAP/OAuth2 login describe blocks, which are `describe.skip`-ed in `connection-session.test.ts` — not needed here |
 
-## Test files run, and expected results
+## Results
 
-Run against jsforce `main` @ `9bae14ea0f1b9dff3b0cb0862a3e5f525f25a29f`, orglet examples/acme
-with the two objects above, after `seed.mjs` (2500 BigTable\_\_c rows, 8 Accounts x 2
-Contacts x 2 Opportunities each).
+Measured with orglet commit `492c66a`, Node v22.23.3, after `seed.mjs` on a fresh org schema (2500
+BigTable\_\_c rows, 8 Accounts x 2 Contacts x 2 Opportunities each). "Excluded by filter" counts tests Jest
+reports as skipped; run 1 includes the Bulk v1 copies re-registered by the import quirk (16 per importing file).
 
-| File | Total | Pass | Fail | Skip | Notes |
-|---|---|---|---|---|---|
-| `test/connection-crud.test.ts` | 15 own | 11 | 4 | 0 | single/multi record CRUD passes; upsert/search failures below |
-| `test/query.test.ts` | 21 own | 16 | 5 | 0 | big-table pagination (queryMore/autoFetch/maxFetch) all pass |
-| `test/connection-meta.test.ts` | 15 | 6 | 9 | 0 | describe/limits pass; recent/updated/deleted/identity/tabs/theme fail |
-| `test/sobject.test.ts` | 28 | 12 | 16 | 0 | find/select/sort/include all pass; all layout/listview APIs fail |
-| `test/connection-session.test.ts` | 12 | 1 | 0 | 11 | only the non-network `urls` describe block runs; SOAP/OAuth2 blocks are `describe.skip`-ed upstream |
-| `test/bulk.test.ts` | 16 | 2 | 14 | 0 | Bulk API is not implemented in orglet (404 on every job endpoint); runs in ~2s so it's included |
+### Run 1: core files (connection-crud, connection-meta, sobject, query)
 
-**Quirk**: `connection-crud.test.ts` and `query.test.ts` both `import { insertAccounts } from
-'./bulk.test'`. Because jsforce's test files register `it()`/`describe()` at module top
-level, importing `bulk.test.ts` as a module also re-registers *all of its own tests* into
-whichever file is currently running (a Jest/CommonJS quirk in the upstream suite, not
-something specific to orglet). So a standalone run of `connection-crud.test.ts` reports 31
-tests (15 own + 16 from `bulk.test.ts`), and `query.test.ts` reports 37 (21 own + 16). The
-table above only counts each file's own test cases once.
+| Date | jsforce | orglet commit | Node | Passed | Failed | Excluded by filter |
+|---|---|---|---|---|---|---|
+| 2026-10-12 | 9bae14e (3.10.26) | 492c66a | v22.23.3 | 51 | 0 | 60 |
 
-### Expected/declared gaps (not orglet bugs — pre-declared out of scope)
+### Run 2: test/bulk2.test.ts
 
-- **Bulk API** — not implemented (`bulk.test.ts`, `bulk2.test.ts`, and any test calling
-  `conn.bulk.load()`/`Query#update`/`Query#destroy` past the bulk threshold): 404 on
-  `/services/async/*` and `/services/data/*/jobs/ingest`.
-- **SOSL / search** — the `/search` endpoint exists and returns a well-formed
-  `{"searchRecords":[]}`, but never matches anything (stub); `connection-crud.test.ts`'s
-  "should search records" fails for this reason *and* because it depends on
-  `insertAccounts()` (Bulk API).
-- **`FOR VIEW` SOQL clause** — orglet returns a clean `UNSUPPORTED:soql-for` error.
-- **Recently viewed items** (`conn.recent()`, `GET /recent`) — 404.
-- **describeLayouts family** (`.layouts()`, named layouts, `.compactLayouts()`,
-  `.approvalLayouts()`) — all 404 under `/sobjects/<Type>/describe/...`.
-- Streaming, Metadata/Tooling API, Apex REST, Chatter — not exercised by this file subset.
+| Date | jsforce | orglet commit | Node | Passed | Failed | Excluded by filter |
+|---|---|---|---|---|---|---|
+| 2026-10-12 | 9bae14e (3.10.26) | 492c66a | v22.23.3 | 12 | 0 | 5 |
 
-### Other findings (not pre-declared gaps) — see the conformance run report for HTTP-level detail
+## Exclusions
 
-- `GET /sobjects/<Type>/updated`, `/deleted`, `GET /tabs`, `GET /theme` — all 404, not
-  implemented.
-- `GET /sobjects/<Type>/listviews` (and its `/describe`, `/results`, `/explain` sub-paths) —
-  404, not implemented.
-- `explain=<soql>` on `GET /query` (and on `.../listviews/<id>/explain`) — orglet ignores the
-  `explain` param and tries to parse an empty SOQL string, returning
-  `MALFORMED_QUERY: unexpected token: end of query` instead of a plan or a clean
-  UNSUPPORTED error.
-- `PATCH /sobjects/<Type>/<extIdField>/<value>` on a duplicate external ID returns
-  `300 Multiple Choices` with `[{"message":...,"errorCode":"MULTIPLE_CHOICES"}]` instead of
-  an array of matching record URLs (the documented Salesforce shape), so jsforce's
-  `err.data` isn't an array of strings as the test (and jsforce's own types) expect.
-- `PATCH /composite/sobjects/<Type>/<extIdField>` (collection upsert) omits the `created`
-  boolean on every result record, success or failure.
-- `conn.identity()`'s `id` URL is `http://...` not `https://...` — expected, since orglet is
-  served over plain HTTP locally; not a defect.
-- The "upsert already existing record" test asserting `ret.id === recId` after an update-path
-  upsert is not satisfiable by any spec-compliant server: Salesforce's real API returns `204
-  No Content` (no body) for an upsert-update, and jsforce's own
-  `Connection#_upsertParallel` (`src/connection.ts`) hard-codes
-  `noContentResponse: { success: true, errors: [] }` for that path — it never attaches an
-  `id`. This is a jsforce test-suite issue, not an orglet bug.
+Every alternative in `CORE_FILTER` and `BULK2_FILTER` in run.sh has a row here.
 
-## Expected results (phase 0, verified 2026-09-25)
+| Pattern / test | Run | Classification | Reason |
+|---|---|---|---|
+| `bulk`, `Bulk`, `allowBulk` | 1 | bulk-v1-excluded | Bulk API v1 (`/services/async`) is out of scope; these are bulk.test.ts tests re-registered via the `insertAccounts` import, and Query tests forcing Bulk v1 |
+| `Query#update and return updated records`, `Query#destroy and return deleted status` | 1 | bulk-v1-excluded | calls `insertAccounts`, which uses Bulk v1 (`DEFAULT_BULK_API_VERSION = 1` in jsforce `src/query.ts`) |
+| `search records` | 1 | sosl | SOSL is a stub answering the documented empty shape; the test also calls `insertAccounts` (Bulk v1) |
+| `layout`, `list view`, `listup list` | 1 | ui-api | describeLayouts family and list views are UI API territory, not implemented (404) |
+| `tabs list`, `theme information`, `recently accessed` | 1 | not-implemented | `/tabs`, `/theme`, `/recent` answer 404 |
+| `identity information` | 1 | plain-http | asserts an `https://` identity URL; orglet serves plain HTTP locally |
+| `already existing` | 1 | test-defect | asserts `ret.id` on a 204 upsert-update, which jsforce's own `_upsertParallel` never populates; unsatisfiable by any spec-compliant server |
+| `randomly-waiting` | 1 | timeout | streams with random per-record delays and exceeds the Jest timeout; not investigated |
+| `with empty input and not raise client input error` (bulk update and bulk delete, 2 tests) | 2 | not-implemented | jsforce PUTs a 0-byte body; orglet marks the job Failed ("InvalidBatch : the uploaded CSV had no header row"); Salesforce behaviour for an empty upload is undocumented, so no change |
+| `bulk insert from file and return inserted results` (2 tests with this name) | 2 | not-implemented | every row fails INVALID_FIELD on `JIGSAWCOMPANYID`; the Account baseline lacks the deprecated Data.com Jigsaw* fields |
+| `bulk upsert from CSV file using backquote as a delimiter` | 2 | test-defect | the CSV has no Id column while `externalIdFieldName` is `Id`; every row fails REQUIRED_FIELD_MISSING [Id] on any server |
 
-Run from a clean org schema (`orglet reset --org-schema jsconf` first, then `--seed`). The
-subset is the four files below with this Jest name filter, which excludes the phase-1 gaps:
+`should bulk query and get records` (run 2) passes but asserts inside an un-awaited `end` handler, so it proves
+only that the job completes (test-defect noted; the simple-salesforce leg checks query rows).
 
-```sh
-npx jest --forceExit test/connection-crud.test.ts test/connection-meta.test.ts \
-  test/sobject.test.ts test/query.test.ts \
-  -t '^(?!.*(bulk|Bulk|layout|list view|listup list|search records|tabs list|theme information|identity information|already existing|randomly-waiting|allowBulk|recently accessed)).*'
-```
+## Jest import quirk
 
-| Result | Count |
-|---|---|
-| passed | 51 |
-| failed | 2 |
-| skipped by the filter | 58 |
+`connection-crud.test.ts` and `query.test.ts` both `import { insertAccounts } from './bulk.test'`. Because
+jsforce's test files register `it()`/`describe()` at module top level, importing `bulk.test.ts` as a module
+also re-registers *all of its own tests* into whichever file is currently running (a Jest/CommonJS quirk in
+the upstream suite, not something specific to orglet). So a standalone run of `connection-crud.test.ts`
+reports 31 tests (15 own + 16 from `bulk.test.ts`), and `query.test.ts` reports 37 (21 own + 16).
 
-The two failures (`Query#update` / `Query#destroy` "and return updated/deleted status") call
-`insertAccounts` from `bulk.test.ts`, which uses Bulk API v1 (`/services/async/50.0/job`).
+`bulk2.test.ts` does not import `bulk.test.ts`, but 12 of its 17 test names are identical to Bulk v1 names and
+Jest's `-t` filter is global, so a single invocation cannot include Bulk 2.0 while excluding the re-registered
+v1 copies. run.sh therefore runs Jest twice.
 
-Excluded and why:
+## Known gaps
 
-- **Bulk API v1/v2** (`bulk`, `allowBulk`, `Query#update`/`destroy` above): not implemented, phase 1.
-- **SOSL** (`search records`): `/search` answers the documented empty shape, phase 1.
-- **Layouts, compact/approval/named layouts, list views** (`layout`, `list view`, `listup list`): UI API territory, phase 1.
-- **`/tabs`, `/theme`, `/recent`**: not implemented, phase 1.
-- **`identity information`**: the test asserts an `https://` id URL; orglet serves plain HTTP locally.
-- **`already existing` upsert**: asserts `ret.id` on a `204 No Content` upsert-update, which jsforce
-  itself never populates (`_upsertParallel` hard-codes `{ success: true, errors: [] }`); not
-  passable against any spec-compliant server.
-- **`randomly-waiting` stream test**: streams with random per-record delays and exceeded the Jest
-  timeout; not yet investigated.
-
-Everything else in these files passes: CRUD single and collection, upsert by external id including
-the 300 Multiple Choices body and allOrNone rollback, describe global/object, updated/deleted
-windows, limits, explain, queryMore/autoFetch/maxFetch paging over 2500 rows, and the
-relationship-based find/select/sort/include tests.
-
+- Bulk API v1 (`/services/async`) is not implemented.
+- SOSL is a stub (`/search` answers `{"searchRecords":[]}`).
+- UI API (layouts, list views), `/tabs`, `/theme` and `/recent` answer 404.
+- Streaming, Metadata/Tooling API, Apex REST and Chatter are not exercised by this subset.
