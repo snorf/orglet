@@ -41,4 +41,4 @@ jsforce: 14/14 passed
 
 A failing object prints `FAIL <Object> <missing properties or the SDK error>` and the script exits 1.
 
-This check is manual. It is not run in CI until phase 7 decides on the conformance setup.
+CI runs both legs of this check on every push and pull request, in the `conformance` job of `.github/workflows/ci.yml` (through `conformance/run-all.sh`); it is not a required status check. The commands above remain the way to run it by hand.
