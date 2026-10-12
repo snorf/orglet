@@ -167,7 +167,7 @@ Edition org and both SDK conformance suites, with results committed and dated.
 Plans:
 - [x] 07-01-PLAN.md — `orglet check --strict` (CLI + usage + tests) and the Bulk 2.0 `sf__Error` separator fix (` --`)
 - [x] 07-02-PLAN.md — simple-salesforce harness: env vars, three Bulk 2.0 checks, `simple-salesforce==1.12.10` pin, new README with measured numbers
-- [ ] 07-03-PLAN.md — jsforce `run.sh`: pinned sha, stamp-guarded build, two Jest invocations; unfiltered bulk2 run; Johan's empty-CSV/disposition decision
+- [x] 07-03-PLAN.md — jsforce `run.sh`: pinned sha, stamp-guarded build, two Jest invocations; unfiltered bulk2 run; Johan's empty-CSV/disposition decision
 - [ ] 07-04-PLAN.md — apply the decision (empty-CSV fix or exclusion), final BULK2_FILTER, measured green run, jsforce README rewrite
 - [ ] 07-05-PLAN.md — `conformance/run-all.sh`, CI `conformance` job (cache on pinned sha, not required), targeted-check READMEs, push with Johan's OK
 - [ ] 07-06-PLAN.md — stale-doc corrections, final re-run, `conformance/README.md` overview, DE retrieve check last, ACCEPT ticks
