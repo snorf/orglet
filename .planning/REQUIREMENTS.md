@@ -129,7 +129,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Acceptance
 
-- [ ] **ACCEPT-01**: `orglet check` against Johan's Developer Edition retrieve reports zero
+- [x] **ACCEPT-01**: `orglet check` against Johan's Developer Edition retrieve reports zero
   `UNSUPPORTED` warnings (baseline 2026-09-29: 15)
 - [ ] **ACCEPT-02**: The `simple-salesforce` conformance script and the `jsforce` e2e subset
   are re-run after all changes and stay green; previously excluded Bulk tests are included
