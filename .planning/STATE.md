@@ -30,7 +30,7 @@ rather than faked.
 Milestone: v1.0 "hardening" — SHIPPED 2026-10-12 (7/7 phases, 37/37 plans)
 Phase: none active (next milestone not yet defined; numbering continues from 8)
 Status: Milestone complete
-Last activity: 2026-10-12
+Last activity: 2026-10-12 - Completed quick task 261012-leq: empty metadata root fix
 
 Progress: [██████████] 100%
 
@@ -170,6 +170,12 @@ Recent decisions affecting current work:
 - None open. The phase 3-5 research concerns were resolved during their phases (baseline facts confirmed
   in 03-RESEARCH, TYPEOF AST read in 04-02, reparent/undelete recompute implemented without a primary
   quote — documented in 05-07-SUMMARY).
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 261012-leq | Treat an empty metadata root (`<CustomObject/>`) as an empty node; name the object file in parse errors | 2026-10-12 | 3a7898f | [261012-leq-fix-parsemetadataxml-so-an-empty-metadat](./quick/261012-leq-fix-parsemetadataxml-so-an-empty-metadat/) |
 
 ## Session Continuity
 
