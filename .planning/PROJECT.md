@@ -19,16 +19,40 @@ support, and anything it does not support is logged as `UNSUPPORTED:<area>` rath
 
 **Shipped:** v1.0 "hardening" on 2026-10-12 (phases 1-7, 37 plans, PRs #1-#7; archive in
 `.planning/milestones/`). The headless Salesforce-compatible API on Postgres loads Johan's Developer
-Edition retrieve with zero `UNSUPPORTED` warnings under `orglet check --strict`, runs its 427-test suite
+Edition retrieve with zero `UNSUPPORTED` warnings under `orglet check --strict`, runs its 431-test suite
 on embedded pglite without Docker, and is verified by pinned jsforce and simple-salesforce conformance
-runs (jsforce 51/0/60 + Bulk 2.0 12/0/5, simple-salesforce 29/29) executed in CI on every push.
+runs executed in CI on every push. After v1.0 a large real enterprise-org retrieve was loaded locally:
+it loads (141 objects, ~3 600 fields) but with several hundred warnings in a handful of areas, which
+define the next milestone.
 
-**Next milestone:** not yet defined (`/gsd:new-milestone`). Candidates, in the order the original plan
-suggested: UI API + LWC/SLDS 1 front end (the "small self-hosted CRM" promise), the security model
-(profiles, permission sets, FLS, OWD), Flow interpreter and CDC/Platform Events, Apex runtime behind
-`TriggerExecutor`. Carry-over tech debt from the v1.0 audit: POLY-01 formula leg (sigha colon syntax),
-combined Bulk-ingest + roll-up test, roll-up re-backfill (`orglet rollup --recompute`), OwnerId
-narrowing, `conformance` CI job as a required check.
+## Current Milestone: v1.1 real-org fidelity
+
+**Goal:** A large, real enterprise-org retrieve loads with zero warnings for everything it itself
+references: every object and field that a lookup, formula, roll-up or validation rule points at exists,
+is described correctly and behaves as in Salesforce. Standard objects nothing references are reported
+in a quiet informational category, not as warnings.
+
+**Target features:**
+- Standard-object baseline v2 generated from the public Object Reference: field parity for the
+  existing 35 objects (incl. the thin phase-3 ones) and the business objects a typical sales/service org
+  references (Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember,
+  OpportunityTeamMember, OpportunityContactRole, ContractLineItem, EmailMessage,
+  ContentDocument/ContentVersion, FeedItem, Location/Address).
+- Formula coverage: `$UserRole`, `$Api`, `$Setup`, `$Label`, `$CustomMetadata` globals; OwnerId
+  `referenceTo` narrowed per object so plain `Owner.X` compiles; `Relationship:Object.Field` colon
+  syntax and the `!` operator fixed upstream in sigha and resynced. `$Permission` stays an explicit
+  `UNSUPPORTED:formula-global` until the security milestone.
+- Custom metadata types as read-only objects with rows from `customMetadata/` in the retrieve,
+  `MetadataRelationship` fields; list/hierarchy custom settings with `$Setup` semantics.
+- Roll-up summary over formula fields where Salesforce allows it.
+- `orglet check` report quality: root-cause reporting for cascaded formula failures, a quiet category for
+  unreferenced system objects, per-area summary counts.
+
+**Acceptance:** a public fixture (an extended `examples/acme` or a new `examples/enterprise`, all custom
+metadata under generic names) covers every category and runs in CI with `--strict`; Johan's Developer
+Edition retrieve keeps loading clean; the large org is run only locally and reported, if at all, as
+warning counts per area. Backlog items promoted: 999.1-999.7. Left in backlog: 999.8 platform events,
+999.9 Heimdall end-to-end.
 
 ## Requirements
 
@@ -143,7 +167,8 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
 
 ### Active
 
-None. v1.0 shipped 2026-10-12; the next milestone's requirements are defined by `/gsd:new-milestone`.
+Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements are defined in
+`.planning/REQUIREMENTS.md` and mapped to phases 8+ in `.planning/ROADMAP.md`.
 
 ### Out of Scope
 
@@ -270,4 +295,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-12 after v1.0 milestone*
+*Last updated: 2026-10-12 at the start of v1.1 real-org fidelity*
