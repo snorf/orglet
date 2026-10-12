@@ -289,7 +289,7 @@ async function readObjectDir(dir: string, warnings: string[]): Promise<SourceObj
 
   const objFile = join(dir, `${name}.object-meta.xml`);
   try {
-    const node = parseMetadataXml(await readFile(objFile, "utf8"), "CustomObject");
+    const node = parseMetadataXml(await readFile(objFile, "utf8"), "CustomObject", objFile);
     const label = str(node, "label");
     if (label !== undefined) obj.label = label;
     const plural = str(node, "pluralLabel");
