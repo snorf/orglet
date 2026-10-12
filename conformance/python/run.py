@@ -297,7 +297,8 @@ def main():
     bulk_job_id = None
     bulk_ids = []
     with check("11a bulk2 insert -> per-row successful and failed results"):
-        rows = [{"Name": f"{tag}-{i}"} for i in range(1, 4)] + [{"Name": ""}]
+        # Two columns: with a single column a blank Name serialises to an empty CSV line, which is skipped rather than failed.
+        rows = [{"Name": f"{tag}-{i}", "Industry": "Energy"} for i in range(1, 4)] + [{"Name": "", "Industry": "Energy"}]
         summary = sf.bulk2.Account.insert(records=rows, wait=1)
         assert len(summary) == 1, summary
         bulk_job_id = summary[0]["job_id"]
