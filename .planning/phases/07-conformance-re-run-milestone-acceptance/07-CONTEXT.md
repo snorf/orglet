@@ -120,6 +120,26 @@ the repo and `.planning` docs (folded todo: reword ROADMAP line 14).
   stating the author's own retrieved metadata is used as local test input and no org is
   contacted or compared. Fits D-17/D-19.
 
+### Post-research amendments (2026-10-12)
+- **D-20 (amends D-03/D-05):** Jest's `-t` filter is global and 12 of 17 `bulk2.test.ts` names
+  are identical to `bulk.test.ts` names (which `connection-crud.test.ts` and `query.test.ts`
+  re-register). `run.sh` therefore performs **two Jest invocations**: run 1 = the four core
+  files (`connection-crud`, `connection-meta`, `sobject`, `query`) with today's filter plus
+  `Query#update and return updated records` / `Query#destroy and return deleted status`
+  excluded (expected 51 passed / 0 failed / 60 skipped, to be measured); run 2 =
+  `test/bulk2.test.ts` alone with its own filter. Both tables go in the README. No upstream
+  patches (D-02 holds).
+- **D-21 (amends domain "no new features"):** Fidelity bugs that bulk2 tests expose ARE fixed
+  when they are formatting/behaviour gaps against documented Salesforce output, not features.
+  Locked: the Bulk 2.0 `sf__Error` field separator becomes `:Name --` (space before `--`) in
+  `formatSaveError`, with the two assertions in `packages/api/src/bulk/store.test.ts` updated.
+  The empty-CSV case (orglet marks the job `Failed`, "no header row") is decided only after
+  `bulk2.test.ts` has been run unfiltered once: if jsforce really sends the PUT and Salesforce
+  documentation supports an empty successful job, fix it; otherwise exclude with a reason.
+  Every other predicted failure (upsert on `externalIdFieldName: 'Id'`, uppercase CSV headers,
+  un-awaited `end` handler in the query test) is classified from the actual run, never from
+  the static prediction.
+
 ### Claude's Discretion
 - Exact number and shape of the Python bulk2 checks (D-08), as long as ingest and query are
   both exercised and results are asserted per row.
