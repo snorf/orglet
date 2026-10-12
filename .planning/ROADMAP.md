@@ -171,7 +171,7 @@ Plans:
 - [x] 07-03-PLAN.md — jsforce `run.sh`: pinned sha, stamp-guarded build, two Jest invocations; unfiltered bulk2 run; Johan's empty-CSV/disposition decision
 - [x] 07-04-PLAN.md — apply the decision (empty-CSV fix or exclusion), final BULK2_FILTER, measured green run, jsforce README rewrite
 - [x] 07-05-PLAN.md — `conformance/run-all.sh`, CI `conformance` job (cache on pinned sha, not required), targeted-check READMEs, push with Johan's OK
-- [ ] 07-06-PLAN.md — stale-doc corrections, final re-run, `conformance/README.md` overview, DE retrieve check last, ACCEPT ticks
+- [x] 07-06-PLAN.md — stale-doc corrections, final re-run, `conformance/README.md` overview, DE retrieve check last, ACCEPT ticks
 
 ## Progress
 
