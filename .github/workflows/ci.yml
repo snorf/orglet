@@ -57,3 +57,45 @@ jobs:
       - run: pnpm build
       - run: pnpm lint
       - run: pnpm test
+
+  conformance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: orglet
+          POSTGRES_PASSWORD: orglet
+          POSTGRES_DB: orglet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      ORGLET_DATABASE_URL: postgres://orglet:orglet@localhost:5432/orglet
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - id: jsforce
+        run: echo "sha=$(sed -n 's/^JSFORCE_SHA=//p' conformance/jsforce/run.sh)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: conformance/jsforce/.cache/jsforce
+          key: jsforce-${{ runner.os }}-${{ steps.jsforce.outputs.sha }}-${{ hashFiles('.nvmrc') }}
+      - run: python -m venv conformance/python/.venv && conformance/python/.venv/bin/pip install -r conformance/python/requirements.txt
+      - run: conformance/run-all.sh
+        env:
+          ORG_SCHEMA: conformance_run
+          PORT: "8093"
