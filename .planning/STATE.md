@@ -1,38 +1,38 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: verifying
-stopped_at: Completed 07-06-PLAN.md
-last_updated: "2026-10-12T12:27:28.276Z"
+milestone_name: hardening
+status: milestone_complete
+stopped_at: "v1.0 hardening shipped 2026-10-12; next: /gsd:new-milestone"
+last_updated: "2026-10-12T12:58:25.821Z"
 last_activity: 2026-10-12
 progress:
   total_phases: 7
   completed_phases: 7
   total_plans: 37
   completed_plans: 37
-  percent: 0
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-29)
+See: .planning/PROJECT.md (updated 2026-10-12)
 
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 07 — conformance-re-run-milestone-acceptance
+**Current focus:** v1.0 shipped; planning next milestone (`/gsd:new-milestone`)
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
-Status: Phase complete — ready for verification
+Milestone: v1.0 "hardening" — SHIPPED 2026-10-12 (7/7 phases, 37/37 plans)
+Phase: none active (next milestone not yet defined; numbering continues from 8)
+Status: Milestone complete
 Last activity: 2026-10-12
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -159,13 +159,17 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Reword ROADMAP phase 7 to validate against the DE retrieve, not the org (planning, 2026-10-01)
+- Narrow baseline OwnerId referenceTo per object (metadata, 2026-10-08)
+- Support Relationship:Object.Field colon syntax for polymorphic formula references (formula, 2026-10-08)
+- v1.0 audit tech debt (see milestones/v1.0-MILESTONE-AUDIT.md): combined Bulk-ingest + roll-up test;
+  roll-up re-backfill todo; refresh 04-VERIFICATION.md status after UAT; VALIDATION.md maps; make the
+  `conformance` CI job required on main (ruleset change, Johan's call)
 
 ### Blockers/Concerns
 
-- Phase 3: Key prefix and name-equivalent field for `IdeaTheme` (prefix, single-source) and `DandBCompany`/`Entitlement`/`ServiceContract`/`SocialPost` (name field, unconfirmed) need verification against the Object Reference before writing baseline JSON.
-- Phase 4: Exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js` needs reading from its `.d.ts` during implementation; not verified during research.
-- Phase 5: Roll-up reparent and undelete recompute triggers are not confirmed by a direct official Salesforce quote (scope is not in question, only edge-case sourcing).
+- None open. The phase 3-5 research concerns were resolved during their phases (baseline facts confirmed
+  in 03-RESEARCH, TYPEOF AST read in 04-02, reparent/undelete recompute implemented without a primary
+  quote — documented in 05-07-SUMMARY).
 
 ## Session Continuity
 
