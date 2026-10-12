@@ -68,7 +68,7 @@ describe("ingest job store", () => {
     await withTransaction(pool, (c) =>
       store.writeIngestChunk(c, job.id, [
         { rowIndex: 0, success: true, recordId: "001000000000001AAA", created: true, error: null },
-        { rowIndex: 1, success: false, recordId: null, created: null, error: "REQUIRED_FIELD_MISSING:x:Name--" },
+        { rowIndex: 1, success: false, recordId: null, created: null, error: "REQUIRED_FIELD_MISSING:x:Name --" },
       ]),
     );
     expect(await store.findIngestJob(job.id)).toMatchObject({ numberRecordsProcessed: 2, numberRecordsFailed: 1 });
@@ -76,7 +76,7 @@ describe("ingest job store", () => {
     await withTransaction(pool, (c) => store.writeIngestChunk(c, job.id, [{ rowIndex: 2, success: true, recordId: "001000000000002AAA", created: false, error: null }]));
     expect(await store.findIngestJob(job.id)).toMatchObject({ numberRecordsProcessed: 3, numberRecordsFailed: 1 });
     const results = await store.readIngestResults(job.id);
-    expect(results[1]).toEqual({ rowIndex: 1, success: false, recordId: null, created: null, error: "REQUIRED_FIELD_MISSING:x:Name--" });
+    expect(results[1]).toEqual({ rowIndex: 1, success: false, recordId: null, created: null, error: "REQUIRED_FIELD_MISSING:x:Name --" });
   });
 
   it("list_shows_only_the_users_jobs_of_this_org", async () => {
