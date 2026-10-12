@@ -3,7 +3,7 @@
  *
  *   orglet up [--project <dir>] [--port 8080] [--db <url>] [--org-schema org] [--force] [--permissive|--users user:pass,...] [--key-prefixes <file>]
  *   orglet reset [--db <url>] [--org-schema org] [--drop-prefixes]
- *   orglet check [--project <dir>]
+ *   orglet check [--project <dir>] [--strict]
  */
 import { parseArgs } from "node:util";
 import { resolve } from "node:path";
@@ -17,7 +17,7 @@ const USAGE = `orglet - a self-hosted, Salesforce-compatible org
 
 Usage:
   orglet up [--project <sfdx-dir>] [--port <n>] [--db <postgres-url>] [--org-schema <name>] [--force] [--users u:p,...] [--key-prefixes <file>]
-  orglet check [--project <sfdx-dir>]
+  orglet check [--project <sfdx-dir>] [--strict]
   orglet reset [--db <postgres-url>] [--org-schema <name>] [--drop-prefixes]
 
 Options:
@@ -33,6 +33,7 @@ Options:
                   none persisted yet (for example your own org's keyPrefix values); never overrides a
                   persisted assignment
   --drop-prefixes With reset: also forget the org's persisted custom-object key prefixes
+  --strict      With check: exit 1 if any warning was printed (default: always exit 0)
   --quiet       Only print errors
 `;
 
@@ -69,7 +70,7 @@ function sourceSuffix(source: ReconcileKeyPrefixesResult["assignments"][number][
   }
 }
 
-async function check(c: Common): Promise<number> {
+async function check(c: Common, strict: boolean): Promise<number> {
   const result = await loadOrgSchema(c.project ? { projectDir: c.project } : {});
   const objects = result.schema.list();
   log(c, `${objects.length} objects (${objects.filter((o) => o.custom).length} custom), ${objects.reduce((n, o) => n + o.fields.length, 0)} fields`);
@@ -77,9 +78,10 @@ async function check(c: Common): Promise<number> {
   const custom = objects.filter((o) => o.custom);
   for (const o of custom) log(c, `  ${o.name}  ${o.keyPrefix}  (provisional)`);
   if (custom.length > 0) log(c, "custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter");
-  for (const w of result.warnings) console.warn(`warning: ${w}`);
-  for (const w of new FormulaRegistry(result.schema).warnings) console.warn(`warning: ${w}`);
-  return 0;
+  const warnings = [...result.warnings, ...new FormulaRegistry(result.schema).warnings];
+  for (const w of warnings) console.warn(`warning: ${w}`);
+  // --strict turns any warning (UNSUPPORTED:* or otherwise) into a failing exit code, for acceptance runs and CI.
+  return strict && warnings.length > 0 ? 1 : 0;
 }
 
 async function up(c: Common, port: number, force: boolean, auth: AuthConfig, importMode: boolean, keyPrefixesFile: string | undefined): Promise<number> {
@@ -191,6 +193,7 @@ export async function main(argv: string[]): Promise<number> {
       "key-prefixes": { type: "string" },
       "drop-prefixes": { type: "boolean" },
       quiet: { type: "boolean" },
+      strict: { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -209,7 +212,7 @@ export async function main(argv: string[]): Promise<number> {
       return up(c, port, values.force === true, auth, values.import === true, typeof values["key-prefixes"] === "string" ? resolve(values["key-prefixes"]) : undefined);
     }
     case "check":
-      return check(c);
+      return check(c, values.strict === true);
     case "reset":
       return reset(c, values["drop-prefixes"] === true);
     default:
