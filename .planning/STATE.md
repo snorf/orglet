@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-10-12T12:00:32.553Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-10-12T12:00:39.240Z"
 last_activity: 2026-10-12
 progress:
   total_phases: 7
@@ -28,7 +28,7 @@ rather than faked.
 ## Current Position
 
 Phase: 07 (conformance-re-run-milestone-acceptance) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-10-12
 
@@ -86,6 +86,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 06 P05 | 20min | 2 tasks | 7 files |
 | Phase 06 P06 | n/a | 4 tasks | 2 files |
 | Phase 07 P02 | 15min | 2 tasks | 3 files |
+| Phase 07 P01 | 10min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -150,6 +151,7 @@ Recent decisions affecting current work:
 - [Phase 06]: 06-03: setJobState is sole state writer (TRANSITIONS table); retention basis created_date, 7 days hard-coded; reconcile fails UploadComplete/InProgress with locked ServerRestarted messages
 - [Phase 06]: Bulk ingest processing errors roll back the chunk and set job Failed with InternalServerError message; DELETABLE.ingest includes UploadComplete
 - [Phase 06]: Bulk query rejection wording is orglet's own (undocumented by Salesforce); semi-joins accepted; query abort from UploadComplete/InProgress, delete from JobComplete/Aborted/Failed
+- [Phase 07]: 07-01: --strict only affects check; Bulk sf__Error format is 'CODE:message:fields --'
 
 ### Pending Todos
 
@@ -163,6 +165,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-12T12:00:32.550Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-10-12T12:00:39.237Z
+Stopped at: Completed 07-01-PLAN.md
 Resume file: None
