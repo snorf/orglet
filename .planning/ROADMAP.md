@@ -163,7 +163,14 @@ Edition org and both SDK conformance suites, with results committed and dated.
   1. `orglet check` against Johan's Developer Edition retrieve reports zero `UNSUPPORTED` warnings of any kind (baseline 2026-09-29: 15).
   2. The `simple-salesforce` conformance script and the `jsforce` e2e subset are both re-run after all milestone changes and stay green, with previously-excluded Bulk tests classified (v1-still-excluded vs v2-now-included) and included where Bulk API 2.0 now covers them.
   3. Both `conformance/` READMEs are updated with current, dated pass/fail/excluded numbers and the reason for every remaining exclusion.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 07-01-PLAN.md — `orglet check --strict` (CLI + usage + tests) and the Bulk 2.0 `sf__Error` separator fix (` --`)
+- [ ] 07-02-PLAN.md — simple-salesforce harness: env vars, three Bulk 2.0 checks, `simple-salesforce==1.12.10` pin, new README with measured numbers
+- [ ] 07-03-PLAN.md — jsforce `run.sh`: pinned sha, stamp-guarded build, two Jest invocations; unfiltered bulk2 run; Johan's empty-CSV/disposition decision
+- [ ] 07-04-PLAN.md — apply the decision (empty-CSV fix or exclusion), final BULK2_FILTER, measured green run, jsforce README rewrite
+- [ ] 07-05-PLAN.md — `conformance/run-all.sh`, CI `conformance` job (cache on pinned sha, not required), targeted-check READMEs, push with Johan's OK
+- [ ] 07-06-PLAN.md — stale-doc corrections, final re-run, `conformance/README.md` overview, DE retrieve check last, ACCEPT ticks
 
 ## Progress
 
@@ -178,4 +185,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Polymorphic Lookups & SOQL TYPEOF | 7/7 | Complete | 2026-10-08 |
 | 5. Roll-Up Summary Fields | 7/7 | Complete | 2026-10-09 |
 | 6. Bulk API 2.0 Persistence | 6/6 | Complete    | 2026-10-10 |
-| 7. Conformance Re-Run & Milestone Acceptance | 0/TBD | Not started | - |
+| 7. Conformance Re-Run & Milestone Acceptance | 0/6 | Planned | - |
