@@ -42,8 +42,8 @@ CORE_FILES=(test/connection-crud.test.ts test/connection-meta.test.ts test/sobje
 CORE_FILTER='^(?!.*(bulk|Bulk|layout|list view|listup list|search records|tabs list|theme information|identity information|already existing|randomly-waiting|allowBulk|recently accessed|Query#update and return updated records|Query#destroy and return deleted status)).*'
 
 BULK2_FILES=(test/bulk2.test.ts)
-# Empty until plan 07-04 fills in the classified exclusions (see README.md "Exclusions").
-BULK2_FILTER=''
+# Classified exclusions for bulk2.test.ts; each is explained in README.md "Exclusions".
+BULK2_FILTER='^(?!.*(with empty input and not raise client input error|bulk insert from file and return inserted results|bulk upsert from CSV file using backquote as a delimiter)).*'
 
 node_major="$(node -e 'console.log(process.versions.node.split(".")[0])' 2>/dev/null || echo 0)"
 if [ "$node_major" -lt 22 ]; then
