@@ -2,7 +2,7 @@
 export * from "./types.js";
 export { readSourceProject, UnsupportedMetadataError } from "./sfdx.js";
 export type { SourceProject, SourceObject, SourceField, SourceFilterItem } from "./sfdx.js";
-export { loadBaseline, buildOrgSchema } from "./build.js";
+export { loadBaseline, buildOrgSchema, validateBaseline } from "./build.js";
 export type { Baseline, BuildResult } from "./build.js";
 export { OrgSchemaImpl } from "./schema.js";
 

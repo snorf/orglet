@@ -1,0 +1,12 @@
+{
+  "name": "PrefixlessThing",
+  "label": "Prefixless Thing",
+  "labelPlural": "Prefixless Things",
+  "keyPrefix": null,
+  "keyPrefixSource": "unverified",
+  "createable": false,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Name", "type": "Text", "length": 80, "nillable": false, "idLookup": true, "nameField": true }
+  ]
+}

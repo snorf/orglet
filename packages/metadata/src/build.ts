@@ -220,6 +220,7 @@ function fromStandardObject(j: StandardObjectJson, standardValueSets: Map<string
     label: j.label,
     labelPlural: j.labelPlural,
     keyPrefix: j.keyPrefix,
+    ...(j.keyPrefixSource !== undefined ? { keyPrefixSource: j.keyPrefixSource } : {}),
     custom: false,
     createable: j.createable ?? true,
     updateable: j.updateable ?? true,
@@ -425,7 +426,34 @@ function customKeyPrefix(index: number): string {
   return `a${hi}${lo}`;
 }
 
+const PROVENANCE = new Set<string>(["doc", "sdk-fixture", "de-describe", "unverified"]);
+
+/**
+ * Baseline files are orglet's own data, so a bad one is a bug and a hard error, not an UNSUPPORTED warning
+ * (D-10). A null prefix must come with a source label and a non-createable object, because nothing may
+ * mint an Id for it; every other prefix must be a real-looking, unique standard prefix that can never
+ * collide with a custom-object (a00..azz) or custom-metadata (m0x, conservative guard) prefix (D-12).
+ */
+export function validateBaseline(objects: readonly StandardObjectJson[]): void {
+  const seen = new Map<string, string>();
+  for (const o of objects) {
+    if (o.keyPrefixSource !== undefined && !PROVENANCE.has(o.keyPrefixSource)) throw new Error(`invalid baseline: ${o.name} has unknown keyPrefixSource ${String(o.keyPrefixSource)}`);
+    if (o.keyPrefix === null) {
+      if (o.createable !== false) throw new Error(`invalid baseline: ${o.name} has keyPrefix null but is createable; a prefix-less object must set "createable": false`);
+      if (o.keyPrefixSource === undefined) throw new Error(`invalid baseline: ${o.name} has keyPrefix null but no keyPrefixSource`);
+      continue;
+    }
+    if (!/^[0-9A-Za-z]{3}$/.test(o.keyPrefix)) throw new Error(`invalid baseline: ${o.name} key prefix ${o.keyPrefix} is not three alphanumeric characters`);
+    if (/^a[0-9A-Za-z]{2}$/.test(o.keyPrefix)) throw new Error(`invalid baseline: ${o.name} key prefix ${o.keyPrefix} is in the custom-object range a00..azz`);
+    if (o.keyPrefix.startsWith("m0")) throw new Error(`invalid baseline: ${o.name} key prefix ${o.keyPrefix} is in the custom-metadata range m0*`);
+    const other = seen.get(o.keyPrefix);
+    if (other !== undefined) throw new Error(`invalid baseline: key prefix ${o.keyPrefix} is used by both ${other} and ${o.name}`);
+    seen.set(o.keyPrefix, o.name);
+  }
+}
+
 export function buildOrgSchema(baseline: Baseline, project?: SourceProject): BuildResult {
+  validateBaseline(baseline.objects);
   const warnings: string[] = [...(project?.warnings ?? [])];
   const standardValueSets = new Map(baseline.standardValueSets);
   for (const s of project?.standardValueSets ?? []) standardValueSets.set(s.name, s);
