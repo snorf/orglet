@@ -42,7 +42,7 @@ created: 2026-10-13
 | 8-01-01 | 01 | 1 | MIGR-04 | integration | `pnpm vitest run packages/schema/src/pglite-compat.test.ts packages/schema/src/migrate.test.ts -t "pg_indexes\|idempotent"` | ✅ (extended) | ⬜ pending |
 | 8-01-02 | 01 | 1 | MIGR-02 | integration | `pnpm vitest run packages/schema/src/migrate.test.ts` | ✅ (FK test rewritten) | ⬜ pending |
 | 8-02-01 | 02 | 1 | BASE2-05 | unit | `pnpm vitest run packages/metadata` | ✅ build.test.ts + ❌ W0 fixture `packages/metadata/test/fixtures/null-prefix/` | ⬜ pending |
-| 8-02-02 | 02 | 1 | BASE2-05 | unit + integration | `pnpm vitest run packages/schema/src/ids.test.ts packages/schema/src/prefixes.test.ts && pnpm exec tsc -b packages/schema/tsconfig.json` | ✅ | ⬜ pending |
+| 8-02-02 | 02 | 1 | BASE2-05 | unit + integration | `pnpm vitest run packages/schema/src/ids.test.ts packages/schema/src/prefixes.test.ts && pnpm exec tsc -b packages/schema/tsconfig.json && ! grep -nE 'keyPrefix!\|keyPrefix as string\|keyPrefix \?\? "' packages/schema/src/*.ts packages/metadata/src/*.ts` | ✅ | ⬜ pending |
 | 8-03-01 | 03 | 2 | BASE2-05 | integration | `pnpm vitest run packages/engine/src/null-prefix.test.ts packages/engine/src/engine.test.ts packages/engine/src/bootstrap.test.ts packages/engine/src/query.test.ts` | ❌ W0 `null-prefix.test.ts` | ⬜ pending |
 | 8-03-02 | 03 | 2 | BASE2-05 | unit | `pnpm build && pnpm lint && pnpm vitest run packages/soql packages/api/src/describe.test.ts packages/engine` | ❌ W0 `describe.test.ts` | ⬜ pending |
 | 8-04-01 | 04 | 1 | (SC5) | script + CI | `! grep -n "sed -i ''" scripts/sync-sigha.sh && bash -n scripts/sync-sigha.sh` + scratch `SIGHA_DEST` sync + `diff -r`; CI `sigha-sync-check` | ❌ W0 CI job | ⬜ pending |
@@ -53,14 +53,14 @@ created: 2026-10-13
 | 8-05-03 | 05 | 3 | MIGR-02 | integration | `pnpm vitest run packages/schema packages/metadata && pnpm build && pnpm lint` | ✅ | ⬜ pending |
 | 8-06-01 | 06 | 4 | (SC5) | unit | `pnpm vitest run packages/formula` | ✅ | ⬜ pending |
 | 8-06-02 | 06 | 4 | (SC5) | unit + integration | `pnpm vitest run packages/engine/src/formulas.test.ts packages/engine/src/query.test.ts packages/engine/src/engine.test.ts && pnpm build && pnpm lint && pnpm test` | ❌ W0 `formulas.test.ts` | ⬜ pending |
-| 8-07-01 | 07 | 4 | MIGR-01 | fixture check | `test "$(ls packages/metadata/test/fixtures/baseline-v1.0/objects/*.json \| wc -l \| tr -d ' ')" = 35` + per-file `cmp` against commit 1b737c1 | ❌ W0 fixture dir | ⬜ pending |
-| 8-07-02 | 07 | 4 | MIGR-01, MIGR-04 | integration (both backends) | `pnpm vitest run packages/engine/src/upgrade.test.ts` (+ same with `ORGLET_DATABASE_URL`) | ❌ W0 `upgrade.test.ts` | ⬜ pending |
-| 8-08-01 | 08 | 1 | (SC5) | upstream tests | upstream's own test command on `feat/unary-bang` in `/Users/johankarlsteen/Development.nosync/sigha-upstream` | n/a (external clone) | ⬜ pending |
+| 8-07-01 | 07 | 4 | MIGR-01 | fixture check | `test "$(ls packages/metadata/test/fixtures/baseline-v1.0/objects/*.json \| wc -l \| tr -d ' ')" = 35` + per-file `cmp` against commit 1b737c1 + `test -z "$(git tag --list \| grep -vx v1.0)"` (no new tag; pre-existing `v1.0` untouched) + audit lists `baseline-v1.0/objects/Group.json` | ❌ W0 fixture dir | ⬜ pending |
+| 8-07-02 | 07 | 4 | MIGR-01, MIGR-04 | integration (both backends) | `pnpm vitest run packages/engine/src/upgrade.test.ts` (+ same with `ORGLET_DATABASE_URL`) + audit lists `upgrade.test.ts` + 08-04 completeness loop prints no `MISSING` | ❌ W0 `upgrade.test.ts` | ⬜ pending |
+| 8-08-01 | 08 | 1 | (SC5) | upstream tests | upstream's own test command on `feat/unary-bang` in `/Users/johankarlsteen/Development.nosync/sigha-upstream`, after `source ~/.nvm/nvm.sh` + `nvm use` (upstream `.nvmrc`, fallback 22); toolchain recorded before install | n/a (external clone) | ⬜ pending |
 | 8-08-02 | 08 | 1 | (SC5) | upstream tests | upstream's own test command on `feat/polymorphic-colon-ref` | n/a (external clone) | ⬜ pending |
 | 8-09-01 | 09 | 2 | (SC5) | checkpoint:decision | manual (Johan approves fork) | n/a | ⬜ pending |
 | 8-09-02 | 09 | 2 | (SC5) | CLI check | `gh repo view snorf/sigha --json parent -q .parent.owner.login` = `rfaulhaber` | n/a | ⬜ pending |
 | 8-09-03 | 09 | 2 | (SC5) | checkpoint:decision | manual (Johan approves push) | n/a | ⬜ pending |
-| 8-10-01 | 10 | 3 | (SC5) | CLI check | `git ls-remote --heads fork` lists exactly the approved branches | n/a | ⬜ pending |
+| 8-10-01 | 10 | 3 | (SC5) | CLI check | `git ls-remote --heads fork` lists exactly the approved branches, or `grep -qx "Push decision: stop" 08-09-SUMMARY.md` | n/a | ⬜ pending |
 | 8-10-02 | 10 | 3 | (SC5) | checkpoint:human-action | manual (Johan opens PRs, pastes URLs) | n/a | ⬜ pending |
 | 8-10-03 | 10 | 3 | (SC5) | grep + script | `grep -nE '^## (Pending upstream changes\|Upstream changes)$' packages/sigha/VENDOR.md` + scratch re-sync keeps section once | ✅ (VENDOR.md) | ⬜ pending |
 
