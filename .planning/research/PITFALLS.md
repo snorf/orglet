@@ -1,960 +1,471 @@
-# Pitfalls Research
+# Domain Pitfalls: v1.1 real-org fidelity
 
-**Domain:** Self-hosted Salesforce platform emulator — roll-up summaries, polymorphic
-lookups/TYPEOF, persisted key prefixes, persisted Bulk API 2.0, pglite test infra, GitHub
-Actions CI, standard-object baseline expansion, conformance re-run
-**Researched:** 2026-09-29
-**Confidence:** MEDIUM-HIGH (Salesforce platform behavior and pglite claims verified against
-official/primary sources where fetchable; some Salesforce Help pages returned errors under
-WebFetch and are backed by secondary sources instead — flagged per pitfall)
+**Domain:** Salesforce platform emulator (orglet), adding docs-generated standard-object baseline v2,
+custom metadata / custom settings, formula globals, OwnerId narrowing, sigha resync, roll-up over
+formula fields, and a redesigned `orglet check` report to a shipped v1.0 system.
+**Researched:** 2026-10-12
+**Overall confidence:** MEDIUM. Code-level claims are HIGH (read directly from `packages/*`). Salesforce
+semantics are MEDIUM or LOW where only secondary sources were reachable; each pitfall carries a
+confidence tag. Salesforce help pages were not fetchable in v1.0 research either, so several platform
+claims are reasoning plus secondary sources and must be re-verified in the phase that implements them.
 
-This is a hardening milestone, not greenfield work. Every pitfall below is anchored to the
-actual code paths in `packages/*` (read from `.planning/codebase/CONCERNS.md` and
-`.planning/codebase/ARCHITECTURE.md`, cross-checked directly against source where it mattered)
-rather than generic advice — each one names the exact bug class this codebase is positioned to
-reintroduce.
+Pitfalls of the v1.0 milestone (`.planning/milestones/v1.0-research/PITFALLS.md`) that still apply and are
+NOT repeated here: #8/#9 (prefix persistence: now also constrains new standard prefixes, see B3), #10
+(pglite vs Postgres divergence: the migrate differ gets much bigger input, see M3), #14 (never run
+`sync-sigha.sh` in CI), #18/#19 (describe contract and read-only objects for thin baselines: apply to every
+new object, see B5), #20/#21 (conformance re-run last, classify every exclusion).
+
+Legend: **BLOCKER** = changes the roadmap order or must be decided before a phase starts.
 
 ## Critical Pitfalls
 
-### Pitfall 1: Roll-up double-counting or stale totals on reparent
+### B1. Treating the Object Reference as ground truth for describe (BLOCKER for phase 1 design)
+**What goes wrong:** The generated baseline contains fields a real API describe does not return, or gets
+flags wrong, so a client sees a different field list than Salesforce.
+**Why it happens:** Object Reference pages list fields that are (a) gated behind a feature, permission or
+licence (Territory, Person Accounts, Data.com `Jigsaw*`, Shield, Field Service), (b) gated by API version
+("available in API version X and later") or "Lightning Experience only", (c) deprecated or "reserved for
+future use", (d) edition-dependent, (e) documented with a flag line (Create/Filter/Group/Nillable/Sort/
+Update) that is sometimes wrong or silent about `defaultedOnCreate`, `calculated`, `idLookup`, `unique`.
+Docs never state `defaultedOnCreate`, `caseSensitive`, `length` for every field, relationship names,
+child relationship names or delete constraints reliably. v1.0 already hit this: conformance excluded Data.com
+`Jigsaw*` fields (PROJECT.md, Phase 7).
+**Consequences:** Phantom columns forever (migrate never drops them without `--force`), clients that select
+`FIELDS(ALL)` hit absent features, `nillable`/`createable` mismatches produce wrong `REQUIRED_FIELD_MISSING`
+or wrong acceptance of writes.
+**Prevention:**
+- Generator (`scripts/`, committed, output committed) emits a per-field provenance record and a curated
+  override file (`packages/metadata/standard/overrides/*.json`) that always wins. Never regenerate in CI and
+  never fetch docs in tests; generated JSON is reviewed as a diff.
+- Default policy: exclude fields marked feature-gated, reserved, deprecated or Lightning-only unless the
+  override file opts them in. Include a field only when the same fact is stated in two places (field table +
+  a second doc page, SDK fixture, or the org retrieve itself). Single-source flags: mark `unverified`.
+- A guard test: every baseline field has `type`, explicit `nillable`, `createable`, `updateable`; objects
+  without a Name field state `nameField` absence explicitly (see B5).
+- Do not copy description prose from docs into JSON (documentation text is Salesforce copyright, not OSI
+  licensed; names, types and flags are facts). Keep `description` out of generated output.
+**Detection:** a retrieve references a standard field the baseline lacks (`UNSUPPORTED:standard-field`) or
+the baseline has a field no retrieve ever mentions; count both in the generator report.
+**Phase:** Baseline v2. Confidence: HIGH on mechanism, MEDIUM on specific gating examples.
 
+### B2. Un-skipping an object un-skips all its retrieved metadata (cascade surprise)
+**What goes wrong:** Today a retrieved `Quote.object-meta.xml` produces one `UNSUPPORTED:standard-object Quote
+skipped` warning (`packages/metadata/src/build.ts:452-454`). Once Quote is in the baseline, the file's
+validation rules, record types, custom fields, lookups, roll-ups and formulas all load and each may fail for
+its own reason (missing globals, missing sibling objects, polymorphic `Owner`). Warning counts go UP in the
+middle of a milestone that targets zero.
+**Prevention:** order phases so baseline objects land together with the globals and `OwnerId` work they
+unlock, or accept an interim non-strict state and record expected counts per area per phase. Do not judge the
+baseline phase by total warning count; judge by "no `standard-object` / `reference-target` warnings left for
+referenced objects". Write the expectation in the phase plan.
+**Phase:** Baseline v2 and Check report. Confidence: HIGH (code read).
+
+### B3. Key prefixes are not in the Object Reference; wrong or invented prefixes mint wrong Ids
+**What goes wrong:** `keyPrefix` is required by `StandardObjectJson` and drives Id minting, the shared
+`matchTargetByPrefix` rule (polymorphic lookups, TYPEOF, formula parent loading) and describe. Object
+Reference pages generally do not list key prefixes (they appear in describe output and in third-party
+cheat sheets such as AutoRabit's, which are unofficial and incomplete). Some objects have no prefix at all
+(history/share/feed child objects describe `keyPrefix: null`), and a few prefixes are shared or org-specific.
+**Consequences:** A guessed prefix gives orglet Ids that look real but belong to another object after a
+migration to a real org (the project's stated end goal), silently mis-resolves polymorphic parents, and may
+collide with a persisted custom prefix.
+**Prevention:**
+- Prefix is data with a source label (`doc`, `sdk-fixture`, `unverified`). Take it only from public SDK test
+  fixtures, public docs text, or open-source tools; if not found, set no prefix (null, as describe does for
+  prefix-less objects) and exclude the object from polymorphic matching rather than invent one. This needs a
+  small type change (`keyPrefix: string | null`) across `build.ts`, `ids.ts`, `prefixes.ts`, `api` describe.
+- Add a baseline unit test: all standard prefixes unique, three characters, none in the custom allocation
+  range orglet uses (`a00`.. via `customKeyPrefix` in `build.ts:420`), none equal to `m0x` used for custom
+  metadata (C2).
+- Upgrade hazard: `planKeyPrefixes` throws `KeyPrefixError` when a persisted prefix collides with a standard
+  prefix (`packages/schema/src/prefixes.ts:104-110`). A new standard prefix that equals a prefix already
+  persisted for a custom object makes `orglet up` fail on an existing database. Test: persist `a00..a0z`, load
+  baseline v2, assert no throw. Real Salesforce also reserves letters for custom objects, so the check is
+  cheap; do it for every added prefix.
+**Phase:** Baseline v2, first task (decides the type change). Confidence: MEDIUM (docs absence confirmed
+only by v1.0 experience and search; verify per object).
+
+### M1. NOT NULL and FK additions on populated tables (migration hazard, BLOCKER for baseline and OwnerId work)
+**What goes wrong:** `migrate()` is additive but two rules turn into hard failures on existing databases:
+1. `columnFor` sets `notNull` for `MasterDetail` fields without a default (`packages/schema/src/columns.ts:99`).
+   `ALTER TABLE ... ADD COLUMN ... NOT NULL` fails on any non-empty table. Baseline v2 adds fields to existing
+   populated tables (Account, Contact, Opportunity...). If any added field is typed `MasterDetail` (e.g. a
+   documented master-detail child relationship on an existing object) migration aborts mid-transaction.
+2. `planTable` creates an FK only when `referenceTo.length === 1` and the target exists
+   (`packages/schema/src/ddl.ts:38-44`). Two v1.1 changes add FKs to old columns: narrowing `OwnerId` from
+   `[User, Group]` to `[User]` (no FK today, FK to `user` tomorrow), and modelling previously missing targets.
+   Existing rows owned by a Group (legal today, e.g. loaded with `--import`) fail `foreignKeySql`. The error is
+   already friendly (`migrate.ts:166`) but it is fatal for `orglet up`.
+**Prevention:**
+- Never derive DB `NOT NULL` from `nillable:false` for baseline fields (current rule; keep it). For new
+  MasterDetail columns on existing tables add the column nullable and enforce in the engine, or refuse in the
+  baseline generator (standard objects rarely gain MD fields; emit a generator error).
+- Build an upgrade test: create a DB with v1.0 baseline + `examples/acme` data (including a Group-owned row and
+  `--import` rows), run `migrate` with the v1.1 schema, assert success, zero data loss, and the exact warning
+  set. This single test covers M1-M4.
+- For OwnerId narrowing: pre-scan before `ALTER` and emit `UNSUPPORTED:schema-narrow` style warning naming
+  the object and count, instead of aborting, OR document that `up` aborts and requires clearing the rows.
+  Decide explicitly; do not leave it to the Postgres error. (Reasoning.)
+**Detection:** `migrate.test.ts` has no populated-table upgrade case today.
+**Phase:** Baseline v2 and OwnerId narrowing. Confidence: HIGH (code read).
+
+### R1. Roll-up over a formula field: formulas are not stored (BLOCKER for the roll-up phase design)
+**What goes wrong:** Phase 5 roll-ups are SQL correlated subqueries over stored child columns
+(`packages/schema/src/rollup.ts`). Formula fields in orglet are evaluated per row after fetch and have no
+column (`isVirtual`, `columns.ts`). A roll-up whose `summarizedField` is a formula has nothing to aggregate.
+**Options and traps:**
+- Materialise formula results into a hidden stored column maintained in the save pipeline before the roll-up
+  recompute. Trap: `migrate()` backfill is SQL-only and `@orglet/schema` depends only on `metadata`; it cannot
+  import `@orglet/formula` (layering `metadata -> schema -> formula`). Backfilling existing rows therefore
+  must run in `engine` or `cli` after migrate, not inside the migrate transaction, and D-10 ("backfill is the
+  last step of the migrate transaction") must be re-decided for this case.
+- Translate the formula to SQL: semantic drift (Decimal.js vs `numeric` rounding, blank handling,
+  `formulaTreatBlanksAs`, text/date functions). Not recommended beyond trivial arithmetic.
+- Evaluate in the app by fetching children: correct but O(children) per recompute; acceptable only as a
+  documented fallback.
+**Prevention:** apply the stored value with the formula's declared `precision/scale` rounding (a Salesforce
+number formula rounds to its scale before aggregation; reasoning, verify). Reject at load, with an explicit
+error naming the formula, anything Salesforce forbids: cross-object references, time-dependent functions
+(`TODAY`, `NOW`), and other non-deterministic or context-dependent inputs (`$User`, `$Setup`, `$Api`).
+Secondary sources agree: formula fields in roll-ups must be idempotent, no related-object merge fields, no
+`TODAY/NOW` (MEDIUM; Salesforce Help not reachable). Follow D-05: invalid roll-up definition fails load
+rather than warning.
+**Also:** a formula that depends on another roll-up field on the same record makes the depth ordering in
+`rollupDepth` include formula dependencies; add a cycle test (formula -> roll-up -> formula).
+**Phase:** Roll-up over formula. Confidence: HIGH on orglet side, MEDIUM on Salesforce rules.
+
+## Moderate Pitfalls
+
+### M2. Index and FK statement bloat on every `orglet up`
+**What goes wrong:** `planTable` emits one index per Lookup/MasterDetail/unique/externalId field and one FK per
+single-target lookup. `migrate` runs `indexSql` for every planned index on every start (idempotent, but one
+round trip each) and checks FK names against `pg_constraint`. ~50 more objects with ~10 lookups each adds
+hundreds of statements per boot, inside one transaction, multiplied by one pglite instance per test file
+(`hookTimeout` 60 s).
+**Prevention:** measure `up`/test-file setup time before and after baseline v2 (budget: no more than 2x);
+skip indexes whose name already exists via the `existingConstraintNames`-style catalog query instead of
+`IF NOT EXISTS` statements; do not index lookups on read-mostly baseline objects nobody queries unless the
+retrieve references them. Do not lower Postgres limits claims: the per-table column cap is 1600 and a
+standard object has well under 200 fields, so the cap is not a real risk, but check compound fields (below).
+**Detection:** `statements.length` from `MigrateResult` in the upgrade test; track it as a number.
+**Phase:** Baseline v2. Confidence: HIGH (code read), MEDIUM on timing (unmeasured).
+
+### M3. Compound fields and virtual columns in generated baselines
+**What goes wrong:** Docs list `BillingAddress` (Address) and its parts (`BillingStreet`...) as separate
+fields. If the generator marks both as physical, data is stored twice and writes conflict. `Name`-type compound
+fields (`Contact.Name`) and `Location` have the same shape.
+**Prevention:** generator maps documented compound types to `Address`/`Name`/`Location` with `compoundFieldName`
+on the parts (already supported in `fromStandardJson`); unit test that every part has a matching compound
+parent and that `isVirtual` excludes the parent from DDL. Bulk query rejects Address/Location fields (Phase 6),
+so keep the type exact.
+**Phase:** Baseline v2. Confidence: HIGH.
+
+### M4. Field renames, removals and type changes between baseline v1 and v2 leave permanent warnings
+**What goes wrong:** Hand-written v1 fields that differ from generated v2 (renamed, dropped, changed length or
+type) produce `UNSUPPORTED:schema-drop` and `UNSUPPORTED:schema-narrow` warnings on every `up` (the columns are
+kept, `migrate.ts:140-143, 198-203`), which breaks `--strict` for every existing user. Data in the old column
+is not moved.
+**Prevention:** the generator produces a v1-vs-v2 diff report; CI fails if any v1 field disappears or narrows
+unless an allowlist entry explains it. Widening is accepted (`isWidening`). Keep v1 fields that docs omit but
+v1 conformance relies on, via overrides.
+**Phase:** Baseline v2. Confidence: HIGH.
+
+### B4. Standard picklist values are per-org; baking doc values makes them look authoritative
+**What goes wrong:** `Account.Industry`, `Lead.Status`, `Case.Status`, `Opportunity.StageName` and most Type
+picklists differ per org and are overridden by the retrieve's `standardValueSets`. Opportunity `StageName`
+also carries probability/forecast category semantics; `Case.Status` carries open/closed. Doc values with
+`restricted: true` reject values real orgs allow.
+**Prevention:** baseline picklists are `restricted: false` unless the docs state "restricted picklist"; use
+`standardValueSet` references whose names match the Metadata API StandardValueSet names exactly (an orphan
+name means the retrieve override never applies); the retrieve always overrides wholesale (note the merge at
+`build.ts:468-470` replaces values and drops the `valueSetName`, check it still behaves for the new sets);
+generated defaults mark exactly the documented default. Add a test that loads each new object with a retrieve
+override and asserts the override wins.
+**Phase:** Baseline v2. Confidence: MEDIUM.
+
+### B5. New objects that break describe or DML honesty
+**What goes wrong:** Many of the listed objects have special semantics: `ContentDocument` is created via
+`ContentVersion`, `ContentVersion.VersionData` is a blob with its own REST path, `FeedItem.ParentId` is
+polymorphic over almost every object, `EmailMessage`, `OpportunityContactRole`, `AccountTeamMember` and
+`AccountContactRelation` have no Name field, `Location/Address` are compound and feature-gated. A baseline that
+treats them as ordinary CRUD objects returns success where Salesforce refuses.
+**Prevention:** per-object explicit `createable/updateable/deletable/undeletable/queryable/searchable`
+(Phase 3 mechanism, `INVALID_TYPE_FOR_OPERATION`); `base64` fields are `UNSUPPORTED:field-type` until blob
+handling exists, not text; objects without a name field describe with no `nameField:true` (do not invent one);
+extend `conformance/describe-check/objects.txt` to every new object and run both SDK legs (v1.0 #18).
+Describe-global grows by ~50 entries: any queryable flag must be true only if SOQL works for the table.
+**Phase:** Baseline v2 and conformance. Confidence: MEDIUM.
+
+### C1. Custom metadata Ids: not in the retrieve, must be deterministic
+**What goes wrong:** `customMetadata/Type.Record.md-meta.xml` carries no Id. The Id counter is process-local
+(PROJECT.md Known Gaps), so Ids assigned in load order change between runs, and a reload that deletes and
+re-inserts rows invalidates any Id a client or another `__mdt` row stored (MetadataRelationship values are
+developer names in the XML, but Ids once inserted into columns).
+**Prevention:** mint `__mdt` record Ids deterministically from (type API name, record DeveloperName) and
+persist the mapping alongside key prefixes (`_orglet`), or derive a counter slice from a stable hash and
+check collisions at load. Reload semantics: upsert by (type, DeveloperName); delete rows no longer in the
+retrieve; never reuse an Id. Test: load twice and across a changed record order; Ids identical.
+**Phase:** Custom metadata. Confidence: HIGH on mechanism, MEDIUM on the Id format (below).
+
+### C2. Custom metadata key prefix is a separate namespace
+**What goes wrong:** Records of custom metadata types start with `m0x`, allocated per type like custom objects
+use `a0x` (secondary source: Apex Hours / AutoRabit; LOW-MEDIUM, no official statement found). `customKeyPrefix`
+in `build.ts:420` is hard-coded to `a`, `isCustomObjectName` matches only `__c`, and the warning regex at
+`build.ts:452` classifies `__mdt` as `object-kind` unsupported. Letting `__mdt` ride the existing custom path
+gives them `a` prefixes.
+**Prevention:** `planKeyPrefixes` takes an alphabet start per kind; persisted `source` column distinguishes
+kinds; a test that custom metadata types never consume `a..` prefixes and vice versa. Verify the `m0x` claim
+from a public fixture before shipping; if unverifiable, document as orglet's choice.
+**Phase:** Custom metadata. Confidence: LOW-MEDIUM.
+
+### C3. MetadataRelationship: load order, cycles, dangling targets, entity targets
+**What goes wrong:** A `__mdt` record can reference another `__mdt` record (same type or other), including
+cycles; targets can be missing from a partial retrieve; and `MetadataRelationship` can also target
+`EntityDefinition`/`FieldDefinition` (which orglet does not model) rather than `__mdt`. Inserting in file
+order with immediate FK checks fails or silently drops values.
+**Prevention:** insert all `__mdt` rows in one transaction with FKs deferred (they already are
+`DEFERRABLE INITIALLY DEFERRED`) or in import mode; resolve names to Ids in a second pass after all Ids are
+minted (C1). Missing target record: store null and warn `UNSUPPORTED:custom-metadata-record` naming
+type and developer name (once per target), never abort. EntityDefinition/FieldDefinition targets stay an
+explicit `UNSUPPORTED:field-type` or `reference-target`. `fromSourceField` currently skips the type entirely
+(`field-type` warning); the new branch must keep the skip for unsupported variants.
+**Phase:** Custom metadata. Confidence: MEDIUM.
+
+### C4. Custom metadata value parsing and read-only enforcement
+**What goes wrong:** Values come as `<values><field>X__c</field><value xsi:type="xsd:double">` etc. Strings that
+look numeric must stay strings (`"007"`), `xsi:nil` means null, booleans are `true/false`, picklists need
+validation against the (possibly retrieved) value set, and a value for a field absent from the type (a field
+deleted after the record was saved) must warn, not crash. Writes through REST/Bulk to `__mdt` are not
+allowed by Salesforce DML; use the existing flag mechanism (`INVALID_TYPE_FOR_OPERATION`), bypassed only by
+the loader. The exact Salesforce status code for REST DML on `__mdt` was not verified (LOW); confirm from SDK
+tests or docs before asserting it in a conformance check.
+**Phase:** Custom metadata. Confidence: MEDIUM.
+
+### C5. Custom settings are `__c` objects with a different shape
+**What goes wrong:** `<customSettingsType>List|Hierarchy</customSettingsType>` appears in an ordinary
+`Name__c.object-meta.xml`. `fromSourceObject` treats it as a custom object: it grants `OwnerId`
+(`hasOwner = !MasterDetail`), a `Name` field, record types, DML via REST like any object. Hierarchy settings
+instead carry `SetupOwnerId` (polymorphic: Organization, Profile, User) and no owner. Setting data is not part
+of an SFDX retrieve, so `$Setup` resolves against an empty table unless seeded.
+**Prevention:** parse `customSettingsType` in `sfdx.ts`, build a separate `SObjectDef` shape
+(`customSetting: "List" | "Hierarchy"`, no OwnerId, `SetupOwnerId` for hierarchy), assign key prefixes via the
+persisted mechanism, and reject unsupported variants explicitly. Do not claim setting values exist when the
+retrieve has none; `orglet check` must say "no data, `$Setup` evaluates to blank".
+**Phase:** Custom settings. Confidence: MEDIUM.
+
+### F1. `$Setup` hierarchy resolution order and blank semantics
+**What goes wrong:** Hierarchy custom settings resolve per running user: user-specific row, else profile row,
+else organization default, else blank (null fields). Implementing "first row found" or "org default only"
+returns wrong values; implementing missing rows as an error breaks formulas Salesforce evaluates to blank.
+List custom settings are not available through `$Setup` in formulas (verify from docs; MEDIUM) and must fail
+as `UNSUPPORTED:formula-global` or a field-not-found, matching Salesforce, not silently resolve.
+**Prevention:** one resolver `resolveHierarchySetting(user, setting)` with documented order, unit test for all
+four outcomes plus a user with no profile. Load once per evaluation batch, not per row: the formula registry
+evaluates after fetch, per row, so a naive global loader is N+1 queries. `$Setup` cannot be inlined at compile
+time because settings are mutable data; compile once, bind per evaluation.
+**Phase:** Formula globals. Confidence: MEDIUM.
+
+### F2. `$CustomMetadata` and missing records
+**What goes wrong:** `$CustomMetadata.Type__mdt.DeveloperName.Field__c` bound at compile time against records
+that a partial retrieve lacks. Salesforce validates type/field at save and returns blank at run time for a
+record that no longer exists; orglet's compile-time check against a retrieve can only say "not in the retrieve".
+**Prevention:** unknown type or field: compile error with a clear message (metadata inconsistency, a root
+cause, F5). Unknown record developer name: compile succeeds, evaluates to blank, plus one
+`UNSUPPORTED:custom-metadata-record` warning per missing record (not per formula). Case-insensitive match on
+developer name. Records are static between reloads, but do not cache compiled formulas across a reload.
+**Phase:** Formula globals. Confidence: MEDIUM.
+
+### F3. `$Label` and translations
+**What goes wrong:** Labels live in `labels/CustomLabels.labels-meta.xml` (master `language`, `protected`,
+`categories`), translations in `translations/*.translation-meta.xml`. Salesforce evaluates `$Label.X` in the
+running user's language. orglet's user language is effectively fixed.
+**Prevention:** resolve to the master value; if the retrieve contains a translation for the user's
+`LanguageLocaleKey`, either implement it (small) or emit `UNSUPPORTED:formula-label-translation` once. Trim
+nothing the XML preserved (whitespace inside `<value>` is meaningful), keep XML entity decoding, support the
+`$Label.ns.Name` form, and treat built-in `$Label.Site.*` as `UNSUPPORTED:formula-global`. Label names are
+case-insensitive. Missing label: compile error naming the label.
+**Phase:** Formula globals. Confidence: MEDIUM.
+
+### F4. `$Api` leaks the wrong host or a live session token
+**What goes wrong:** `$Api.Partner_Server_URL_xxx`, `$Api.Enterprise_Server_URL_xxx` and `$Api.Session_ID` need
+a base URL and a session. Building the URL from the incoming `Host` header gives `localhost:8180` or an
+internal Docker hostname in data a client later stores; using the session token inside a compiled/cached
+formula or a materialised roll-up column (R1) leaks it into persisted data. `Session_ID` is blank in contexts
+without a user session (batch, bulk worker). (Syntax details from public formula docs; MEDIUM.)
+**Prevention:** one configured public base URL (`ORGLET_BASE_URL`, default derived once at `up` from the
+listening port), version taken from the request API version, org Id from the org; never persist `$Api`
+values; reject `$Api` in roll-up formulas (R1); never log it. Test with `--host`/proxy-style `Host` header.
+**Phase:** Formula globals. Confidence: MEDIUM.
+
+### F5. `$UserRole` for users without a role
+**What goes wrong:** `$UserRole.*` for a user with `UserRoleId` null must be blank, not an error; the loader
+(parent loading currently assumes a row) may throw on null FK or issue a query with `NULL`.
+**Prevention:** same loader as `$User`/`$Profile`; test with the default session user (no role) and a role with
+a parent. Baseline `UserRole` exists already.
+**Phase:** Formula globals. Confidence: HIGH.
+
+### O1. OwnerId narrowing is per object, not global (BLOCKER for the OwnerId task)
+**What goes wrong:** Narrowing every `OwnerId` to `[User]` breaks objects that really are polymorphic (Case,
+Lead, and other queue-capable objects). `conformance/poly-check` creates a Case owned by a Group
+(`sf_poly.py:61`, `jsforce.mjs:63`) and several unit tests use Group owners (`api.test.ts`, `engine.test.ts`,
+`query.test.ts`, `shape.test.ts`, `compile.test.ts`). `systemFields()` in `build.ts:112-116` hard-codes
+`["User","Group"]` for every baseline and custom object.
+**Prevention:**
+- Source the narrowing per object from the Object Reference "Reference To" line for `OwnerId`; encode it as
+  `ownerTargets` in the standard JSON (default stays `["User","Group"]` so nothing changes silently). Custom
+  objects stay as-is until a public source says otherwise (LOW on real behaviour).
+- Audit tests first: grep Group-owned fixtures against the narrowed object list; change tests only where
+  Salesforce itself would reject (reference: `INVALID_CROSS_REFERENCE_KEY`) and say so in the commit.
+- `<rel>.Type` and `TYPEOF` on a now single-target relationship: Salesforce treats those as polymorphic-only;
+  decide the behaviour (likely `INVALID_FIELD`) and test it; do not leave the Phase 4 code path accepting it
+  by accident (reasoning, LOW).
+- Narrowing adds an FK (M1); sequence with the migration upgrade test.
+- Sequencing with sigha: while `Owner` stays polymorphic for Case/Lead, plain `Owner.Name` in formulas stays a
+  compile-time rejection (D-08) until the colon syntax lands (S1); do not claim Case/Lead formulas fixed
+  by narrowing.
+**Phase:** OwnerId narrowing, before formula globals; after the upgrade test exists. Confidence: HIGH on
+orglet side, MEDIUM on which objects are single-target.
+
+### S1. Resyncing sigha: moving upstream HEAD, script portability, corpus drift
 **What goes wrong:**
-A child record's roll-up summary contribution is counted on both the old and new parent (double
-count), or the old parent is never recalculated after the child leaves it (stale total), or the
-new parent is never recalculated after the child arrives (missing count).
-
-**Why it happens:**
-`packages/metadata/src/types.ts:101` already models `reparentable?: boolean` on `FieldDef`,
-mirroring Salesforce's real "Allow reparenting" checkbox on Master-Detail relationships — so
-reparenting a roll-up child is an explicitly supported case here, not a theoretical one. The
-naive implementation recomputes the roll-up for `next.ParentId` on every child save and forgets
-that `old.ParentId` (the previous parent, on update) also needs recomputation. Salesforce
-itself only allows roll-up summaries on Master-Detail relationships specifically because
-reparenting is otherwise unconstrained on Lookup relationships; if orglet's roll-up
-implementation is not restricted to `type === "MasterDetail"` children, this bug class widens
-to every lookup-based parent-child pair.
-
-**How to avoid:**
-On child update, diff `old` vs `next` for every roll-up-eligible parent field on the object;
-if the parent reference changed, recompute the roll-up for **both** the old and new parent,
-not just the new one. Restrict roll-up summary fields to `MasterDetail` relationships (matching
-real Salesforce), and make `reparentable: false` (the Salesforce default) the enforced
-non-reparentable case explicit in tests — a reparent attempt on a non-reparentable
-Master-Detail child should fail before recomputation is even a question.
-
-**Warning signs:**
-A test that reparents a child between two parents and asserts both parents' totals afterward
-is the single highest-value test to write first; if it's missing, assume the bug exists.
-Symptom in a running org: `SUM`/`COUNT` roll-ups that only ever grow, never shrink, across a
-reparent-heavy workload.
-
-**Phase to address:** Roll-up summary fields phase (own the reparent case explicitly in the
-phase's acceptance criteria, not as a follow-up).
-
----
-
-### Pitfall 2: Roll-up not recalculated on undelete or on a change to the filter field
-
-**What goes wrong:**
-(a) A child that was soft-deleted (excluded from the roll-up) is undeleted, but the parent's
-roll-up is never recomputed to add it back. (b) A roll-up has a filter (e.g. `SUM(Amount)
-WHERE StageName = 'Closed Won'`) and a child's `StageName` changes from outside the filter to
-inside it (or vice versa) without changing any field the recompute logic watches — the roll-up
-silently goes stale.
-
-**Why it happens:** PROJECT.md's requirement text says roll-ups recompute "on child
-insert/update/delete/undelete" — undelete is called out explicitly because Salesforce's own
-soft-delete/undelete pipeline (which orglet already implements per
-`packages/engine/src/engine.ts` `undeleteBatch()`) is a separate code path from `update()`, and
-it's easy to wire recomputation into `saveBatch()`'s update path while forgetting
-`undeleteBatch()` entirely. The filter-field case is a distinct failure mode: recompute logic
-that triggers "when a roll-up source field changes" must also trigger when a field used only in
-the roll-up's **filter clause** changes, even if the aggregated field itself (`Amount`) did not.
-
-**How to avoid:** Recompute the roll-up on every one of the four child mutation paths
-(`saveBatch` insert, `saveBatch` update, `deleteBatch`, `undeleteBatch`), not just the ones that
-look most "roll-up-shaped." Derive the recompute trigger set from the roll-up's full definition
-— aggregated field **and** every field referenced in the filter — not just the aggregated
-field, so a filter-only field change still invalidates the cached total.
-
-**Warning signs:** A test matrix with one row per (insert, update-aggregate-field,
-update-filter-field-only, delete, undelete) × (in-filter, out-of-filter) is the concrete
-acceptance test; if the test suite only covers insert/delete, filter-field and undelete gaps
-will ship silently, matching exactly the class of "quiet field loss" this project already
-flags via `UNSUPPORTED:*` for other gaps — a stale roll-up gives no warning at all, which is
-worse.
-
-**Phase to address:** Roll-up summary fields phase.
-
----
-
-### Pitfall 3: Roll-up recursion and transaction-scope interaction with per-record savepoints
-
-**What goes wrong:** A roll-up parent is itself a child of another roll-up (multi-level
-Master-Detail), so updating a grandchild must cascade a recompute up two levels; a naive
-recursive implementation either infinite-loops, recomputes the same ancestor multiple times
-per transaction, or — because orglet wraps `saveBatch()` in one Postgres transaction with a
-savepoint per record (`packages/engine/src/engine.ts:207`, per `ARCHITECTURE.md`) — a roll-up
-update to the parent that fails validation rolls back to its savepoint and silently reverts
-just that one record's roll-up write while the rest of the batch (including the child that
-triggered it) commits, leaving parent and child inconsistent without either "insert" or
-"update" ever reporting an error for the parent.
-
-**Why it happens:** Salesforce's own documented behavior is that native roll-up summaries only
-look one level down (see Sources) — multi-level cascading is explicitly a known limitation, not
-an edge case anyone forgets to handle; a from-scratch implementation is exactly where a team
-either (a) doesn't realize the limitation exists and builds unbounded recursion, hitting stack
-depth or an actual infinite loop if two roll-ups reference each other in a cycle, or (b) copies
-Salesforce's one-level restriction faithfully but doesn't decide what to do when a grandchild
-insert happens inside the *same transaction* as its parent's insert (import mode, `Bulk API`
-batch of 200, or a `/composite/tree` request) — savepoint rollback on the parent must not
-silently drop the roll-up write without failing the batch's reported result for that record.
-
-**How to avoid:** Bound recompute depth explicitly (one level, matching Salesforce) rather than
-walking an arbitrary parent chain; detect and reject roll-up cycles at metadata-load time
-(object A's roll-up depends on object B's roll-up which depends on object A) as an
-`UNSUPPORTED:rollup-cycle` warning, following the project's existing degrade-not-crash
-convention, rather than at runtime. For transaction scope: recompute the roll-up **inside** the
-same savepoint as the triggering child write so that a rollback of the child's savepoint also
-correctly reverts the roll-up recompute for that one record — verified by a test that inserts a
-batch with `allOrNone: false` where one child fails validation and asserts the parent's roll-up
-reflects only the children that actually committed.
-
-**Warning signs:** Any roll-up recompute function that calls itself or walks
-`childRelationships` without a depth counter; any roll-up recompute that runs outside the
-triggering record's savepoint (i.e., as a separate top-level query after the transaction
-commits) will show phantom totals under partial-success batches.
-
-**Phase to address:** Roll-up summary fields phase — the transaction-scope test above should be
-a named acceptance criterion, not implicit.
-
----
-
-### Pitfall 4: Roll-up fields accepted as writable via the API instead of rejected like Salesforce
-
-**What goes wrong:** A client `POST`s or `PATCH`es a record with a value for a roll-up summary
-field and orglet either stores the client-supplied value (silently wrong until the next
-recompute) or throws an unhelpful error, instead of matching Salesforce's documented behavior:
-roll-up summary fields describe as `createable: false` and `updateable: false`, so real
-Salesforce clients (jsforce, simple-salesforce) either never send the field or expect the
-server to ignore/reject it the same way it does for any other non-createable system field.
-
-**Why it happens:** The engine's existing `coerce.ts`/`checkRequired`/system-field-default
-logic (per `ARCHITECTURE.md`'s save pipeline) was built before roll-up fields existed as a
-concept; it's easy to add the `Summary` field type to the schema/DDL layer and forget to also
-add it to whatever list currently drives "not createable" behavior for fields like `Id` or
-`SystemModstamp`.
-
-**How to avoid:** Treat `Summary`-type fields exactly like the existing read-only system
-fields in the save pipeline — reuse the same `notWritable` error path
-(`packages/engine/src/errors.ts:44-49`, already used for other non-updatable fields) rather
-than inventing new logic, and strip/ignore client-supplied roll-up values before validation the
-same way Salesforce silently ignores them on insert (Salesforce does not error on a supplied
-roll-up value on `insert`/`update` calls that omit it from the field list; it only matters if
-the field is explicitly included with a value — confirm exact behavior against describe
-`updateable`/`createable` flags in a conformance check, since Salesforce's tolerance here is a
-detail worth pinning down with a real describe call rather than assuming).
-
-**Warning signs:** `describe` output for a roll-up field that reports `createable: true` or
-`updateable: true` is a direct regression signal; a test that attempts to set a roll-up field
-via `insert()`/`update()` and asserts the value is ignored (not stored, not erroring the whole
-record) belongs in the engine's existing coercion test suite.
-
-**Phase to address:** Roll-up summary fields phase.
-
----
-
-### Pitfall 5: Fixing the SOQL join for polymorphic lookups but not the read-side `attributes.type` or formula parent path
-
-**What goes wrong:** `OwnerId.referenceTo = ["User", "Group"]` is already correctly modelled
-(`packages/metadata/src/build.ts:113`, and `Group` is one of the 21 baseline objects with
-`keyPrefix: "00G"`), so this bug is concretely reproducible today: `resolveRelationship`
-picks `targets[0]` (`"User"`) unconditionally
-(`packages/metadata/src/types.ts:197-200`/`schema.ts:53-60`), the SOQL compiler joins `Owner`
-against the `user` table unconditionally (`packages/soql/src/compile.ts:116`), **and**
-`shape.ts` bakes `shape.type` in at compile time and stamps it onto every row's
-`attributes.type` regardless of the row's actual key prefix
-(`packages/soql/src/shape.ts:19,26` — confirmed by reading the file: `attributes(shape.type,
-id, apiVersion)` where `shape.type` is fixed per query shape, not computed per row). A team
-that fixes only the join (adds a `CASE`/branch join keyed on `keyPrefixOf`) will still return
-`attributes.type: "User"` for a Group-owned record, and `packages/formula/src/compile.ts:97`'s
-"first target" parent-path resolution is a **third**, independent place with the same bug that
-is easy to forget because it lives in a different package.
-
-**Why it happens:** Three call sites (`soql/compile.ts` join, `soql/shape.ts` row shaping,
-`formula/compile.ts` parent traversal) all independently encode "polymorphic = pick index 0"
-as a stopgap; there is no single seam that all three route through, so a partial fix (usually
-just the SOQL join, since that's the one with the visible `TYPEOF is not supported yet` error)
-is the natural failure mode.
-
-**How to avoid:** Fix `resolveRelationship`'s callers to select the target by the row's actual
-key prefix (via `keyPrefixOf`, already available per `packages/schema/src/ids.ts:40`) as a
-**single shared helper** used by all three call sites, not three separate patches. Write one
-test per call site against the same fixture (a Case or Account owned by a `Group`, not a
-`User`): SOQL `SELECT Owner.Name FROM Case`, `attributes.type` on that same query's Owner
-sub-object, and a formula referencing `Owner.Name` in a validation rule — all three must agree
-on `"Group"`.
-
-**Warning signs:** `checkReferences` (`packages/engine/src/engine.ts:487-509`) already resolves
-polymorphic targets correctly per-row on the **write** path (`targets.find(t => t.keyPrefix ===
-keyPrefixOf(id))`) — if the read-side fix doesn't converge on this exact same pattern, the
-write and read paths will disagree about a record's owner type, which is a strong sign only one
-side was fixed.
-
-**Phase to address:** Polymorphic lookups / TYPEOF phase.
-
----
-
-### Pitfall 6: TYPEOF parser support gaps and `WHERE` on the polymorphic parent itself
-
-**What goes wrong:** `TYPEOF ... WHEN ... THEN ... ELSE ... END` currently throws
-`unsupported("soql-typeof", ...)` unconditionally (`packages/soql/src/compile.ts:327`) — it is
-parsed by `@jetstreamapp/soql-parser-js` but never compiled. Two distinct sub-bugs to watch for
-once this is implemented: (1) a record whose runtime type matches none of the `WHEN` branches
-must fall through to `ELSE` (documented Salesforce behavior — confirmed: unmatched types get
-the `ELSE` field list, not an error and not an empty result) rather than being silently dropped
-from results or crashing; (2) `WHERE Owner.Type = 'Group'` (filtering on the polymorphic
-field's runtime type) is a separate, officially-documented pattern from `TYPEOF ... END` (which
-only shapes the *selected* fields) — a compiler that implements `TYPEOF` in `SELECT` but not
-`.Type` in `WHERE` will pass the "happy path" TYPEOF test and still fail any client that
-filters by owner type, which is a common real-world query shape.
-
-**Why it happens:** `TYPEOF` and `<Relationship>.Type` in `WHERE` are two independent grammar
-productions in SOQL that happen to serve the same polymorphic-relationship feature; treating
-"implement TYPEOF" as one task risks stopping at the `SELECT`-only case since that's the more
-visible/discussed of the two in most Salesforce documentation and blog coverage.
-
-**How to avoid:** Scope the phase to both productions explicitly. Confirm parser coverage
-first — `@jetstreamapp/soql-parser-js` (already a dependency) needs to be checked for whether
-it parses `WHERE Owner.Type = 'Group'` today; if the AST shape differs from what `compile.ts`
-expects for a normal field comparison, that's a second parser-adjacency risk distinct from the
-`TYPEOF` clause itself. jsforce's TypeScript types for query results on a `TYPEOF`-selected
-field are typically loosely typed (`any`/`Record<string, unknown>` per branch) rather than a
-discriminated union — this is a jsforce client-side characteristic, not something orglet needs
-to defend against, but worth knowing so a "the jsforce test doesn't strongly type the result"
-observation isn't mistaken for a orglet bug during conformance re-run.
-
-**Warning signs:** A `TYPEOF` query against a fixture row whose owner is neither `User` nor
-`Group` (not reachable for `OwnerId` today since both targets are modelled, but reachable for
-`User.DelegatedApproverId` which is `["Group", "User"]` — both modelled too) is a weak test;
-the strong test is `WHERE Owner.Type = 'Group'` returning exactly the Group-owned rows.
-
-**Phase to address:** Polymorphic lookups / TYPEOF phase.
-
----
-
-### Pitfall 7: Polymorphic-target-not-in-schema case is deferred but the TYPEOF/join fix must not assume all targets always exist
-
-**What goes wrong:** For *this* milestone, every polymorphic field's targets are already
-modelled: `OwnerId` → `User`/`Group`, `User.DelegatedApproverId` → `Group`/`User`,
-`Group.RelatedId` → `User`/`UserRole` (all in the 21-object baseline). `Task.WhoId`/`WhatId`
-and `Event.WhoId`/`WhatId` — whose targets include objects like `Lead` (modelled) but reference
-patterns spanning many objects — are explicitly out of scope for this milestone per
-`PROJECT.md`. The risk is writing the TYPEOF/join fix in a way that silently assumes "every
-`referenceTo` entry has a matching object in the schema," which will throw an unhandled error
-(not a graceful `UNSUPPORTED:*`) the moment a future milestone adds `Task`/`Event` with a
-target not yet modelled, or the moment any custom polymorphic-adjacent scenario shows up.
-
-**Why it happens:** It's easy to design and test the per-row target resolution helper (Pitfall
-5) only against the two fields where all targets are guaranteed present, and never exercise the
-"no target found for this key prefix" branch, because that branch is unreachable with current
-fixtures.
-
-**How to avoid:** Make the per-row resolution helper explicitly handle "key prefix has no
-matching modelled target" as a degrade case (`UNSUPPORTED:reference-target` warning, matching
-the existing convention at `packages/metadata/src/build.ts:461-466`) with a defined fallback
-`attributes.type` (Salesforce's own key-prefix-to-object mapping is public and stable — even an
-unmodelled target's *type* can often still be reported correctly from the ID prefix alone,
-even if its fields can't be joined) rather than throwing. Add one test with a synthetic/fake key
-prefix that matches nothing in the schema to exercise this branch now, even though no real
-fixture hits it yet.
-
-**Warning signs:** No test in the suite constructs an owner/parent ID whose prefix matches
-nothing in `OrgSchema` — that gap is itself the warning sign.
-
-**Phase to address:** Polymorphic lookups / TYPEOF phase (defensive-only scope; full
-Task/Event support stays out of scope).
-
----
-
-### Pitfall 8: Persisting key prefixes by renumbering instead of seeding from the current alphabetical assignment
-
-**What goes wrong:** The migration from "recomputed alphabetically on every build"
-(`packages/metadata/src/build.ts:1-8,20-24`) to "persisted" must treat the **first** run
-against an existing org (including Johan's own Developer Edition retrieve, which already has
-custom objects assigned prefixes today under the old scheme) as "freeze what's there now," not
-"assign fresh prefixes as if this were a brand-new org." A naive persistence implementation
-that just adds a table and populates it by running the existing alphabetical algorithm once
-more will, by construction, reproduce the *current* correct assignment on the very first run
-(no bug yet) — but the real risk surfaces on the *second* schema build after a custom object is
-added or removed, if the persistence-write logic still recomputes-then-persists instead of
-persist-then-only-assign-new-ones. The bug is invisible in a single-run test and only shows up
-across two consecutive builds with a changed object set — precisely the scenario
-`CONCERNS.md` already documents as unguarded by any existing test
-(`packages/metadata/src/build.test.ts` "covers baseline+project merge but not multi-build
-prefix drift").
-
-**Why it happens:** "Persist the prefixes" sounds like "add a cache," and a cache that's
-trivially derivable from existing inputs (alphabetical sort) tempts a same-answer-either-way
-implementation that recomputes on every build and only *writes* the result — which passes every
-single-build test while remaining exactly as broken as before across multi-build scenarios.
-
-**How to avoid:** On first encounter with a custom object name, look up the org's persisted
-prefix table; if the name exists, use its stored prefix unconditionally (never recompute it
-from position). If the name is new, assign the next unused prefix in the persisted sequence
-(not `customObjects.length` recomputed fresh) and persist it before returning the schema. The
-correctness test is explicitly two-build, not one: build with objects [A, B], record prefixes;
-build again with objects [A, B, Z-inserted-alphabetically-before-A]; assert A and B's prefixes
-are unchanged and only the new object gets a new prefix — matching the exact scenario
-`CONCERNS.md` calls out as currently untested.
-
-**Warning signs:** Any implementation where the "assign new prefix" code path is reachable
-without first consulting the persisted table is suspect; a two-build test (as above) is the
-concrete acceptance gate.
-
-**Phase to address:** Key-prefix persistence phase.
-
----
-
-### Pitfall 9: `orglet reset` semantics and `orglet check` without a database left undefined for persisted prefixes
-
-**What goes wrong:** Two behaviors need an explicit decision before implementation, not an
-implicit one baked in by whatever's easiest to code: (1) does `orglet reset` (which drops the
-org's Postgres schema per `ARCHITECTURE.md`'s CLI responsibilities) also clear the persisted
-prefix table, or does it survive reset? If persisted prefixes live *inside* the dropped org
-schema, reset naturally clears them (arguably correct — reset means "start over," and with no
-records left, fresh alphabetical assignment on the next `up` is harmless). If they live
-*outside* the org schema (a separate always-on system table, a local file), reset leaves them
-stale, which quietly defeats the entire point of persistence: a `reset && up` cycle would then
-get *different* prefixes than a truly fresh org, which is itself a correctness regression
-relative to the pre-persistence behavior (which was at least *consistently* recomputed).
-(2) `orglet check` validates an SFDX project **without touching Postgres**
-(`ARCHITECTURE.md`) — but the true persisted prefix can only be known by reading Postgres, so
-`check` running before any `up` has occurred cannot report the *real* prefix a subsequent `up`
-would assign; it can only report a *provisional* one, and if `check`'s provisional guess is
-allowed to diverge from what `up` later actually assigns, any output from `check` that surfaces
-prefixes (warnings, describe-like output) is misleading.
-
-**Why it happens:** These two commands were designed before persistence existed, under the
-assumption that "the prefix" is a pure function of the object list computable anywhere; adding
-persistence turns "the prefix" into "the prefix, conditional on what's already durably
-recorded," which `check`'s no-database contract cannot honor, and `reset`'s "drop everything"
-contract has to make an explicit choice about.
-
-**How to avoid:** Decide and document explicitly (a design note, not just code): persisted
-prefixes live inside the org's Postgres schema so `reset` clears them by construction (simplest,
-matches "reset = start over," and is the only option consistent with `orglet check` running
-without a database — there is no *other* place `check` could read from anyway). Make `orglet
-check`'s output, if it shows prefixes at all, explicitly labeled as provisional/unverified
-("would assign, pending `up`") rather than presented as fact.
-
-**Warning signs:** Any design where persisted-prefix storage lives outside the org's own
-Postgres schema (e.g., a flat file next to the SFDX project, a global `orglet` config table
-shared across orgs) is the concrete anti-pattern to catch in review before implementation
-starts, since it breaks both the reset-consistency and check-without-DB constraints
-simultaneously.
-
-**Phase to address:** Key-prefix persistence phase — resolve as a design decision before
-writing the migration, not discovered mid-implementation.
-
----
-
-### Pitfall 10: Green pglite tests hiding real-Postgres regressions
-
-**What goes wrong:** A test suite that passes entirely on pglite gives false confidence that
-the Docker-Postgres path (the one the *running server* actually uses, per
-`PROJECT.md`: "Docker Compose path still works for the running server") is also correct, when
-pglite differs from real Postgres 16 in ways that matter to this codebase specifically:
-
-- **`session_replication_role`**: import mode
-  (`packages/engine/src/engine.ts:215`, `SET LOCAL session_replication_role = replica`) is
-  used to disable FK enforcement during import. pglite's support for this session parameter has
-  been reported as failing in at least one downstream project migrating SQLite→pglite data,
-  with a `25P02` error surfaced ([electric-sql/pglite issue tracker discussion referenced via
-  a downstream bug report](https://github.com/activepieces/activepieces/issues/10545);
-  confidence: MEDIUM — this is a third-party bug report, not an official pglite compatibility
-  matrix entry, so **verify directly against the pinned pglite version before relying on
-  import-mode tests passing under pglite as proof the feature works**). If import mode's
-  `SET LOCAL session_replication_role` silently no-ops or errors under pglite while genuinely
-  working under real Postgres (or vice versa), tests for import mode are exactly where a false
-  positive or false negative would hide.
-- **`information_schema`/`pg_catalog` completeness**: pglite has had gaps in
-  `information_schema.tables`/`pg_catalog.pg_tables` support (confirmed via
-  [electric-sql/pglite#8](https://github.com/electric-sql/pglite/issues/8); status as of this
-  research is that basic `information_schema` queries work but completeness relative to real
-  Postgres is not guaranteed for every catalog view — confidence: MEDIUM, the specific issue
-  is from 2024 and may be resolved in the current pglite version, but no authoritative "fully
-  resolved" changelog entry was found). This directly threatens `packages/schema/src/migrate.ts`,
-  which diffs a `TablePlan` against a live database **via `information_schema`** — if pglite's
-  `information_schema` output shape (column order, type names, nullable representation) differs
-  even slightly from real Postgres 16, the migration differ could report false
-  drops/no-changes under pglite that a real Postgres run would report differently, or vice
-  versa.
-- **Single connection / no real concurrency**: pglite is explicitly single-connection by design
-  (confirmed via [pglite GitHub repository description and multiple third-party writeups
-  including the PGlite v0.4 announcement discussing "connection multiplexing" as new, partial
-  functionality](https://electric.ax/blog/2026/03/25/announcing-pglite-v04); confidence: HIGH
-  for the base single-connection architecture, MEDIUM for how far v0.4's multiplexing closes
-  the gap for this project's needs since it's described as "not all cases might be covered").
-  Any test relying on genuine transaction interleaving — e.g., two concurrent `DmlEngine.insert`
-  calls racing on a unique constraint, or the per-record savepoint rollback behavior under real
-  concurrent load — cannot be meaningfully exercised under pglite even with multiplexing,
-  because statements are still serialized through one underlying engine.
-- **Error message / SQLSTATE differences**: because pglite is a WASM build of real Postgres
-  source (not a reimplementation), SQLSTATE codes are generally expected to match; the
-  practical risk is narrower than "different SQLSTATEs" — it's *exact error message text* in
-  cases where orglet's error mapping (e.g., `duplicateError()`,
-  `packages/engine/src/engine.ts:514`, which parses the conflicting field name out of a
-  `23505` error) depends on Postgres's constraint-name-in-message formatting, which could
-  differ subtly across build/version skew between pglite's bundled Postgres and the Docker
-  image's Postgres 16.
-
-**Why it happens:** pglite's entire value proposition is "real Postgres, just embeddable" — it
-is easy to treat it as behaviorally identical rather than as its own compatibility surface with
-its own version, its own known gaps, and its own concurrency model, especially since the
-happy-path DDL/DML the existing 119 tests exercise mostly avoids the specific features (import
-mode, migration diffing, concurrent writes, exact error text) most likely to diverge.
-
-**How to avoid:** Keep a Docker Postgres 16 CI job in addition to a pglite job (explicitly
-listed as an "Active" requirement already — "pglite for tests, Docker Compose for the running
-server" — but the *CI matrix*, not just the local dev workflow, needs both). Run the
-**identical** test suite against both backends in CI (parameterize the Postgres connection
-setup, don't duplicate test files), and treat any test that only passes under one backend as a
-signal to investigate before merging, not a backend quirk to route around. Specifically target
-import mode's `session_replication_role` test and the schema-migration differ tests
-(`migrate.test.ts`) at both backends first, since those are the two highest-risk overlaps
-identified above.
-
-**Warning signs:** A CI config that runs pglite-backed tests only, with Docker Postgres reduced
-to "developer convenience, not CI-gated," is the anti-pattern; watch for it explicitly during
-GitHub Actions setup since it's the path of least resistance (pglite needs no service
-container, Docker Postgres does).
-
-**Phase to address:** pglite test infrastructure phase, with the Docker-Postgres CI job owned
-by the same phase (not deferred to the GitHub Actions phase as an afterthought) since the two
-are only safe together.
-
----
-
-### Pitfall 11: pglite's WASM/ESM loading breaking under vitest's default bundler handling
-
-**What goes wrong:** pglite ships WASM binaries loaded via bundler-sensitive patterns (`new
-URL('./file', import.meta.url)`); vitest's default transform pipeline (esbuild-based) has been
-reported to need explicit handling for this pattern in some setups, and vitest's own project
-threads report needing plugin help (`vite-plugin-wasm` or manual
-`WebAssembly.compileStreaming()`) for ESM+WASM integration
-([vitest-dev/vitest discussion #4283](https://github.com/vitest-dev/vitest/discussions/4283);
-confidence: MEDIUM — this is community-reported, not an official pglite/vitest compatibility
-statement, and pglite's official bundler-support docs frame the requirement generically as
-"the bundler must handle `new URL(...)` correctly" rather than vitest-specifically). Since this
-repo's `vitest.config.ts` currently has zero bundler-plugin configuration (it's a plain
-Node-environment vitest setup per `TESTING.md`), a first-time pglite integration attempt is a
-plausible place to lose time to a WASM-loading error that looks unrelated to the actual test
-code.
-
-**Why it happens:** vitest's Node-environment test runner doesn't go through Vite's full
-browser-oriented asset pipeline by default the same way a Vite app build does, so guidance
-written for "using pglite in a Vite app" doesn't map 1:1 onto "using pglite in a vitest Node
-test file."
-
-**How to avoid:** Prototype the pglite import in isolation (one throwaway test file, `import {
-PGlite } from "@electric-sql/pglite"`, `new PGlite()`, one query) before wiring it into the
-existing test helper pattern (`beforeAll`/`afterAll` per `TESTING.md`), specifically to
-isolate WASM-loading failures from schema/migration logic failures. If vitest's Node
-environment turns out to load the WASM module directly via Node's native `fs`/`WebAssembly`
-APIs without needing a bundler plugin (plausible, since vitest's Node pool doesn't necessarily
-route through esbuild's browser-target asset handling the same way), this pitfall may not
-materialize at all in this specific stack — treat the prototype step as the actual
-verification, not the WebSearch results above.
-
-**Warning signs:** Any error mentioning `import.meta.url`, `WebAssembly.instantiate`, or a
-missing `.wasm` file path during the first pglite test run is this exact issue, not a logic
-bug.
-
-**Phase to address:** pglite test infrastructure phase.
-
----
-
-### Pitfall 12: pglite memory growth across many test files exhausting CI runners
-
-**What goes wrong:** Booting a fresh pglite instance per test file (mirroring the existing
-per-file-random-schema isolation pattern in `TESTING.md`) multiplies WASM/initdb memory cost
-across the 5 currently-Postgres-backed test files (and any new ones added by this milestone —
-roll-ups, TYPEOF, and Bulk persistence will each likely need their own Postgres-backed test
-file). Community reports describe pglite's `initdb` step failing under memory pressure when
-multiple clusters boot concurrently, and one third-party project's test suite reportedly
-consumed ~5GB across parallel vitest workers with multiple in-memory Postgres instances
-(confidence: LOW-MEDIUM — these are individual project post-mortems found via search, not an
-official pglite resource-usage benchmark; treat as "plausible failure mode to budget CI runner
-memory for," not a precise number to plan around).
-
-**Why it happens:** vitest's default pool runs test files in parallel worker processes/threads
-for speed; each worker's pglite instance is independent memory, and GitHub Actions' standard
-runners have a fixed, modest memory ceiling (typically 7GB on `ubuntu-latest` at time of
-writing) shared across the whole job.
-
-**How to avoid:** Either share one pglite instance across test files within a worker (requires
-rethinking the current "fresh Postgres schema per file" isolation pattern, since pglite has no
-Docker-container-level isolation the way a shared Postgres server does — a shared pglite
-instance would need the *same* schema-namespacing trick already used against Docker Postgres:
-`CREATE SCHEMA test_<hex>` per file, `DROP SCHEMA ... CASCADE` in `afterAll`, reusing one
-`PGlite` connection), or explicitly cap vitest's worker/pool concurrency
-(`vitest.config.ts`'s `pool`/`poolOptions` per [vitest pool
-docs](https://vitest.dev/config/pool)) for the CI run specifically if per-file instances are
-kept. Prefer the shared-instance-plus-schema-namespacing approach — it reuses the exact
-isolation pattern already proven in this codebase rather than inventing a new one.
-
-**Warning signs:** CI runs that pass locally (larger dev machine) but OOM or get killed on
-GitHub-hosted runners specifically; a linear growth in CI wall-clock/memory usage as more
-pglite-backed test files are added during this milestone (roll-ups, TYPEOF, Bulk persistence
-each likely add one) is the leading indicator to watch during the milestone, not just at the
-end.
-
-**Phase to address:** pglite test infrastructure phase — decide the sharing/isolation strategy
-before other phases start adding new Postgres-backed test files against it, since retrofitting
-isolation strategy after several new test files exist is more work than deciding it first.
-
----
-
-### Pitfall 13: pnpm/corepack/Node 22 mismatches and vendored-file drift breaking CI but not local dev
-
-**What goes wrong:** `package.json` pins `"packageManager": "pnpm@12.6.0"` and
-`"engines": {"node": ">=22", "pnpm": ">=10"}`. A GitHub Actions workflow that installs Node 22
-and a *different* pnpm version (e.g., via a stale `actions/setup-node` cache key or a
-`pnpm/action-setup` version pin that doesn't match `packageManager`) can produce lockfile-format
-mismatches that only fail in CI, since local dev machines with corepack enabled resolve the
-exact pinned version transparently. Separately: `pnpm-lock.yaml` drift (a dependency bumped
-locally without `pnpm install` being re-run, or vice versa) fails differently in CI than
-locally, because **pnpm refuses to update an existing lockfile when it detects the `CI` env var**
-(set automatically by GitHub Actions), so a workflow using a plain `pnpm install` where a
-contributor's machine would silently rewrite the lockfile will instead hard-fail in CI with no
-local repro unless `CI=true` is set locally too.
-
-**Why it happens:** Corepack + `packageManager` field is the correct modern pattern, but
-`actions/setup-node`'s built-in caching assumes the version manager is already installed and
-doesn't itself enforce corepack activation — mixing `actions/setup-node`'s Node-only setup with
-a separate pnpm install step (rather than using it consistently with `pnpm/action-setup` or the
-newer consolidated `pnpm/setup` action) is the most common source of drift, per the setup-node
-issue tracker ([actions/setup-node#531](https://github.com/actions/setup-node/issues/531)).
-
-**How to avoid:** Use `corepack enable` explicitly as an early workflow step (Node 22 ships
-corepack but it is not enabled by default on GitHub-hosted runner images as of this research —
-verify against the current `actions/setup-node` runner image notes at CI-authoring time), then
-let corepack read `packageManager` from `package.json` rather than pinning a pnpm version
-separately in the workflow YAML — this makes the workflow and `package.json` a single source of
-truth instead of two. Run `pnpm install --frozen-lockfile` (not plain `install`) as the CI
-install step specifically so lockfile drift fails fast with a clear message rather than
-silently rewriting the lockfile in a CI context where nobody will commit the rewrite.
-
-**Warning signs:** A CI failure that says "lockfile does not match package.json" or a pnpm
-version-mismatch error on a PR where local `pnpm test` passed cleanly — this is definitionally
-an environment-pinning gap, not a code bug, and re-running locally will falsely appear to
-"work."
-
-**Phase to address:** GitHub Actions / CI phase.
-
----
-
-### Pitfall 14: Vendored `sigha` and `scripts/sync-sigha.sh` desynced from what CI actually checks out
-
-**What goes wrong:** `packages/sigha/src` is generated by `scripts/sync-sigha.sh` from an
-**external** upstream repo (`github.com/rfaulhaber/sigha`) and is explicitly "not edited by
-hand" (`ARCHITECTURE.md`). Because the vendored output is committed to this repo (not
-regenerated at build/CI time — confirm this assumption against the actual `.gitignore` before
-relying on it, but `ARCHITECTURE.md`'s description implies committed vendored source, not a
-build step), CI should simply be checking out committed files like any other source — the
-actual risk is narrower and easier to miss: `sync-sigha.sh` clones upstream fresh
-(`git clone -q https://github.com/rfaulhaber/sigha.git`) every time it's run, so if it is ever
-invoked as part of a CI step (rather than only as a manual local maintenance script), CI
-becomes dependent on an external GitHub repo's availability and current `main` branch content,
-silently coupling build reproducibility to a third party the project doesn't control. This is
-a "looks fine until upstream force-pushes or goes away" risk, not a subtle logic bug.
-
-**Why it happens:** It is tempting, when wiring up a CI workflow from scratch, to include
-"resync vendored dependencies" as a step for freshness, without registering that this
-specific vendored package is a deliberate one-time-per-maintainer-action, not a build-time
-step.
-
-**How to avoid:** CI should never invoke `scripts/sync-sigha.sh`; it should only run
-`pnpm install`, `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm build` against whatever
-`packages/sigha/src` is already committed in the checked-out ref. Explicitly exclude the sync
-script from any "run all scripts" style CI step if one is ever added generically.
-
-**Warning signs:** A CI workflow file that references `sync-sigha.sh` at all is the thing to
-catch in review.
-
-**Phase to address:** GitHub Actions / CI phase.
-
----
-
-### Pitfall 15: Bulk API 2.0 persistence loosens the server-only state-transition guarantee
-
-**What goes wrong:** The existing in-memory implementation already correctly enforces that a
-client can only request `UploadComplete` or `Aborted` via `PATCH .../jobs/ingest/{id}`
-(`packages/api/src/routes/bulk.ts:276-290`), rejecting any other client-requested state with
-`INVALIDJOBSTATE`; the server alone drives `Open → UploadComplete → InProgress → JobComplete`
-internally. When this state machine moves into Postgres, the risk is that persistence code
-(an `UPDATE bulk_jobs SET state = $1 WHERE id = $2`-style helper) becomes reusable/callable
-from more places than the original narrow state-transition functions were, and a future route
-or test helper calls it directly with an arbitrary state string, bypassing the validation that
-currently lives in the route handler rather than in a shared state-machine module.
-
-**Why it happens:** Persistence work naturally centralizes "write job state to storage" into a
-shared function; if that function is a raw setter rather than a guarded transition function, the
-validation that used to be co-located with the only caller (the route handler) can quietly stop
-being the only way to reach that code path.
-
-**How to avoid:** Model the persisted state machine as a function that takes `(currentState,
-requestedTransition)` and returns either the new state or a rejection, reusing exactly the
-transition table already encoded in the current route handler's `if` chain — and make the
-Postgres write happen *only* through that function, never via a raw `UPDATE ... SET state`
-callable from elsewhere. Keep the existing test coverage for "client cannot set `InProgress` or
-`JobComplete` directly" as a persisted-store test too, not just an in-memory one.
-
-**Warning signs:** Any code path that writes to a `state` column without going through the
-shared transition-guard function; a grep for direct `UPDATE.*bulk_jobs.*state` outside one
-module is the concrete review check.
-
-**Phase to address:** Bulk API 2.0 persistence phase.
-
----
-
-### Pitfall 16: Persisted jobs "surviving restart" while synchronous processing still leaves them stuck mid-batch
-
-**What goes wrong:** This milestone's scope is explicitly "jobs are persisted... and survive a
-server restart" — not "processing becomes asynchronous/resumable" (that's a separate, larger
-change `CONCERNS.md` already flags as a scaling limit, out of scope here). A job that a client
-sees as `InProgress` when the server process dies mid-CSV-parse (between `CHUNK_SIZE = 200`
-DML batches, per `packages/api/src/routes/bulk.ts:18` chunking) will, after persistence,
-**restart in the `InProgress` state with no code path that ever revisits it** — because nothing
-in a synchronous, request-triggered processing model resumes a half-finished job on server
-boot. Before persistence, a restart correctly returned 404 for that job (honest failure, per
-`CONCERNS.md`); after persistence, the same restart returns a job stuck at `InProgress`
-forever with no error and no progress, which is a **worse** client experience than 404 —
-polling clients get no error, no completion, no timeout, indefinitely.
-
-**Why it happens:** "Persist so it survives restart" sounds strictly better than "in-memory,"
-but survival-without-resumability for a job that was mid-flight at the moment of the crash is
-not actually well-defined — the requirement, read literally, is really about
-already-`JobComplete`/`Failed` jobs and their result data surviving restart, plus
-`Open`/`UploadComplete` jobs (not yet started processing) being resumable simply by re-running
-`UploadComplete` handling on next boot — not about resuming genuinely mid-batch `InProgress`
-work.
-
-**How to avoid:** On server startup, scan persisted jobs for `InProgress` state (which, given
-synchronous processing, can only mean "the server crashed while processing this job") and
-transition them to `Failed` with an explicit error message (e.g., "processing was interrupted
-by a server restart") rather than leaving them stuck — this keeps the honest-failure property
-the in-memory version had by construction, now made explicit instead of implicit. Confirm this
-edge case against the milestone's actual acceptance bar before building resumable/async
-processing, which is explicitly not required here.
-
-**Warning signs:** No test kills the server process (or simulates process restart by
-constructing a fresh `DmlEngine`/job store against the same persisted schema) mid-`InProgress`
-and asserts the job's state after "restart" — that gap is the concrete thing to close.
-
-**Phase to address:** Bulk API 2.0 persistence phase.
-
----
-
-### Pitfall 17: Large CSV payloads stored as a single Postgres row/column
-
-**What goes wrong:** `IngestJob.csvChunks`, `successRows`, `failedRows`, and `QueryJob.rows`
-are currently in-memory arrays (`packages/api/src/bulk/jobs.ts:29,35,37`, per
-`CONCERNS.md`). A straightforward persistence design stores the concatenated CSV as one
-`text`/`bytea` column per job row. Postgres handles large text values via TOAST transparently
-up to its hard 1GB-per-value limit, but this milestone's persistence work can still reintroduce
-the exact "hold the whole payload in memory" problem `CONCERNS.md` already flags — reading a
-large persisted CSV back out for the result-download endpoint still means loading the full
-column value into the Node process's memory unless the read path streams it, which a naive
-`SELECT csv_data FROM bulk_jobs WHERE id = $1` does not.
-
-**Why it happens:** Persistence work is scoped as "don't lose jobs on restart," not
-"stream large payloads" — it's easy to satisfy the literal restart-survival requirement while
-leaving the memory-buffering behavior (now doubled: buffered once in the request handler,
-again on the round-trip through Postgres) unchanged or worse.
-
-**How to avoid:** Explicitly scope this phase to *not* attempt streaming (matching
-`CONCERNS.md`'s existing framing of streaming as a separate, larger scaling fix) but do verify
-the specific interaction: a single Postgres `text` column comfortably holds realistic CSV
-sizes for this project's stated use case (local dev/CI-scale data, not enterprise bulk loads),
-so this is a "confirm it's fine at this scale, document the ceiling" task, not a "must fix"
-one. Put an explicit, documented row-size assumption/limit in code comments near the DDL for
-the jobs table so a future contributor doesn't need to rediscover the 1GB TOAST ceiling by
-hitting it.
-
-**Warning signs:** Any test with a CSV payload sized to actually exercise TOAST behavior
-(multi-MB) is a "nice to have, not required" for this milestone; the concrete minimum bar is a
-code comment/doc note stating the assumption explicitly, since there's no requirement to fix
-the underlying buffering.
-
-**Phase to address:** Bulk API 2.0 persistence phase (document scope boundary explicitly, do
-not silently expand scope to streaming).
-
----
-
-### Pitfall 18: Thin standard-object baselines that break jsforce's `describe()` contract
-
-**What goes wrong:** jsforce (and simple-salesforce) treat certain `describe()` fields as
-structurally required for the SDK's own internal logic, not just informational — `nameField`
-(which field is the record's display name), `keyPrefix`, and the `urls` map (`sobject`,
-`describe`, `rowTemplate`, etc.) are the three the milestone context calls out explicitly. A
-"thin" baseline built by stripping a real object down to its minimum fields can easily produce
-JSON that's valid per this project's own `StandardObjectJson` schema but missing one of these —
-e.g., an object with no field marked `nameField: true` (plausible for a genuinely minimal
-object like `BusinessHours`, which doesn't have an obvious "Name" field) will describe
-correctly by *this* codebase's own rules but may cause jsforce's list-view/record-name-display
-logic (or simple-salesforce's equivalent) to throw or silently render blank where a real
-Salesforce org always has exactly one `nameField: true` field per object.
-
-**Why it happens:** The 14 objects being added exist in this milestone specifically to satisfy
-*lookup validation* (`checkReferences`), not to be fully functional CRUD targets — the natural
-temptation is to define the absolute minimum (system fields + whatever's referenced), which is
-correct for the lookup-validation goal but risks being *too* thin for any conformance test that
-happens to `describe()` one of these 14 objects directly.
-
-**How to avoid:** For each of the 14, confirm real Salesforce's actual `nameField` (most
-standard objects have one even if it's not obviously an editable "Name" — e.g. `CaseNumber` for
-`Case`) via public describe references before deciding an object has none; if an object
-genuinely has no user-facing name field (rare but real, e.g. some junction-like standard
-objects), confirm what real Salesforce's describe returns in that case (an empty `nameField`
-designation is itself a valid, documented state — don't invent a fake one) rather than
-guessing. Run each new object through a `describe()` call in both conformance suites
-(jsforce, simple-salesforce) as part of this phase's acceptance, not just orglet's own
-`build.test.ts`.
-
-**Warning signs:** Any of the 14 new objects with zero fields marked `nameField: true` *and*
-no confirmation that real Salesforce agrees is a review flag; a jsforce or simple-salesforce
-conformance run that throws (not just fails an assertion) when touching one of these 14 objects
-is the concrete detection signal.
-
-**Phase to address:** Thin baselines phase.
-
----
-
-### Pitfall 19: Read-only-in-real-Salesforce objects silently accepting inserts in the thin baseline
-
-**What goes wrong:** Several of the 14 objects (`OpportunityHistory` is the clearest example —
-a system-managed audit trail of `Opportunity` stage changes, never directly insertable via the
-API in real Salesforce) are read-only by nature. If the thin baseline defines them with the
-same default `createable`/`insertable` posture as an ordinary custom-touched standard object
-(since that's this codebase's existing default path through `build.ts`), a client `INSERT` into
-`OpportunityHistory` will succeed against orglet where it would fail with
-`CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY` (or similar) against real Salesforce — a correctness gap
-in the *opposite* direction from the project's stated design principle (`UNSUPPORTED:<area>`
-for gaps, not silently-wrong-but-successful behavior).
-
-**Why it happens:** The 14 objects are being added specifically to satisfy `checkReferences`
-for **lookups pointing at them** — nobody is planning to insert `OpportunityHistory` rows
-directly, so it's easy to not think about the object's own createability at all and let it
-default to whatever the schema/DDL layer does for any other object.
-
-**How to avoid:** For each of the 14, explicitly research (not assume) whether real Salesforce
-allows direct DML against it; for the ones that don't (`OpportunityHistory` is the standout
-case — history objects are consistently read-only across Salesforce's platform), mark the
-object `createable: false`/`updateable: false`/`deletable: false` at the object level (if this
-codebase's schema model supports object-level DML restriction — confirm; if it only supports
-field-level `createable`/`updateable`, this may require adding object-level support, which is a
-scope question worth raising explicitly rather than silently skipping the restriction) so an
-insert attempt fails the same documented way it does against real Salesforce, rather than
-succeeding.
-
-**Warning signs:** A test that inserts a bare row into each of the 14 new objects and expects
-success is the wrong test for the ones that are read-only in reality; if such a test exists and
-passes, it's testing the wrong thing.
-
-**Phase to address:** Thin baselines phase.
-
----
-
-### Pitfall 20: Believing the conformance suites are green because nobody re-ran them
-
-**What goes wrong:** `TESTING.md` documents the jsforce README as last verified 2026-09-25,
-**before** Bulk API 2.0 support was added (`2fcdbc5 Add Bulk API 2.0 ingest and query jobs`)
-and explicitly flags "this specific gap may be narrower now; re-run before relying on the exact
-counts." This milestone adds six more changes (TYPEOF, roll-ups, thin baselines, key-prefix
-persistence, Bulk persistence, pglite) any one of which can shift the conformance numbers in
-either direction — new passes (Bulk tests that previously failed on the v1 vs v2 mismatch) and
-new failures (a roll-up or TYPEOF change altering describe() output in a way an existing
-passing test didn't expect) are both plausible. Treating "conformance was green in the last
-recorded run" as still true without re-running is exactly the stale-numbers trap the milestone
-context calls out by name.
-
-**Why it happens:** The two conformance suites are explicitly **manual, not CI-gated**
-(`TESTING.md`: "not part of `pnpm test` / CI... require a running orglet instance plus
-network/tooling setup") — this is a deliberate design choice (external SDK e2e suites are slow
-and need live-server setup unsuitable for every PR), but it means nothing *forces* a re-run,
-unlike the vitest suite which fails loudly in CI on every push once GitHub Actions exists.
-
-**How to avoid:** Make the conformance re-run an explicit, named task at the *end* of this
-milestone (after all six other changes land), not something assumed to still be true from
-the pre-milestone baseline — update both READMEs' documented pass/fail counts and dates as part
-of the milestone's own completion criteria, matching this project's existing convention of
-dated, numbered conformance records rather than vague "should still work" language.
-
-**Warning signs:** A milestone completion review that doesn't include a fresh
-`conformance/jsforce/run.sh` and `conformance/python/run.py` execution with updated numbers
-committed to their respective READMEs is incomplete by this project's own documented standard.
-
-**Phase to address:** Conformance re-run phase — sequenced last, after every other phase in
-this milestone, by definition (it validates the sum of the milestone's changes).
-
----
-
-### Pitfall 21: Previously-excluded Bulk tests now included may fail for reasons unrelated to Bulk itself
-
-**What goes wrong:** The jsforce conformance run's Jest `-t` filter currently excludes "bulk"
-by name in some capacity per the historical 58-skipped count, and the 2 known failures were
-tied to Bulk API **v1** (`/services/async/*`, not implemented) rather than v2. Once Bulk API
-2.0 persistence is added and the filter is revisited to include more Bulk-related tests, new
-failures may surface that have nothing to do with persistence correctness — e.g., the seed data
-script (`conformance/jsforce/seed.mjs`, which seeds via `/composite/sobjects` rather than Bulk,
-per `TESTING.md`) may not provision fixture rows in a shape newly-enabled Bulk tests expect, or
-newly-included tests may assume Bulk API v1 endpoints that remain genuinely out of scope for
-this milestone (v1 is not being added — only v2 persistence).
-
-**Why it happens:** "Re-run the conformance suite and include previously-excluded Bulk tests"
-conflates two independent risks: (1) did Bulk API 2.0 persistence introduce a regression, and
-(2) were the tests excluded for a reason that persistence doesn't actually address (v1 vs v2).
-Newly-red tests get attributed to the wrong cause if this distinction isn't made explicit going
-in.
-
-**How to avoid:** Before broadening the Jest filter, read the specific excluded test names and
-classify each one as "blocked by v1-not-implemented (stays excluded, this milestone doesn't
-add v1)" vs "blocked by v2-not-persisted (now unblocked, should be included)" — don't do a
-blanket "unexclude bulk" and then debug failures reactively. Document the classification in the
-updated README alongside the refreshed pass/fail counts, continuing the existing "expected/
-declared gaps" vs "other findings" table convention already used there.
-
-**Warning signs:** A conformance re-run diff that shows new failures in Bulk-related tests
-without a clear note on whether each failure is a real regression or an expected v1-still-out-
-of-scope gap.
-
-**Phase to address:** Conformance re-run phase.
-
----
-
-## Technical Debt Patterns
-
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|-----------------|------------------|
-| Recompute-then-persist key prefixes (recompute alphabetically every build, just write the result) | Fast to implement, passes single-build tests | Reintroduces the exact prefix-drift bug persistence exists to fix, invisibly, until a second build with a changed object set | Never — this is the one shortcut this phase exists specifically to close |
-| Roll-up recompute scoped to Master-Detail only, no reparenting support at all (reject reparenting outright rather than handling it) | Sidesteps Pitfall 1 entirely, smaller surface to test | Matches Salesforce's own default (`reparentable: false`) closely enough to be legitimate, not really a shortcut | Acceptable and arguably correct as the milestone's default; only a real shortcut if `reparentable: true` is left silently broken instead of explicitly rejected |
-| pglite-only CI (no Docker Postgres job) | Simpler CI config, faster jobs, no service container needed | Hides exactly the class of pglite/Postgres divergence bugs described in Pitfall 10 | Never for this project, given `PROJECT.md` already commits to keeping the Docker path working |
-| Persisting Bulk jobs without an `InProgress`-on-restart reconciliation step | Smaller diff, "just add a table" | Jobs stuck silently forever after any crash mid-processing — worse UX than the pre-persistence 404 | Never; the reconciliation step is small enough that skipping it isn't a meaningful time save |
-| Thin baseline objects with default (non-restricted) DML posture for read-only-in-reality objects like `OpportunityHistory` | One less thing to research per object | Silent wrong-success on insert, violating the project's own `UNSUPPORTED:<area>` design principle | Never — directly contradicts the stated Core Value ("anything it does not support is logged... rather than faked") |
-
-## Integration Gotchas
-
-| Integration | Common Mistake | Correct Approach |
-|-------------|-----------------|-------------------|
-| jsforce `describe()` | Assuming any valid-looking JSON satisfies jsforce's internal expectations of `nameField`/`keyPrefix`/`urls` | Run every new/changed object through an actual jsforce `describe()` call as part of the phase, not just this project's own schema validation |
-| simple-salesforce | Assuming Python SDK and jsforce agree on TYPEOF/polymorphic result shaping | Run both conformance suites against the same TYPEOF fixtures; don't treat one suite's pass as sufficient |
-| pglite | Treating it as a drop-in Postgres 16 replacement for every code path | Verify `session_replication_role` (import mode) and `information_schema` (migration differ) specifically against the pinned pglite version before trusting green tests there |
-| GitHub Actions service containers | Configuring the Postgres service container without a `pg_isready` health check, causing flaky "connection refused" failures on fast runners | Use `--health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5` (or stricter) exactly as GitHub's own Postgres service container docs demonstrate |
-| `@jetstreamapp/soql-parser-js` | Assuming TYPEOF and `WHERE <rel>.Type = '...'` are the same parser feature / land in the same effort | Verify parser AST coverage for both productions independently before scoping the TYPEOF phase |
-
-## Performance Traps
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|-----------------|
-| Roll-up recompute via a fresh aggregate query per child-save, with no batching for bulk/composite-tree inserts | A `Bulk API` ingest of 200 rows into a roll-up child triggers 200 separate parent aggregate recomputes instead of one per distinct parent | Batch recompute by distinct parent ID within a chunk before writing, not per individual child row | Any Bulk ingest chunk (`CHUNK_SIZE = 200`) where many children share few parents |
-| pglite instance-per-test-file multiplying memory (Pitfall 12) | CI runners OOM or slow down disproportionately as more Postgres-backed test files are added this milestone | Share one pglite instance per worker with schema-namespacing, or cap vitest pool concurrency in CI | Once roll-up/TYPEOF/Bulk-persistence tests each add their own Postgres-backed file on top of the existing 5 |
-| Persisted Bulk job CSV read back into memory in full for result download (Pitfall 17) | Large result downloads block the event loop or spike memory | Explicitly scope this milestone to NOT fix (document the ceiling instead); revisit only if real usage exceeds it | Payloads approaching Postgres's ~1GB TOAST ceiling, or many concurrent large downloads |
-
-## Security Mistakes
-
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Persisting Bulk job data (which may include arbitrary customer-shaped CSV rows from ingest jobs) without considering it now durable across restarts, combined with the existing permissive-auth default | Previously, an in-memory job's data vanished on restart; persisted job data now lives in Postgres indefinitely (until explicit job deletion) under the same permissive-by-default auth posture `CONCERNS.md` already flags | No new mitigation required for this milestone's stated goals (local dev/CI use), but explicitly note in the phase's own documentation that persisted Bulk job data inherits the existing permissive-auth risk profile, so it isn't rediscovered as a "new" finding later |
-| Roll-up recompute or TYPEOF resolution accidentally exposing data across polymorphic targets a user shouldn't see (e.g., resolving `Owner` to a `Group` whose fields shouldn't be visible) | Low risk in this milestone specifically since there is no FLS/sharing model enforcement anywhere in the engine yet (`CONCERNS.md` already documents this as out of scope) | No new mitigation needed here either — just don't let TYPEOF/polymorphic work imply a false sense of access control that doesn't exist anywhere else in the engine |
-
-## UX Pitfalls
-
-| Pitfall | User Impact | Better Approach |
-|---------|--------------|-------------------|
-| `orglet check` silently showing a provisional key prefix as if it were final (Pitfall 9) | A developer trusts `check`'s output, then sees a different prefix after `up`, and doesn't know why | Label any prefix shown by `check` as provisional/unverified explicitly in its output text |
-| Persisted Bulk job stuck at `InProgress` forever after a crash (Pitfall 16) | Client polling logic waits indefinitely with no error, no timeout signal | Reconcile `InProgress` jobs to `Failed` with an explicit restart-interruption message on server boot |
-| Roll-up field silently ignoring a client-supplied value instead of a clear rejection (Pitfall 4) | A client that mistakenly tries to set a roll-up field gets no feedback that its value was dropped | Match Salesforce's exact behavior precisely (confirm via conformance test) rather than guessing between silent-ignore and hard-reject |
-
-## "Looks Done But Isn't" Checklist
-
-- [ ] **Roll-up summaries:** Often missing the reparent-both-parents case and the
-      filter-field-only-changed case — verify with the two-build/two-parent test matrix in
-      Pitfalls 1–2, not just insert/delete on a stable parent.
-- [ ] **TYPEOF / polymorphic:** Often fixes the SOQL join but leaves `attributes.type` (shape.ts)
-      or the formula parent path (formula/compile.ts) on the old "first target" behavior —
-      verify all three call sites against the same Group-owned fixture (Pitfall 5).
-- [ ] **Key-prefix persistence:** Often correct on the first build (recompute happens to match
-      persisted state) but wrong on the second build with a changed object set — verify with a
-      two-build test, not a one-build test (Pitfall 8).
-- [ ] **pglite test infra:** Often "all tests pass under pglite" is treated as equivalent to
-      "all tests pass under Docker Postgres" — verify the same suite runs against both in CI,
-      not pglite alone (Pitfall 10).
-- [ ] **Bulk API 2.0 persistence:** Often satisfies "survives restart" for completed jobs but
-      leaves genuinely mid-flight `InProgress` jobs stuck forever — verify with a simulated
-      restart during processing (Pitfall 16).
-- [ ] **Thin baselines:** Often defines enough fields to satisfy this project's own schema
-      validation but not enough to satisfy jsforce/simple-salesforce's `describe()` assumptions
-      (`nameField`, `keyPrefix`, `urls`) — verify with an actual SDK `describe()` call per new
-      object, not just `build.test.ts` (Pitfall 18).
-- [ ] **Conformance re-run:** Often "should still be green" is assumed rather than re-verified
-      after six concurrent feature changes — verify with an actual, dated re-run of both suites
-      as an explicit milestone-completion task (Pitfall 20).
-
-## Recovery Strategies
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|-----------------|------------------|
-| Roll-up double-counting shipped (Pitfall 1) | MEDIUM | Add the missing old-parent recompute, then run a one-off recompute-all-roll-ups pass across existing data to correct already-wrong totals (needed once, not part of the save pipeline) |
-| Key prefixes renumbered on a second build (Pitfall 8) | HIGH | Existing record IDs already stored under the old prefix cannot be un-issued; recovery requires either accepting the drift for already-created records and only fixing it going forward, or a data migration remapping IDs — expensive enough that prevention (two-build test before shipping) is far cheaper than recovery |
-| pglite-only CI shipped and a real-Postgres-only bug reaches main (Pitfall 10) | LOW | Add the Docker Postgres CI job retroactively; not destructive, just delayed protection |
-| Bulk job stuck at `InProgress` forever in production data (Pitfall 16) | LOW | A one-off script/migration to reconcile any currently-stuck `InProgress` jobs to `Failed`, then ship the boot-time reconciliation fix so it doesn't recur |
-
-## Pitfall-to-Phase Mapping
-
-| Pitfall | Prevention Phase | Verification |
-|---------|-------------------|----------------|
-| 1. Roll-up double-count/stale on reparent | Roll-up summary fields | Two-parent reparent test asserting both totals |
-| 2. Roll-up missed on undelete/filter-field change | Roll-up summary fields | Full (insert/update-aggregate/update-filter-only/delete/undelete) × (in/out-filter) matrix |
-| 3. Roll-up recursion + savepoint scope | Roll-up summary fields | Multi-level cycle rejected at load; partial-success batch test asserting roll-up matches only committed children |
-| 4. Roll-up writable via API | Roll-up summary fields | `describe()` shows `createable: false`/`updateable: false`; insert/update with a roll-up value ignored, not stored |
-| 5. TYPEOF fix incomplete across join/shape/formula | Polymorphic lookups / TYPEOF | Same Group-owned fixture asserted via SOQL, `attributes.type`, and a formula validation rule |
-| 6. TYPEOF parser gaps / `WHERE <rel>.Type` | Polymorphic lookups / TYPEOF | `WHERE Owner.Type = 'Group'` test, independent of the `TYPEOF...END` test |
-| 7. Unmodelled polymorphic target defensive gap | Polymorphic lookups / TYPEOF | Synthetic unmatched-prefix test degrades gracefully, doesn't throw |
-| 8. Key prefixes renumbered on second build | Key-prefix persistence | Two-build test: unchanged prefixes for existing objects, new prefix only for the added object |
-| 9. `reset`/`check` semantics undefined | Key-prefix persistence | Explicit design note + test: `reset` clears persisted prefixes; `check` output labeled provisional |
-| 10. Green pglite hides real-Postgres bugs | pglite test infrastructure | Same suite run against both pglite and Docker Postgres 16 in CI; import-mode and migration-differ tests specifically |
-| 11. pglite WASM/ESM loading breaks under vitest | pglite test infrastructure | Isolated one-file pglite prototype before wiring into existing test pattern |
-| 12. pglite memory growth across test files | pglite test infrastructure | Shared-instance-plus-schema-namespacing decided before other phases add new Postgres-backed files |
-| 13. pnpm/corepack/Node 22 CI drift | GitHub Actions / CI | `corepack enable` + `pnpm install --frozen-lockfile`; CI fails clearly on lockfile drift |
-| 14. `sync-sigha.sh` accidentally run in CI | GitHub Actions / CI | Workflow review confirms only `install`/`typecheck`/`lint`/`test`/`build` run, never the sync script |
-| 15. Bulk state machine loosened by persistence | Bulk API 2.0 persistence | Shared transition-guard function is the only writer of `state`; existing client-cannot-set-InProgress test ported to the persisted store |
-| 16. Persisted job stuck at InProgress after restart | Bulk API 2.0 persistence | Simulated-restart test: `InProgress` job reconciled to `Failed` on boot |
-| 17. Large CSV in a single Postgres row | Bulk API 2.0 persistence | Documented ceiling in code comments near the jobs table DDL; explicitly out of scope to fix streaming |
-| 18. Thin baseline breaks jsforce `describe()` | Thin baselines | Real jsforce/simple-salesforce `describe()` call per new object, not just `build.test.ts` |
-| 19. Read-only object accepts inserts | Thin baselines | Object-level DML restriction for `OpportunityHistory`-style objects; insert attempt fails the documented way |
-| 20. Stale conformance numbers | Conformance re-run | Fresh dated run of both suites, README counts updated, sequenced last |
-| 21. Newly-included Bulk tests fail for unrelated (v1) reasons | Conformance re-run | Each previously-excluded test classified v1-still-excluded vs v2-now-included before broadening the filter |
+- `sync-sigha.sh` defaults to `main` (`SRC=${1:-main}`). "Identical to upstream HEAD" is a moving target; a
+  resync pulls every unrelated upstream change (new functions, changed coercion), and `rm -rf src corpus`
+  discards anything not on the script's hard-coded layer list (`syntax registry analysis engine i18n`): a new
+  upstream layer is silently omitted and only `tsc` notices.
+- `sed -i ''` is BSD/macOS-only; on Linux (CI, contributors) it treats `''` as a file name and fails.
+- The corpus consists of `salesforce-v2.json` (BSD-3 derived from salesforce/formula-engine, attribution in
+  `packages/sigha/NOTICE`) and `org-verified.json`. The provenance of `org-verified.json` is not stated in
+  the NOTICE read; "org-verified" suggests upstream compared against a real org, which clashes with the
+  project's no-behaviour-diffing rule if orglet ships it. Already shipped in v1.0; re-check provenance when
+  resyncing and before adding more cases (LOW-MEDIUM; ask upstream or inspect its repo docs).
+**Prevention:** always run `scripts/sync-sigha.sh <full-sha>` with the pinned revision, update `VENDOR.md`
+(revision, date) in the same commit, keep the diff of `packages/sigha` reviewable (no hand edits, ever),
+and run the whole workspace plus both corpus suites before and after, comparing pass counts (6 312 cases
+baseline per PROJECT.md). Make the script portable (`sed -i.bak` or `perl -pi`) as a separate, reviewed change.
+If the upstream fix is not merged, vendor from a named upstream PR commit, say so in `VENDOR.md`, and resync to
+the merged commit afterward; never carry a local patch. Keep NOTICE/LICENSE intact; MIT plus BSD-3
+attribution must survive the `rm -rf`.
+**Phase:** sigha resync; do it before Formula globals so globals are not built on a lexer about to change.
+Confidence: HIGH (script and VENDOR.md read).
+
+### S2. Colon syntax and `!` change the AST that orglet's compiler consumes
+**What goes wrong:** orglet builds reference keys by `.`-joining paths (`register` in
+`packages/formula/src/compile.ts`: `ref.key.split(".")`) and resolves relationships with
+`resolveRelationship`. `Owner:User.Name` introduces a type qualifier segment (and `Relationship:Object.Field`
+in general); if sigha emits it inside `FieldRef.path` or as a new node, orglet may mis-key the reference, drop
+the qualifier, or crash on `:`. `!` is the unary NOT (and part of `!=`); an upstream lexer fix that tokenises
+`!` differently can regress `!=` or `{!Merge}` text in string literals.
+**Prevention:** add orglet-side tests before the resync (expected-failing): `Owner:Group.Name`,
+`Owner:User.Email`, `!ISBLANK(x)`, `x != y`, strings containing `!` and `:`; keep `Owner.X` rejection tests for
+still-polymorphic fields. Let the qualifier select the target in `resolvePath` using the shared prefix/target
+rule (single seam, v1.0 #5 lesson) and evaluate parent loading with that target only. Update D-16 in
+PROJECT.md when done.
+**Phase:** sigha resync then formula compile. Confidence: MEDIUM.
+
+### K1. Root-cause grouping can hide real errors
+**What goes wrong:** Cascades are real (a formula referencing a field that failed makes dependents fail),
+but a grouping heuristic over strings can fold unrelated failures into one root cause, or drop dependents
+that have a second, independent error. Warnings are plain `string[]` today (`BuildResult.warnings`,
+`FormulaRegistry.warnings`, `packages/cli/src/main.ts:81-84`), so grouping would parse text.
+**Prevention:** introduce structured diagnostics (`code`, `area`, `subject`, `cause?: key`) in parallel to the
+string list; compute cause edges from the reference graph the compiler already builds, not from message text.
+Every dependent keeps an entry (collapsed in default output, listed in `--verbose` or `--json`), and the summary
+states both numbers ("412 warnings, 9 root causes"). `--strict` fails on the underlying set: it must never pass
+because a group was collapsed. Test: two independent errors in one formula are both reported.
+**Phase:** Check report, after the failure sources exist. Confidence: HIGH (design reasoning).
+
+### K2. The quiet category swallows a referenced object
+**What goes wrong:** "Unreferenced system objects" are classified quiet. If "referenced" is computed by a
+different walk than the one that raises `reference-target`/`standard-object` warnings, an object referenced
+only from a formula global, roll-up summary target, validation rule text, record type, picklist dependency or
+`$ObjectType` falls through and its warning disappears.
+**Prevention:** compute reference sets once (lookup `referenceTo`, formula `references`, rollup definitions,
+metadata files naming the object) and use the same set for both warnings and quiet classification. Invariant
+test: for every warning naming an object X, X is not quiet; for every quiet object X, no field, formula or
+rule resolves to it. Quiet entries remain listed in a separate "informational" section and in `--json`; never
+omitted. Quiet objects never count towards `--strict` failure, but referenced ones always do.
+**Phase:** Check report. Confidence: HIGH.
+
+### K3. Report redesign breaks scripts and acceptance records
+**What goes wrong:** `warning: UNSUPPORTED:<area> ...` lines on stderr are parsed by CI (`--strict`), docs,
+and tests; the v1.0 acceptance record cites exit code and a summary line.
+**Prevention:** keep one `warning:` line per root-cause entry in the same format (stderr), add the summary on
+stdout, keep exit-code semantics, update `examples/acme` and docs together, and add a snapshot test of the
+exact output for the acme fixture.
+**Phase:** Check report. Confidence: HIGH.
+
+### G1. Fixture and docs leak real-org names (HARD CONSTRAINT)
+**What goes wrong:** A public `examples/enterprise` made by "sanitising" the private retrieve keeps its shape:
+object counts, field naming patterns, unusual relationship names, validation-rule logic. Also, warning text from
+the large org pasted into planning docs, plans, issues or this agent's context discloses names. The large org
+is an employer's metadata (CLAUDE.md levels apply: treat as Level 2+ and keep it out of Claude context and
+the repo).
+**Prevention:** author the fixture from the public documentation of each feature, never by editing a copy of
+the retrieve; generic names (`Acme_*`, `Widget__c`), small counts per category; reviewers check names against
+a private denylist kept outside the repo (a local pre-push script, not committed with the names inside).
+Report the large run only as warning counts per area, per PROJECT.md. Planning artefacts and commit messages
+carry no object names from it.
+**Phase:** every phase; the fixture task owns the check. Confidence: HIGH (project constraint).
+
+## Minor Pitfalls
+
+### N1. Conformance describe suites against a bigger org
+**What goes wrong:** `describeGlobal` gains ~50 entries; jsforce `connection-meta` tests and
+`describe-check/contract.json` assert key sets. A new field type string, an absent `urls` key or a
+`queryable:true` object that cannot be queried fails a suite that was green.
+**Prevention:** run `conformance/run-all.sh` after the baseline phase, not only at milestone end; treat any
+new red as a v1.1 regression until classified (v1.0 D-02 rule). Confidence: HIGH.
+
+### N2. Generated JSON churn
+**What goes wrong:** Non-deterministic generator output (map order, timestamps) makes every regeneration a
+huge diff, and field order changes column ordinal positions in new databases and describe order.
+**Prevention:** sort keys and fields by a documented rule, no timestamps, append-only field order for existing
+objects (keep v1 order, add new fields after). Confidence: MEDIUM.
+
+### N3. Child relationship name clashes
+**What goes wrong:** Documented `childRelationshipName`s for new lookups (e.g. to Account) can duplicate each
+other or an existing one; the compiler resolves subqueries by that name.
+**Prevention:** build-time uniqueness check per parent object over baseline children; fail the generator.
+Confidence: MEDIUM.
+
+### N4. Compile-time vs data-time errors for globals
+**What goes wrong:** Mixing "global does not exist" (compile, `UNSUPPORTED:formula-global` or field-not-found)
+with "value is blank" (runtime) produces inconsistent `check` results.
+**Prevention:** one rule: names and types validated at compile; data absence evaluates to blank, with at most
+one aggregated warning. `$Permission` stays `UNSUPPORTED:formula-global`. Confidence: HIGH.
+
+## Phase-Specific Warnings
+
+| Phase topic | Likely pitfall | Mitigation |
+|-------------|---------------|------------|
+| Baseline v2 generator | B1, B3, B4, M3, M4, N2 | Provenance, overrides, null prefixes, v1-v2 diff gate |
+| Baseline v2 migration | M1, M2 | Populated-DB upgrade test first; no NOT NULL from nillable |
+| New business objects | B2, B5 | Plan expected warning shifts; per-object DML flags; describe-check list |
+| OwnerId narrowing | O1, M1 | Per-object source, audit tests, FK pre-scan |
+| sigha resync | S1, S2 | Pinned sha, portable script, tests written before resync |
+| Formula globals | F1-F5, N4 | One resolver per global, per-batch loading, blank semantics |
+| Custom metadata | C1-C4 | Deterministic Ids, `m` prefix namespace, two-pass load, read-only flag |
+| Custom settings | C5, F1 | Separate shape, hierarchy resolver, no data claim |
+| Roll-up over formula | R1 | Decide materialisation layer before coding; reject forbidden formulas at load |
+| Check report | K1, K2, K3 | Structured diagnostics, shared reference set, stable output |
+| Fixture and acceptance | G1, N1 | Doc-derived fixture, private denylist, conformance after each phase |
+
+## Blockers for roadmap order
+1. Upgrade (populated-DB) migration test exists before any baseline v2 or OwnerId change merges (M1).
+2. `keyPrefix` nullability and source labelling decided before generating 50 objects (B3).
+3. OwnerId narrowing is per-object data, after the audit of Group-owned tests and `poly-check` (O1).
+4. sigha resync precedes formula-global and polymorphic-formula work (S1, S2).
+5. Roll-up-over-formula layer decision (materialise in `engine`/`cli`, not in `@orglet/schema`) precedes its plan (R1).
+6. Structured diagnostics precede the report redesign; the quiet category shares one reference walk (K1, K2).
 
 ## Sources
-
-- [Roll-Up Summary Field — Salesforce Help](https://help.salesforce.com/s/articleView?language=en_US&id=fields_about_roll_up_summary_fields.htm&type=0) (fetch blocked by site error page during this research; treat as MEDIUM confidence, corroborated by secondary sources below)
-- [Salesforce Rollup Summary Field: 3 Limitations and Fixes — TractionComplete](https://tractioncomplete.com/articles/salesforce-rollup-summary-field-limitations/) — Master-Detail-only requirement, 40-field cap, single-level hierarchy visibility, COUNT/SUM/MIN/MAX-only operations
-- [Understanding Relationship Fields and Polymorphic Fields — Salesforce Developers](https://developer.salesforce.com/docs/platform/salesforce-soql-sosl/guide/sforce-api-calls-soql-relationships-and-polymorph-keys.html) (fetch returned 403 during this research; TYPEOF syntax and `.Type` filtering corroborated via secondary source below)
-- [Polymorphic Relationships in SOQL Queries: TYPEOF — Amit Salesforce](http://amitsalesforce.blogspot.com/2020/09/polymorphic-relationships-in-soql.html) — TYPEOF WHEN/THEN/ELSE syntax, unmatched-type ELSE fallback behavior, API version 46.0+ requirement, `WHERE <rel>.Type IN (...)` filtering pattern
-- [Job States — Bulk API 2.0 and Bulk API Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/bulk_api_2_job_states.htm) (fetch returned 403 during this research; state machine corroborated via secondary source and directly against this repo's own already-correct implementation in `packages/api/src/routes/bulk.ts`)
-- [electric-sql/pglite GitHub repository](https://github.com/electric-sql/pglite) — single-connection/single-user architecture
-- [Announcing PGlite v0.4: connection multiplexing — Electric](https://electric.ax/blog/2026/03/25/announcing-pglite-v04) — confirms single-connection is the base architecture; v0.4 multiplexing is new and partial ("not all cases might be covered")
-- [Missing pg_catalog.pg_tables and information_schema.tables — electric-sql/pglite#8](https://github.com/electric-sql/pglite/issues/8) — historical gap in system catalog completeness; current status not independently reconfirmed in this research, verify against pinned pglite version
-- [PGlite Bundler Support docs](https://pglite.dev/docs/bundler-support) — `new URL(..., import.meta.url)` WASM loading pattern, `optimizeDeps.exclude` requirement for Vite-based bundlers
-- [Issues Loading and Testing WebAssembly Modules in vitest — vitest-dev/vitest#4283](https://github.com/vitest-dev/vitest/discussions/4283) — community-reported ESM+WASM integration friction in vitest specifically
-- [migration from SQLite to PGLite errors — activepieces/activepieces#10545](https://github.com/activepieces/activepieces/issues/10545) — third-party report of a `session_replication_role`-related error (`25P02`) under pglite; not an official pglite compatibility statement, verify directly against the pinned version
-- [actions/setup-node — Corepack Support #531](https://github.com/actions/setup-node/issues/531) — corepack/setup-node interaction caveats
-- [Creating PostgreSQL service containers — GitHub Docs](https://docs.github.com/actions/guides/creating-postgresql-service-containers) — `pg_isready` health check pattern for GitHub Actions Postgres service containers
-- This repository's own source, read directly during this research: `packages/metadata/src/build.ts` (OwnerId `referenceTo = ["User", "Group"]`, `customKeyPrefix` alphabetical assignment), `packages/metadata/standard/objects/Group.json` (confirms Group is already modelled, `keyPrefix: "00G"`), `packages/metadata/src/types.ts` (`reparentable?: boolean`, `relationshipOrder` MasterDetail-only), `packages/soql/src/shape.ts` (`attributes(shape.type, ...)` fixed per compiled shape, not per row), `packages/soql/src/compile.ts` (TYPEOF unconditional `unsupported` throw, first-target join comment), `packages/api/src/bulk/jobs.ts` and `packages/api/src/routes/bulk.ts` (existing correct client-cannot-set-InProgress/JobComplete state machine), `package.json` (`packageManager: pnpm@12.6.0`, `engines.node >=22`), `scripts/sync-sigha.sh` (fresh external clone on every invocation)
-- `.planning/codebase/CONCERNS.md`, `.planning/codebase/ARCHITECTURE.md`, `.planning/codebase/TESTING.md`, `.planning/PROJECT.md` (this project's own prior analysis, read as mandatory input per task instructions)
-
----
-*Pitfalls research for: orglet milestone 1 (hardening) — roll-ups, TYPEOF, key-prefix persistence, Bulk API 2.0 persistence, pglite, GitHub Actions CI, thin baselines, conformance re-run*
-*Researched: 2026-09-29*
+- Code read directly: `packages/metadata/src/build.ts`, `packages/schema/src/{migrate,ddl,columns,prefixes}.ts`,
+  `packages/formula/src/compile.ts`, `scripts/sync-sigha.sh`, `packages/sigha/{VENDOR.md,NOTICE}`,
+  `packages/cli/src/main.ts`, `conformance/poly-check`, `conformance/describe-check` (HIGH)
+- `.planning/PROJECT.md`, `.planning/milestones/v1.0-research/PITFALLS.md` (HIGH)
+- Roll-up over formula restrictions (idempotent, no cross-object, no TODAY/NOW):
+  https://www.apexhours.com/aggregating-validating-data/ , https://www.janbasktraining.com/community/salesforce/why-cant-a-formula-number-field-be-used-in-the-rollup-summary-field-salesforce (secondary, MEDIUM; Salesforce Help not fetched)
+- Custom metadata record Id prefix `m00` vs custom objects `a00`: https://www.apexhours.com/custom-metadata-types/ (secondary, LOW-MEDIUM)
+- Third-party prefix list showing prefixes are not in official docs: https://www.autorabit.com/blog/salesforce-object-prefixes-cheat-sheet/ (LOW)
+- Custom metadata XML shape: https://developer.salesforce.com/docs/atlas.en-us.264.0.api_meta.meta/api_meta/meta_custommetadata.htm (official, not re-fetched this session; verify in the phase)
+- Everything marked "reasoning" or "verify" above is unverified against Salesforce documentation.

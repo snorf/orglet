@@ -1,175 +1,170 @@
-# Stack Research — Hardening Milestone (Additions Only)
+# Technology Stack: v1.1 additions
 
-**Domain:** Test infrastructure (Docker-free Postgres for a TS/Node 22/Fastify 5/Postgres 16 monorepo), CI, Bulk API 2.0 persistence, SOQL parser capability check
-**Researched:** 2026-09-29
-**Confidence:** HIGH
+**Project:** orglet v1.1 "real-org fidelity"
+**Researched:** 2026-10-12
+**Scope:** only what the NEW features need. The existing stack (TS strict, Node 22, pnpm, Fastify 5, vitest, pglite, fast-xml-parser 5, soql-parser-js, vendored sigha, decimal.js) is unchanged.
+**Overall confidence:** MEDIUM-HIGH (data source and sigha findings verified against primary sources; legal reading is mine, not legal advice)
 
-This file covers only what the hardening milestone *adds* on top of the existing stack
-documented in `.planning/codebase/STACK.md` (pnpm 12.6.0, TypeScript 5.9, Fastify 5.12.5,
-`pg` 8.23.0, `@jetstreamapp/soql-parser-js` 8.1.0, vitest 3.2.7, Postgres 16 via Docker Compose).
-Nothing below replaces anything in that file.
+## Headline
 
-## Recommended Stack
+**Add zero new runtime dependencies.** Every v1.1 capability is a change to existing packages, one new
+offline generator script, and one new vendored data snapshot. The one genuinely new thing is a *data
+source* for the standard-object baseline, and a good one exists:
 
-### Core Additions
+> **`forcedotcom/sf-skills`, skill `platform-data-and-tooling-api-context-get`** (Apache-2.0, published by
+> Salesforce, Inc.): one JSON file per standard sObject, converted from the public Object Reference pages.
+> 1 839 Data API sObjects + 291 Tooling records. This is the "Salesforce-maintained dataset" the
+> question asked about.
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|------------------|
-| `@electric-sql/pglite` | **0.5.8** (npm registry, published from GitHub `electric-sql/pglite`, last push 2026-08-26) | Embedded Postgres for tests, no Docker | It is real Postgres source compiled to WASM and run in single-user mode — not a reimplementation. Every feature the codebase actually exercises in Postgres-backed tests (`SAVEPOINT` per record in `engine.ts`, `SET LOCAL session_replication_role = replica` for import mode, `ILIKE` in compiled SOQL, `numeric`/`timestamptz`/`char(18)`/`varchar` column types, `CREATE SEQUENCE` for AutoNumber fields, correlated child subqueries, `ALTER TABLE` in `migrate.ts`, real `information_schema` for the diff-based migrator) is genuine Postgres 16-family behavior, not a JS approximation. Apache-2.0/PostgreSQL dual license, OSI-compliant. |
-| `@electric-sql/pglite-socket` | **0.2.11** (peer-pins `@electric-sql/pglite` to exactly `0.5.8` — install both together) | Exposes a PGlite instance over the real Postgres wire protocol on a local TCP port | Lets the **existing, unmodified** `createPool()` in `packages/schema/src/db.ts` (`new pg.Pool({ connectionString })`) talk to PGlite exactly as it talks to Docker Postgres today. No new driver, no adapter shim, no change to the production code path the running server uses — only the test bootstrap changes what `ORGLET_DATABASE_URL` points at. MIT license. |
+## 1. Reading the public Object Reference programmatically
 
-**No new library is needed for Bulk API 2.0 persistence or for SOQL `TYPEOF`** — see "What NOT to Use" and "Verified: no new dependency needed" below.
+### Findings
 
-### CI (GitHub Actions)
+| Route | Result | Confidence |
+|-------|--------|------------|
+| `developer.salesforce.com/docs/atlas.en-us.object_reference.meta/...htm` via curl / WebFetch | **HTTP 403** (bot wall) from plain clients; pages are client-rendered. Verified 2026-10-12. | HIGH |
+| `/docs/get_document/...`, `/docs/get_document_content/...` (the XHR endpoints the docs SPA calls) | **403** to curl; 301 redirect for one variant. Undocumented, not a supported API, no stability promise. | HIGH (that they are blocked), LOW (that they are what the SPA uses) |
+| Official PDF bundle (`resources.docs.salesforce.com/.../atlas.en-us.object_reference.meta.pdf`) | **404**. Salesforce's own `platform-docs-get` skill says "Do not fall back to PDFs". | HIGH |
+| Salesforce's own retrieval guidance | `forcedotcom/sf-skills` `platform-docs-get`: for JS-heavy developer.salesforce.com use *browser-rendered extraction* (Playwright); no JSON API is documented. | HIGH |
+| `@salesforce/source-deploy-retrieve` 13.4.5 (Apache-2.0) | Metadata *registry* only (type -> directory/suffix). No field definitions, no key prefixes. Verified by grep of the shipped `metadataRegistry.json`. | HIGH |
+| `@salesforce/types` 1.8.0 (BSD-3), `@salesforce/schemas` 1.10.3 (ISC), `@salesforce/core` 9.3.6 | Config/CLI typings and JSON schemas for `sfdx-project.json` etc. No standard-object describes. | MEDIUM |
+| `jsforce` / `@jsforce/jsforce-node` 3.10.29 (MIT), `simple-salesforce` | Metadata-API *typings* (see 3.) and mocks only. Not a standard-object dataset. | HIGH |
+| Enterprise/Partner WSDL | Org-generated download (Setup). It is an org artefact, not public docs: **do not use** (legal rule). Note: the `wsdl_segment` strings inside the dataset below contain org-specific `__c` fields; ignore that section. | HIGH |
+| `salesforce/formula-engine` (BSD-3) | Formula grammar/functions only; no object catalogue. | HIGH |
 
-| Action | Version | Purpose | Why This Version |
-|--------|---------|---------|-------------------|
-| `actions/checkout` | **v7** (latest release `v7.0.1`, 2026-07-20) | Checkout the repo | Current major; `v6.1.0` still receives patches but `v7` is the actively recommended line as of this research date. |
-| `actions/setup-node` | **v7** (latest release `v7.0.0`, 2026-07-14) | Install Node 22, provide `cache: pnpm` | Current major. Requires pnpm to already be on `PATH` before it can compute a pnpm cache key — install pnpm first (below), then this step. |
-| `pnpm/action-setup` | **v6** (latest release `v6.1.0`, 2026-09-05, i.e. this week) | Install the pnpm version pinned in `package.json` (`packageManager: pnpm@12.6.0`) | Reads `packageManager` automatically, no version to hand-maintain in the workflow file. Actively maintained; the pnpm docs note `pnpm/action-setup` remains the supported path "for pnpm v12 and earlier when used with `actions/setup-node`" — exactly this project's version. |
+### Recommended source: sf-skills `platform-data-and-tooling-api-context-get`
 
-**Order matters:** `actions/checkout` → `pnpm/action-setup` (puts pnpm on `PATH`, matching the pinned `12.6.0`) → `actions/setup-node` with `cache: pnpm` (needs pnpm present to fingerprint the lockfile) → `pnpm install --frozen-lockfile` → `pnpm build` (`tsc -b`) → `pnpm lint` → `pnpm test`.
+- URL: <https://github.com/forcedotcom/sf-skills/tree/main/plugins/builder/salesforce-development/skills/platform-data-and-tooling-api-context-get/assets/enterprise_api>
+- Licence: repo `LICENSE.txt` = Apache License 2.0, "Copyright (c) 2026 Salesforce, Inc." (GitHub reports `Apache-2.0`). Compatible with orglet's Apache-2.0. Keep the LICENSE/NOTICE next to the vendored copy.
+- Provenance: data is *generated from the public Object Reference* ("generated by generate_data_and_tooling_skill.py on 2026-07-23", per its index table). That satisfies "public documentation only": it is a Salesforce-published, Apache-licensed redistribution of the public docs, and no org was touched.
+- Freshness: repo HEAD `4bbae5c4...` (2026-10-09); skill last changed in `37effabd...` (release 2.2.0, 2026-09-22). Pin a commit SHA; resync by script like sigha.
+- Coverage checked for every v1.1 target object: Account, Contact, Opportunity, Lead, Case, Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole, ContractLineItem, EmailMessage, ContentDocument, ContentVersion, FeedItem, Location, Address, Contract, User, Product2, Pricebook2, PricebookEntry, Task, Event, Campaign, CampaignMember, Asset are **all present** (field counts 7-175).
 
-```yaml
-- uses: actions/checkout@v7
-- uses: pnpm/action-setup@v6
-- uses: actions/setup-node@v7
-  with:
-    node-version: 22
-    cache: pnpm
-- run: pnpm install --frozen-lockfile
-- run: pnpm build
-- run: pnpm lint
-- run: pnpm test
-```
+### What the JSON contains and what it lacks (drives generator design)
 
-**Note on `pnpm/setup` (a separate, newer action at `github.com/pnpm/setup`):** the pnpm project's own CI docs now lead with this action (it installs pnpm *and* the Node runtime in one step, `cache: true`, no `actions/setup-node` needed) for pnpm v11+. It's a legitimate, simpler alternative — but it's a newer action (`v2.0.0` current release) with a smaller install base than the well-established `pnpm/action-setup` + `actions/setup-node` combo this table recommends. For a solo/small-team repo where the pair above already matches the project's pinned versions exactly and is the pattern most existing GitHub Actions examples and troubleshooting content assume, stick with the established pair; revisit `pnpm/setup` later if the two-step setup becomes a maintenance annoyance. MEDIUM confidence on this specific recommendation (both are reasonable; this just isn't a place to be an early adopter).
+File layout: `{ sections, title, description, fields, field_reference, usage, associated_objects, wsdl_segment, ... }`.
 
-**Second job with a real Postgres 16 service container — optional, not required for correctness:** since PGlite *is* Postgres, a service-container job is a belt-and-braces sanity check (catches any WASM-build-specific quirk), not a substitute for pglite in the main fast job. If added:
+| Need (baseline JSON field) | Source in dataset | Gap / handling |
+|----------------------------|-------------------|----------------|
+| field `name`, `type` | `fields[Name].type` (SOAP names: `string`, `picklist`, `reference`, `double`, `int`, `currency`, `textarea`, `phone`, `url`, `email`, `address`, `boolean`, `date`, `datetime`/`dateTime` (both spellings occur), `id`) | Map table SOAP-type -> orglet `type` (Text, LongTextArea, Number, Currency, Picklist, Lookup...). `string` + length > 255 and `textarea` need care. |
+| `createable` / `updateable` / `nillable` / filterable / sortable / groupable | `fields[Name].properties` comma string ("Create, Filter, Group, Nillable, Sort, Update"), plus `Defaulted on create` | Parse to booleans; **absence = false**. HIGH value, fully covered. |
+| `referenceTo`, `relationshipName`, relationship type | `refers_to`, `relationship_name`, `relationship_type` | `refers_to` is a string; polymorphic targets appear as comma lists (e.g. Task.WhoId) - split on `,`. 1-3 such fields per object. |
+| `required` (not nillable, no default) | `required: true` on some entries | Prefer deriving from not-Nillable and not-Defaulted-on-create; use `required` as a cross-check. |
+| `label` | `field_reference[Name].field_label` | `field_reference` is a **second, differently-populated catalogue** (per SKILL.md "dual-catalog rule"). Union both; fall back to humanised API name (`AccountNumber` -> "Account Number") when absent. |
+| `length` | `field_reference[Name].length` (string) | Present for most text fields, but also for picklists (255) and non-text types; only use for `string`/`phone`/`url`/`email`/`textarea`. Also regex "Maximum size is N characters" in `description` as a fallback. Else default 255 + mark `generated: guessed`. |
+| `precision` / `scale` | **absent** | Keep hand-curated overrides file; default Currency 18/2, Number 18/0 unless docs prose says otherwise. Existing baseline already encodes values - the generator must *merge* (hand overrides win), not overwrite. |
+| picklist values | **absent** (docs describe them in prose or point to `StandardValueSet`) | Reuse existing `standardValueSet` mapping + `packages/metadata/standard/standardValueSets.json`; unmapped picklists emit `picklistValues: []` + `UNSUPPORTED:standard-picklist` style quiet note. Do not invent values. |
+| `keyPrefix` | **absent** | No machine-readable public source found. Keep a tiny hand-maintained `keyPrefixes.json` (3-char prefixes are stable, publicly listed); ~15 new objects need adding. LOW confidence on any third-party blog list - cross-check against 2 sources, never against an org. |
+| `labelPlural`, `hasOwner` | `title`/`description` only; `hasOwner` derivable from presence of `OwnerId` | Derive `hasOwner`; humanise `labelPlural` with a small override map. |
+| compound fields (`compoundFieldName`) | not modelled | Existing Address/Geolocation components table in generator (BillingStreet -> BillingAddress). Hand-maintained. |
 
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    env:
-      POSTGRES_USER: orglet
-      POSTGRES_PASSWORD: orglet
-      POSTGRES_DB: orglet
-    ports: ["5433:5432"]
-    options: >-
-      --health-cmd pg_isready
-      --health-interval 10s
-      --health-timeout 5s
-      --health-retries 5
-```
-then run `pnpm test` with `ORGLET_DATABASE_URL=postgres://orglet:orglet@localhost:5433/orglet` and no PGlite substitution, mirroring `docker-compose.yml` exactly. HIGH confidence — this is the standard, long-stable GitHub Actions `services:` pattern, unchanged for years.
+### Traps in the dataset (must be coded against)
 
-## Verified: no new dependency needed
+1. **`__c` leakage.** `Account.field_reference` contains `Active__c` etc. (org-specific fields in the doc's own example tables). The generator must drop every key ending `__c`/`__r` and ignore `wsdl_segment`.
+2. **Mixed completeness.** `fields` (SOAP table) and `field_reference` (UI table) overlap partially; e.g. AccountTeamMember has 11 `fields` and 0 `field_reference`; Account `fields` 76 vs 126 `field_reference`. Fields only in `field_reference` have no createable/updateable flags: default them to read-only (`createable:false, updateable:false`) and record that in the generated header.
+3. **Doc prose is Salesforce-authored text.** Do not copy `description` strings into committed baseline JSON (facts - names, types, flags - only). Avoids republishing prose and keeps the baseline small.
+4. **Version drift.** Snapshot targets a recent API version (skill `minApiVersion: 67.0`); orglet's baseline should stamp the source SHA and docs-generation date in a generated-file header.
+5. **Docs gaps are real gaps.** Field present in the retrieve but absent from docs is a fidelity gap: surface through `orglet check` (quiet/gap category), do not guess.
 
-### 1. Bulk API 2.0 persistence — plain tables via the existing `pg` driver
+### Integration with the existing repo
 
-Confirmed by reading `packages/api/src/bulk/jobs.ts`: the current store is two in-memory
-`Map`s (`JobStore.ingest`, `JobStore.query`) holding plain objects (`IngestJob`, `QueryJob`)
-with string/string[][] fields. **Nothing here needs an ORM, query builder, or job-queue
-library.** The rest of the codebase has zero ORM/query-builder dependency anywhere — `pg`
-with hand-written SQL is the established, consistent pattern in `packages/schema`,
-`packages/engine` and `packages/api`. Two plain tables (or one table with a `kind`
-discriminator), columns matching the existing interfaces, `jsonb`/`text[]` for
-`csvChunks`/`successRows`/`failedRows`, migrated the same way every other table in the org
-schema is migrated, is the only recommendation that fits the codebase's own conventions.
-Confidence: HIGH (this is a direct reading of the current implementation, not a library
-search finding).
+- Vendor the snapshot like sigha: `scripts/sync-sfdocs.sh <sha>` copies only the ~35-50 needed `enterprise_api/<Object>.json` files (not all 1 839, not `wsdl_segment`) into `packages/metadata/standard/source/` with `LICENSE` + `VENDOR.md` (SHA, date). Vendoring makes CI/offline deterministic and keeps GitHub fetch out of tests.
+- Generator: `scripts/gen-standard-baseline.ts` run with the already-present `tsx`; reads snapshot + `standard/overrides/*.json` (precision/scale, keyPrefix, compound fields, picklist-set bindings, narrowed `OwnerId.referenceTo`) and writes `packages/metadata/standard/objects/<Obj>.json` in the **existing shape** (Account.json keys: `name,label,labelPlural,keyPrefix,hasOwner,fields[]` with `name,label,type,length,precision,scale,standardValueSet,restrictedPicklist,picklistValues,compoundFieldName,createable,updateable`). Output is deterministic (sorted keys) and committed; a vitest test regenerates in memory and diffs against the committed files.
+- Add a `pnpm gen:standard` script only; no new deps. A parity test: every field in the old 35 hand-written objects must still exist (baseline-not-in-docs was 0-1 per object in a spot check: Account lacks only `Tier`).
+- Optional live refresh (NOT in CI): Playwright against developer.salesforce.com is what Salesforce itself recommends for JS-heavy pages, but it is brittle, bot-walled, and adds a ~100 MB dependency. **Do not add it**; refresh from sf-skills instead.
 
-### 2. SOQL `TYPEOF` — the parser already supports it; the gap is orglet's own compiler
+## 2. Custom metadata, custom settings, custom labels: SFDX source format
 
-`@jetstreamapp/soql-parser-js` **8.1.1** (current latest, released 2026-09-26 — three days
-before this research) does parse `TYPEOF ... WHEN ... THEN ... ELSE ... END`. Evidence: the
-package's own changelog documents *formatting* behavior for `TYPEOF` fields as far back as
-version `3.2.0` (2021), meaning parse-level support for the construct predates that — it is
-long-standing, stable functionality, not a recent or experimental addition. This matches
-`.planning/codebase/CONCERNS.md`'s own description: `packages/soql/src/compile.ts:327`
-throws `unsupported("soql-typeof", ...)` **unconditionally**, i.e. the AST node already
-arrives from the parser and orglet's own compiler simply refuses to compile it. No
-parser upgrade or replacement is needed to build `TYPEOF` support — only new compilation
-logic in `packages/soql/src/compile.ts` (and the parallel "first target" logic in
-`packages/formula/src/compile.ts` / `packages/metadata/src/schema.ts`'s
-`resolveRelationship`). Confidence: HIGH for "the parser supports it" (multiple years of
-stable behavior, current release), HIGH for "the gap is compile-time" (direct code read).
+All verified against Salesforce's Metadata API reference (via the sf-skills `platform-metadata-api-context-get` assets: `CustomMetadata.json`, `CustomLabels.json`, `CustomObject.json`) and the SDR registry.
 
-### 3. Roll-up summary fields — no library gap either
+| Artifact | Path in retrieve | Shape |
+|----------|------------------|-------|
+| Custom metadata *type* | `objects/<Name>__mdt/<Name>__mdt.object-meta.xml` + `objects/<Name>__mdt/fields/*.field-meta.xml` | `<CustomObject>` like any object; presence of `__mdt` suffix marks it. `visibility` Public/Protected/PackageProtected. Fields end `__c`; type may be `MetadataRelationship` (with `<referenceTo>` and `<metadataRelationshipControllingField>`). Already walks through `sfdx.ts` object/field loading; needs `__mdt` handling in the type map. |
+| Custom metadata *record* | `customMetadata/<Type>.<RecordDevName>.md-meta.xml` (SDR: dir `customMetadata`, suffix `md`) | `<CustomMetadata><label/><protected/><values><field>Field__c</field><value xsi:type="xsd:string">..</value></values>...`. `field` is the API name; `value` is `xsd:anyType` with an `xsi:type` attr, may be `xsi:nil="true"`. The type name is the part before the first `.` in the filename; record DeveloperName is the remainder (note: `<fullName>` is usually absent). |
+| Custom setting *definition* | `objects/<Name>__c/<Name>__c.object-meta.xml` with `<customSettingsType>List</customSettingsType>` or `Hierarchy` (Hierarchy is the default when the element is present without value, per docs) | Plain custom object plus the marker; `<visibility>` replaces older `customSettingsVisibility`. Fields are ordinary `.field-meta.xml`. |
+| Custom setting *data* | **Not in a metadata retrieve.** It is record data. | `$Setup` can only be populated from `--import`/seed data or REST DML. Define behaviour: the `__c` setting table is created, rows come from the data path; otherwise `$Setup.X__c.Field__c` evaluates against empty/default and logs a quiet note. Do not claim retrieve support. |
+| Custom labels | `labels/CustomLabels.labels-meta.xml` (SDR: dir `labels`, suffix `labels`, child element `labels`, unique id `fullName`) | `<CustomLabels><labels><fullName/><value/><language/><protected/><shortDescription/><categories/></labels>...`. Translations live elsewhere (`translations/`): out of scope, use the `language` of the base label. |
 
-Not a parsing or library problem: `packages/metadata/src/sfdx.ts` already recognizes the
-`Summary` field type and only skips *loading* it; the recomputation itself is a save-pipeline
-concern (aggregate SQL executed by the engine on child insert/update/delete/undelete,
-consistent with the project's existing rule that "business rules live in the app, not DB
-triggers" — see Key Decisions in `PROJECT.md`). Plain `pg` queries (`SELECT COUNT(*)/SUM(...)
-FROM ... WHERE parent_id = $1 [AND <filter>]`) executed inside the existing DML transaction
-are sufficient; no aggregation/rules-engine library is needed or appropriate here.
+### Existing parser: what to change (packages/metadata)
 
-## Alternatives Considered
+`src/xml.ts` uses `fast-xml-parser` with `ignoreAttributes: true`, `parseTagValue: false`, and a `REPEATED` set that already contains `value`/`values`.
 
-| Recommended | Alternative | When the Alternative Would Make Sense |
-|-------------|-------------|-----------------------------------------|
-| `@electric-sql/pglite` + `@electric-sql/pglite-socket` | `pg-mem` (`oguimbal/pg-mem`, npm `pg-mem` **3.0.14**, MIT) | If the project's Postgres-backed tests only used a small, well-supported SQL subset with no `ALTER TABLE`, no `SAVEPOINT`, no `session_replication_role`, and correctness of exact type/DDL semantics didn't matter. That is not this codebase: `migrate.ts` does non-trivial `ALTER TABLE`/widen-narrow diffing against `information_schema`, `engine.ts` uses per-record `SAVEPOINT`, and import mode flips `session_replication_role`. `pg-mem` is a **hand-written JS SQL engine with its own parser** (its own README: "best effort to replicate PG... keep an eye on your query results if you perform complex queries"), last pushed 2026-02-26 (~7 months stale at research time) with 206 open issues — a real reimplementation-fidelity risk for exactly the features this milestone depends on. See "What NOT to Use" below. |
-| Bootstrap PGlite directly per test file with a ~20-line local helper (spin up `new PGlite()` + `PGLiteSocketServer` on port 0, build the URL, call the existing `createPool()`) | `pglite-pool` (npm, third-party, wraps the same `pglite-server` CLI that ships inside `@electric-sql/pglite-socket`) | If the team wants a ready-made, off-the-shelf wrapper instead of a few lines of glue code owned in-repo. Given the codebase's stated preference for minimal dependencies (no ORM, no query builder anywhere) and that the underlying primitive (`PGLiteSocketServer`) is a five-line usage in its own README, a small local helper is more in keeping with "enkelhet först" than adding a third-party dependency for what the official package already exposes directly. |
-| `pnpm/action-setup@v6` + `actions/setup-node@v7` | `pnpm/setup@v2` (separate, newer GitHub Action, replaces both steps) | If/when a simpler one-step pnpm+Node install becomes worth adopting; it is legitimate but newer/less battle-tested than the pair recommended here. Not worth switching to for this milestone. |
+- Add `labels` to `REPEATED` (a single-label file would otherwise parse as an object, not array) - verify the rest of the set when editing.
+- `ignoreAttributes: true` loses `xsi:type`/`xsi:nil`. **Do not flip the global parser.** Coerce record values by the *declared field type* of `<Type>__mdt.<Field>__c` (the schema is already loaded), which is what Salesforce itself does. Only if nil-vs-empty matters, add a second parser instance with `ignoreAttributes: false, attributeNamePrefix: "@_"` used solely for `customMetadata/`.
+- New loaders mirror existing ones: `filesWithSuffix(join(root,"customMetadata"), ".md-meta.xml")`, `labels/CustomLabels.labels-meta.xml`. Produce `OrgSchema` additions (`customMetadataRecords`, `labels`) rather than a new package.
 
-## What NOT to Use
+### Does an OSI package already cover this? Yes for *types*, no for need
 
-| Avoid | Why | Use Instead |
-|-------|-----|--------------|
-| `pg-mem` as the embedded-Postgres solution for tests | Hand-rolled SQL engine/parser, not real Postgres — explicit upstream disclaimer about correctness on complex queries, "basic index implementations", last GitHub push 2026-02-26 (~7 months before this research), 206 open issues. The exact features this milestone's tests rely on (`SAVEPOINT`, `session_replication_role`, `information_schema`-diff-driven `ALTER TABLE`, real sequence/numeric/timestamptz semantics) are precisely the kind of edge behavior a reimplementation is most likely to get subtly wrong, silently, in a way that only real Postgres in CI/prod would catch — defeating the point of a "test without Docker" story that must still trust the tests. | `@electric-sql/pglite` |
-| `@middle-management/pglite-pg-adapter` (npm **0.0.4**) as the pg↔pglite bridge | Very early version (0.0.4), and its usage pattern (`new Pool({ pglite: appDB, max: 10 })`) requires changing `createPool()`'s call signature/shape in `packages/schema/src/db.ts` — touching the production code path the running server also uses, for a test-only concern. `@electric-sql/pglite-socket` achieves the same goal (existing tests talk to PGlite) with **zero** changes to `db.ts`. | `@electric-sql/pglite-socket`, pointed at by an unchanged `ORGLET_DATABASE_URL`/`createPool()` |
-| Any ORM or SQL query builder (Drizzle, Kysely, Prisma, TypeORM, Knex) for Bulk API 2.0 job persistence | The entire codebase — `packages/schema`, `packages/engine`, `packages/api` — uses raw `pg` with hand-written SQL and zero query-builder dependency. Introducing one for two small job tables breaks that convention for no benefit and adds a dependency whose surface (migrations, connection handling, type generation) the project doesn't otherwise use. | Plain `CREATE TABLE` DDL + `pg` `Pool`/`PoolClient` queries, same as every other table in the schema |
-| `better-sqlite3` / any SQLite-family "embedded DB" as the Docker-free test backend | Different SQL dialect entirely: no `session_replication_role`, no real Postgres `information_schema`, different `ILIKE`/`numeric`/`timestamptz` semantics, no `SAVEPOINT` behaving identically to Postgres's MVCC model. Using it would mean tests validate different behavior than what the Postgres-16-backed server actually does — the opposite of what "hardening" is for. The milestone's own framing ("embedded **Postgres**") already rules this out; noted here only to close the door explicitly. | `@electric-sql/pglite` |
+- `@jsforce/jsforce-node` 3.10.29 (MIT): `lib/api/metadata/schema.d.ts` has `CustomMetadata { label, protected, values: CustomMetadataValue[] }`, `CustomMetadataValue { field, value }`, `CustomLabels { labels: CustomLabel[] }`, `CustomObject.customSettingsType`.
+- `@salesforce/source-deploy-retrieve` 13.4.5 (Apache-2.0): registry plus (de)serialisation of source format; heavy tree (`@salesforce/core`, jsforce, graceful-fs, ...).
+- **Recommendation: neither as a dependency.** orglet's parser is intentionally tiny and offline; the three shapes above are 5-10 elements each. Use the jsforce typings as a *reference* when hand-writing interfaces (types only, nothing imported). Adding SDR would drag in ~dozens of transitive packages and its own opinionated component model for no gain.
 
-## pglite Limitations That Concretely Affect This Codebase
+## 3. sigha (formula front end)
 
-| Concern (from the milestone prompt) | Verdict | Detail |
-|---|---|---|
-| `session_replication_role` (import mode, `engine.ts:215`) | Works | Real Postgres GUC, not an extension; PGlite runs genuine Postgres backend code. |
-| `SAVEPOINT` (per-record write in `engine.ts:403-411`) | Works | Real Postgres `SAVEPOINT`/`RELEASE`/`ROLLBACK TO`. Fine as used here because each record's savepoint dance happens sequentially on one `PoolClient`, not concurrently across multiple connections — see "concurrent connections" row below. |
-| `information_schema` (schema diffing in `migrate.ts`) | Works | Real Postgres system catalogs/views, not simulated. |
-| `numeric`, `timestamptz`, `ILIKE`, sequences, `char(18)` (column types in `columns.ts`/`ddl.ts`, SOQL text comparison in `compile.ts:552`) | Works | All core Postgres, not extensions; PGlite ships the same type system and operators. |
-| Correlated subqueries (`compile.ts:335-359`, child relationship subqueries) | Works | Same Postgres planner/executor, single-user mode doesn't change SQL semantics. |
-| DDL `ALTER TABLE` (`migrate.ts` add/widen columns, drop with `--force`) | Works | This is one of the specific areas where "real Postgres in WASM" beats a reimplementation like `pg-mem`, whose DDL/ALTER fidelity is much less certain. |
-| Multiple schemas (`test_<hex>` per file) | Works, but reconsider the pattern | PGlite supports `CREATE SCHEMA` fully. However: PGlite is **single-connection per WASM instance**, and vitest runs test files in parallel workers/processes (no `pool`/`isolate` override in `vitest.config.ts`, so vitest's default per-file worker isolation applies) — a single shared PGlite instance can't be handed across separate worker processes. **Recommendation:** give each Postgres-backed test file its own fresh, in-memory `PGlite` instance in `beforeAll` (via its own `pglite-socket` server on port `0`) instead of trying to share one instance across files. The existing `test_<hex>` schema-within-one-instance trick becomes unnecessary for isolation (each file already gets a fully separate database) but can be kept unchanged to minimize the diff to `migrate.test.ts`/`engine.test.ts`/`api.test.ts`/`bulk.test.ts`/`query.test.ts` — only the `beforeAll`/`afterAll` plumbing that creates `pool` needs to change, not the schema-per-file logic itself. |
-| Concurrent connections (bulk/composite batch processing) | Real limitation, low practical risk here | PGlite is fundamentally single-user/single-connection (Postgres WASM can't fork processes; it runs Postgres's "single user mode"). `pglite-socket` multiplexes multiple TCP clients onto that one connection and its own README warns "this is different from a normal Postgres installation, so not all use cases are guaranteed to work." This *would* matter if a test exercised true concurrent multi-connection behavior (e.g. two `pool.connect()` clients racing on the same row to test lock contention) — grep of the current test suite shows no such pattern today (bulk records are written in a sequential per-record savepoint loop, not `Promise.all`-fanned across multiple clients), so this is a latent constraint to document, not a blocker for the tests that exist now. Flag it explicitly in code comments near the test `pool` setup so a future contributor adding a real concurrency test knows to reach for the Docker Postgres path (`pnpm db:up`) instead. |
-| Extension support | Not applicable to this codebase | `grep -rn "CREATE EXTENSION"` across `packages/schema` and `packages/engine` returns nothing — orglet uses zero Postgres extensions today. PGlite does support official extension packages (pgvector, PostGIS, pg_ivm, age, pgtap, pg_uuidv7, pg_hashids, pg_textsearch, each as a separate `@electric-sql/pglite-<ext>` npm package) if that ever changes, but none are needed for this milestone. |
-| Status | Honest caveat | The `electric-sql/pglite` README itself still carries a `status: alpha` badge despite 16k GitHub stars and an active release cadence (pushed 2026-08-26). Treat pglite as "very widely used, still labeled alpha by its own maintainers" — reasonable for a test-only dependency that never touches production data, worth reassessing if the project ever considers it for anything beyond tests. |
+- Upstream: <https://github.com/rfaulhaber/sigha> (MIT, owner Ryan Faulhaber, ~active: last merged PR #45 on 2026-09-22; pushed 2026-09-29; 0 open issues, only dependabot PRs open). Vendored rev `2abe5dbb` (2026-09-22) = upstream HEAD of main at research time; resync with `scripts/sync-sigha.sh <rev>`.
+- Layout: `src/syntax/{lexer,parser,ast,token,chars}.ts`, `registry/`, `analysis/`, `engine/`, `i18n/`; golden corpus `corpus/salesforce-v2.json` (oracle-compared with `salesforce/formula-engine`) and `org-verified.json`.
+  - **Legal flag:** `org-verified.json` is upstream's record of rows verified *against a real org*. It is upstream's MIT data, already vendored since v1.0, but it is exactly the thing orglet's rule forbids producing itself. Johan should consciously accept or drop it; this research does not change that status quo.
+
+### `!` token - verified: Salesforce accepts unary `!`
+
+- Evidence: Salesforce's open-source formula engine (BSD-3, `salesforce/formula-engine`) grammar `impl/src/main/antlr4/com/force/formula/parser/gen4/Formula.g4` has `unaryExpression : ... | NOT unaryExpression | BANG unaryExpression #unaryExpression_bang`, and `ANTLR4GrammarVisitor.visitUnaryExpression_bang` rewrites it to the `NOT` AST node. `LexerRules.g4`: `BANG : '!'`, `COLON : ':'`. Docs-derived sources also list `!` as logical NOT alongside `!=`. HIGH confidence for the semantic (`!x` == `NOT(x)`), same precedence as other unary operators.
+- The vendored corpus has **no unary `!` case** (only `!` inside string literals), which is why upstream never hit it.
+- Current sigha behaviour: `lexer.ts` case `"!"` emits an `operator` token only when followed by `=`, else error `unexpectedBang`. `parser.ts#parseUnary` only accepts `-`/`+`; `ast.ts#UnaryOperator = "-" | "+"` with a comment that NOT is a function.
+- **Smallest upstream change:** (a) lexer: `!` not followed by `=` becomes an `operator` token; delete/retire `unexpectedBang`; (b) ast: `UnaryOperator = "-" | "+" | "!"`; (c) parser `parseUnary`: accept `!` (same depth guard); (d) evaluator: treat `UnaryOp "!"` as the existing `NOT` implementation (null/blank semantics identical to `NOT`); (e) formatter/analysis exhaustive switches over `UnaryOperator` (compiler will list them); formatter should round-trip `!x` unchanged. Add corpus rows with expectations taken from the BSD-3 formula-engine oracle, not from an org.
+
+### `Relationship:Object.Field` colon syntax - verified
+
+- Meaning: polymorphic relationship qualification: `Owner:User.Email`, `Owner:Queue.QueueEmail` (Salesforce cross-object owner formulas). The open-source engine models it as `FormulaUtils.getPolymorphicFieldName("Owner","User")` = `"Owner:User"` with `DOMAIN_DELIMETER` ':' and `getNameAndDomainFromFieldName` splitting it into {field, domain}.
+- Current sigha: `isIdentContinue` excludes `:`; `parseFieldRef` loops `dot identifier`. No `colon` token kind exists, so `Owner:User.Email` errors at the colon.
+- **Smallest upstream change:** in `scanIdentifier`, after the identifier run, if `peek()===":"` and `isIdentStart(peek(1))`, consume `:` plus the next identifier run, so `Owner:User` is a single identifier token (path segment `"Owner:User"`). Zero parser/AST change; `FieldRef.path[0] === "Owner:User"`. Edge: never absorb when the previous token context is a ternary-like `:`; Salesforce formulas have no `?:`/`:` operator, so the check is safe. Resolver side (orglet `packages/formula`): split a segment on `:`; when the field is polymorphic, resolve against the named target's fields, else keep the current `referenceTo` rules; mismatched domain -> compile diagnostic.
+- Process: change is upstream-only per `VENDOR.md` ("Behaviour changes belong upstream"). Johan owns the GitHub account `snorf`, not the upstream repo: plan a PR to `rfaulhaber/sigha` (small, with corpus tests), then `sync-sigha.sh <merged sha>`. Fallback if the PR stalls: pin a fork commit in `VENDOR.md` (still MIT) - do not hand-patch `packages/sigha/src` (the sync script wipes it).
+
+## 4. Other v1.1 features: stack impact
+
+| Feature | Stack impact |
+|---------|--------------|
+| `$UserRole`, `$Api`, `$Setup`, `$Label`, `$CustomMetadata` globals | Pure TS in `packages/formula` + `engine`: extend the global-context builder next to `$User/$Profile/$Organization`. `$Label.X` from `labels`; `$CustomMetadata.Type__mdt.Record.Field__c` from loaded md rows; `$Api.Session_ID`/`Partner_Server_URL_*` return fixed emulator values. `$Permission` stays `UNSUPPORTED:formula-global`. No deps. |
+| Roll-up over formula fields | Engine/DDL logic only. Note: Salesforce rejects roll-ups over some formula shapes; follow documented restrictions, else `UNSUPPORTED:rollup-formula`. |
+| `orglet check` --summary/--json | Plain `JSON.stringify` + existing `console` conventions. No `commander`/`yargs`/`chalk`. |
+| `__mdt` objects read-only | DDL via existing planner; DML engine rejects writes with a real Salesforce status code (`INVALID_OPERATION`/`FEATURE_NOT_ENABLED`, confirm against docs), records inserted at load only. |
+
+## What NOT to add
+
+| Do not add | Why |
+|------------|-----|
+| Playwright/Puppeteer/Firecrawl for docs scraping | Docs are bot-walled (403), SPA-rendered, ToS-fuzzy; Salesforce already publishes the converted data under Apache-2.0. Heavy dependency. |
+| `@salesforce/source-deploy-retrieve` | Pulls `@salesforce/core`, jsforce and a large tree to read ~5 XML shapes. |
+| `jsforce` / `@jsforce/jsforce-node` as a runtime dep | Only its types would be useful; it is already used as a pinned conformance client, keep it there. |
+| An XSD/WSDL generator or any Enterprise WSDL | WSDL is org-generated; legal rule. |
+| `sf sobject describe` / org describe as a data source | Forbidden by the project's legal constraint (also counts as benchmarking). |
+| `commander`, `yargs`, `chalk`, table libraries | `check` output is simple text/JSON. |
+| ANTLR / a second formula parser | sigha plus two small upstream patches covers both syntax gaps. |
+| Third-party blog key-prefix tables as an automated source | Unverified, copyright-fuzzy; hand-maintain a small cross-checked JSON. |
 
 ## Installation
 
 ```bash
-# Core hardening additions (dev-only — tests, not the running server)
-pnpm add -D -w @electric-sql/pglite@0.5.8 @electric-sql/pglite-socket@0.2.11
-
-# No other new runtime or dev dependency is required for this milestone's stack changes
-# (Bulk API 2.0 persistence and SOQL TYPEOF both build on libraries already in the project).
+# No new dependencies. New scripts only:
+#   scripts/sync-sfdocs.sh <sf-skills-sha>    # vendors needed enterprise_api/*.json + LICENSE + VENDOR.md
+#   pnpm gen:standard                          # tsx scripts/gen-standard-baseline.ts
+#   scripts/sync-sigha.sh <rev>                # after upstream PR merges (existing)
 ```
 
-## Version Compatibility
+## Confidence
 
-| Package A | Compatible With | Notes |
-|-----------|------------------|-------|
-| `@electric-sql/pglite-socket@0.2.11` | `@electric-sql/pglite@0.5.8` (exact peer dependency pin, verified via npm registry metadata — not a range) | Install both at these exact versions together; a `pnpm` peer-dependency mismatch warning here should be treated as a real problem, not noise. |
-| `@electric-sql/pglite@0.5.8` | Node 22 | No `engines` field declared by the package (verified via npm registry metadata) — no documented floor above what a WASM-capable modern Node provides; Node 22 (already required by this project) is well within its normal usage range. |
-| `pnpm/action-setup@v6` | `packageManager: "pnpm@12.6.0"` in `package.json` | Action reads this field automatically; no version needs to be duplicated into the workflow file. README explicitly states this action line is the supported path for pnpm v12 and earlier used together with `actions/setup-node`. |
-| `actions/setup-node@v7` `cache: pnpm` | pnpm already on `PATH` | Must run `pnpm/action-setup` (or any pnpm install step) before `actions/setup-node`, or the pnpm cache key computation fails/no-ops. |
+| Area | Level | Notes |
+|------|-------|-------|
+| Docs have no public JSON API; 403/404 on the guessed endpoints | HIGH | Tested 2026-10-12; Salesforce's own skill recommends browser rendering. |
+| sf-skills dataset: licence, coverage, shape | HIGH | Read LICENSE, fetched Account/Opportunity/etc., computed coverage on 30 target objects. |
+| Dataset sufficiency | MEDIUM | Good for names/types/flags/relationships; lengths partial, no picklist values / precision / key prefixes. Overrides required. |
+| Legal compatibility of using the dataset | MEDIUM | Apache-2.0 repo, derived from public docs, no org involved; the doc prose copyright is Salesforce's, hence facts-only output. Not legal advice. Confirm Johan is comfortable before first commit. |
+| SFDX formats (md, labels, customSettingsType) | HIGH for shapes, MEDIUM for edge cases (nil values, Hierarchy default, MetadataRelationship element names - confirm against `CustomField` doc when implementing). |
+| sigha `!` and `:` changes | HIGH | Verified in BSD-3 formula-engine grammar and in the vendored lexer/parser source. Effort on evaluator/formatter side not measured. |
 
 ## Sources
 
-- npm registry metadata (`registry.npmjs.org`) fetched directly for exact published versions: `@electric-sql/pglite` (0.5.8), `@electric-sql/pglite-socket` (0.2.11, peer deps), `pg-mem` (3.0.14), `@jetstreamapp/soql-parser-js` (8.1.1) — HIGH confidence, primary source
-- GitHub REST API (`api.github.com/repos/...`) fetched directly for `pushed_at`/`archived`/commit history: `electric-sql/pglite` (pushed 2026-08-26, active), `oguimbal/pg-mem` (pushed 2026-02-26, not archived but ~7 months stale, commit log confirms sparse recent activity), `actions/checkout` (latest `v7.0.1`), `actions/setup-node` (latest `v7.0.0`), `pnpm/action-setup` (latest `v6.1.0`) — HIGH confidence, primary source
-- `github.com/electric-sql/pglite` main README (fetched raw) — PGlite API (`new PGlite()`, `.query()`), "single user/connection" limitation stated by the maintainers themselves, alpha status badge — HIGH confidence
-- `github.com/electric-sql/pglite` `packages/pglite-socket/README.md` (fetched raw) — `PGLiteSocketServer`/`PGLiteSocketHandler` API, explicit multiplexer caveat ("not all use cases are guaranteed to work") — HIGH confidence
-- `pglite.dev/docs/pglite-socket` (WebFetch) — corroborates the raw README — MEDIUM/HIGH confidence (secondary rendering of the same source)
-- `github.com/jetstreamapp/soql-parser-js` CHANGELOG.md (fetched raw) — `TYPEOF` formatting behavior documented since v3.2.0 (2021), confirming long-standing parse-level support; current release 8.1.1 dated 2026-09-26 — HIGH confidence
-- `oguimbal/pg-mem` GitHub repo page (WebFetch) and README/wiki content (WebSearch) — "best effort", limitation list, no maintenance/archived notice either way — MEDIUM confidence (repo not archived, but low recent commit velocity is a documented fact, not training-data speculation)
-- `pnpm.io/continuous-integration` (WebFetch) — current official pnpm CI guidance, including the newer `pnpm/setup` action — MEDIUM/HIGH confidence (official docs, but reflects the newest recommendation rather than the most battle-tested one)
-- `github.com/pnpm/action-setup` README (WebFetch) — confirms it remains supported for pnpm v12 and earlier alongside `actions/setup-node`, reads `packageManager` field automatically — HIGH confidence
-- Direct repo reads (`Read`/`Bash grep`) of this project's own source: `packages/schema/src/db.ts`, `packages/schema/src/ids.ts`, `packages/schema/src/migrate.ts`, `packages/schema/src/columns.ts`, `packages/schema/src/ddl.ts`, `packages/engine/src/engine.ts`, `packages/soql/src/compile.ts`, `packages/api/src/bulk/jobs.ts`, `vitest.config.ts`, `package.json` — used to ground every limitation/recommendation in what this codebase actually does, not generic PGlite documentation — HIGH confidence (primary source: the code itself)
-
----
-*Stack research for: hardening milestone (pglite test infra, CI, Bulk API 2.0 persistence, SOQL TYPEOF parser check)*
-*Researched: 2026-09-29*
+- sf-skills repo (Apache-2.0): https://github.com/forcedotcom/sf-skills (`platform-data-and-tooling-api-context-get`, `platform-metadata-api-context-get`, `platform-docs-get`)
+- Salesforce formula engine (BSD-3): https://github.com/salesforce/formula-engine (`Formula.g4`, `LexerRules.g4`, `ANTLR4GrammarVisitor.java`, `FormulaUtils.java`)
+- sigha (MIT): https://github.com/rfaulhaber/sigha
+- npm (versions/licences checked 2026-10-12): `@salesforce/source-deploy-retrieve` 13.4.5 Apache-2.0; `@salesforce/types` 1.8.0 BSD-3; `@salesforce/schemas` 1.10.3 ISC; `@salesforce/core` 9.3.6 Apache-2.0; `@jsforce/jsforce-node` 3.10.29 MIT; `fast-xml-parser` 5.11.2 MIT; `@jetstreamapp/soql-parser-js` 8.1.2 MIT; `@electric-sql/pglite` 0.5.9 Apache-2.0
+- Local reading: `packages/sigha/src/syntax/{lexer,parser,ast}.ts`, `packages/metadata/src/xml.ts`, `scripts/sync-sigha.sh`

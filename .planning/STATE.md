@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: hardening
-status: milestone_complete
-stopped_at: "v1.0 hardening shipped 2026-10-12; next: /gsd:new-milestone"
+milestone: v1.1
+milestone_name: real-org fidelity
+status: ready_to_plan
+stopped_at: "v1.1 roadmap created; Phase 8 not started"
 last_updated: "2026-10-12T12:58:25.821Z"
 last_activity: 2026-10-12
 progress:
   total_phases: 7
-  completed_phases: 7
-  total_plans: 37
-  completed_plans: 37
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -23,16 +23,17 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** v1.0 shipped; planning next milestone (`/gsd:new-milestone`)
+**Current focus:** Phase 8 — Upgrade Safety Net & Nullable Key Prefixes (v1.1 real-org fidelity)
 
 ## Current Position
 
-Milestone: v1.0 "hardening" — SHIPPED 2026-10-12 (7/7 phases, 37/37 plans)
-Phase: none active (next milestone not yet defined; numbering continues from 8)
-Status: Milestone complete
-Last activity: 2026-10-12 - Completed quick task 261012-leq: empty metadata root fix
+Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
+Phase: 8 of 14 (Upgrade Safety Net & Nullable Key Prefixes) — not started
+Plan: —
+Status: Ready to plan
+Last activity: 2026-10-12 — v1.1 roadmap created (phases 8-14)
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 

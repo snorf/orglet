@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 hardening** — Phases 1-7 (shipped 2026-10-12) — [archive](milestones/v1.0-ROADMAP.md)
-- 📋 **v1.1** — not yet defined (`/gsd:new-milestone`)
+- 🚧 **v1.1 real-org fidelity** — Phases 8-14 (in progress)
 
 ## Phases
 
@@ -23,12 +23,107 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 
 </details>
 
-### 📋 Next milestone (not yet planned)
+### 🚧 v1.1 real-org fidelity (Phases 8-14) — IN PROGRESS
 
-Phase numbering continues from 8. Candidates (PROJECT.md Out of Scope and v2 requirements in the v1.0
-requirements archive): UI API + LWC/SLDS front end, Flow interpreter, security model (profiles,
-permission sets, FLS, OWD), Apex runtime, Task/Event with `WhoId`/`WhatId`, SOSL, Metadata API import,
-plus the v1.0 tech-debt list.
+**Milestone goal:** A large, real enterprise-org retrieve loads with zero warnings for everything it itself references. Standard objects nothing references are reported as information, not warnings.
+
+- [ ] **Phase 8: Upgrade Safety Net & Nullable Key Prefixes** - A populated v1.0 database upgrades without data loss; FK violations downgrade to warnings; objects may have no key prefix
+- [ ] **Phase 9: Baseline Generator, Parity & OwnerId Narrowing** - A deterministic generator reproduces the 35 existing objects, then adds every documented field and per-object OwnerId targets
+- [ ] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart
+- [ ] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load
+- [ ] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas
+- [ ] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields
+- [ ] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run
+
+## Phase Details
+
+### Phase 8: Upgrade Safety Net & Nullable Key Prefixes
+**Goal**: A database created by v1.0 can be upgraded by any later baseline change without data loss or an aborted `orglet up`, and a standard object without a confirmed key prefix is a first-class citizen.
+**Depends on**: Nothing (first v1.1 phase; must land before any baseline change)
+**Requirements**: MIGR-01, MIGR-02, MIGR-04, BASE2-05
+**Success Criteria** (what must be TRUE):
+  1. A test builds a database from the v1.0 baseline files (taken from git) holding Group-owned rows and `--import` rows, runs `orglet up` with the current code on pglite and Postgres 16, finds every row intact afterwards, and asserts the exact resulting warning set.
+  2. When a new single-target lookup foreign key would be added over rows that violate it, `orglet up` completes, prints one `UNSUPPORTED:schema-fk` warning per column naming the table, column and offending row count, and deletes or rewrites nothing.
+  3. A second `orglet up` on an up-to-date database prints no warnings and executes no `CREATE INDEX` for indexes that already exist.
+  4. A standard object with a `null` key prefix (source-labelled) loads, appears in describe, is accepted as a reference target by `orglet check`, and is excluded from prefix-based polymorphic matching; no prefix is ever invented.
+  5. Groundwork for later phases is observable: structured diagnostic records (`Diagnostic`/`SkippedItem`/`FormulaFailure`) exist beside the unchanged warning strings and are covered by a test; `scripts/sync-sigha.sh` runs on Linux in CI (no BSD-only `sed`) and orglet-side expectation tests for `!`, `!=`, colon syntax and `:`/`!` inside string literals exist (red until Phase 12); the upstream sigha PR links are recorded in `packages/sigha/VENDOR.md`; and a Group-owned test audit list (every test, fixture and conformance check that relies on a Group owner) is committed in the phase directory for Phase 9.
+**Plans**: TBD
+**Research flag**: none.
+
+### Phase 9: Baseline Generator, Parity & OwnerId Narrowing
+**Goal**: The standard-object baseline is produced by a deterministic, licence-attributed generator instead of by hand, the existing 35 objects keep their shape and gain every documented field, and `OwnerId` targets match each object's documentation.
+**Depends on**: Phase 8
+**Requirements**: BASE2-01, BASE2-02, BASE2-03, BASE2-04, MIGR-03
+**Success Criteria** (what must be TRUE):
+  1. Running the generator twice yields byte-identical JSON, CI fails when regeneration differs from the committed files, and the committed output contains no documentation prose.
+  2. Regenerating only the existing 35 objects first produces a no-op diff against v1.0; the v1-vs-v2 diff gate then fails if a v1.0 field disappears or narrows without an allowlisted reason, and the generator refuses a new MasterDetail column on an object that existed in v1.0.
+  3. `orglet check` on a retrieve using documented fields of those 35 objects reports zero `UNSUPPORTED:standard-field`, and feature-gated fields appear in describe as nullable fields tagged `featureGated`.
+  4. `Owner.Name` in a formula and in SOQL compiles on Account, Contact, Opportunity, Contract, Asset and Campaign, while Case, Lead and Task owner queries still return User and Group owners as in v1.0 (`conformance/poly-check` stays green).
+  5. The Phase 8 populated-database upgrade test still passes with the v2 baseline, with only the expected, allowlisted warnings.
+**Plans**: TBD
+**Research flag**: design spike (not a full research phase) on type mapping, string-length rules and single-source flags.
+
+### Phase 10: Business Standard Objects
+**Goal**: The 18 business objects a typical sales/service org references exist as faithful baseline objects, and `orglet check` separates objects a retrieve references from objects nothing references.
+**Depends on**: Phase 9
+**Requirements**: BASE2-06, BASE2-07, BASE2-08
+**Success Criteria** (what must be TRUE):
+  1. A jsforce or simple-salesforce client can describe and query Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument, ContentVersion, FeedItem, Location and Address, with no blob fields exposed and the omissions listed in the generator report.
+  2. DML that the documentation forbids is refused with `INVALID_TYPE_FOR_OPERATION` (OrderItem undelete; CaseMilestone create and delete; ContentDocument create; ContentVersion delete), and a lookup to any of the 18 with a malformed or wrong-type Id is rejected with `INVALID_CROSS_REFERENCE_KEY`.
+  3. `orglet check` keeps `UNSUPPORTED:reference-target` for a standard object that a lookup, roll-up, formula or validation rule references but orglet does not model, and lists an unreferenced, unmodelled standard object in an informational category that never makes `--strict` exit 1.
+  4. The conformance run (`conformance/run-all.sh`) is green after the new objects land, and the plan records the expected warning-count shifts.
+**Plans**: TBD
+**Research flag**: none (verification list for single-list key prefixes lives in the plans).
+
+### Phase 11: Custom Metadata, Custom Settings & Labels
+**Goal**: Custom metadata types with their records, custom settings and custom labels in a retrieve load as the objects and data they are, so nothing needs to be skipped.
+**Depends on**: Phase 9 (key-prefix and generator groundwork), Phase 10
+**Requirements**: CMDT-01, CMDT-02, CMDT-03, CMDT-04, CSET-01, CSET-02
+**Success Criteria** (what must be TRUE):
+  1. After `orglet up`, a client can describe and SOQL-query an `__mdt` type through jsforce and simple-salesforce and sees the retrieved records with stable Ids across restarts (`"007"` stays text, `xsi:nil` is null), and a removed record disappears on reload.
+  2. Create, update and delete against an `__mdt` object via the data API are rejected with an error and never accepted; describe flags show only describe, query and retrieve as supported.
+  3. A `MetadataRelationship` field to another `__mdt` returns that record's Id, a relationship to an entity or field definition returns its qualified API name and `Rel__r.QualifiedApiName` is selectable, and a dangling target warns and stays null.
+  4. A List or Hierarchy custom setting describes as `customSetting: true` with no `OwnerId`; a second hierarchy row for the same `SetupOwnerId` fails with `DUPLICATE_VALUE`; `orglet check` states that custom-setting data is not part of a retrieve.
+  5. Custom labels from `CustomLabels.labels-meta.xml` are present on the loaded org schema with name, value, language and category.
+**Plans**: TBD
+**Research flag**: YES (`MetadataRelationship` stored value and describe spelling, the `customSetting` flag on `__mdt`, DML error code, `m00` prefix, nil handling).
+
+### Phase 12: sigha Resync & Formula Globals
+**Goal**: Formulas and validation rules that use `!`, `Relationship:Object.Field` and the extra global variables compile and evaluate instead of raising warnings.
+**Depends on**: Phase 11 (labels, custom metadata and settings must exist; resync goes first in the phase), Phase 8 (portable sync script and expectation tests)
+**Requirements**: FORM-01, FORM-02, FORM-03, FORM-04, FORM-05
+**Success Criteria** (what must be TRUE):
+  1. After the resync to a pinned full commit recorded in `VENDOR.md`, the formula corpus pass count is at least the v1.0 baseline of 6 312 cases and `sync-sigha.sh` runs on macOS and Linux; `!ISBLANK(x)` evaluates as NOT, and `!` or `:` inside string literals is unaffected.
+  2. `Owner:User.Email` and `Owner:Queue.Name` evaluate against the named target of a polymorphic lookup and are blank when the row is owned by the other type; a qualifier the lookup cannot reference fails to compile with Salesforce's wording.
+  3. `$UserRole.<field>` is blank for a user without a role, and `$Api.Partner_Server_URL_<n>`, `$Api.Enterprise_Server_URL_<n>` and `$Api.Session_ID` evaluate to the running server's URLs and the request's session.
+  4. `$Label.<Name>` and `$CustomMetadata.<Type__mdt>.<Record>.<Field__c>` resolve from loaded data; an unknown label, type or field is a compile error, and an unknown record evaluates blank with one aggregated `UNSUPPORTED:custom-metadata-record` warning.
+  5. `$Setup.<Setting__c>.<Field__c>` returns the user, profile or organization value in that order for a hierarchy setting, while `$Setup` on a list setting and `$Permission` still raise `UNSUPPORTED:formula-global` with the reason stated.
+**Plans**: TBD
+**Research flag**: YES, small (`$Setup` null-field fall-through, `$Api` URL shapes, `$Label` casing).
+
+### Phase 13: Roll-Ups over Formula Fields
+**Goal**: A roll-up summary can aggregate or filter on a formula field in the cases Salesforce permits, and fails soft in the cases it does not.
+**Depends on**: Phase 12 (structured formula registry and dependency list)
+**Requirements**: ROLL2-01
+**Success Criteria** (what must be TRUE):
+  1. A COUNT, SUM, MIN or MAX roll-up whose summarized or filter field is a same-object, non-volatile formula loads, and inserting, updating, deleting or undeleting child rows changes the parent value exactly as for a stored-field roll-up (including when a field the formula reads changes).
+  2. Upgrading a database that already holds children backfills the formula roll-up once, and a second `orglet up` is silent.
+  3. A roll-up over a formula with a cross-object path, `NOW`/`TODAY`/`TIMENOW`, or a `$User`, `$Profile`, `$Setup`, `$Api` or `$Label` root loads without failing, logs `UNSUPPORTED:rollup-formula` and skips that field.
+  4. A formula-to-roll-up-to-formula cycle is detected and reported rather than looping.
+**Plans**: TBD
+**Research flag**: YES (return types and restriction set Salesforce allows; rounding to the formula's declared scale before aggregating).
+
+### Phase 14: Check Report & Enterprise Acceptance
+**Goal**: `orglet check` reads as an actionable report on a large retrieve, and the milestone is proven against a public enterprise-shaped fixture, both SDK suites and the author's real retrieves.
+**Depends on**: Phases 8-13
+**Requirements**: CHECK-01, CHECK-02, ACC2-01, ACC2-02, ACC2-03
+**Success Criteria** (what must be TRUE):
+  1. `orglet check` on `examples/acme` prints a census, a one-line verdict, a per-area table keyed by `UNSUPPORTED:<area>`, and groups cascaded formula failures under their root cause while listing every dependent and stating both counts; output order is deterministic (snapshot test) and the `warning:` line format is unchanged.
+  2. `orglet check --summary` prints only census, verdict and per-area counts with no object, field or rule names; `--json` emits the same report including the informational category; `--strict` exits 1 on any warning and 0 when only informational entries exist.
+  3. `examples/enterprise`, authored from the feature documentation under generic names and covering every v1.1 category, passes `orglet check --strict` with exit 0 in CI, and `conformance/run-all.sh` (describe-check, poly-check, rollup-check and both SDK suites, every exclusion still classified) is green against it.
+  4. The author's Developer Edition retrieve still loads with `orglet check --strict` exiting 0, and the author's large real-org retrieve (local only) reports zero warnings for everything it references, recorded in `conformance/README.md` as counts per area, never names.
+**Plans**: TBD
+**Research flag**: none.
 
 ## Progress
 
@@ -41,6 +136,13 @@ plus the v1.0 tech-debt list.
 | 5. Roll-Up Summary Fields | v1.0 | 7/7 | Complete | 2026-10-09 |
 | 6. Bulk API 2.0 Persistence | v1.0 | 6/6 | Complete | 2026-10-10 |
 | 7. Conformance Re-Run & Milestone Acceptance | v1.0 | 6/6 | Complete | 2026-10-12 |
+| 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 0/TBD | Not started | - |
+| 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 0/TBD | Not started | - |
+| 10. Business Standard Objects | v1.1 | 0/TBD | Not started | - |
+| 11. Custom Metadata, Custom Settings & Labels | v1.1 | 0/TBD | Not started | - |
+| 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
+| 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
+| 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
 
 ## Backlog
 

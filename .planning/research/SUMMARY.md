@@ -1,495 +1,240 @@
 # Project Research Summary
 
-**Project:** orglet — Milestone 1 ("hardening")
-**Domain:** Salesforce platform emulator — test infrastructure (Docker-free Postgres + CI),
-polymorphic SOQL (`TYPEOF`), roll-up summary fields, standard-object baseline expansion,
-Bulk API 2.0 persistence, stable key prefixes
-**Researched:** 2026-09-29
-**Confidence:** MEDIUM-HIGH (mixed — see per-area breakdown below; several Salesforce facts
-rest on secondary sources because `developer.salesforce.com`/`help.salesforce.com` returned
-HTTP 403 to automated fetches)
+**Project:** orglet, milestone v1.1 "real-org fidelity"
+**Domain:** self-hosted, single-tenant Salesforce platform emulator (second milestone on shipped v1.0)
+**Researched:** 2026-10-12
+**Confidence:** MEDIUM-HIGH (code-level and data-source findings HIGH; Salesforce-side semantics for roll-ups, `$Setup`, MetadataRelationship and several error codes MEDIUM/LOW)
+
+Detail lives in `STACK.md`, `FEATURES.md`, `ARCHITECTURE.md`, `PITFALLS.md` in this directory. This file reconciles them.
 
 ## Executive Summary
 
-This is not greenfield research — it is six additions layered onto an existing, working
-pnpm/TypeScript/Postgres monorepo, and all four researchers grounded their findings in direct
-reads of this codebase's own source rather than generic advice. The consistent conclusion
-across STACK, ARCHITECTURE, FEATURES and PITFALLS is that **every one of the six hardening
-features fits inside an existing seam and needs no new package, ORM, or architectural
-detour**: `@electric-sql/pglite` + `@electric-sql/pglite-socket` slot under the existing
-`createPool()`/`ORGLET_DATABASE_URL` seam with zero source changes; `TYPEOF` is already parsed
-by `@jetstreamapp/soql-parser-js` and only needs a compiler case; roll-ups need a new
-`packages/engine/src/rollups.ts` module (no DB trigger, per the project's own "business rules
-live in the app" decision); key prefixes and Bulk jobs both need a small persisted table in the
-already-reserved-but-unused `_orglet` internal schema; and the 14 thin standard objects are
-just JSON files the existing loader already picks up automatically.
+v1.1 makes a large real enterprise retrieve (141 objects, ~3 600 fields, several hundred warnings in a handful of areas) load with zero warnings for everything it references. Nothing new is needed at runtime. The work is (1) a much bigger, generated standard-object baseline, (2) loading more metadata kinds (`__mdt` types and rows, custom settings, labels, `MetadataRelationship`), (3) more formula globals plus two upstream sigha syntax fixes, (4) per-object `OwnerId` narrowing, (5) roll-ups over formula fields, and (6) a root-cause-oriented `orglet check` report. The v1.0 layering (`metadata -> schema -> {formula, soql} -> engine -> api -> cli`) absorbs all of it. No new runtime dependency, no new package.
 
-The recommended approach is architecture-first, not feature-first: stand up the pglite test
-seam and CI before touching any of the five feature areas, so that infrastructure risk
-(WASM/ESM loading under vitest, `session_replication_role` compatibility, CI memory pressure)
-surfaces against the known-good 119-test baseline rather than after new Postgres-backed tests
-for roll-ups/TYPEOF/Bulk pile on top of it. From there, ARCHITECTURE.md recommends key-prefix
-persistence and the 14 thin baselines as fast, self-contained, low-risk wins before the two
-harder engine-pipeline changes (polymorphic/TYPEOF, then roll-ups), with Bulk API 2.0
-persistence last as the most isolated feature. The milestone's own acceptance criteria (zero
-`UNSUPPORTED` warnings on Johan's real Developer Edition retrieve, both conformance suites
-green with updated numbers) make a final "conformance re-run" step a mandatory last phase, not
-optional cleanup — PITFALLS.md names this explicitly as Pitfall 20, "believing the suites are
-green because nobody re-ran them."
+The recommended approach is data first, then loaders, then semantics, then reporting. A committed, deterministic generator produces the baseline from two public inputs (a Salesforce-published Apache-2.0 dataset and the public Object Reference PDF used as a cross-check) with a hand-written overrides file that always wins. Everything file-derived (`$Label`, `$CustomMetadata`) is constant-folded at formula compile time; everything data-derived (`$Setup`, `$UserRole`, `$Api`) is bound at evaluate time through the existing `loadGlobals`. Custom metadata rows are ordinary Postgres tables seeded at `up`. Roll-ups over formulas compute the formula in TypeScript and feed the values into the existing SQL aggregate, so formula semantics are never reimplemented in SQL. The check report is rendered from structured diagnostics that sit next to, not instead of, the `UNSUPPORTED:<area>` strings.
 
-The key risks worth carrying into planning are: (1) roll-up recomputation has at least three
-distinct correctness traps (reparent-both-parents, undelete, filter-field-only changes,
-recursion/savepoint interaction) that are each individually easy to half-implement and ship
-looking done; (2) polymorphic-field fixes are scattered across three independent call sites
-(`soql/compile.ts`, `soql/shape.ts`, `formula/compile.ts`) that must converge on one shared
-"resolve by key prefix" helper or the read path will disagree with the already-correct write
-path; (3) pglite is real Postgres in WASM but is not risk-free — `session_replication_role`
-(used by import mode) has an unresolved, only-partially-corroborated compatibility question
-that STACK.md calls "works" on architectural grounds while PITFALLS.md flags as an open,
-third-party-reported risk; and (4) several Salesforce facts this milestone depends on (roll-up
-reparent/undelete recompute triggers, most of the 14 objects' key prefixes and name fields, the
-exact `TYPEOF` AST shape from the SOQL parser) were not verified against a live, fetchable
-official page and are flagged below as things to confirm at implementation time, not to treat
-as settled.
+The main risks are all about what changes under an existing database and under an existing contract. Two HIGH migration hazards: narrowing `OwnerId` adds an FK on populated columns that may hold Group-owned rows, and any new MasterDetail column on a populated table fails `ADD COLUMN ... NOT NULL`. Both are neutralised by a populated-database upgrade test that exists before any baseline change merges. Next: key prefixes are not in any machine-readable public source (they must become nullable and source-labelled), the vendored sigha has a Linux-broken sync script and an `org-verified.json` provenance question, and un-skipping objects will first raise warning counts before it lowers them. Public fixtures must never inherit names from the private org.
 
 ## Key Findings
 
-### Recommended Stack
+### Recommended Stack (from STACK.md)
 
-*Source: `.planning/research/STACK.md`, confidence HIGH overall.* This file only covers
-**additions** to the already-established stack (pnpm 12.6.0, TypeScript 5.9, Fastify 5.12.5,
-`pg` 8.23.0, `@jetstreamapp/soql-parser-js` 8.1.0, vitest 3.2.7, Postgres 16). No existing
-dependency changes.
+**Runtime additions: none.** Added instead: one vendored data snapshot, one generator script, three small parser additions.
 
-**Core additions:**
-- `@electric-sql/pglite@0.5.8` + `@electric-sql/pglite-socket@0.2.11` (exact peer-pinned pair) —
-  embedded, real Postgres-in-WASM for Docker-free tests, exposed over the genuine Postgres wire
-  protocol so the existing `createPool()` needs zero changes. Chosen explicitly over `pg-mem`
-  (hand-rolled SQL engine, ~7 months stale, 206 open issues, real fidelity risk against exactly
-  the features this codebase's tests exercise: `SAVEPOINT`, `session_replication_role`,
-  `information_schema`-diff-driven `ALTER TABLE`).
-- `actions/checkout@v7`, `actions/setup-node@v7`, `pnpm/action-setup@v6` for GitHub Actions —
-  standard, current, low-risk choices; order matters (checkout → pnpm install → setup-node with
-  `cache: pnpm`).
-- **No new dependency needed** for Bulk API 2.0 persistence (plain `pg` + hand-written SQL,
-  matching the codebase's existing zero-ORM convention) or for SOQL `TYPEOF` (the parser already
-  supports it — `packages/soql/src/compile.ts:327` throws `unsupported` unconditionally on an
-  AST node that already arrives correctly parsed; the gap is orglet's own compiler, not the
-  library).
+- **Vendored data snapshot**: `forcedotcom/sf-skills`, skill `platform-data-and-tooling-api-context-get`, `assets/enterprise_api/<Object>.json` (Apache-2.0, Salesforce, generated from the public Object Reference). Vendor only the ~35-50 needed objects, plus LICENSE and VENDOR.md with the pinned SHA, via a `sync-sfdocs.sh <sha>` script modelled on `sync-sigha.sh`.
+- **Generator**: `scripts/gen-baseline/` run with the already-present `tsx` (`pnpm gen:standard`). Not a workspace package. Output is committed, deterministic, and diff-checked in a vitest test.
+- **Parser changes** in `packages/metadata`: `customMetadata/*.md-meta.xml`, `labels/CustomLabels.labels-meta.xml`, `<customSettingsType>`, `MetadataRelationship`. Add `labels` to the `REPEATED` set. Do not flip `ignoreAttributes`; coerce values by the declared field type (second parser instance only if nil-vs-empty matters).
+- **sigha**: two upstream-only patches. Unary `!` (verified in the BSD-3 `salesforce/formula-engine` grammar: `BANG unaryExpression` rewrites to `NOT`) and `Relationship:Object.Field` (lexer folds `Owner:User` into one identifier token, zero parser/AST change). Never hand-patch `packages/sigha/src`.
+- **Do not add**: Playwright/Puppeteer (docs are bot-walled), `@salesforce/source-deploy-retrieve`, jsforce as runtime dep (use its typings as reference only), any WSDL (org-generated, forbidden), `commander`/`chalk`, ANTLR, third-party key-prefix tables as an automated source.
 
-### Expected Features
+### Expected Features (from FEATURES.md)
 
-*Source: `.planning/research/FEATURES.md`, confidence HIGH for `TYPEOF` grammar/restrictions,
-roll-up metadata shape and Bulk API 2.0 job lifecycle (official PDF references); MEDIUM for
-roll-up recalculation triggers and Bulk 2.0 retention; MEDIUM-LOW for the 14 objects' key
-prefixes (no official published table exists).*
+**Table stakes (needed for the milestone goal):**
+- Baseline v2: field parity for the existing 35 objects plus 18 business objects (Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument, ContentVersion, FeedItem, Location, Address) with explicit per-object DML flags (`INVALID_TYPE_FOR_OPERATION` on violation).
+- `OwnerId` `referenceTo` narrowed per object so plain `Owner.X` compiles (the main unblocker for cascaded formula failures).
+- `__mdt` types as read-only objects with rows from `customMetadata/`, system fields (`DeveloperName`, `MasterLabel`, `Label`, `Language`, `NamespacePrefix`, `QualifiedApiName`, `IsProtected`), `MetadataRelationship` loaded instead of skipped.
+- Custom settings: `customSettingsType` parsed, describe `customSetting: true`, no `OwnerId`, hierarchy `SetupOwnerId` (Organization/Profile/User) with `DUPLICATE_VALUE` uniqueness.
+- Globals: `$UserRole`, `$Api`, `$Label`, `$CustomMetadata`, `$Setup` (hierarchy only); `!` and colon syntax via sigha; `$Permission` stays `UNSUPPORTED:formula-global`.
+- Roll-up over a same-object, non-volatile formula field (highest complexity item).
+- Check report: census, verdict line, per-area table, root-cause grouping of cascades, referenced-but-missing vs modelled-but-unreferenced, quiet informational category, deterministic ordering.
 
-**Must have (table stakes — matches `PROJECT.md` Active requirements exactly):**
-- Per-row polymorphic resolution fixed, then `TYPEOF ... WHEN ... THEN ... ELSE ... END`
-  compiling correctly, plus `<relationship>.Type` filterable in `WHERE` (a separate SOQL
-  grammar production from `TYPEOF` — easy to implement one and assume it covers the other)
-- Roll-up summary fields (`Summary` type): metadata load, COUNT/SUM/MIN/MAX with filters,
-  recompute on child insert/update/delete, correct read-only `describe()` shape
-- Thin baselines for all 14 referenced-but-missing standard objects, each with **documented,
-  object-specific** createable/updateable/deletable flags — 3 of the 14 are read-only via the
-  standard API (`ExternalDataSource`, `OpportunityHistory`, `UserLicense` — a stronger claim
-  than the milestone brief's own framing, which names only two of the three) and `CallCenter`
-  is create-only
-- Custom-object key prefixes persisted once, stable across reload/rename
-- Bulk API 2.0 job state and result data persisted in Postgres, correct state machine, survives
-  restart
+**Differentiators (worth it when cheap):**
+- `--summary` counts-only mode (project-critical: it is what makes the private-org result safe to report) and `--json` (same `Report` object, two renderers).
+- Roll-up with a formula as filter field; backfill of formula roll-ups at migrate.
+- Cheap EntityDefinition/FieldDefinition alias (`Entity__r.QualifiedApiName` as an alias of the stored string).
+- Order/Quote validation rules, AccountContactRelation auto-create hook, queue loading with owner check: only if a phase has slack (queue owner error code is unverified).
+- `--baseline report.json` diff and `--max-warnings N`: v1.2 candidates.
 
-**Explicitly anti-features (do not build, even though they'd look "more complete"):** `TYPEOF`
-permitted in `WHERE`/`GROUP BY`/`HAVING`/semi-joins/nesting (real Salesforce rejects all of
-these with `MALFORMED_QUERY`); `TYPEOF` in Bulk 2.0 query-job SOQL (separately, explicitly
-unsupported there); roll-ups writable via `create()`/`update()`/Bulk; roll-ups on lookup (not
-master-detail) relationships; full historical/audit field parity for the 14 thin objects; Bulk
-API v1; a distributed/multi-process Bulk job store.
+**Anti-features / defer:**
+- DML on `__mdt` (reject), packaging visibility and mdt limits, Apex `getInstance`, Quote<->Opportunity sync (`UNSUPPORTED:quote-sync`), Order activation automation, FeedItem generation, Email-to-Case, entitlement milestones, `$Setup` on list settings, `$Permission`, `$Label` translations, formula-to-SQL, in-memory mdt store, docs scraping.
+- Defer: ContentVersion blob upload/download and `ContentDocumentLink` (see open question 3), per-user language, packaged/namespaced labels.
 
-**Defer (v2+, out of this milestone's scope per `PROJECT.md`):** roll-up "force recalculation"
-CLI helper, >25 roll-ups/object, Bulk API 2.0 true async/background processing, PK chunking,
-full field parity for the 14 objects.
+### Architecture Approach (from ARCHITECTURE.md)
 
-### Architecture Approach
+Seven integration decisions, all consistent with the v1.0 layering and the "schema stays formula-agnostic" rule:
 
-*Source: `.planning/research/ARCHITECTURE.md`, confidence HIGH for component boundaries and
-data flow (every claim grounded in a direct read of the actual source file), MEDIUM for exact
-SFDX XML tag names and pglite runtime limits (verified against public docs/ecosystem, not a
-running instance).* The core structural finding: `INTERNAL_SCHEMA = "_orglet"` is already
-defined in `packages/schema/src/columns.ts` but never used anywhere — a clear "reserved for
-future use" seam that both key-prefix persistence and Bulk job persistence should use (as two
-independent tables, not a shared "ensure internal schema" utility, since the two features have
-nothing else in common).
+1. **`__mdt` rows are ordinary Postgres tables**, seeded idempotently at `up` by `packages/engine/src/seed.ts` (full sync keyed by `DeveloperName`, Ids preserved), plus an immutable copy on `OrgSchema` used only for compile-time folding. Writes are refused through the existing DML-flag mechanism; the seeder bypasses it by writing through `Store`/SQL.
+2. **Globals split by mutability.** `$Label`/`$CustomMetadata` are constant-folded to literal AST nodes in `compile.ts` (works in `check` with no DB, cheap per row). `$Setup`/`$UserRole`/`$Api` resolve at evaluate time via `loadGlobals`; `FormulaRegistry` collects which ones compiled formulas reference so the common path stays at three reads.
+3. **Roll-up over formula**: formula values computed in TypeScript (same path as `project()`), passed as a derived table (`unnest`) into the existing `rollupSelectSql`. `RollupRegistry.watched` must include the fields the formula reads. `migrate()` returns `pendingBackfills`; `engine.backfillFormulaRollups` runs them after the engine is built. Same-object, non-volatile formulas only (also a staleness guard).
+4. **Referenced vs unreferenced** computed once in `build.ts` from project lookups and roll-ups (never transitive closure over baseline lookups). Structured diagnostics (`SkippedItem`, `FormulaFailure`, `FormulaCompileError.missing`) are added beside the warning strings; `packages/cli/src/report.ts` builds the cause graph.
+5. **Generator** in `scripts/gen-baseline/`, offline, committed snapshot plus `overrides.json` (each entry carries a `reason`), sorted keys, no timestamps, CI `git diff --exit-code`.
+6. **OwnerId narrowing at the data source** via `ownerTargets` on the standard JSON, threaded through `systemFields(hasOwner, ownerTargets)`.
+7. **Migration**: the FK pre-check and the populated-DB upgrade test are the acceptance gate for baseline growth; skip `CREATE INDEX` when the index name already exists.
 
-**Major components touched:**
-1. `packages/soql/src/compile.ts` / `shape.ts` and `packages/engine/src/parents.ts` /
-   `packages/formula/src/compile.ts` — three independent "pick the polymorphic candidate"
-   call sites that must converge on one shared key-prefix-matching helper
-2. `packages/engine/src/rollups.ts` (new) — `RollupRegistry`, `affectedParents()`, one batched
-   aggregate `UPDATE` per roll-up field per affected-parent batch, called after each child
-   mutation's after-hooks in `saveBatch`/`deleteBatch`/`undeleteBatch`
-3. `packages/schema/src/keyPrefixes.ts` (new) — persists/reconciles real prefixes against
-   `_orglet.key_prefixes`, called in `orglet up` between the Postgres connectivity check and
-   bootstrap; `orglet check` (no-DB path) keeps reporting a labeled-provisional prefix
-4. `packages/api/src/bulk/store.ts` (new) — two `_orglet` tables (`bulk_ingest_jobs`,
-   `bulk_query_jobs`) replacing the in-memory `JobStore`, owned entirely inside
-   `packages/api/src/bulk`
-5. `packages/metadata/standard/objects/*.json` (14 new files) — no other package needs to
-   change; `loadBaseline()` already picks up every file in that directory automatically
+### Critical Pitfalls (from PITFALLS.md; the six roadmap blockers)
 
-**Anti-patterns explicitly called out:** recomputing roll-ups via a Postgres trigger (violates
-the project's own "business rules live in the app, not DB triggers" decision — triggers can't
-participate in `PRIORVALUE`/`ISCHANGED` ordering or be skipped in import mode); creating a new
-package for any of the six features (every one fits an existing package's stated
-responsibility).
+1. **Populated-database upgrade test first (M1).** Fixture: v1.0 baseline files from git plus acme data including a Group-owned row and `--import` rows; assert success, zero data loss, exact warning set. Never derive DB `NOT NULL` from `nillable:false`; the generator errors if it would add a MasterDetail to an existing populated object.
+2. **Nullable, source-labelled `keyPrefix` before generating ~50 objects (B3).** Type change `keyPrefix: string | null` across `build.ts`, `ids.ts`, `prefixes.ts`, describe. Uniqueness test; test that a new standard prefix cannot collide with persisted custom prefixes (`KeyPrefixError` would break `up` on existing DBs).
+3. **OwnerId narrowing is per-object data (O1)**, after auditing Group-owned unit tests and `conformance/poly-check` (Case with a Group owner). Case and Lead stay polymorphic.
+4. **sigha resync precedes formula work (S1/S2).** `sync-sigha.sh` uses BSD `sed -i ''` and fails on Linux; `defaults to main`; pin a full SHA; write the orglet-side expectation tests (`Owner:User.Email`, `!ISBLANK(x)`, `x != y`, strings containing `!` and `:`) before the resync.
+5. **Decide the layer for formula materialisation in roll-ups (R1)**: engine, not `@orglet/schema`; D-10 ("backfill last in the migrate transaction") is re-decided for this case.
+6. **Structured diagnostics and one shared reference walk before the report redesign (K1/K2).** `--strict` must never pass because a group was collapsed; every quiet object must be provably unreferenced.
 
-### Critical Pitfalls
+Also high-signal: un-skipping an object un-skips all its metadata, so warning counts rise mid-milestone (B2); do not copy doc prose into committed JSON (B1); public fixtures must not derive from the private retrieve (G1).
 
-*Source: `.planning/research/PITFALLS.md`, 21 pitfalls total, confidence MEDIUM-HIGH.* Top 5:
+## Reconciled Across Researchers
 
-1. **Roll-up double-counting or stale totals on reparent** — recompute both the old *and* new
-   parent on a changed foreign key, not just the new one; restrict roll-ups to `MasterDetail`
-   relationships, matching Salesforce's own constraint.
-2. **Roll-up not recalculated on undelete, or on a filter-field-only change** — wire
-   recomputation into all four child mutation paths (`saveBatch` insert/update, `deleteBatch`,
-   `undeleteBatch`), and derive the trigger set from the roll-up's aggregated field **and**
-   every field in its filter clause, not just the aggregated field.
-3. **Polymorphic fix applied to the SOQL join but not `attributes.type` (shape.ts) or the
-   formula parent path (formula/compile.ts)** — three independent call sites encode "pick
-   index 0" today; a partial fix (usually just the join, since that's the one with the visible
-   error) leaves the other two silently wrong. Test all three against the same Group-owned
-   fixture.
-4. **Green pglite tests hiding real-Postgres regressions** — pglite is real Postgres source in
-   WASM, not a reimplementation, but has its own compatibility surface
-   (`session_replication_role`, `information_schema` completeness, single-connection
-   concurrency). Keep a Docker Postgres 16 CI job running the *identical* suite alongside
-   pglite, not pglite-only.
-5. **Believing the conformance suites are green because nobody re-ran them** — both suites are
-   manual, not CI-gated; the jsforce README predates Bulk API 2.0 entirely. Make the re-run an
-   explicit, named, dated last task, not an assumption carried over from the pre-milestone
-   baseline.
+| Topic | What they said | Decision |
+|-------|---------------|----------|
+| Generator input | STACK: vendor the sf-skills JSON (Apache-2.0; flags, types, relationships; no picklist values, precision, key prefixes; `__c` leakage from doc examples). FEATURES: Object Reference PDF (v68.0, `resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/object_reference.pdf`) readable with `pdftotext`; 18 business objects already extracted (flags, OwnerId). STACK got a 404 on a different PDF path (`atlas.en-us.object_reference.meta.pdf`) and a 403 on the HTML, so the two findings are compatible. | **Primary input: sf-skills snapshot** (vendored, licensed, reproducible, no network). **Cross-check input: PDF extraction**, run as a generator-time verification, not committed as source. Rule from PITFALLS B1: a flag is `verified` when both agree, `unverified` (and logged in the generator report) when only one states it; disagreements go into `overrides.json` with a reason. PDF text is never redistributed; facts only. Both are public; neither is a real org. |
+| Snapshot location | STACK: `packages/metadata/standard/source`. ARCHITECTURE: `scripts/gen-baseline/snapshot`. | `scripts/gen-baseline/` for snapshot, vendor copy, and `overrides.json`; generated output stays in `packages/metadata/standard/objects/`. Drop ARCHITECTURE's "scrape the HTML" snapshot step; the sf-skills sync replaces it. |
+| Global resolution | FEATURES: a `GlobalResolver` pre-resolving all globals per batch. ARCHITECTURE: split by mutability. | **ARCHITECTURE's split.** `$Label`/`$CustomMetadata` need no resolver (folded; the sigha evaluator that throws for un-pre-resolved `$CustomMetadata` keys is never reached). FEATURES' pre-resolver survives as the evaluate-time half: `FormulaRegistry` collects referenced `$Setup`/`$UserRole`/`$Api` keys, `loadGlobals` loads only those, memoised per call or session. |
+| `$Api` values | FEATURES: reuse login URL builder, session token. PITFALLS: do not trust `Host`. | One configured public base URL (`ORGLET_BASE_URL`, default derived once at `up`); `Session_ID` from the session, blank without one; never persisted; rejected in roll-up formulas. Formula fields only (per sigha contexts), not validation rules. |
+| OwnerId targets | ARCHITECTURE guessed Task User-only (LOW). FEATURES read the PDF. | **FEATURES' table** (see below). Widen `ownerTargets` from `("User"\|"Group")[]` to `string[]` because Event is `Calendar + User`. |
+| Gated fields | FEATURES: generate all documented fields, tag `featureGated`. PITFALLS B1 and the v1.0 `standard/README.md`: exclude gated, reserved, deprecated. | Choose one, do not blend: **include gated fields, tagged `featureGated` in the generator provenance; exclude only reserved, deprecated and Lightning-only.** Reason: the goal is zero warnings for what a real retrieve references, and a retrieve may legitimately use a gated field. Cost: describe shows fields a non-gated org would lack (nullable columns, low harm). This changes the v1.0 README rule, so it is open question 6. |
+| Roll-up formula restrictions | FEATURES/ARCHITECTURE: accept at load, mark `UNSUPPORTED:rollup-formula` (warning, roll-up inert). PITFALLS: fail load per D-05. | **Warn, do not fail.** D-05 rejects a case Salesforce itself forbids with high confidence; the formula restriction set is only MEDIUM/LOW confidence, and a retrieve already passed Salesforce's save-time validation. Failing load on a doc-vs-reality mismatch would block the real org. |
+| Roll-up evaluation | FEATURES: load children, aggregate with decimal.js, write parent. ARCHITECTURE: TS values into SQL derived table. | ARCHITECTURE's (reuses all filter/aggregate SQL semantics). Round to the formula's declared scale before aggregating (verify in the phase). Add formula -> roll-up -> formula cycle test. |
+| Structured diagnostics timing | FEATURES: first. ARCHITECTURE: collect during phases, render last. | Both: introduce the `Diagnostic` types in Phase 8 (additive; strings stay), every later phase emits them, renderer in the last phase. This also gives a per-area measuring stick on the large org from the start. |
+| Report flags | FEATURES `--format json`; ARCHITECTURE `--json`. | `--json` and `--summary`. Keep one `warning:` line per root cause on stderr, summary on stdout, same exit-code semantics (K3). |
+| MetadataRelationship targets | ARCHITECTURE: keep EntityDefinition/FieldDefinition `UNSUPPORTED` varchar. FEATURES: alias variant. PITFALLS: explicit `UNSUPPORTED:field-type`. | `__mdt` -> `__mdt` fully supported (two-pass, deferred FK). Entity/FieldDefinition targets: varchar plus `QualifiedApiName` alias, with one `UNSUPPORTED:reference-target` for anything beyond that. Needs a research check in Phase 11. |
+| DML on `__mdt` error code | STACK suggested `INVALID_OPERATION`/`FEATURE_NOT_ENABLED`; FEATURES/ARCHITECTURE reuse the existing flag error. | `INVALID_TYPE_FOR_OPERATION` (project convention); mark unverified in the message source; do not assert it in conformance until confirmed. |
+| `__mdt` key prefix | Task text says `m0`; sources say first prefix is `m00`. | Own provisional pool `m00..`, never the `a..` custom range; one secondary source only, so document as an orglet choice if no public fixture confirms. Custom settings share the persisted custom prefix mechanism (no source). |
+| Key prefixes for new objects | STACK: hand-maintained `keyPrefixes.json`. PITFALLS: nullable plus source. FEATURES: two agreeing community lists. | Both: `keyPrefixes.json` with a `source` label per entry (`doc`, `community-list`, `unverified`); six prefixes (AccountTeamMember `01M`, ContentVersion `068`, ContentDocument `069`, FeedItem `0D5`, EmailMessage `02s`, OpportunitySplit `049`) are single-list and stay `community-list` until a second source appears. No prefix means null, excluded from polymorphic matching. |
+| sigha provenance | STACK/PITFALLS: `org-verified.json` is upstream's record of org-verified rows. | Open question 1. |
+
+### OwnerId table (FEATURES, read from the Object Reference)
+
+| `ownerTargets` | Objects |
+|----------------|---------|
+| `["User"]` | Account, Contact, Opportunity, Contract, Asset, Campaign, Individual, Solution, ContentVersion, ContentDocument |
+| `["Group","User"]` (stay polymorphic) | Case, Lead, Task, SocialPost, Order, Location, ContactRequest, WorkOrder, ServiceAppointment, OperatingHours |
+| `["Calendar","User"]` | Event (needs a `Calendar` baseline object or one `UNSUPPORTED:reference-target`) |
+| no `OwnerId` (`hasOwner:false`) | Quote, QuoteLineItem, Entitlement, Product2, Pricebook2, PricebookEntry, EmailMessage, FeedItem, Address, OpportunityLineItem, CampaignMember, BusinessHours |
+| contradictions | ServiceContract: Metadata API says queue-capable, Object Reference silent; use `["Group","User"]` (MEDIUM). Order: Object Reference says `Group, User` though Order is not a valid QueueSobject; follow the Object Reference because describe is what clients see. |
+
+Check before the narrowing lands: which of Product2, Pricebook2, Entitlement, BusinessHours currently have `hasOwner:true` in the v1.0 baseline. Dropping `OwnerId` there yields a permanent `UNSUPPORTED:schema-drop` warning on every existing database (M4); the generator's v1-vs-v2 diff gate must list these.
 
 ## Implications for Roadmap
 
-Based on combined research, the suggested phase structure follows ARCHITECTURE.md's explicit
-build order (Section "Build Order"), cross-checked against PITFALLS.md's per-pitfall "Phase to
-address" mapping. **The two documents agree on the bookends** (infrastructure first, conformance
-re-run last) and do not actually conflict on the middle ordering, but see "Where the Documents
-Disagree" below for nuances a roadmapper should not smooth over.
+Phase numbers continue from v1.0 (phases 1-7). Seven phases plus one optional.
 
-### Phase 1: Test & CI infrastructure (pglite + GitHub Actions)
-**Rationale:** ARCHITECTURE.md ranks this first because it touches zero feature-package source
-(`metadata`/`schema`/`engine`/`soql`/`api`), only test infrastructure — it validates the
-existing 119 tests against pglite while the codebase is still today's size, and unblocks
-meaningful CI (a milestone acceptance criterion on its own) immediately. PITFALLS.md
-independently confirms this ordering: Pitfall 12 says the pglite sharing/isolation strategy
-must be decided "before other phases start adding new Postgres-backed test files," and Pitfall
-10 requires the Docker-Postgres CI job to ship in the *same* phase as pglite, not deferred.
-**Delivers:** `@electric-sql/pglite` + `-socket` wired via vitest `globalSetup`, zero changes to
-any Postgres-backed test file or `packages/schema/src/db.ts`; GitHub Actions running lint,
-typecheck, build and the full suite on every push/PR, against both pglite (fast, default) and
-Docker Postgres 16 (belt-and-braces, catches WASM-specific divergence).
-**Avoids:** Pitfalls 10 (green pglite hiding real-Postgres bugs), 11 (WASM/ESM loading under
-vitest), 12 (memory growth across test files), 13 (pnpm/corepack/Node version drift passing
-locally, failing in CI), 14 (accidentally invoking `scripts/sync-sigha.sh` in CI).
+### Phase 8: Safety net, diagnostics, sigha preparation
+**Rationale:** Everything later grows the baseline or changes contracts; the highest-risk failure (aborted `up` on an existing database) must be testable first, and several decisions (nullable prefix, diagnostic shape, sigha stance) are cheap now and expensive later.
+**Delivers:** populated-DB upgrade test (v1.0 baseline files from git, Group-owned and `--import` rows, exact warning set asserted); migrate FK pre-check naming every offender (violations downgrade to a warning and skip the FK, never delete data); skip-existing-index optimisation; `keyPrefix: string | null` with source labels and uniqueness/collision tests; `Diagnostic`/`SkippedItem`/`FormulaFailure` types and `FormulaCompileError.missing` (strings untouched); portable `sync-sigha.sh` plus orglet-side expectation tests (colon, `!`, `!=`, `!` and `:` inside strings); upstream sigha PR opened (external lead time starts here); Group-owned test audit list for Phase 9.
+**Avoids:** M1, B3, K1 groundwork, S1/S2 groundwork, M2.
+**Research flag:** none (standard patterns), except the sigha provenance inquiry to upstream.
 
-### Phase 2: Custom-object key-prefix persistence
-**Rationale:** Self-contained (`packages/schema` + one `packages/cli` call site), and
-foundational — every subsequent feature's tests create records, and unstable prefixes make
-every other phase's tests harder to reason about while they're being written.
-**Delivers:** `_orglet.key_prefixes` table; `reconcileKeyPrefixes()` called in `orglet up`
-before bootstrap; `orglet check`'s existing alphabetical scheme kept as an explicitly-labeled
-provisional guess (it has no DB access by design and must not silently claim to be authoritative).
-**Addresses:** the "Custom-object key prefixes are persisted" Active requirement.
-**Avoids:** Pitfall 8 (recompute-then-persist, which passes single-build tests but reintroduces
-drift on the second build with a changed object set — needs an explicit two-build acceptance
-test), Pitfall 9 (`reset`/`check` semantics left undefined — decide explicitly that reset clears
-persisted prefixes since they live inside the org's own Postgres schema).
+### Phase 9: Baseline generator, parity for the existing 35 objects, OwnerId narrowing
+**Rationale:** The generator is the widest-blast-radius change; prove it reproduces the current shape first (no-op regeneration), then grow. OwnerId narrowing ships here because it is data in the same generator and needs the Phase 8 FK pre-check.
+**Delivers:** `sync-sfdocs.sh` plus vendored subset with LICENSE/VENDOR.md; `scripts/gen-baseline/` (SOAP-type mapping table, union of `fields` and `field_reference`, `__c`/`__r` and `wsdl_segment` dropped, compound-field table, `overrides.json` with reasons, PDF cross-check, per-field provenance, no description prose); v1-vs-v2 diff gate (no v1 field disappears or narrows without an allowlist entry); child-relationship-name uniqueness check; parity for the existing 35 objects; `ownerTargets` per the table above; picklists stay `restricted:false` and bound to `standardValueSet` names that match the Metadata API exactly (B4).
+**Addresses:** baseline parity, OwnerId narrowing (plain `Owner.X` now compiles for User-only objects).
+**Avoids:** B1, B4, M3, M4, N2, N3, O1.
+**Research flag:** short design spike (not a full research-phase): type mapping, `string` length rules, which flags are single-source.
 
-### Phase 3: Thin standard-object baselines (14 objects)
-**Rationale:** ARCHITECTURE.md places this third for two reasons: it's the fastest, lowest-risk
-feature (14 JSON files + two small `build.ts`/`types.ts` edits, no other package touched), and
-it directly reduces Johan's Developer Edition warning count (14 of today's 15) — worth
-validating early. See "Where the Documents Disagree" below regarding the second stated reason
-(giving TYPEOF more real targets).
-**Delivers:** 14 new `packages/metadata/standard/objects/*.json` files, each with correct
-key prefix, name-equivalent field, and per-object createable/updateable/deletable flags (3
-read-only, 1 create-only, 10 full CRUD — per FEATURES.md's per-object table); a `thin?: boolean`
-marker on `StandardObjectJson` that defaults DML flags to `false` unless overridden.
-**Addresses:** the "Thin baselines exist for the 14 standard objects" Active requirement; zero
-remaining `UNSUPPORTED:reference-target` warnings.
-**Avoids:** Pitfall 18 (baseline satisfies this project's own schema validation but breaks
-jsforce/simple-salesforce's `describe()` contract on `nameField`/`keyPrefix`/`urls` — verify
-with an actual SDK `describe()` call per object, not just `build.test.ts`), Pitfall 19
-(read-only-in-reality objects like `OpportunityHistory` silently accepting inserts because the
-default DML posture wasn't overridden).
+### Phase 10: Business standard objects
+**Rationale:** Needs the generator and corrected Account/Contact/Opportunity/Pricebook2 fields. Order of delivery by reference count: Order, OrderItem, Quote, QuoteLineItem first; ContentVersion/ContentDocument/FeedItem/EmailMessage last.
+**Delivers:** the 18 objects with explicit create/update/delete/undelete/search flags from the Object Reference (OrderItem no undelete/search; CaseMilestone no create/delete; ContentDocument no create; ContentVersion no delete), no invented Name fields, blob fields omitted and listed in the generator report, `describe-check/objects.txt` extended, conformance `run-all.sh` after the phase (not only at milestone end), expected warning shifts written into the plan (B2). `examples/enterprise` fixture created from public docs with generic names.
+**Avoids:** B2, B5, N1, G1.
+**Research flag:** none beyond the verification list below (six single-list prefixes, `CasesId` naming, ContentVersion update disagreement).
 
-### Phase 4: Per-row polymorphic lookups + SOQL `TYPEOF`
-**Rationale:** The write path (`checkReferences()`) already resolves polymorphic targets
-correctly per row; this phase brings the read path (SOQL joins, row shaping, formula parent
-traversal) into agreement with it. Ordered after thin baselines per ARCHITECTURE.md, though see
-the disagreement note below on how load-bearing that ordering actually is.
-**Delivers:** a shared "resolve target by key prefix" helper (recommended home:
-`packages/schema/src/ids.ts`, next to `keyPrefixOf`) used by `soql/compile.ts` (N candidate
-joins + `COALESCE`/discriminator column), `soql/shape.ts` (per-row `attributes.type`),
-`engine/parents.ts` (grouped `loadByIds` per candidate — flagged by ARCHITECTURE.md as
-mattering *more* than the SOQL fix for runtime correctness), and `formula/compile.ts`
-(field-existence search across all candidates); `TYPEOF` compiled as a real case reusing the
-same primitive; `.Type` filterable in `WHERE`.
-**Addresses:** "Polymorphic lookups resolve per row... TYPEOF is supported" Active requirement.
-**Avoids:** Pitfall 5 (fixing only the join, not shape.ts or formula/compile.ts — test all three
-against one Group-owned fixture), Pitfall 6 (implementing `TYPEOF` in `SELECT` but not
-`<rel>.Type` in `WHERE`, treating them as one task when they're two independent grammar
-productions), Pitfall 7 (assuming every `referenceTo` target always has a modelled backing
-table — must degrade gracefully via `UNSUPPORTED:reference-target`, not throw).
-**Research flag:** the exact `FieldTypeof` AST shape from `@jetstreamapp/soql-parser-js` needs
-to be read from its `.d.ts` during implementation — ARCHITECTURE.md names this explicitly as
-"the one sub-task likely to need its own short research pass." See Open Questions.
+### Phase 11: Custom metadata, custom settings, labels
+**Rationale:** Must precede `$CustomMetadata`, `$Label`, `$Setup`, because compile resolves against these objects; also unlocks the `MetadataRelationship` `UNSUPPORTED:field-type` cascade.
+**Delivers:** parsers; `__mdt` read-only `SObjectDef` with system fields, `m00..` key prefix pool included in `reconcileKeyPrefixes`; `seed.ts` (deterministic Ids from type + DeveloperName, persisted mapping, upsert/delete sync, two-pass MetadataRelationship resolution); custom settings shape (no `OwnerId`, `SetupOwnerId`, `customSetting: true`); values coerced by declared type (`"007"` stays a string, `xsi:nil` null, missing field warns); `labels` on `OrgSchema`; describe flags. `check` states "custom setting has no data in the retrieve".
+**Avoids:** C1-C5.
+**Research flag:** YES. MetadataRelationship stored value and describe spelling, `customSetting` flag on `__mdt`, DML error code, `m00` prefix, nil handling.
 
-### Phase 5: Roll-up summary fields
-**Rationale:** ARCHITECTURE.md places this after Phase 4 for a pedagogical reason (both touch
-`engine`'s save pipeline and parent-loading code; the smaller Phase 4 change builds familiarity
-with code roll-ups also need) and after Phase 1 because it needs the most new DB-backed test
-cases of any of the six features (insert/update/delete/undelete/reparent/filter-change, each
-needing real Postgres assertions).
-**Delivers:** new `packages/engine/src/rollups.ts` (`RollupRegistry`, `affectedParents()`,
-batched aggregate `UPDATE`); `packages/metadata/src/sfdx.ts` parses `<summarizedField>` etc.
-instead of skipping `Summary` fields; second-pass resolution in `build.ts` sets the roll-up
-field's real numeric/date type; roll-up fields default to `0` (not `NULL`) before any child
-exists.
-**Addresses:** the "Roll-up summary fields... are loaded from metadata, recomputed... and
-readable" Active requirement.
-**Avoids:** Pitfall 1 (reparent recomputes only the new parent, not the old — double-count/stale
-total), Pitfall 2 (undelete or filter-field-only changes never trigger recompute), Pitfall 3
-(unbounded multi-level recursion, or a recompute that escapes the triggering child's savepoint
-and silently diverges from a partial-success batch's actual committed result), Pitfall 4
-(roll-up fields accepted as writable instead of matching Salesforce's `createable: false`/
-`updateable: false`).
+### Phase 12: Formula globals and sigha resync
+**Rationale:** Needs Phase 11 data on `OrgSchema`; the resync goes first in the phase, so globals are not built on a lexer about to change.
+**Delivers:** sigha resync to a pinned full SHA (upstream merged commit, or a named PR/fork commit recorded in VENDOR.md if the PR stalls; pass counts compared against the 6 312 baseline; NOTICE/LICENSE intact); `!` and colon resolution (`resolvePath` splits segments on `:`, qualifier selects the target, mismatch is a compile diagnostic); `$UserRole` (null role gives blank), `$Api`, `$Label` and `$CustomMetadata` (folded; unknown type/field is a compile error, unknown record evaluates blank with one aggregated `UNSUPPORTED:custom-metadata-record`), `$Setup` hierarchy (user, then profile, then org, per field; list settings `UNSUPPORTED:formula-global`); `$Permission` unchanged; update D-16.
+**Avoids:** S1, S2, F1-F5, N4.
+**Research flag:** YES (small): null user-level `$Setup` field fall-through, `$Api` URL shapes, `$Label` casing and `$Label.ns.Name`.
 
-### Phase 6: Bulk API 2.0 job persistence
-**Rationale:** ARCHITECTURE.md places this last — it is the most isolated of the six features
-(touches only `packages/api/src/bulk` and one `packages/cli` call site, no
-`engine`/`soql`/`metadata` coupling beyond the already-precedented `ctx.engine.pool` direct-query
-pattern), so it carries the least risk of blocking or being blocked by anything else, and none
-of the milestone's headline acceptance criteria (DE zero-warnings, conformance green) depend on
-it.
-**Delivers:** `_orglet.bulk_ingest_jobs` / `_orglet.bulk_query_jobs` tables; `BulkStore`
-replacing the in-memory `JobStore`; processing stays synchronous (explicitly acceptable per
-milestone scope — no worker/queue); a boot-time reconciliation step that transitions any
-persisted `InProgress` job to `Failed` (a crash-interrupted job, since nothing resumes mid-batch
-processing on restart).
-**Addresses:** "Bulk API 2.0 jobs are persisted in Postgres and survive a server restart."
-**Avoids:** Pitfall 15 (persistence loosening the existing server-only state-transition
-guarantee — keep one shared transition-guard function as the only writer of `state`), Pitfall 16
-(jobs stuck at `InProgress` forever after a crash — worse than the pre-persistence honest 404),
-Pitfall 17 (large CSV as a single Postgres column — explicitly scope out streaming, document the
-TOAST ceiling instead of fixing it).
+### Phase 13: Roll-up over formula fields
+**Rationale:** Highest complexity; depends on the structured `FormulaRegistry` (dependency list, restriction check) from Phase 12 and `pendingBackfills`. Both touch `formulas.ts` and `engine.ts`, so serialise.
+**Delivers:** `familyOf` accepts formula fields (summarized and filter) by return type; `RollupDef.viaFormula`; `FormulaRegistry` second validation pass (same-object only; no NOW/TODAY/TIMENOW, no `$User`/`$Profile`/`$Setup`/`$Api`/`$Label` roots, no dotted parent path) downgrading to `UNSUPPORTED:rollup-formula`; virtual-column support in `rollupSelectSql` (optional parameter, still pure); formula-aware `recomputeRollups`; widened `watched` set; `pendingBackfills` plus `backfillFormulaRollups`; cycle test; document O(children) recompute.
+**Avoids:** R1 and the staleness risk.
+**Research flag:** YES. Salesforce's allowed return types and restriction set (the Help article is JS-rendered; MEDIUM at best).
 
-### Phase 7: Conformance re-run & milestone acceptance
-**Rationale:** PITFALLS.md's Pitfall 20 states this explicitly: sequenced last "by definition —
-it validates the sum of the milestone's changes." Not called out as its own numbered step in
-ARCHITECTURE.md's Build Order, but required by `PROJECT.md`'s own Active requirements ("Both
-conformance suites are re-run... and the numbers... are updated") and reinforced independently
-by PITFALLS.md as a named phase.
-**Delivers:** fresh, dated runs of both `conformance/jsforce` and `conformance/python` (`simple-
-salesforce`) suites with updated pass/fail counts committed to their READMEs; Johan's Developer
-Edition retrieve re-verified at zero `UNSUPPORTED` warnings (down from today's 15).
-**Avoids:** Pitfall 20 (stale conformance numbers assumed still valid), Pitfall 21 (newly
-un-excluded Bulk tests failing for reasons unrelated to this milestone's persistence work — e.g.
-still-out-of-scope Bulk API v1 assumptions — classify each previously-excluded test explicitly
-before broadening the Jest filter, rather than a blanket un-exclude followed by reactive
-debugging).
+### Phase 14: `orglet check` report and enterprise acceptance
+**Rationale:** Consumes the final set of warning areas and all structured diagnostics.
+**Delivers:** `packages/cli/src/report.ts`: census, verdict line, per-area table keyed by the `UNSUPPORTED:<area>` token, root-cause grouping (every dependent kept, collapsed by default, both numbers stated), referenced-versus-unreferenced from one shared reference walk, quiet category (never fails `--strict`, never omitted from `--json`), `--summary` counts-only, `--json`, deterministic ordering, snapshot test of exact acme output; `examples/enterprise` runs with `--strict` in CI; DE retrieve still 0 warnings; local-only large-org run reported as counts per area. Conformance `run-all.sh` final run with every exclusion classified.
+**Avoids:** K1, K2, K3, G1.
+**Research flag:** none (design is sufficient).
 
-### Where the Documents Disagree
+### Phase 15 (optional, decide before requirements): ContentVersion blob upload/download
+Multipart route, blob storage, `GET .../sobjects/ContentVersion/{id}/VersionData`, `VersionData` URL rewrite in SOQL shaping. Recommended OUT of v1.1 (open question 3).
 
-Per the task's instruction to flag rather than smooth over disagreement, three tensions surfaced
-while cross-checking ARCHITECTURE.md's build order against PITFALLS.md's phase mapping and the
-other two documents:
+### Phase Ordering Rationale
 
-1. **The stated reason for ordering "thin baselines" before "polymorphic/TYPEOF" is weaker than
-   ARCHITECTURE.md claims, and its own example is inaccurate.** ARCHITECTURE.md's Build Order
-   step 3 gives two reasons for building thin baselines before Feature 1; the second is "some
-   existing `referenceTo` lists point at objects among these 14 or adjacent to them (e.g.
-   `Group.RelatedId → User|UserRole`)." `UserRole` is not one of the 14 thin-baseline objects
-   (`BusinessHours`, `BusinessProcess`, `CallCenter`, `DandBCompany`, `Entitlement`,
-   `ExternalDataSource`, `IdeaTheme`, `Individual`, `OperatingHours`, `OpportunityHistory`,
-   `ServiceAppointment`, `ServiceContract`, `SocialPost`, `UserLicense`) — it is "adjacent" but
-   not actually in scope this milestone, and ARCHITECTURE.md's own example undercuts its
-   argument. PITFALLS.md's Pitfall 7 states the opposite directly: "For *this* milestone, every
-   polymorphic field's targets are already modelled" in the existing 21-object baseline (`User`,
-   `Group`), and the fields that *would* reference the 14 (`Task.WhoId`/`WhatId`,
-   `Event.WhoId`/`WhatId`) are explicitly out of scope per `PROJECT.md`. FEATURES.md's own
-   dependency graph agrees: it marks the thin-baseline dependency as needed only "for
-   WhatId/WhoId-style fields," i.e. the deferred ones. **Conclusion: build thin baselines before
-   TYPEOF for the reasons that do hold up (fast, low-risk, reduces the DE warning count early) —
-   not because TYPEOF's actual test fixtures need them. A roadmapper reordering these two phases
-   would not break a real dependency.**
-
-2. **`session_replication_role` under pglite: STACK.md says it "Works," PITFALLS.md says this is
-   an open risk.** STACK.md's compatibility table marks `session_replication_role` (used only by
-   import mode) as "Works" on architectural grounds ("Real Postgres GUC, not an extension; PGlite
-   runs genuine Postgres backend code"). PITFALLS.md's Pitfall 10 treats the same question as
-   unresolved: it cites a third-party bug report (a different project migrating SQLite→pglite
-   data hit a `25P02` error) and explicitly instructs to "verify directly against the pinned
-   pglite version before relying on import-mode tests passing under pglite as proof the feature
-   works" (PITFALLS' own confidence tag: MEDIUM, third-party report, not an official
-   compatibility matrix entry). **Conclusion: treat this as genuinely open, not settled by
-   STACK.md's "Works" row — Phase 1 should include an explicit, early, isolated test of import
-   mode's `SET LOCAL session_replication_role = replica` under the pinned `0.5.8` before trusting
-   the rest of the pglite migration.**
-
-3. **Minor granularity difference, not a contradiction: PITFALLS.md splits "pglite test
-   infrastructure" and "GitHub Actions / CI" into two named phases (Pitfalls 10-12 vs. 13-14),
-   while ARCHITECTURE.md folds CI standup into the tail of its pglite step** ("do that right
-   after this step, not at the end"). Neither document assigns these two an explicit relative
-   order beyond "early." This summary treats them as one Phase 1 (see above); a roadmapper who
-   prefers a cleaner phase-per-concern split could equally split it into two without contradicting
-   either source.
-
-Separately, note that **PITFALLS.md's own top-to-bottom document ordering** (roll-up pitfalls
-appear before TYPEOF pitfalls, which appear before key-prefix pitfalls, which appear before
-pglite/CI pitfalls) is *not* a proposed build order — PITFALLS.md never claims this, and it does
-not match ARCHITECTURE.md's explicit Build Order. Do not read section order in PITFALLS.md as
-sequencing guidance; only its per-pitfall "Phase to address" column and the two explicit
-sequencing statements (pglite before other DB-test-adding phases; conformance last) carry
-ordering weight.
+- Baseline and migration safety first because every other feature is exercised against baseline objects, and a failed `up` on an existing database is the worst regression.
+- Loaders (11) before globals (12) because compile validates paths against the objects they create; globals before roll-up (13) because the roll-up validation pass reuses the structured registry; report (14) last because it needs every warning area to exist.
+- sigha work is a parallel external track: PR on day 1, tests and portable script in Phase 8, resync at the start of Phase 12. Phases 9-11 do not depend on it; plain `Owner.X` on User-only objects compiles without the colon syntax.
+- Warning counts on the large org will rise after Phases 10 and 11 and fall after 12. Judge Phase 10 by "no `standard-object` or `reference-target` warnings left for referenced objects", not by total count.
 
 ### Research Flags
 
-Phases likely needing a short, targeted research pass during planning (per the Open Questions
-below, several researchers flagged these as "verify at implementation time," not "known"):
-- **Phase 4 (polymorphic/TYPEOF):** the exact `FieldTypeof` AST shape from
-  `@jetstreamapp/soql-parser-js` needs reading from its `.d.ts` — ARCHITECTURE.md names this
-  explicitly as needing its own short research pass. Also confirm the parser's AST coverage for
-  `WHERE <rel>.Type = '...'` independently of `TYPEOF` (PITFALLS Pitfall 6, Integration Gotchas).
-- **Phase 1 (pglite):** confirm `session_replication_role` behavior against the pinned
-  `pglite@0.5.8` before trusting import-mode tests (see disagreement #2 above).
-- **Phase 3 (thin baselines):** per-object key prefix and name-equivalent field for
-  `DandBCompany`, `Entitlement`, `ServiceContract`, `SocialPost` (not confirmed in FEATURES.md's
-  research pass) and especially `IdeaTheme` (single-source prefix, LOW confidence) — confirm
-  against the Object Reference PDF before writing the JSON baseline files.
-- **Phase 5 (roll-ups):** reparent and undelete recompute triggers are logically implied by
-  Salesforce's documented behavior but not confirmed by a direct official quote (FEATURES.md
-  Gaps; `help.salesforce.com` article `000391766` is the specific page to chase). PITFALLS.md
-  treats both as hard requirements regardless (Pitfalls 1-2), since `PROJECT.md`'s own
-  requirement text names them explicitly — the gap is sourcing, not scope.
+Need `/gsd:research-phase`: Phase 11 (MetadataRelationship, mdt describe/DML specifics), Phase 12 (small: `$Setup` fall-through, `$Api`), Phase 13 (roll-up formula restrictions and return types).
+Standard patterns, skip research: Phase 8, Phase 10 (use the FEATURES tables), Phase 14. Phase 9 gets a design spike, not a research phase.
 
-Phases with standard, well-documented patterns (research-phase likely unnecessary):
-- **Phase 2 (key-prefix persistence):** a straightforward persisted-table pattern; the risk is
-  implementation discipline (two-build test), not missing information.
-- **Phase 6 (Bulk persistence):** the job state machine is already correctly implemented
-  in-memory and fully documented in the official Bulk API 2.0 PDF (HIGH confidence); this is a
-  storage-migration task, not a research task.
-- **Phase 7 (conformance re-run):** mechanical — run the existing suites, update the existing
-  README tables.
+## Open Questions for Johan (decide before requirements)
+
+1. **`org-verified.json` in vendored sigha.** It is upstream's corpus of rows verified against a real org; it has shipped since v1.0, and it sits badly with the "never diff against a real org" rule. Options: accept as upstream's MIT data; drop it from the vendored copy (change the `sync-sigha.sh` copy list; the 6 312-case baseline count will change); or ask upstream for its provenance first. **Recommendation:** open an upstream issue now, and keep it out of the vendored copy until the answer is known if you want the rule applied strictly. Its size and which tests depend on it were not measured.
+2. **Upstream PR versus pinned fork for sigha.** **Recommendation:** open the PR to `rfaulhaber/sigha` on day 1 (small, with corpus rows taken from the BSD-3 formula-engine oracle, not an org) and, in parallel, be ready to pin a named PR-branch or fork commit in `VENDOR.md` if it has not merged by Phase 12. Never carry a local patch; the milestone must not wait on upstream.
+3. **ContentVersion blob upload/download in or out?** It needs a multipart route, blob storage and URL shaping, and `ContentDocumentLink` (the junction that makes a file visible on a record) is a bigger gap that real retrieves reference. **Recommendation:** OUT of v1.1. Model ContentVersion/ContentDocument as data objects without blob fields, record both gaps in the backlog. Move it in only if the large org's formulas or roll-ups depend on file content (they should not).
+4. **`$Setup` for list custom settings out?** All three researchers independently lean out (Visualforce docs say unavailable; a list setting has no unambiguous row). **Recommendation:** confirm out; `UNSUPPORTED:formula-global`; hierarchy only.
+5. **Sign-off on the data sources.** The legal reading is the researcher's, not legal advice. Confirm you are comfortable with (a) vendoring the Apache-2.0 sf-skills subset (facts only, no description prose), (b) reading the public Object Reference PDF as a cross-check, (c) community key-prefix lists as labelled secondary sources.
+6. **Gated-field policy** (include with `featureGated` tag versus the v1.0 README rule of skipping them). Recommendation above: include.
+7. **OwnerId FK violation policy.** Downgrade to a warning and skip the FK when existing rows violate it (recommended), or abort `up`. Related: accept removing `OwnerId` from objects that gain `hasOwner:false`.
+8. **Roll-up formula violations: warn versus fail load.** Recommendation above: warn.
+9. **Custom-setting data.** The retrieve carries definitions only. Confirm the stance: no seed invented; `examples/enterprise` ships a small seed script for the fixture; `check` says so.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Versions and compatibility verified directly against npm registry and GitHub API metadata (`pushed_at`, release tags) at research time; the one MEDIUM sub-item is a stylistic choice (`pnpm/action-setup` vs. the newer `pnpm/setup`), not a factual uncertainty. |
-| Features | MIXED (HIGH for grammar/metadata shape, MEDIUM for recalculation timing and Bulk retention, MEDIUM-LOW for the 14 objects' key prefixes) | Official Salesforce PDF exports were used successfully as a workaround for `developer.salesforce.com`/`help.salesforce.com` returning 403 to automated fetches, which grounds the TYPEOF grammar and roll-up metadata shape claims in primary sources. Key prefixes have no official published table at all — every prefix is cross-verified across 2-3 community sources except `IdeaTheme` (1 source, explicitly flagged LOW). |
-| Architecture | HIGH for component boundaries/data flow (every claim verified by directly reading the named source file in this repo); MEDIUM for exact SFDX `CustomField` roll-up XML tag names (single external source) and pglite runtime limits (public docs/ecosystem, not a running instance in this repo). |
-| Pitfalls | MEDIUM-HIGH | Salesforce platform-behavior pitfalls anchored to official PDF/doc sources where fetchable; several pglite-specific pitfalls (Pitfalls 10-12) rest on third-party GitHub issue reports and blog post-mortems rather than an official pglite compatibility matrix — explicitly flagged MEDIUM or LOW-MEDIUM per pitfall, not overstated as settled. |
+| Stack | HIGH | Licence, coverage and shape of the sf-skills dataset were read and measured; sigha `!`/colon verified in the formula-engine grammar and the vendored lexer. Dataset sufficiency MEDIUM (overrides required). |
+| Features | MEDIUM-HIGH | Object shapes and metadata formats come from the current public PDFs (HIGH). Formula-global semantics, queue-owner error codes and roll-up formula rules came through search snippets (MEDIUM/LOW). Several items are explicitly UNVERIFIED. |
+| Architecture | HIGH (integration), MEDIUM (Salesforce semantics) | Read from the code in 12+ files. Roll-up restrictions, `$Setup` on list settings and MetadataRelationship values were not verified against docs. |
+| Pitfalls | MEDIUM-HIGH | Code-level claims HIGH; Salesforce-side claims secondary-sourced. |
 
-**Overall confidence:** MEDIUM-HIGH. The architectural plan (where code lives, what changes,
-build order) is on solid ground — grounded in direct reads of this specific codebase. The
-domain facts with the most residual uncertainty are narrow and well-isolated: a handful of
-standard-object key prefixes/name fields, roll-up reparent/undelete recompute triggers, and one
-pglite compatibility question — all individually small to verify and none blocking the overall
-phase structure.
+**Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
 
-The following open questions were explicitly flagged by the researchers as needing resolution
-at implementation time, not before roadmap creation:
+- Key prefixes: six single-list community entries, mdt `m00` single secondary source, custom-setting series no source. Handle with source labels; verify in Phases 9-11; never invent.
+- Exact DML error code for `__mdt` and for a queue owner on a non-queue object. Use the project convention, flag unverified, do not assert in conformance.
+- `customSetting` value on `__mdt` describe; `Label`/audit fields in the `__mdt` describe (Metadata API and Object Reference contradict).
+- `$Setup` null-field fall-through and `$UserRole` fields restricted in formulas (VF excludes four): research flag in Phase 12.
+- Roll-up-accepted formula return types and the real restriction set: Phase 13 research.
+- jsforce/simple-salesforce wire form for ContentVersion `VersionData` create: inspect the pinned SDK sources in `conformance/` only if question 3 goes IN.
+- Dataset field lengths are partial; defaults (255, flagged `guessed`) need review. Precision/scale come from the existing baseline via overrides (hand overrides win; never overwrite).
+- `FeedItem.ParentId`, `OpportunitySplitType` (prefix `149`) and `Calendar` are lookup targets outside the requested list; each needs either a baseline entry or one `UNSUPPORTED:reference-target`.
+- Index/FK statement volume and `up` time with ~50 more objects are unmeasured; budget no more than 2x and track `statements.length`.
 
-- **`soql-parser-js` `FieldTypeof` AST shape:** confirmed the library parses `TYPEOF` (has since
-  v3.2.0, per its changelog), but the exact AST node shape orglet's compiler needs to switch on
-  was not read from the `.d.ts` during this research pass. ARCHITECTURE.md names this as the one
-  sub-task in the entire milestone likely to need its own short research pass during Phase 4
-  planning. Separately, confirm parser AST coverage for `WHERE <rel>.Type = '...'` independently
-  — it's a different grammar production that happens to serve the same feature.
-- **pglite and `session_replication_role`:** STACK.md's compatibility table asserts this works
-  (architectural reasoning: it's a real Postgres GUC, not an extension). PITFALLS.md treats it
-  as an open, only third-party-corroborated risk (a `25P02` error reported in an unrelated
-  project's SQLite→pglite migration). Resolve early in Phase 1 with a direct, isolated test
-  against the pinned `pglite@0.5.8` before trusting any import-mode test that passes under
-  pglite as proof the feature genuinely works — see disagreement #2 above.
-- **Key prefixes and name-equivalent fields for the 14 thin standard objects:** no official
-  Salesforce page publishes a canonical key-prefix table (the "Entity Key Prefix Decoder" is an
-  interactive one-at-a-time tool, not a static list). Every prefix in FEATURES.md's per-object
-  table is cross-verified across 2-3 independent community sources except `IdeaTheme`
-  (single source, explicitly LOW confidence — verify before hardcoding). Name-equivalent fields
-  for `DandBCompany`, `Entitlement`, `ServiceContract`, and `SocialPost` were not independently
-  confirmed in this research pass at all (the PDF section extraction landed mid-alphabet).
-  Getting a name/`idLookup` field wrong is a likely source of `INVALID_FIELD` surprises when
-  Johan's real DE retrieve is re-checked — confirm against the Object Reference PDF before
-  writing the 14 JSON files in Phase 3.
-- **Roll-up recalculation on reparent and undelete:** create/update/delete recompute triggers
-  are well corroborated (official Trailhead module + multiple independent sources: recompute
-  happens "in the background during save execution"). Reparenting (when "Allow reparenting" is
-  enabled) and undelete were not confirmed by a direct official quote in this research pass —
-  FEATURES.md flags MEDIUM/LOW confidence and names `help.salesforce.com` article `000391766`
-  as the specific page to validate against. This does not change scope: `PROJECT.md`'s own
-  requirement text names both triggers explicitly, and PITFALLS.md's Pitfalls 1-2 treat them as
-  mandatory regardless of citation strength — the gap is sourcing for the exact edge-case
-  mechanics (e.g. does a filter-field-only change on an unrelated field also need to trigger
-  recompute in every documented case), not whether to build the feature.
+## Watch Out For
 
-Other, lower-priority gaps worth a one-line note during planning rather than a dedicated
-research pass:
-- Roll-up stored-value rounding/scale behavior (full floating-point precision vs. 2-decimal
-  display rounding) — MEDIUM confidence, community-sourced only.
-- Bulk API 2.0's ~7-day job/result retention window — confirmed verbatim for Bulk API v1 only;
-  the Bulk-2.0-specific doc page returned 403, so the 7-day figure for v2 rests on secondary
-  corroboration. Not necessarily worth enforcing deletion in a local dev/CI tool either way —
-  worth documenting as a deliberate divergence if orglet keeps jobs indefinitely.
-- pglite's `information_schema`/`pg_catalog` completeness relative to real Postgres 16 — a 2024
-  GitHub issue flagged gaps; current status not reconfirmed against the pinned version in this
-  pass. Directly relevant to `packages/schema/src/migrate.ts`'s diff-based migrator.
-- Whether this codebase's schema model supports **object-level** (not just field-level)
-  createable/updateable/deletable restriction — needed to correctly reject inserts into
-  `OpportunityHistory`-style read-only objects (Pitfall 19); ARCHITECTURE.md doesn't confirm
-  this exists today and flags it as "a scope question worth raising explicitly."
+1. Warning counts go UP when Quote, Order and friends land (their retrieved validation rules, formulas and lookups start loading). Plan the expected shifts; do not read the total as regression.
+2. Never ship a guessed key prefix. Null plus exclusion from polymorphic matching beats a plausible wrong one that mints Ids that mean something else after migration to a real org.
+3. `migrate` aborts the whole transaction on a NOT NULL or FK violation. Pre-check, name all offenders, downgrade to a warning, test on a populated database.
+4. Narrowing every `OwnerId` is wrong. Case, Lead, Task, Order and others stay polymorphic; `conformance/poly-check` and several unit tests use Group owners.
+5. The sf-skills dataset leaks org-specific `__c`/`__r` fields from doc examples and its `wsdl_segment` is org-derived: drop both. Do not copy description prose. `field_reference` fields have no create/update flags: default read-only and record that.
+6. Never run `sync-sigha.sh` in CI; always give it a full SHA; it wipes anything outside its layer list; fix the BSD-only `sed` as a separate reviewed change.
+7. `$Setup` must not be baked at compile time (stale after DML); `$Label`/`$CustomMetadata` must not hit the DB at evaluate time (breaks `check` and costs per row). Load `$Setup` once per batch, not per row.
+8. `$Api` values: no `Host` header, no persisted session token, no roll-up use.
+9. Roll-up over a formula that reads a parent is stale when the parent changes; same-object only is a correctness guard, not just fidelity.
+10. Root-cause grouping must never hide an independent second error or let `--strict` pass; the quiet set and the warning set must come from the same reference walk.
+11. Keep the `warning: UNSUPPORTED:<area>` line format on stderr; CI, docs and the acceptance record parse it.
+12. Hard constraint: `examples/enterprise` is authored from public docs with generic names (`Acme_*`, `Widget__c`), never by sanitising a copy of the private retrieve. No object, field, label or validation-rule names from the large org in plans, commits, issues or the research files; report only counts per area. Keep the denylist outside the repo.
+13. Generated JSON must be deterministic (no timestamps, fixed comparator, v1 field order kept, append-only) or every regeneration is a huge diff.
+14. Standard picklist values are per-org: `restricted:false`, `standardValueSet` names must match the Metadata API exactly, and a retrieve override must still win wholesale (test it).
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Official Salesforce PDF exports (`resources.docs.salesforce.com/.../pdf/*.pdf`): SOQL and
-  SOSL Reference v68.0, Bulk API 2.0 and Bulk API Developer Guide, Metadata API Developer Guide,
-  Object Reference for the Salesforce Platform, REST API Developer Guide — used as a workaround
-  for `developer.salesforce.com`/`help.salesforce.com` returning HTTP 403 to automated fetches
-- npm registry metadata and GitHub REST API (`pushed_at`, release tags) for every package
-  version cited in STACK.md
-- Direct reads of this repository's own source (all four research files): `packages/schema/
-  src/db.ts`, `ids.ts`, `columns.ts`, `migrate.ts`, `packages/engine/src/engine.ts`, `parents.
-  ts`, `packages/soql/src/compile.ts`, `shape.ts`, `packages/formula/src/compile.ts`,
-  `packages/metadata/src/build.ts`, `sfdx.ts`, `types.ts`, `packages/api/src/bulk/jobs.ts`,
-  `routes/bulk.ts`, `package.json`, `scripts/sync-sigha.sh`
-- `github.com/electric-sql/pglite` and `pglite-socket` READMEs (fetched raw)
-- `github.com/jetstreamapp/soql-parser-js` CHANGELOG.md (fetched raw)
+- `forcedotcom/sf-skills` (Apache-2.0): `platform-data-and-tooling-api-context-get`, `platform-metadata-api-context-get`, `platform-docs-get`
+- `salesforce/formula-engine` (BSD-3): `Formula.g4`, `LexerRules.g4`, `ANTLR4GrammarVisitor.java`, `FormulaUtils.java`
+- `rfaulhaber/sigha` (MIT) and the vendored `packages/sigha`
+- Public Object Reference, Metadata API, REST API and Tooling API PDFs at `resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/` (v68.0)
+- Repository code: `packages/{metadata,schema,formula,engine,cli}/src/*`, `scripts/sync-sigha.sh`, `conformance/{poly-check,describe-check}`, `.planning/PROJECT.md`
 
 ### Secondary (MEDIUM confidence)
-- Community-maintained Salesforce key-prefix lists (gist, fishofprey.com, automationchampion.
-  com, aegissoftworks.com) — cross-verified across 2-3 sources per object except `IdeaTheme`
-- Trailhead "Optimize Roll-Up Summary Fields," `sfdcfanboy.com` rounding write-up, Salesforce
-  Help article `000391766` (referenced, not directly fetchable) — roll-up recalculation timing
-  and rounding behavior
-- Third-party GitHub issue reports: `electric-sql/pglite#8` (`information_schema` gaps),
-  `activepieces/activepieces#10545` (`session_replication_role` `25P02` error),
-  `vitest-dev/vitest#4283` (WASM/ESM loading friction), `actions/setup-node#531`
-  (corepack/setup-node interaction)
-- `pnpm.io/continuous-integration` (official but newest-recommendation-not-most-battle-tested)
-- `oguimbal/pg-mem` repo page/README — used only to justify *not* using it
+- Visualforce global-variable pages (`$Api`, `$Setup`, `$UserRole`, `$Label`) via search snippets; Apex custom-settings pages (snippets); Salesforce Help roll-up article (snippet)
+- Two community key-prefix gists and Apex Hours (agree with each other)
+- Trailhead module on custom metadata in formulas; Custom Metadata Types Implementation Guide (Spring '17, dated)
 
-### Tertiary (LOW confidence, flagged for validation)
-- `IdeaTheme` key prefix (`0Bg`) — single source (fishofprey.com) only
-- `DandBCompany`/`Entitlement`/`ServiceContract`/`SocialPost` name-equivalent fields — not
-  independently confirmed in this research pass at all
-- pglite memory-growth-under-CI claims — individual project post-mortems, not an official
-  resource-usage benchmark
+### Tertiary (LOW confidence, needs validation)
+- Third-party blog posts on roll-up restrictions and custom-setting field limits; AutoRabit prefix cheat sheet; `m00` custom-metadata prefix from a single secondary source
 
 ---
-*Research completed: 2026-09-29*
-*Ready for roadmap: yes*
+*Research completed: 2026-10-12*
+*Ready for roadmap: yes, after the decisions in "Open Questions for Johan"*

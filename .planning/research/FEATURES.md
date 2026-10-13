@@ -1,302 +1,430 @@
-# Feature Research
+# Feature Landscape: v1.1 real-org fidelity
 
-**Domain:** Salesforce platform emulator — hardening milestone (SOQL TYPEOF, roll-up summary
-fields, thin standard-object baselines, Bulk API 2.0 job persistence, stable key prefixes)
-**Researched:** 2026-09-29
-**Confidence:** HIGH for TYPEOF grammar/restrictions, roll-up metadata shape, and Bulk API 2.0
-job lifecycle (all sourced from official Salesforce PDF references downloaded directly from
-`resources.docs.salesforce.com`). MEDIUM for roll-up recalculation triggers and Bulk API 2.0
-retention (corroborated across multiple sources but not quoted verbatim from an official page
-in this pass). MEDIUM-LOW for standard-object key prefixes (no official published table exists;
-cross-verified across 3 independent community sources for most objects, 1 source only for
-`IdeaTheme`).
+**Domain:** Salesforce platform emulator (orglet), subsequent milestone
+**Researched:** 2026-10-12
+**Scope:** only the seven new feature groups of v1.1. Existing v1.0 features are not re-researched.
+**Overall confidence:** MEDIUM-HIGH. Object shapes and metadata formats are HIGH (read from the current public
+PDFs). Formula-global semantics and error codes are MEDIUM/LOW because the HTML docs block non-browser clients and
+several behaviours are only documented in pages I could reach through search snippets.
 
-## Sourcing note
+## Source key and how the docs were reached
 
-`developer.salesforce.com` and `help.salesforce.com` return HTTP 403 to automated fetches and
-serve a client-rendered Aura/LWR shell respectively, so most citations below come from the
-official PDF exports of the same documentation (`resources.docs.salesforce.com/.../pdf/*.pdf`),
-downloaded and converted to text for this research. These are the same official reference guides
-(SOQL and SOSL Reference, Bulk API 2.0 and Bulk API Developer Guide, Metadata API Developer
-Guide, Object Reference for the Salesforce Platform, REST API Developer Guide), just not the HTML
-rendering. Page/line references below are from the PDF text extraction, not from a live org —
-consistent with the project's constraint to never diff behavior against a real org.
+`developer.salesforce.com` HTML returns HTTP 403 to WebFetch/curl, but the **public PDF builds of the guides are
+downloadable** from `resources.docs.salesforce.com` and were converted with `pdftotext`. These are the primary,
+quotable sources (build dates inside the PDFs: Oct 2026, API v68.0). Every claim below carries a tag.
 
-## Feature Landscape
+| Tag | Source (public documentation) | Confidence |
+|-----|-------------------------------|------------|
+| [OR] | Object Reference PDF, 6 437 pp: https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/object_reference.pdf (per-object HTML: `https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_<name>.htm`) | HIGH |
+| [MD] | Metadata API Developer Guide PDF: https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/api_meta.pdf | HIGH |
+| [REST] | REST API Developer Guide PDF: https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/api_rest.pdf | HIGH |
+| [TOOL] | Tooling API PDF: https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/api_tooling.pdf | HIGH |
+| [CMTG] | Custom Metadata Types Implementation Guide, **Spring '17** (old): https://resources.docs.salesforce.com/206/latest/en-us/sfdc/pdf/custom_metadata_types_impl_guide.pdf | MEDIUM (dated) |
+| [VF] | Visualforce Developer Guide global variables, e.g. https://developer.salesforce.com/docs/atlas.en-us.pages.meta/pages/pages_variables_global_api.htm (also `_setup`, `_userrole`, `_label`); reached via search snippets only | MEDIUM |
+| [APEX] | Apex Developer Guide, Custom Settings: https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_customsettings.htm and `apex_methods_system_custom_settings.htm`; snippets only | MEDIUM |
+| [HELP] | Help article https://help.salesforce.com/s/articleView?id=fields_about_roll_up_summary_fields.htm (JS-rendered; text via search snippet) | MEDIUM |
+| [KP] | Community key-prefix lists (not Salesforce-official): https://gist.github.com/FishOfPrey/05f7a742757fce071a09, https://gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583, https://www.apexhours.com/salesforce-object-key-prefix/ | MEDIUM (two agreeing lists) |
+| [SIGHA] | open-source vendored `packages/sigha/src/registry/contexts.ts` (MIT); its "org-verified" comments are upstream's claim, not ours | MEDIUM |
+| UNVERIFIED | no public documentation found; decide by project convention, never claim as Salesforce fact | LOW |
 
-### Table Stakes (Milestone Scope — Must Have)
+**Method consequence worth acting on:** the Object Reference PDF has a regular layout (`Field / Type / Properties /
+Description / Relationship Name / Refers To`). A 60-line parser extracted field name, type, Create/Update/Nillable/
+Defaulted flags and OwnerId targets for all 18 business objects below. The baseline-v2 generator can be built the
+same way; the PDF does **not** carry key prefixes, picklist values or exact lengths (lengths only inside prose), so
+those need the supplements named per feature.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| `TYPEOF ... WHEN ... THEN ... ELSE ... END` in `SELECT` | A real DE org's Task/Event/ContentDocumentLink-style polymorphic queries use it; jsforce/simple-salesforce clients expect it to work, not 400 | MEDIUM | Compiles to a per-row `CASE`-shaped join keyed by the row's actual key prefix (already available via `keyPrefixOf`). Grammar, restrictions and JSON result shape below are HIGH confidence, directly from the official SOQL and SOSL Reference PDF. |
-| Per-row polymorphic resolution for `OwnerId`/`WhoId`/`WhatId`/`ParentId`-style fields (SOQL joins and formula parent traversal) | Today orglet always resolves to `targets[0]`; a `Task.WhoId` pointing at a `Lead` silently joins `Contact` and returns wrong/null data instead of erroring | MEDIUM | This is the prerequisite fix TYPEOF sits on top of — see Dependencies below. |
-| `polymorphicField.Type` (e.g. `Owner.Type`, `Who.Type`) usable in `SELECT` and filterable in `WHERE` with any comparison operator, returning the object type as a string | Standard, documented, widely used alternative to `TYPEOF` for simple filtering; SDKs generate this pattern routinely | LOW-MEDIUM | `WHERE What.Type IN ('Account','Opportunity')` — string comparison against `.Type`, distinct from `TYPEOF`'s per-branch field shaping. Restriction: `TYPEOF` itself is *only* allowed in `SELECT`; filtering on type must go through `.Type` in `WHERE`, never `TYPEOF` in `WHERE`. |
-| Roll-up summary fields (`Summary` type): load from metadata, compute COUNT/SUM/MIN/MAX with filter criteria, recompute on child DML, expose read-only via REST/SOQL | Today the field type is recognized then silently dropped (`UNSUPPORTED:field-type`); any DE org with a roll-up loses the field entirely, which breaks any client selecting it | HIGH | Must live in the engine's save pipeline (post-commit step keyed on `childRelationships`), not in `metadata` or as a formula. Requires `master-detail` relationship (see Dependencies). |
-| Roll-up fields appear correctly in `describeSObject`: `calculated: true`, `calculatedFormula: null` (roll-ups aren't formulas), `createable: false`, `updateable: false`, `type` matching the underlying data (`double` for SUM/MIN/MAX on Number/Currency/Percent, `date`/`datetime` for MIN/MAX on Date/DateTime, `int`/`double` for COUNT) | Clients introspect describe to build forms/validate payloads; a roll-up field that appears writable will get rejected inserts with the wrong error shape | LOW | Confirmed describe field shape (`calculated`, `calculatedFormula`, `createable`, `updateable`) directly from the official REST API Developer Guide PDF. |
-| Thin baselines for the 14 referenced-but-undefined standard objects: `BusinessHours`, `BusinessProcess`, `CallCenter`, `DandBCompany`, `Entitlement`, `ExternalDataSource`, `IdeaTheme`, `Individual`, `OperatingHours`, `OpportunityHistory`, `ServiceAppointment`, `ServiceContract`, `SocialPost`, `UserLicense` | A real DE org's `checkReferences` needs a real target row/table to validate FKs against; today these are unchecked free-text | MEDIUM (×14, but each is small) | Each needs: `Id`, a name-equivalent field (`Name` where documented as `idLookup`, otherwise the object's actual identifying field — several of these do *not* have a generic `Name` field, see per-object notes below), and standard audit fields (`CreatedDate`, `CreatedById`, `LastModifiedDate`, `LastModifiedById`, `SystemModstamp`). |
-| Correct createable/updateable/deletable flags per thin-baseline object, matching documented `Supported Calls` | Getting this wrong either lets orglet silently accept writes Salesforce would reject, or blocks legitimate writes | LOW | 3 of the 14 are **read-only via the standard API** per the official Object Reference: `ExternalDataSource` (`describeSObjects(), query(), retrieve()` only), `OpportunityHistory` (same three plus `getDeleted()`/`getUpdated()`), `UserLicense` (same three, no `getDeleted`/`getUpdated`). `CallCenter` is create-only-no-update (`create(), describeSObjects(), getDeleted(), getUpdated(), query(), retrieve()` — no `update()`, no `upsert()`, no `delete()`). The remaining 10 support full `create()`/`update()`/`delete()`/`upsert()`. See table below for the complete per-object breakdown. |
-| Custom-object key prefixes assigned once at creation and persisted forever, independent of alphabetical position or rename | Today `customKeyPrefix()` recomputes by alphabetical index on every build; inserting a new custom object earlier in the alphabet silently reassigns every later object's prefix and therefore its record IDs' meaning, causing `checkReferences` to accept wrong data or reject valid data after a reload | MEDIUM | Real Salesforce assigns `a0X` prefixes (starting `a00`) sequentially by **creation order** within the org, never alphabetically, and the prefix never changes even if the object is renamed. Needs a persisted prefix-assignment table (e.g. `object_key_prefixes(name, prefix, assigned_at)`), not a recomputation. MEDIUM confidence — well-established, cross-verified across multiple sources, but Salesforce doesn't publish one canonical doc page stating "never changes on rename" in those exact words. |
-| Bulk API 2.0 job state persisted in Postgres, survives restart, correct state machine | Today `JobStore` is an in-memory `Map`; any restart during a long-running CI Bulk load loses the job with no trace, and polling clients get bare 404s instead of a state transition | MEDIUM | Job states (ingest): `Open` → `UploadComplete` → `InProgress` → `JobComplete` \| `Failed` \| `Aborted`. Query jobs skip `Open` (created directly in `UploadComplete` since the SOQL is supplied at creation). Full state table and transition rules below, HIGH confidence, quoted from the official Bulk API 2.0 and Bulk API Developer Guide PDF. |
-| Bulk API 2.0 result endpoints (`successfulResults`, `failedResults`, `unprocessedrecords`) backed by persisted data, not just in-memory CSV caches | Clients call these *after* `UploadComplete`/`JobComplete`; if the process restarted in between, results must still be retrievable for the retention window | LOW-MEDIUM | `successfulResults`/`failedResults` follow the documented `sf__Id, sf__Created, ...` / `sf__Id, sf__Error, ...` CSV shape (already implemented per `ARCHITECTURE.md`); `unprocessedrecords` returns rows from the original upload that were never attempted (job aborted/failed mid-processing) — distinct from `failedResults` (processed but errored). |
-| Job/result retention window (~7 days) reflected in behavior or at least documented as a limitation | Real clients and CI pipelines that poll late expect eventual 404s, not indefinite retention | LOW | MEDIUM confidence: the official PDF states this explicitly for Bulk API v1 ("job status and batch results sets for completed jobs are available for 7 days, after which the data is deleted permanently") and multiple independent sources confirm the same 7-day figure applies to Bulk API 2.0 job data; no verbatim Bulk-2.0-specific quote was retrievable in this pass (the dedicated "job lifespan" doc page returns 403). Not necessarily worth *enforcing* deletion in orglet (a local dev/CI tool benefits from *not* losing data), but worth documenting as a deliberate divergence if orglet keeps jobs indefinitely. |
+---
 
-### Per-object breakdown: the 14 thin standard-object baselines
+## A. Custom metadata types (`__mdt`)
 
-All key prefixes below are cross-verified across 2–3 independent community-maintained lists
-(no single official Salesforce doc publishes a canonical prefix table — the official "Entity Key
-Prefix Decoder" help page is a one-at-a-time interactive tool, not a static table, and returns a
-client-rendered shell to automated fetches). Confidence is MEDIUM unless noted.
+### Documented behaviour an SDK client observes
 
-| Object | Key Prefix | API Access (Object Reference `Supported Calls`) | Name-equivalent field | Confidence |
-|---|---|---|---|---|
-| `BusinessHours` | `01m` | create/update, **no delete()** | `Name` (`idLookup`) | MEDIUM |
-| `BusinessProcess` | `019` | create/update, **no delete()** | `Name` (`idLookup`) | MEDIUM |
-| `CallCenter` | `04v` | **create-only** — no `update()`, `upsert()`, or `delete()` | `Name` (`idLookup`) | MEDIUM |
-| `DandBCompany` | `06E` | full CRUD (`create/delete/update/upsert/search/undelete`) | not confirmed in this pass (object has `City`/`Country`/currency fields; likely `Name`) | MEDIUM |
-| `Entitlement` | `550` | full CRUD | not confirmed in this pass (object references `AccountId`, `AssetId`, `BusinessHoursId`; has a `Name` field per general Entitlement conventions, not independently verified here) | MEDIUM |
-| `ExternalDataSource` | `0XC` | **read-only** — `describeSObjects(), query(), retrieve()` only | `DeveloperName` (unique name; no generic `Name`) | MEDIUM |
-| `IdeaTheme` | `0Bg` | full CRUD + `search()` | not confirmed (no `Name`-labeled field seen in this pass; likely uses `Title`/`MasterLabel`-style field, or none) | **LOW** — single source for the prefix (fishofprey.com); recommend validating before hardcoding |
-| `Individual` | `0PK` | full CRUD + `merge()` | `FirstName`/`LastName` (person-shaped, no single `Name`) | MEDIUM |
-| `OperatingHours` | `0OH` | full CRUD | `Name` (`idLookup`) | MEDIUM |
-| `OpportunityHistory` | `008` | **read-only** — `describeSObjects(), getDeleted(), getUpdated(), query(), retrieve()` only | none — a history/audit-trail object (`Amount`, `CloseDate`, `ForecastCategory`, etc. keyed to the parent Opportunity) | MEDIUM |
-| `ServiceAppointment` | `08p` | full CRUD | `AppointmentNumber` (`Autonumber`, `idLookup` — not a generic `Name`) | MEDIUM |
-| `ServiceContract` | `810` | full CRUD | not confirmed in this pass | MEDIUM |
-| `SocialPost` | `0ST` | full CRUD | no `Name`-labeled field seen (`Content`, `Classification`, `AttachmentUrl`, etc.) | MEDIUM |
-| `UserLicense` | `100` | **read-only** — `describeSObjects(), query(), retrieve()` only | `MasterLabel` (no `Create` property — read-only, consistent with the object) | MEDIUM |
+| Aspect | Documented fact | Source |
+|--------|-----------------|--------|
+| Naming | `Type__mdt`; fields `__c`; the record Developer Name is a separate field | [MD] "Custom Metadata Types (CustomObject)" |
+| Supported calls | `describeSObjects()`, `describeLayout()`, `query()`, `retrieve()` only. No create, update, delete, upsert, undelete, getUpdated, getDeleted, search | [OR] "Custom Metadata Type__mdt" |
+| DML | "DML operations aren't allowed on custom metadata in the Partner or Enterprise APIs"; Apex can only deploy records through the Metadata API | [MD] CustomObject (CMT) "Special Access Rules" |
+| System fields | `DeveloperName` (string, defaulted on create, filter/group/sort), `MasterLabel` (string), `Label` (documented as picklist, always equals MasterLabel), `Language` (string, restricted picklist, default language of the developing org), `NamespacePrefix` (string, nillable), `QualifiedApiName` (string, nillable, `NamespacePrefix__DeveloperName`), `IsProtected` (boolean; the page spells it `isProtected`), `SystemModstamp` (API 56.0+) | [OR] |
+| Audit fields | The Metadata API page says "Audit fields (CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, SystemModStamp) remain uneditable", but the Object Reference field list for `__mdt` does not list them | [MD] vs [OR], contradictory: UNVERIFIED which appear in describe |
+| Key prefix | Custom metadata ids start at `m00` and increment (analogous to `a00` custom objects, `e00` platform events) | [KP] apexhours; MEDIUM. The task text says `m0`; the sources say the first prefix is `m00` |
+| Describe flags | createable/updateable/deletable false and queryable/retrieveable true follow from the supported-calls list. `custom: true` follows from the `__mdt` suffix table. Value of `customSetting` for an mdt is not documented | derived from [OR]; `customSetting` UNVERIFIED |
+| Record source | Retrieve folder `customMetadata/`, file `<Type>.<RecordDeveloperName>.md` (SFDX source format: `.md-meta.xml`); body `<label>`, `<protected>`, `<values><field>X__c</field><value xsi:type="xsd:string">…</value></values>`; `xsi:type` carries the value type; a value "can be null" | [MD] "CustomMetadata" |
+| Type definition | `<CustomObject>` with `<visibility>` Public / Protected / PackageProtected; types limited to 100 fields, 100 types per org, 10 MB, 50 000 records per transaction | [MD], [CMTG] Limits |
+| SOQL | Single `FROM`, `USING SCOPE`, `WHERE` with `IN`/`NOT IN`, `=,>,>=,<,<=,!=`, `LIKE`, `AND`; `ORDER BY` only non-relationship, selected fields; metadata-relationship fields allowed in select/where and support all standard relationship queries | [CMTG] Spring '17; **dated, UNVERIFIED for v68**. Do not police this narrowing |
+| Unreadable rows | Records hidden by Protected/PackageProtected rules are "unavailable to REST, SOAP, SOQL, and Setup" | [MD] CustomMetadata.protected. Irrelevant in single-tenant unpackaged orglet |
+| Error for REST DML | **Not documented.** Closest in-project convention is the phase-3 flag error `INVALID_TYPE_FOR_OPERATION` | UNVERIFIED. Pick by convention, say so in the message source |
 
-**3 of the 14 are read-only via the standard API** (`ExternalDataSource`, `OpportunityHistory`,
-`UserLicense`) — this is a stronger claim than the milestone brief's own framing (which names only
-`OpportunityHistory` and `UserLicense`), and worth carrying into requirements: `ExternalDataSource`
-should also reject create/update/delete rather than silently accepting them. `CallCenter` is a
-fourth partial case (createable, not updateable/deletable) worth a requirement of its own.
+### `MetadataRelationship` field semantics
 
-### Differentiators (Nice-to-Have, Not Required for This Milestone)
+- Field type enum value `MetadataRelationship`; `<metadataRelationshipControllingField>` on a field definition names the
+  entity-definition field that filters it (API 39.0+). [MD] CustomField.
+- Domain is one of: another custom metadata type, `EntityDefinition` (standard or custom object that supports custom
+  fields, triggers and layouts; not an activity, not `User`, not a Trialforce object), or `FieldDefinition`. [CMTG] "Custom
+  Metadata Relationships".
+- Stored value in the record file is the qualified API name of the target ("the qualified API names of the entity and
+  the field it points to"). [MD] CustomMetadataValue.value. Exact string form for a type-to-type relationship
+  (`Type.Record`?) is UNVERIFIED.
+- `QualifiedApiName` on EntityDefinition is `NamespacePrefix__DeveloperName` (custom: `…__c`); "When performing SOQL queries
+  with Custom Metadata Type relationship fields, use this field to obtain fully qualified namespaces." FieldDefinition
+  has `QualifiedApiName` ("a unique external name for the field") and `EntityDefinition.QualifiedApiName`. [TOOL]
+- SOQL: "You can query custom metadata relationships the same way you query normal relationships"; SOQL results omit
+  rows pointing at objects the caller cannot access (single-tenant: not applicable). [CMTG]
+- Public types cannot relate to protected types (packaging rule, ignore).
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| "Force a mass recalculation" equivalent for roll-up fields | Salesforce exposes this as an admin action in Setup when a roll-up drifts out of sync (e.g. after a bulk data load done with automation off); useful for orglet's own `--import` mode, which deliberately skips hooks/validation | LOW-MEDIUM | Natural fit as a `orglet` CLI subcommand or a flag on `up --import`, not a REST endpoint Salesforce itself exposes generally. |
-| Bulk API 2.0 background/async processing (job returns from `UploadComplete` immediately, transitions `InProgress → JobComplete` on a worker) | Matches real Salesforce's actual async behavior more closely than orglet's current synchronous-in-request model; needed for very large CI loads that would otherwise block the HTTP request for the whole batch | HIGH | Explicitly out of scope for *this* milestone per `PROJECT.md` — persistence is required, true asynchrony is not. Can be added later without changing the persisted job schema if states/transitions are modeled correctly now. |
-| PK chunking for Bulk API 2.0 query jobs | Real Salesforce auto-chunks large query jobs by primary key; not needed until orglet's own query jobs handle multi-million-row tables | HIGH | Documented (`isPkChunkingSupported`) but firmly a v2+ concern. |
-| `Subscribe to Query Job Platform Events (Beta)` / `Get Parallel Results for a Query Job` | Lets clients start downloading before a query job fully completes | HIGH | Beta feature in real Salesforce itself; not worth chasing for a hardening milestone. |
-| Full field parity (not just a "thin" baseline) for the 14 standard objects | Would make e.g. `ServiceAppointment`/`Entitlement`-heavy Field Service orgs load with zero warnings on every field, not just resolve lookups | HIGH (×14) | Explicitly deferred — "thin" is the correct scope; each object has 20–80+ documented fields in the real platform, most irrelevant to a headless CRUD/SOQL emulator. |
-| `CallCenter` full lifecycle including CTI Toolkit XML import semantics | Would matter for orgs actually using computer-telephony integration | HIGH | Extremely unlikely to matter for this project's users (local dev/CI); thin baseline (createable, describe-correct) is sufficient. |
+### `$CustomMetadata.Type__mdt.Record.Field__c` in formulas
 
-### Anti-Features (Explicitly Do Not Build)
+- Syntax confirmed by the Trailhead module "Use Custom Metadata Types in Formulas, Default Values, and Validation Rules"
+  (https://trailhead.salesforce.com/content/learn/modules/custom_metadata_types_dec/cmt_formulas) with example
+  `$CustomMetadata.Support_Tier__mdt.Bronze.MasterLabel`: type, record DeveloperName, field. MEDIUM.
+- Not allowed to span custom metadata relationships inside a formula; formulas referencing a record can read-lock it.
+  (search snippet of the same module, MEDIUM)
+- Context availability: resolves in formula fields, validation rules, default values and flow formulas, **not** in workflow
+  rules, approvals, buttons or quick actions. [SIGHA] contexts.ts (upstream org-verified claim; adopt as data, label MEDIUM).
+- Sigha behaviour today: the evaluator throws `UnsupportedError` for a `$CustomMetadata` reference unless the key
+  (dotted path joined with `.`) is already present in `env.fields`. So orglet must **pre-resolve** referenced
+  `$CustomMetadata.*` keys into the evaluation environment. [SIGHA] evaluator.ts lines ~138-148.
 
-| Feature | Why It Looks Appealing | Why It's Wrong Here | Alternative |
-|---------|------------------------|----------------------|-------------|
-| `TYPEOF` allowed in `WHERE`, `GROUP BY`/`GROUP BY ROLLUP`/`GROUP BY CUBE`/`HAVING`, inside a semi-join's `SELECT`, with functions in a `WHEN` field list, or nested inside another `TYPEOF`'s `WHEN` | Would feel "more complete" / more permissive than real Salesforce | Real Salesforce rejects every one of these with a compile error (`MALFORMED_QUERY`); silently allowing them makes orglet *more* permissive than the platform it emulates, which breaks the "cannot tell the difference" core value in the other direction — clients that correctly avoid these patterns won't notice, but conformance/regression tests that assert the error would fail against orglet | Reject with the same `MALFORMED_QUERY`-shaped error SOQL compilation already uses for other unsupported constructs (`packages/soql/src/errors.ts`), pointing at the specific restriction. |
-| `TYPEOF` in Bulk API 2.0 query-job SOQL | Consistency — "if TYPEOF works in REST SOQL, why not Bulk SOQL?" | Explicitly and separately documented as unsupported in Bulk API 2.0 (`Bulk API 2.0 doesn't support SOQL queries that include ... TYPEOF clauses`), alongside `GROUP BY`, `OFFSET`, aggregate functions, compound fields, and parent-to-child (subquery) relationship queries | Bulk 2.0 query-job SOQL validation should reject `TYPEOF` (and the other listed constructs) even though the same query would be valid REST SOQL. |
-| Roll-up summary fields settable via `create()`/`update()`/Bulk API | Would simplify data-migration/import scenarios (just write the precomputed value) | Roll-ups are read-only in real Salesforce by design — always server-computed, never accepted as input, regardless of API. Accepting a value would silently diverge from platform behavior and mask real bugs in a client's assumptions | Reject writes to roll-up fields the same way other calculated fields are rejected today (`Errors.notWritable`); `--import` mode should skip/ignore them rather than accept-and-store, then a recompute step (if built) brings them in line. |
-| Roll-up summary fields on **lookup** relationships (only master-detail is real) | "Why not let admins roll up any child, not just master-detail children?" — third-party tools like Declarative Lookup Rollup Summaries (DLRS) do exactly this via Apex triggers | Native roll-up summary fields are a master-detail-only platform feature; building lookup-relationship roll-ups as a "native-looking" `Summary` field type would fabricate behavior real Salesforce doesn't have | If lookup-relationship aggregation is ever wanted, model it explicitly as a different, clearly-labeled feature (e.g. a formula/trigger-based convenience), never as the `Summary` field type. |
-| Persisting the 14 thin objects' full historical/audit field sets (e.g. all of `OpportunityHistory`'s tracked-field-history semantics, `ServiceAppointment`'s full Field Service scheduling engine) | Would look more "complete" | Out of scope per milestone ("thin" baselines only, no Flow/Field Service scheduling); massive complexity for near-zero benefit to a headless SOQL/DML emulator's actual users | Id + name-equivalent + audit fields + the specific lookup-target fields other baseline objects already reference; nothing more. |
-| Bulk API v1 (`/services/async/*`) | "Some old SDK code paths default to it" | Separate, larger surface (batches within jobs, different content-type negotiation, different limits); not requested by this milestone and not blocking the stated goal (zero-`UNSUPPORTED` DE retrieve) | Leave as a documented gap (`CONCERNS.md` already tracks it); pick up only if a real conformance target needs it. |
-| A distributed/multi-process Bulk API 2.0 job store (Redis, horizontal scaling) | "Persisting in Postgres is halfway there anyway" | Explicitly out of scope — Postgres persistence solves "survives restart," which is what the milestone needs; distributed coordination is a different problem (matches the existing ID-generation fragility noted in `CONCERNS.md`, not something to solve incidentally here) | Postgres table keyed by job ID is sufficient; revisit only if orglet ever needs to run multiple API processes against one org. |
+### Table stakes / differentiators / anti-features
 
-## Feature Dependencies
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| Load `Type__mdt` definitions from `objects/` and rows from `customMetadata/*.md-meta.xml` into a Postgres table, ids stable (`m0x` prefix + deterministic counter) | Table stake | Med | Key-prefix persistence (`_orglet.key_prefixes`) must learn a second series (`m00…`); ids must survive `orglet up` reruns |
+| System fields `DeveloperName`, `MasterLabel`, `Label`, `Language`, `NamespacePrefix`, `QualifiedApiName`, `IsProtected`, `SystemModstamp` | Table stake | Low | `Label` mirrors `MasterLabel`; `Language` constant `en_US` unless metadata says otherwise (UNVERIFIED default) |
+| Describe: `custom: true`, read-only flags from supported-calls list | Table stake | Low | Reuses the phase-3 DML-flag machinery (`INVALID_TYPE_FOR_OPERATION`) |
+| SOQL select/where/order, incl. `Rel__r.QualifiedApiName` | Table stake | Low-Med | Existing SOQL compiler; extra narrowing of Spring '17 syntax = anti-feature |
+| `MetadataRelationship` field loaded (today `UNSUPPORTED:field-type`) as a string column plus describe `type: reference`, `referenceTo: ["EntityDefinition"]` / `["FieldDefinition"]` / `["Other__mdt"]` | Table stake | Med | The describe `type`/`referenceTo` spelling for these is UNVERIFIED; derive from `Lookup` shape |
+| `$CustomMetadata` formula global resolved from the table | Table stake | Med | Needs a pre-scan of referenced keys at compile time, one batched fetch per query/batch, memoised (formulas are evaluated per row after fetch) |
+| Virtual `EntityDefinition` / `FieldDefinition` objects synthesised from `OrgSchema` so `Entity__r.QualifiedApiName` works | Differentiator | Med | Cheaper variant: treat `Entity__r.QualifiedApiName` as an alias of the stored string and log `UNSUPPORTED:reference-target` for anything else on those objects |
+| Retrieve-time validation that each relationship value names a modelled object/field | Differentiator | Low | Report in `check` (feature G) |
+| DML on `__mdt` via REST | **Anti-feature to implement**: reject | Low | Reject with the project's `INVALID_TYPE_FOR_OPERATION` convention; do not offer a "deploy" path |
+| Enforcing packaging visibility (Protected / PackageProtected), 100-type / 10 MB / 50 000-row limits, caching | Anti-feature | - | Single-tenant, unpackaged. Parse `visibility`/`protected` and ignore, no warning |
+| Metadata-API-style deploy of mdt records (Apex `Metadata.Operations`) | Anti-feature | - | Apex runtime is out of scope |
+
+**Dependencies:** `@orglet/metadata` (new parser for `.md-meta.xml`, field type), `@orglet/schema` (DDL, key prefixes),
+`@orglet/soql` (relationship alias), `@orglet/engine` (read-only guard), `@orglet/formula` (global resolver).
+
+---
+
+## B. Custom settings (list and hierarchy) and `$Setup`
+
+| Aspect | Documented fact | Source |
+|--------|-----------------|--------|
+| Definition | A `CustomObject` with `customSettingsType` = `List` or `Hierarchy` ("Hierarchy … is the default"); "when this field is present, this component isn't a custom object, but a custom setting" | [MD] CustomObject `customSettingsType` |
+| Visibility | `visibility` Public / Protected (replaces `customSettingsVisibility` from API 34.0) | [MD] |
+| Describe flag | `DescribeSObjectResult.customSetting` exists (REST describe sample shows `"customSetting": false` for Account) | [REST] sObject Describe sample; value `true` for settings follows from the property name |
+| Data lives in the DB, not in the retrieve | Metadata API carries definitions only; "Only custom settings definitions are included in packages, not data" | [APEX] custom settings page (snippet) |
+| Hierarchy resolution | org default, overridden by profile, overridden by user; "lowest" level wins | [VF] `$Setup`, [APEX] |
+| Field-level merge | `getInstance()` "returns a custom setting data set record for the current user, with fields … merged based on the lowest level fields that are defined in the hierarchy"; if nothing is defined the result has empty fields "except for the SetupOwnerId field which contains the user ID" | [APEX] `HierarchyCustomSetting.getInstance` (snippet). Whether a *null* user-level field counts as "defined" is UNVERIFIED |
+| `SetupOwnerId` | Present on hierarchy settings; defaults to the Organization level when not populated; polymorphic to Organization, Profile, User; "there must be only one setting instance per `SetupOwnerId`" -> insert of a duplicate fails with `DUPLICATE_VALUE` on `SetupOwnerId` | [APEX] snippet + community write-up https://picchiri.altervista.org/salesforce/duplicate_value-setupownerid-custom-setting/ (LOW-MEDIUM) |
+| `$Setup` syntax | `$Setup.App_Prefs__c.Show_Help_Content__c`; "global merge field type to use when referencing a custom setting of type 'hierarchy'"; list settings "aren't available on Visualforce pages using this global variable" | [VF] `pages_variables_global_setup` |
+| Formula availability | "Custom settings data can be used by formula fields, validation rules, flows, Apex and the SOAP API" | [APEX] (snippet). Whether `$Setup` works for a *list* setting in formulas is UNVERIFIED; a list setting has no unambiguous row to address |
+| Field-type limits | No relationship, calculated/formula, picklist or long/rich text fields (secondary source); "geolocation fields aren't supported in custom settings" | [OR] Address/Geolocation notes (HIGH for geolocation); rest from https://www.greytrix.com/blogs/salesforce/?p=1499 (LOW) |
+| SOQL/DML | Data are real rows: SOQL, SOAP/REST insert/update/delete work; SOSL on settings is off by default (`enableSOSLOnCustomSettings`) and `enableAdvancedCSSecurity` can hide values from the Enterprise WSDL/SOAP | [MD] SchemaSettings |
+| Key prefix | Not documented. Settings probably share the `a`-series with custom objects | UNVERIFIED |
+
+### Table stakes / differentiators / anti-features
+
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| Parse `customSettingsType`, create the table with normal custom-object DDL, describe `customSetting: true`, `hasOwner` false (no OwnerId; `SetupOwnerId` instead) | Table stake | Med | Today a retrieve with a custom setting loads it as an ordinary custom object: `customSetting` is false and OwnerId exists, so the error is silent |
+| Hierarchy `SetupOwnerId` column (polymorphic: Organization 00D / Profile 00e / User 005), default = organization Id on insert, unique per setting | Table stake | Med | Reuses the phase-4 polymorphic machinery (`matchTargetByPrefix`) and `DUPLICATE_VALUE` factory |
+| `$Setup.Name__c.Field__c` for **hierarchy** settings: user row, else profile row, else org row, merged **per field** | Table stake | Med | Needs the running user's Profile Id; `$User`/`$Profile` already bound. Cache per request |
+| `$Setup` on a **list** setting | Anti-feature (emit `UNSUPPORTED:formula-global`) | Low | Matches the Visualforce restriction; no row key available |
+| Custom-setting data load: no source in the retrieve | Gap, not a feature | - | Rows only arrive via REST/Bulk/`--import`. Say so in `check` output; do not invent seed data |
+| Fixture rows for acceptance | Differentiator | Low | `examples/enterprise` ships a small seed script/JSON so `--strict` plus a formula test has data |
+| Setup UI semantics (Manage button, default org value creation) | Anti-feature | - | |
+| Apex `getInstance/getValues/getAll` | Anti-feature | - | Apex runtime out of scope |
+
+**Dependencies:** metadata parser, key-prefix persistence, polymorphic lookup resolution, `$User`/`$Profile` binding,
+the formula pre-resolver shared with feature A/C.
+
+---
+
+## C. Formula globals: `$UserRole`, `$Api`, `$Label` (plus `$Setup`, `$CustomMetadata` above)
+
+### `$UserRole`
+
+- "Global merge field … information about the current user's role"; fields are those of the `UserRole` object. [VF]
+  `pages_variables_global_userrole` (the example is `{!$UserRole.LastModifiedById}`).
+- `UserRole` fields in the Object Reference: `CaseAccessForAccountOwner`, `ContactAccessForAccountOwner`, `DeveloperName`,
+  `ForecastUserId`, `IsPartner`, `MayForecastManagerShare`, `Name`, `OpportunityAccessForAccountOwner`, `ParentRoleId`,
+  `PortalAccountId`, `PortalAccountOwnerId`, `PortalRole`, `PortalType`, `RollupDescription` (+ system fields). [OR] UserRole.
+- Visualforce note: `CaseAccessForAccountOwner`, `ContactAccessForAccountOwner`, `OpportunityAccessForAccountOwner`,
+  `PortalType` are not usable via `$UserRole` in Visualforce. Whether the same holds in formula fields is UNVERIFIED.
+- [SIGHA] already classifies `$UserRole` as simulatable and available in every verified context.
+- Behaviour for a user without a role: UNVERIFIED. Recommend blank fields (null), no error.
+
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| Bind `$UserRole.<UserRole field>` from the running user's `UserRoleId` row, generic over the existing `UserRole` baseline object | Table stake | Low | Same code path as `$Profile`; baseline already has `UserRole` (00E). Check the baseline lists `DeveloperName`, `ParentRoleId`, `RollupDescription` |
+| Restricting to the VF-excluded four | Anti-feature | - | Undocumented for formulas |
+
+### `$Api`
+
+- Properties: `$Api.Partner_Server_URL_xxx`, `$Api.Enterprise_Server_URL_xxx` (xxx = API version without the dot, e.g.
+  `_250`, `_260`), `$Api.Session_ID`. "`$Api.Session_ID` and `GETSESSIONID()` return the same value." [VF]
+  `pages_variables_global_api` (snippet, MEDIUM).
+- Endpoint shape: SOAP login endpoints are `…/services/Soap/c/<ver>` (Enterprise) and `…/services/Soap/u/<ver>` (Partner);
+  orglet's SOAP login already returns `{base}/services/Soap/u/<ver>/<orgId>` (`packages/api/src/routes/login.ts`), so
+  the formula value can reuse that builder. The `/c/` path form is shown in [MD] examples. The org-id suffix is the
+  existing orglet convention, not documented.
+- Context: formula fields only in [SIGHA] (`API_GLOBAL` appended only for `formula_field`).
+- Session id: the formula-field value is a basic session id; orglet has an in-memory session store, so the value is the
+  caller's access token, which is **per request**, not per record. A stored (persisted) formula would be wrong
+  but orglet evaluates formulas at read time, which is correct here.
+
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| `Partner_Server_URL_xxx`, `Enterprise_Server_URL_xxx`, `Session_ID` from request context | Table stake | Low-Med | Needs a request-scoped value in the formula environment (read path only). Writes that evaluate formulas for validation rules should treat `$Api` as unsupported (only formula fields allow it per [SIGHA]) |
+| Leaking real tokens into query results that SDKs cache | Risk, not feature | - | Session token appears in JSON of any query selecting such a field; acceptable for a local emulator, document it |
+
+### `$Label`
+
+- "Global merge field type to use when referencing a custom label … returned value depends on the language setting of
+  the contextual user." [VF] `pages_variables_global_label`. Syntax `$Label.Name` / `$Label.Namespace.Name`.
+- Retrieve format: `labels/CustomLabels.labels-meta.xml` -> `<labels><fullName>, <value>, <language>, <protected>,
+  <shortDescription>`; translations live in separate translation metadata. [MD] CustomLabels.
+- [SIGHA]: `$Label` is org-state, non-simulatable; same pre-resolution requirement as above.
+
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| Parse `CustomLabels.labels-meta.xml`, resolve `$Label.Name` to `value` in the org default language | Table stake | Low | Single-language only |
+| Per-user language / translation files (`translations/`) | Differentiator, defer | Med | Log `UNSUPPORTED:formula-global $Label translations` once |
+| Namespaced labels | Anti-feature | - | Unpackaged only |
+
+**Shared dependency (all globals):** one `GlobalResolver` that, at formula-compile time, collects the dotted keys the AST
+references (`$Setup.*`, `$CustomMetadata.*`, `$Label.*`, `$Api.*`, `$UserRole.*`), and at evaluate time fills
+`env.fields` once per request/batch. Without it every row re-queries. `$Permission` stays `UNSUPPORTED:formula-global`
+(already decided). [SIGHA] evaluator behaviour above.
+
+---
+
+## D. `OwnerId` `referenceTo` per standard object (queue-ownable or not)
+
+Targets read from the `OwnerId` field entry of each object in [OR]. "Refers To" absent means the doc names no target in
+the field entry; see ServiceContract.
+
+| Object | OwnerId `referenceTo` in [OR] | Plain `Owner.X` compiles when narrowed to |
+|--------|-------------------------------|-------------------------------------------|
+| Account, Contact, Opportunity, Contract, Asset, Campaign, Individual, Solution | `User` | `User` |
+| Case, Lead, Task, SocialPost, Order, Location, ContactRequest, WorkOrder, ServiceAppointment, OperatingHours | `Group, User` | polymorphic (Group + User) |
+| Event | `Calendar, User` | polymorphic (Calendar + User) |
+| ServiceContract | Field entry says only "The ID of the user who currently owns the service contract", **no** Refers To | see below |
+| ContentVersion, ContentDocument | `User` | `User` |
+| Quote, QuoteLineItem, Entitlement, Product2, Pricebook2, PricebookEntry, EmailMessage, FeedItem, Address, OpportunityLineItem, CampaignMember, BusinessHours | no `OwnerId` in the field table | n/a (do not synthesise `OwnerId`; baseline loader currently adds one when `hasOwner` is true, so keep `hasOwner:false`) |
+
+Queue ownership rule: queues are `Group` rows of type Queue; a queue can own only the entity types listed on it
+(`QueueSobject`): Metadata API valid `sobjectType` values are Case, ContactRequest, Lead, ServiceContract and Task (API
+48.0+) "plus custom objects"; "service contracts (if Entitlements are enabled)". [MD] Queue / QueueSobject. The same page
+says the `Queue` component "supports cases, leads, service contracts (if Entitlements are enabled), and custom objects".
+
+**Source contradictions, flagged:**
+- `Order`, `Location`, `WorkOrder`, `ServiceAppointment`, `OperatingHours` document `Group, User` in [OR] although `Order` is
+  not a valid `QueueSobject.sobjectType` in [MD]. Take [OR] for describe (it is what a client's describe returns);
+  the queue-membership check (below) is an orglet policy, not a documented rule.
+- `ServiceContract`: [MD] lists it as queue-capable, [OR] shows no Group target. Recommend `["Group","User"]`
+  (MEDIUM; the Metadata API statement is explicit, the Object Reference field entry is silent, not negative).
+
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| Narrow `OwnerId.referenceTo` per the table; `User`-only objects make `Owner.Name`/`Owner.Email` compile (today they are rejected as polymorphic) | Table stake | Low (data) + Med (verify no regression in TYPEOF/poly paths) | This is the main unblocker for the large org's cascaded formula failures |
+| Load `queues/*.queue-meta.xml` into `Group` rows (Type=Queue) + a `QueueSobject` pseudo-table, enforce "owner is a queue not allowed for this object" on insert/update | Differentiator | Med | Error code for an invalid owner is UNVERIFIED; without a code, prefer to warn (`UNSUPPORTED:owner-queue`) rather than invent one |
+| Plain `Owner.X` on `Group, User` objects (Case, Lead) | Open question | - | Salesforce documents `Owner:User.X` colon syntax for polymorphic traversal (already scheduled in sigha). Behaviour of plain `Owner.Name` on a polymorphic owner in a formula is UNVERIFIED; keep the existing compile-time rejection |
+| Queue-based assignment rules, round robin, Omni-Channel routing | Anti-feature | - | |
+
+**Dependencies:** `@orglet/metadata` standard JSON (`referenceTo` on a loader-added field: **README says the loader adds
+`OwnerId`**, so the baseline schema needs an `ownerReferenceTo` knob next to `hasOwner`, currently a boolean), phase-4
+polymorphic resolution, `Group` baseline object.
+
+---
+
+## E. Roll-up summary over formula fields
+
+| Rule | Documented fact | Source |
+|------|-----------------|--------|
+| What may be summarised | "If a roll-up summary field doesn't contain cross-object field references or functions that derive values on the fly, such as NOW or TODAY, it can calculate the values of formula fields." | [HELP] `fields_about_roll_up_summary_fields` (snippet) |
+| Forbidden | Formula fields with related-object merge fields (cross-object); "automatically derived fields, such as current date or current user"; formulas containing "functions that derive values on the fly, such as DATEVALUE, NOW, and TODAY" | [HELP] (snippet), echoed by https://www.apexhours.com/aggregating-validating-data/ and https://s2-labs.com/admin-tutorials/roll-up-summary-cross-object-formula-fields/ (LOW) |
+| Filter-field limits | Cannot use long text area, multi-select picklist, Description, system fields like Last Activity, cross-object formula fields or lookup fields in the filter *field* column; no date-literal filters | https://www.apexhours.com/aggregating-validating-data/, https://gearset.com/blog/salesforce-roll-up-summary-field-deployment/ (MEDIUM, secondary) |
+| Operations / fields | `summaryOperation` Count, Min, Max, Sum; `summarizedField` "can't be null unless … count"; `summaryForeignKey` = master-detail field on the child | [MD] CustomField |
+| Return types | Documentation I could reach does not list the formula return types a roll-up accepts. By operation: SUM needs Number/Currency/Percent; MIN/MAX also Date/DateTime. Text and Checkbox formulas excluded | UNVERIFIED (training memory); orglet's v1.0 typing "per operation" already encodes this for plain fields |
+| Note on DATEVALUE | DATEVALUE is not time-dependent; its presence in the official list is odd. Treat as documented but do not rely on it to reject a loaded org | [HELP] |
+
+**Design rule that follows from the project's own premise:** a retrieve comes from an org that already passed Salesforce's
+save-time validation, so the restrictions above are *authoring* rules. At load time orglet must **accept** a roll-up over
+any formula that references only same-object fields and mark violations (cross-object ref, NOW/TODAY/current-user
+globals) as `UNSUPPORTED:rollup-formula <reason>` instead of failing, so a documented-vs-real mismatch never blocks a real
+org.
+
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| Compute SUM/MIN/MAX/COUNT-with-filter over a **same-object** formula field: formulas are virtual in orglet (`isVirtual`, no column), so the v1.0 SELECT-first correlated subquery cannot aggregate them. App-side: load qualifying children, evaluate the compiled formula per child, aggregate with decimal.js, write the parent column | Table stake | **High** | Recompute triggers widen from "child summarized column changed" to "any field the formula reads changed"; reuse the formula dependency list from the compiler. Savepoint/replay logic from v1.0 (D-01/D-03) stays |
+| Formula-valued roll-up as a **filter** field (criteria on a formula field) | Differentiator | Med | Same app-side evaluation, per child |
+| Load-time classification of unsupported formulas (cross-object, volatile) with `UNSUPPORTED:rollup-formula` | Table stake | Low | sigha has no volatility tag; keep a small deny-list (NOW, TODAY, TIMENOW, `$User`/`$Profile`/… roots, any dotted parent path) in `@orglet/formula` |
+| `migrate()` backfill of a formula-based roll-up | Differentiator | Med | Reuses D-10 one-shot backfill; the known "no re-backfill when the formula text changes" gap gets worse here, record it |
+| Formula-in-SQL compilation | Anti-feature | Very high | Not needed; app-side is correct and consistent with read-time formula evaluation |
+
+**Dependencies:** `@orglet/formula` compile output (referenced field list), `@orglet/engine` roll-up pipeline, SOQL read of
+roll-up columns unchanged.
+
+---
+
+## F. Business standard objects
+
+Flags below are the `Create/Update` properties and "Supported Calls" from [OR]. "Name field" is the field the Object
+Reference marks `idLookup`/autonumber or documents as the record name. Key prefixes are [KP] (two lists agree) unless
+marked. Feature-gated fields are marked `*` by my parser when their description cites Subscription Management, Revenue
+Cloud, Industries, Field Service and similar; the README rule "skip fields that only exist when a feature is enabled"
+cannot be applied mechanically, because a customer formula may reference a gated field. **Recommendation: generate all
+documented fields, tag gated ones `featureGated: true`, and report unreferenced gated fields in the quiet category.**
+
+| Object | Prefix | Name field | Calls (C/U/D/undelete/search) | Notes |
+|--------|--------|-----------|-------------------------------|-------|
+| Quote | `0Q0` | `Name` (225 chars, required) + auto `QuoteNumber` | C U D undelete search | No `OwnerId` in the field table [OR]. `IsSyncing` bool; `OpportunityId` create-only; `Pricebook2Id`; totals read-only (`Subtotal`, `TotalPrice`, `GrandTotal`, `Discount`, `LineItemCount`); address groups Billing/Shipping/QuoteTo/Additional with compound `…Address`; `Status` picklist, default Draft |
+| QuoteLineItem | `0QL` | `LineNumber` (autonumber-like, defaulted) | C U D undelete search | `QuoteId` + `Product2Id` + `PricebookEntryId` create-only, `Quantity` and `UnitPrice` required, `OpportunityLineItemId` create-only nillable, `ListPrice`, `Subtotal`, `TotalPrice`, `Discount` |
+| Order | `801` | `OrderNumber` (autonumber, max 30) | C U D undelete search | `OwnerId` Group/User; `AccountId`, `EffectiveDate` (required), `Status`+`StatusCode`, `Pricebook2Id` (defaulted, nillable only without price book), `TotalAmount` (read-only), `ContractId`, `OpportunityId`, `QuoteId` |
+| OrderItem | `802` | `OrderItemNumber` (autonumber) | C U D, **no undelete, no search** | `OrderId` create-only, `Quantity`, `UnitPrice`, `PricebookEntryId`/`Product2Id` create-only nillable, `ListPrice`, `TotalPrice` read-only, `QuoteLineItemId`. "OrderItems directly deleted aren't sent to the recycle bin and can't be undeleted"; `getDeleted()` shows them until purged |
+| AccountContactRelation | `07k` | none (no name field) | C U D | `AccountId`/`ContactId` create-only, `Roles` multipicklist, `IsActive`, `IsDirect` read-only, `StartDate`/`EndDate` |
+| AccountTeamMember | `01M` | none | C U D | Needs account teams enabled; `AccountId`/`UserId` create-only; `TeamMemberRole`, `AccountAccessLevel`, `CaseAccessLevel`, `ContactAccessLevel`, `OpportunityAccessLevel`; `Title`, `PhotoUrl` read-only |
+| OpportunityTeamMember | `00q` | `Name` (read-only, nillable) | C U D | "If you create a record and the OpportunityId and UserId combination matches an existing record, the system updates any modified fields and returns the existing record" (documented upsert-like create). Needs team selling |
+| OpportunityContactRole | `00K` | none | C U D | `OpportunityId` create-only, `ContactId` create+update, `IsPrimary`, `Role`. "Allowed, though not recommended: several roles for the same contact" |
+| OpportunitySplit | `049` | none | C U D | Needs opportunity splits enabled; `OpportunityId` create-only, `SplitOwnerId` create-only, `SplitPercentage` required, `SplitAmount` read-only, `SplitTypeId` (-> `OpportunitySplitType`, prefix `149`, not in the requested list, so a lookup target the generator must add or log), `SplitNote` |
+| ContractLineItem | `811` | `LineItemNumber` | C U D undelete search | Needs service contracts/entitlements. `ServiceContractId` create-only, `PricebookEntryId`, `Quantity`, `UnitPrice`; `Status` read-only; `Product2Id` read-only |
+| CaseContactRole | `03j` | none | C U D | Case lookup field is named **`CasesId`** in the docs (not `CaseId`); `ContactId` create+update, `Role` |
+| CaseMilestone | `555` | none | **no create, no delete**; update, query, retrieve | `CaseId`, `MilestoneTypeId` read-only; only `CompletionDate` and `StartDate` updateable; `IsCompleted`, `IsViolated`, `TargetDate` and `TimeRemaining*` are computed. Entitlement-process driven |
+| EmailMessage | `02s` | `Name` (read-only) | C U D undelete search | Requires Email-to-Case or Enhanced Email. `ParentId` (Case) create-only, `ActivityId` create-only, `FromAddress`, `ToAddress`, `CcAddress`, `Subject`, `TextBody`/`HtmlBody`, `Incoming`, `Status` (only New -> Read changes), `MessageDate`, `RelatedToId`. Limited to 50 custom fields. `…Ids` are junction id lists (`ToIds`, `CcIds`, `BccIds`, `ContentDocumentIds`) |
+| ContentDocument | `069` | `Title` (updateable) | **no create**; delete, undelete, update, query, retrieve, search | Created implicitly by inserting a `ContentVersion` without `ContentDocumentId`; `LatestPublishedVersionId` read-only; `OwnerId` update-only; delete removes all versions [OR] |
+| ContentVersion | `068` | `Title` (required) | C U (latest version, published only) **no delete**, search, upsert | `VersionData` (base64), `PathOnClient` (create-only), `ContentDocumentId` (create-only; omit to create a document), `FirstPublishLocationId` (create-only), `IsLatest`, `VersionNumber`, `Checksum`, `ContentSize`, `FileExtension`/`FileType` (derived), `IsMajorVersion`. "SOQL queries on ContentVersion return all versions". REST guide separately says ContentVersion "doesn't support updates" (a tip on the insert example) while [OR] lists `update()`: sources disagree |
+| FeedItem | `0D5` | none | C U D search (no undelete) | `ParentId` polymorphic over a huge target list; `Body`, `Title`, `LinkUrl`, `Type` restricted picklist (only ContentPost, LinkPost, QuestionPost, TextPost are user-creatable, all others system-generated), `Status` Published / PendingReview, `IsClosed`, counters read-only. `ContentData` base64 create-only |
+| Location | `131` | `Name` | C U D undelete search | Needs Field Service / Commerce / inventory feature; `LocationType` required and its picklist must have a value; `OwnerId` Group/User; `ParentLocationId`, `RootLocationId` (read-only), `Latitude`, `Longitude`, compound `Location`. In Apex the type is `Schema.Location` (naming collision, irrelevant for REST) |
+| Address | `130` | `Name` (defaulted, not creatable) | C U D undelete search | "You can create an address only when creating a location"; `ParentId` create-only; street/city/state/country/postal/lat/long, compound `Address` |
+
+Sources: [OR] sections Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember,
+OpportunityTeamMember, OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone,
+EmailMessage, ContentDocument, ContentVersion, FeedItem, Location, Address. Prefixes [KP]; `ContentVersion 068`,
+`ContentDocument 069`, `FeedItem 0D5`, `EmailMessage 02s`, `AccountTeamMember 01M` come from the FishOfPrey gist only plus a
+secondary search hit, so double-check against `describeGlobal` docs if a second list appears. `OpportunitySplit` is
+listed under `049` in the same gist.
+
+### ContentVersion `VersionData` download
+
+- REST: `GET /services/data/vXX.X/sobjects/{sObject}/{id}/{blobField}` "retrieves the specified blob field from an
+  individual record and returns it as binary data" (sObject Blob Get). Documented objects with blob fields: Attachment,
+  ContentNote, ContentVersion, Document, Folder, Note; documented example is `/sobjects/Document/{id}/body`. The response
+  "isn't JSON or XML", content type of the stored file, and the resource "isn't compatible with Composite API
+  requests". [REST] "Get Blob Data" and the resource list.
+- Insert: multipart/form-data with a JSON `entity_content` part and a binary part whose `name` is the blob field
+  (`VersionData`) and `filename`; limit 2 GB for ContentVersion (500 MB others); non-multipart base64 JSON limited to
+  37.5 MB. A new `ContentVersion` without `ContentDocumentId` creates the parent `ContentDocument`. [REST] "Insert or
+  Update Blob Data", [OR] ContentVersion usage.
+- Query: selecting `VersionData` in SOQL returns the **URL** form (`/services/data/v…/sobjects/ContentVersion/{id}/VersionData`)
+  rather than bytes in REST. This is how jsforce/simple-salesforce clients discover the download path. The doc
+  statement "to download a document via the API, you must export the VersionData" is [OR]; the URL-in-query form is
+  UNVERIFIED in the text I could read, but the field `VersionDataURL` (string) is documented. Treat as MEDIUM.
+- SOAP/ Data Loader: base64 in the field (+37% size, 50 MB SOAP limit). [OR]
+
+| Item | Class | Complexity | Notes |
+|------|-------|------------|-------|
+| Baseline v2 (field parity with [OR]) for all 18 objects, incl. DML flags from the Create/Update properties and Supported Calls (`INVALID_TYPE_FOR_OPERATION` on violation) | Table stake | Med (generator) | Per-field flags are free from the parser; prefixes, picklist values, lengths, `relationshipName`, `childRelationshipName` need a supplement table. Relationship names appear in [OR] "Relationship Name" lines |
+| Lookup targets exist: Quote->Opportunity, OrderItem->Order, QuoteLineItem->Quote/PricebookEntry/Product2, ContractLineItem->ServiceContract/Asset/Location, CaseContactRole->Case, ContentDocument<->ContentVersion | Table stake | Low | Mutual `ContentDocument.LatestPublishedVersionId` <-> `ContentVersion.ContentDocumentId` is circular: needs deferred FK or a nullable first insert |
+| ContentVersion insert -> auto-create `ContentDocument`; blob stored; `IsLatest`, `VersionNumber`, `ContentSize`, `Checksum`, `FileExtension` derived | Table stake | Med-High | Needs blob storage (bytea or `lo`), multipart parser on `/sobjects/ContentVersion` (jsforce uses it for `sobject.create` with `VersionData`? jsforce v3 sends base64 JSON; check the pinned conformance sha before building) |
+| `GET /sobjects/ContentVersion/{id}/VersionData` binary download | Table stake | Low | Same handler can serve `Attachment/Document` later |
+| ContentVersion SOQL returns the blob URL for `VersionData` | Table stake | Low | Shape-time rewrite, like `attributes.url` |
+| `ContentDocumentLink` (the junction that makes a file visible on a record) | Gap | Med | Not in the requested list, yet `FirstPublishLocationId` and most real retrieves reference it. Flag to the roadmap; likely first `UNSUPPORTED:reference-target` the large org hits after this milestone |
+| Quote <-> Opportunity sync (`IsSyncing`, `Opportunity.SyncedQuoteId`, line-item copy both ways) | Anti-feature (log `UNSUPPORTED:quote-sync`) | High | Fields exist [OR] ("Setting this field lets you start and stop syncing … the ID has to be for a quote that is a child of the opportunity"); the copy semantics are Help-only, not in [OR] |
+| Quote/QuoteLineItem pricebook enforcement: line items need a quote `Pricebook2`; `PricebookEntry` must be in that pricebook; creating a line item increments the quote total; multicurrency code copied from parent | Differentiator | Med | All stated in [OR] Usage; cheap pipeline hooks |
+| Order rules: create requires `StatusCode` Draft; activation = updating only `Status`; Draft orders deletable, Activated not; OrderItems need a price book on the Order | Differentiator | Med | [OR] Order Usage; implement as validation, not automation |
+| `TotalAmount` / `Quote.TotalPrice` roll-ups as real roll-up columns | Differentiator | Med | Uses v1.0 roll-up engine over master-detail-like lookup; Order->OrderItem behaves like a master-detail ([OR] lists `OrderId` create-only non-nillable; the relationship type itself is UNVERIFIED) |
+| Chatter semantics (FeedItem auto posts, tracked changes, mentions, `Type` generation) | Anti-feature | - | Provide a plain table; accept user-creatable types only; reject system types with a clear message (UNVERIFIED code) |
+| Email-to-Case, entitlement-process milestones, team-selling sharing side effects, split totals must be 100% | Anti-feature | - | Mark objects as data-only; `OpportunitySplit` total rule is documented on `OpportunitySplitType` (revenue splits must total 100%), defer |
+| AccountContactRelation auto-creation when `Contact.AccountId` set; `IsDirect` | Differentiator | Med | [OR]: created "immediately after the contact is saved"; implementable as an after-hook on Contact |
+
+**Dependencies:** v1.0 baseline JSON loader and `hasOwner`, phase-3 DML flags, key-prefix persistence (standard prefixes
+must not collide), roll-up engine, REST blob/multipart routing in `packages/api`, `Pricebook2`/`PricebookEntry`/
+`Product2` baselines (exist), `Opportunity`, `Case`, `Contact`, `Account`, `Asset`, `ServiceContract`, `User`.
+
+---
+
+## G. `orglet check` for a 3 000-field org
+
+Today (`packages/cli/src/main.ts`): one line of totals, provisional custom prefixes, then every warning as a flat
+`warning: …` line on stderr in discovery order; `--strict` returns 1 on any warning. Formula failures are one warning per
+formula field, so one missing global produces hundreds of lines (this is the pain the milestone names).
+
+This is a tooling-UX question, not a Salesforce behaviour; the patterns below are conventions (ESLint formatters and
+`--max-warnings`, TypeScript's "Found N errors in M files" closing line, Terraform's plan summary line), reference only
+(https://eslint.org/docs/latest/use/formatters/, https://eslint.org/docs/latest/use/command-line-interface). No Salesforce
+claims depend on them.
+
+### What the report should contain
+
+| Section | Content | Class | Complexity |
+|---------|---------|-------|------------|
+| 1. Census | Objects (standard modelled / custom / `__mdt` / settings / unmodelled-but-referenced), fields, formulas, roll-ups, validation rules, record types, custom-metadata rows, labels; one block of 8-10 lines | Table stake | Low |
+| 2. Verdict line | `RESULT: 214 warnings in 6 areas (38 root causes), 1 140 informational`, plus exit code semantics | Table stake | Low |
+| 3. Per-area summary table | `area | root causes | affected items | example` sorted by affected count, using the existing `UNSUPPORTED:<area>` prefix as the key | Table stake | Low |
+| 4. Root-cause grouping | A formula that fails because a *referenced field* failed is a cascade: print once under its root cause ("`Account.Region__c` skipped: `$Permission` unsupported; blocks 17 formulas, 3 roll-ups, 2 validation rules") with dependents only in `--verbose` | Table stake | **Med-High** (needs a dependency graph from `FormulaRegistry`; cascade today is a flat list) |
+| 5. Missing-reference census | "Referenced but not modelled" objects/fields with referrer counts, split from "modelled but unreferenced" | Table stake | Med |
+| 6. Quiet category | Standard system objects nothing references (the milestone's informational bucket): count only, names under `--verbose`; never affects `--strict` | Table stake | Low |
+| 7. Top-N | Top 10 objects by warning count; top 10 distinct messages | Differentiator | Low |
+| 8. Machine format | `--format json` (stable `{code, area, severity, object, field, rootCause, dependents}`), stdout for the summary and stderr for details | Differentiator | Low-Med |
+| 9. Counts-only mode (`--summary`) | Only area counts and census numbers: no object, field or label names. The acceptance wording says the large org is "reported, if at all, as warning counts per area"; this mode makes that output safe to paste | **Differentiator, project-critical** | Low |
+| 10. Baseline diff | `--baseline report.json` -> new / fixed / unchanged, so a team can ratchet down on a 3 000-field org | Differentiator | Med |
+| 11. Severity and exit codes | error (load fails) / warning (`--strict` fails) / info (never fails); `--max-warnings N` for gradual adoption | Differentiator | Low |
+| Deterministic ordering | sort by area, object, field; no timestamps in the default output so CI diffs are stable | Table stake | Low |
+
+Anti-features: interactive TUI, auto-fix suggestions that edit metadata, uploading reports anywhere, colour as the only
+severity signal (honour `NO_COLOR`), listing every field's resolved type.
+
+**Dependencies:** warning producers must emit structured records (`{area, severity, object, field, message, cause?}`) instead
+of strings. `FormulaRegistry.warnings` and `loadOrgSchema().warnings` are string arrays today; a structured shim that
+parses the existing `UNSUPPORTED:<area>` prefix can bridge phase by phase. Root-cause grouping depends on formula dependency
+edges, which feature A-C resolution also needs, so build the graph once.
+
+---
+
+## Feature dependency graph (v1.1)
 
 ```
-Per-row polymorphic resolution (fix "always targets[0]")
-    └──requires──> keyPrefixOf() per-row branching (already exists, packages/schema/src/ids.ts)
-    └──enables──> TYPEOF compiles to a real per-branch CASE/join
-                       └──requires──> WHEN's referenced object exists in OrgSchema
-                                          └──requires (for WhatId/WhoId-style fields)──>
-                                             Thin baselines for the 14 objects
-                                             (a WHEN branch or a resolved row whose prefix
-                                             maps to e.g. ServiceContract must find a real
-                                             table, or the branch silently returns nulls)
-
-Roll-up summary fields
-    └──requires──> Master-detail relationship support (already exists — cascade/restrict
-                   delete already models master-detail per ARCHITECTURE.md)
-    └──requires──> Engine post-commit hook over childRelationships (new — the recompute
-                   step; lives in packages/engine, not packages/metadata)
-    └──enhances──> describeSObject correctness (calculated/createable/updateable flags)
-
-Thin standard-object baselines (14 objects)
-    └──enables──> checkReferences() validates lookups to these objects instead of accepting
-                   any string (packages/engine/src/engine.ts)
-    └──enables──> SOQL joins/subqueries through these objects become possible
-    └──partially enables──> correct per-row polymorphic resolution when a WhatId/OwnerId/
-                   WhoId-style field's real-world target is one of these 14
-
-Custom-object key prefix persistence
-    └──independent of the above──> same architectural shape (persisted prefix assignment,
-                   not recomputed) as would be needed if the 14 standard baselines' prefixes
-                   were ever made project-overridable, but they are NOT — standard prefixes
-                   are fixed constants, custom prefixes are the only ones assigned at runtime
-
-Bulk API 2.0 job persistence
-    └──independent of the above──> shares no feature dependency, but shares the milestone's
-                   infrastructure dependency (pglite-testable schema/migration path)
+Baseline v2 generator (F) -> OwnerId narrowing (D) -> plain Owner.X compiles (formula)
+Baseline v2 (F)           -> UserRole fields present -> $UserRole (C)
+Custom settings parse (B) -> $Setup (B,C)  -- needs $User/$Profile binding (exists)
+CMT parse (A) + MetadataRelationship (A) -> $CustomMetadata (A,C)
+Custom labels parse (C)   -> $Label (C)
+GlobalResolver (C)        -> all of $Setup, $CustomMetadata, $Label, $Api, $UserRole
+Formula dependency list (compiler) -> roll-up over formulas (E) and check root causes (G)
+Structured warnings (G)   -> every other feature's UNSUPPORTED:* output
+Key-prefix persistence    -> mdt `m00…` series (A), standard prefixes from [KP] (F)
 ```
 
-### Dependency Notes
+## MVP recommendation for the roadmap
 
-- **TYPEOF requires per-row polymorphic resolution:** `TYPEOF` is meaningless without first
-  knowing, per row, which concrete object a polymorphic field actually points to. Today's
-  `targets[0]`-always behavior (`packages/soql/src/compile.ts:116`, `packages/formula/src/compile.ts:97`)
-  must be fixed first; `TYPEOF` compilation is the next layer on top of that fix, not a
-  parallel, independent task.
-- **TYPEOF (and per-row resolution generally) partially requires the 14 thin baselines:**
-  Salesforce's own polymorphic fields (`WhatId` especially) can point at dozens of object
-  types across editions. Several of the 14 objects in this milestone's list are plausible
-  `WhatId`/`OwnerId` targets in a real org (e.g. `ServiceContract`, `Entitlement`). If a
-  polymorphic field resolves to a key prefix with no backing table, the `TYPEOF` branch (or
-  the plain relationship join) must degrade to `ELSE`/null gracefully rather than error —
-  worth an explicit requirement either way.
-- **Roll-ups require master-detail relationships**, which orglet already models structurally
-  (cascade/restrict/set-null delete constraints already require identifying master-detail
-  vs. lookup). No new relationship-type work is needed, only the recompute step and the
-  metadata load path currently skipping `Summary` fields entirely.
-- **Bulk API 2.0 persistence and custom-object key-prefix persistence are independent
-  features** with no shared code path, but both are instances of the same underlying lesson
-  this milestone is built around: *derived/assigned state that must survive a restart cannot
-  live only in a process-local structure (a `Map`, or a recomputed alphabetical index) — it
-  needs a Postgres row.* Worth solving with a consistent pattern (e.g. both as small,
-  purpose-built tables with straightforward migrations) rather than two bespoke persistence
-  mechanisms.
+1. **Structured warnings + GlobalResolver foundation** (G4, C-shared): both are prerequisites for measuring progress on
+   the large org and for every global.
+2. **OwnerId narrowing + `$UserRole` + `$Api` + `$Label`** (D, C): small, data-driven, high cascade payoff.
+3. **Baseline v2 generator** from the PDF, incl. DML flags and prefix supplement (F): largest volume but mechanical;
+   ship object-by-object with the order Order/OrderItem/Quote/QuoteLineItem first (the most referenced), files last.
+4. **Custom metadata types + MetadataRelationship + `$CustomMetadata`** (A).
+5. **Custom settings + `$Setup`** (B).
+6. **Roll-up over formula fields** (E): last, highest complexity, depends on the formula dependency list.
+7. **ContentVersion blob upload/download** (F) as its own late phase because it needs multipart + blob storage.
 
-## MVP Definition
+Defer / do not build: Quote<->Opportunity sync, Order activation automation, FeedItem generation, Email-to-Case,
+entitlement milestones, packaging visibility, custom-settings list in `$Setup`, translation files.
 
-### Launch With (v1) — matches the milestone's Active requirements in PROJECT.md
+## Items to verify before the corresponding phase starts
 
-- [ ] Per-row polymorphic resolution fixed (prerequisite for everything else polymorphic)
-- [ ] `TYPEOF ... WHEN ... THEN ... ELSE ... END` compiles and shapes results correctly,
-      rejecting the documented invalid forms (`WHERE`, `GROUP BY`/`HAVING`, semi-join
-      `SELECT`, functions in `WHEN`, nesting) with a `MALFORMED_QUERY`-shaped error
-- [ ] `.Type` filterable in `WHERE` for polymorphic fields (string comparison)
-- [ ] Roll-up summary fields load from metadata (`summarizedField`, `summaryForeignKey`,
-      `summaryOperation`, `summaryFilterItems`), compute COUNT/SUM/MIN/MAX with filters,
-      recompute on child insert/update/delete, and are read-only via REST/SOQL/describe
-- [ ] Thin baselines for all 14 objects, each createable/updateable/deletable exactly as
-      documented (3 read-only, 1 create-only, 10 full CRUD)
-- [ ] Custom-object key prefixes persisted (assigned once, stable across reloads/renames)
-- [ ] Bulk API 2.0 job state and result data persisted in Postgres, correct state machine,
-      survives restart
-
-### Add After Validation (v1.x)
-
-- [ ] Roll-up "force recalculation" CLI/import-mode helper — trigger once orglet's own
-      `--import` mode is exercised against data with roll-ups and drift is observed
-- [ ] Extend beyond 25 roll-ups per object (documented soft cap, extendable to 40 on real
-      Salesforce) — only if a real retrieve ever needs it
-- [ ] Reparenting recalculation semantics verified against a written test suite — the docs
-      corroborate create/update/delete recompute strongly; reparenting and undelete triggers
-      are logically implied but not independently confirmed by an official quote in this
-      research pass (see Gaps below)
-
-### Future Consideration (v2+)
-
-- [ ] Bulk API 2.0 true async/background processing (worker-based `InProgress` transitions)
-- [ ] Bulk API 2.0 PK chunking, parallel query results, platform-event job subscriptions
-- [ ] Bulk API v1 (`/services/async/*`)
-- [ ] Full (non-thin) field parity for the 14 standard objects
-- [ ] Distributed/multi-process Bulk job store
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Per-row polymorphic resolution fix | HIGH | MEDIUM | P1 |
-| `TYPEOF` in SELECT | HIGH | MEDIUM | P1 |
-| `.Type` in WHERE | MEDIUM | LOW | P1 |
-| Roll-up summary fields (compute + describe) | HIGH | HIGH | P1 |
-| 14 thin standard-object baselines | HIGH | MEDIUM | P1 |
-| Correct createable/updateable flags per thin baseline | MEDIUM | LOW | P1 |
-| Custom-object key prefix persistence | HIGH | MEDIUM | P1 |
-| Bulk API 2.0 job persistence (Postgres-backed) | HIGH | MEDIUM | P1 |
-| Roll-up "force recalculation" helper | LOW | LOW | P3 |
-| Bulk API 2.0 async/background processing | MEDIUM | HIGH | P3 |
-| Full field parity for the 14 objects | LOW | HIGH | P3 |
-| Bulk API v1 | LOW | HIGH | P3 |
-
-**Priority key:**
-- P1: Must have for this milestone (matches `PROJECT.md` Active requirements)
-- P3: Explicitly deferred; revisit only if a concrete conformance or usage need arises
-
-## Fidelity Target (in place of Competitor Feature Analysis)
-
-There is no competing open-source product to benchmark against (per `PROJECT.md`, "No
-open-source Salesforce emulator, SOQL→SQL translator or Flow executor exists"). The relevant
-comparison is real Salesforce's own documented behavior, which is what every row above is
-sourced against. Where real Salesforce itself has inconsistent or object-specific exceptions
-(e.g. `CallCenter`'s missing `update()`, the three read-only objects among the 14), orglet's
-correct behavior is to match the exception, not smooth it over into a uniform CRUD story.
-
-## Gaps to Address
-
-- **Roll-up recalculation on reparenting and undelete:** create/update/delete triggers for
-  recalculation are well corroborated (official Trailhead module + multiple independent
-  sources state recalculation happens "in the background during save execution" for child
-  changes). Reparenting (changing a detail record's master when "Allow reparenting" is
-  enabled) and undelete were not confirmed by a direct official quote in this pass — treat as
-  MEDIUM/LOW confidence and validate against `help.salesforce.com` article `000391766`
-  ("Recalculate Rollup Summary Fields") or equivalent before finalizing the exact recompute
-  trigger list in requirements.
-- **Rounding/scale behavior:** community sources agree the stored value has full
-  floating-point precision (the UI rounds display to 2 decimal places, but the API/database
-  value does not round) — MEDIUM confidence, not independently confirmed against an official
-  page in this pass.
-- **`IdeaTheme` key prefix (`0Bg`):** single-source confidence only (fishofprey.com). If a
-  real DE org happens to reference `IdeaTheme`, verify before hardcoding.
-- **`DandBCompany`, `Entitlement`, `ServiceContract`, `SocialPost` name-equivalent fields:**
-  not independently confirmed in this research pass (the PDF section extraction landed
-  mid-alphabet for several objects); worth a quick confirmation pass against the Object
-  Reference PDF before writing the JSON baseline files, since getting the `idLookup`/primary
-  display field wrong is a likely source of `INVALID_FIELD` surprises in a real retrieve.
-- **7-day Bulk API 2.0 retention:** confirmed for Bulk API v1 verbatim in the official PDF;
-  the Bulk-2.0-specific doc page (`asynch_api_jobs_lifespan.htm`) exists per search results
-  but returned 403 to direct fetch, so the 7-day figure for Bulk 2.0 specifically rests on
-  secondary-source corroboration, not a verbatim official quote.
+- `customSetting` value in the describe of an `__mdt` (flag, UNVERIFIED).
+- Exact REST error code and HTTP status for DML on `__mdt` and for a non-supporting queue owner.
+- Whether a null user-level custom-setting field falls through to the profile/org value in `$Setup`.
+- Key prefixes for AccountTeamMember (`01M`), ContentVersion (`068`), ContentDocument (`069`), FeedItem (`0D5`), EmailMessage
+  (`02s`), OpportunitySplit (`049`): single-list MEDIUM; custom-setting prefix series: no source.
+- Roll-up-accepted formula return types (the exact [HELP] text could not be fetched; JS-rendered).
+- jsforce/simple-salesforce wire form for ContentVersion create with `VersionData` (inspect the pinned SDK sources in
+  `conformance/` before designing the multipart route).
 
 ## Sources
 
-**Official Salesforce documentation (downloaded PDF exports, HIGH confidence unless noted):**
-- SOQL and SOSL Reference, Version 68.0, Winter '27 —
-  `https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/salesforce_soql_sosl.pdf`
-  (TYPEOF grammar/restrictions, polymorphic relationship fields, `.Type` filtering)
-- Bulk API 2.0 and Bulk API Developer Guide —
-  `https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/api_asynch.pdf`
-  (job states table, state transitions, result endpoints, SOQL restrictions incl. TYPEOF,
-  7-day retention statement for Bulk API v1)
-- Metadata API Developer Guide —
-  `https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/api_meta.pdf`
-  (`CustomField` roll-up fields: `summarizedField`, `summaryForeignKey`, `summaryOperation`,
-  `summaryFilterItems`; `FilterItem` operator enum; `FieldType` enum confirming `Summary`)
-- Object Reference for the Salesforce Platform —
-  `https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/object_reference.pdf`
-  (per-object `Supported Calls`, field lists, for all 14 thin-baseline objects plus
-  `BusinessHours`)
-- REST API Developer Guide —
-  `https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/api_rest.pdf`
-  (describe field shape: `calculated`, `calculatedFormula`, `createable`, `updateable`; query
-  response `attributes.type`/`attributes.url` JSON shape)
-
-**Community-verified, cross-referenced (MEDIUM confidence — no single official doc page
-publishes a canonical key-prefix table):**
-- Salesforce Object Key Prefixes gist — `https://gist.github.com/conrjac/2a65daf24e06c205987451a0994d9115`
-- Daniel Ballinger, "Obscure Salesforce object key prefixes" —
-  `http://www.fishofprey.com/2011/09/obscure-salesforce-object-key-prefixes.html`
-- Automation Champion, "Salesforce Object Key Prefix List" —
-  `https://automationchampion.com/2024/01/22/salesforce-object-key-prefix-list-2/`
-- Aegis Softworks, Salesforce ID Object Prefix List —
-  `https://aegissoftworks.com/tools/sfid_prefix_list.php`
-
-**Secondary sources for recalculation timing and rounding behavior (MEDIUM confidence,
-corroborated across multiple independent write-ups but not quoted verbatim from an official
-page in this pass):**
-- Trailhead, "Optimize Roll-Up Summary Fields in Salesforce" —
-  `https://trailhead.salesforce.com/content/learn/modules/point_click_business_logic/roll_up_summary_fields`
-- Salesforce Help, "Recalculate Rollup Summary Fields" (id 000391766) — referenced via search,
-  not directly fetchable
-- sfdcfanboy.com, "Rollup Summary Decimals in Database" — rounding/precision behavior
-
-**Project context read before research (not re-researched, per milestone scope):**
-- `.planning/PROJECT.md`
-- `.planning/codebase/CONCERNS.md`
-- `.planning/codebase/ARCHITECTURE.md`
-
----
-*Feature research for: Salesforce platform emulator hardening milestone*
-*Researched: 2026-09-29*
+All URLs are in the source key at the top. Reproduction note: the PDFs were downloaded with
+`curl -sL -A "Mozilla/5.0" https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/<name>.pdf` (names:
+`object_reference`, `api_meta`, `api_rest`, `api_tooling`, `salesforce_soql_sosl`) and read with `pdftotext -layout`.
+No data from a real org was used.
