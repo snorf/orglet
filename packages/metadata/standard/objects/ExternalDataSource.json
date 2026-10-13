@@ -10,6 +10,15 @@
   "searchable": false,
   "hasOwner": false,
   "fields": [
-    { "name": "DeveloperName", "label": "Name", "type": "Text", "length": 80, "nillable": false, "createable": false, "updateable": false, "nameField": true }
+    {
+      "name": "DeveloperName",
+      "label": "Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "nameField": true
+    }
   ]
 }

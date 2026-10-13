@@ -49,8 +49,8 @@
       "name": "BillingGeocodeAccuracy",
       "label": "Billing Geocode Accuracy",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [],
+      "restrictedPicklist": true,
       "compoundFieldName": "BillingAddress"
     },
     {
@@ -107,10 +107,65 @@
       "updateable": false
     },
     {
+      "name": "CleanStatus",
+      "label": "Clean Status",
+      "type": "Picklist",
+      "picklistValues": [
+        {
+          "value": "Matched",
+          "label": "Matched"
+        },
+        {
+          "value": "Different",
+          "label": "Different"
+        },
+        {
+          "value": "Acknowledged",
+          "label": "Acknowledged"
+        },
+        {
+          "value": "NotFound",
+          "label": "NotFound"
+        },
+        {
+          "value": "Inactive",
+          "label": "Inactive"
+        },
+        {
+          "value": "Pending",
+          "label": "Pending"
+        },
+        {
+          "value": "SelectMatch",
+          "label": "SelectMatch"
+        },
+        {
+          "value": "Skipped",
+          "label": "Skipped"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DandbCompanyId",
+      "label": "D&B Company ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "DandBCompany"
+      ],
+      "relationshipName": "DandbCompany"
+    },
+    {
       "name": "Description",
       "label": "Account Description",
       "type": "LongTextArea",
       "length": 32000
+    },
+    {
+      "name": "DunsNumber",
+      "label": "D-U-N-S Number",
+      "type": "Text",
+      "length": 9
     },
     {
       "name": "Fax",
@@ -153,6 +208,12 @@
       "defaultValue": "false"
     },
     {
+      "name": "Jigsaw",
+      "label": "Data.com Key",
+      "type": "Text",
+      "length": 20
+    },
+    {
       "name": "LastActivityDate",
       "label": "Last Activity",
       "type": "Date",
@@ -177,12 +238,24 @@
       "name": "MasterRecordId",
       "label": "Master Record ID",
       "type": "Lookup",
+      "createable": false,
+      "updateable": false,
       "referenceTo": [
         "Account"
       ],
-      "relationshipName": "MasterRecord",
-      "createable": false,
-      "updateable": false
+      "relationshipName": "MasterRecord"
+    },
+    {
+      "name": "NaicsCode",
+      "label": "NAICS Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "NaicsDesc",
+      "label": "NAICS Description",
+      "type": "Text",
+      "length": 120
     },
     {
       "name": "Name",
@@ -198,6 +271,15 @@
       "type": "Number",
       "precision": 8,
       "scale": 0
+    },
+    {
+      "name": "OperatingHoursId",
+      "label": "Operating Hour ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "OperatingHours"
+      ],
+      "relationshipName": "OperatingHours"
     },
     {
       "name": "Ownership",
@@ -269,8 +351,8 @@
       "name": "ShippingGeocodeAccuracy",
       "label": "Shipping Geocode Accuracy",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [],
+      "restrictedPicklist": true,
       "compoundFieldName": "ShippingAddress"
     },
     {
@@ -335,6 +417,19 @@
       "length": 20
     },
     {
+      "name": "Tier",
+      "label": "Tier",
+      "type": "Picklist",
+      "picklistValues": [],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "Tradestyle",
+      "label": "Tradestyle",
+      "type": "Text",
+      "length": 255
+    },
+    {
       "name": "Type",
       "label": "Account Type",
       "type": "Picklist",
@@ -344,77 +439,6 @@
       "name": "Website",
       "label": "Website",
       "type": "Url",
-      "length": 255
-    },
-    {
-      "name": "CleanStatus",
-      "label": "Clean Status",
-      "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": [
-        { "value": "Matched", "label": "Matched" },
-        { "value": "Different", "label": "Different" },
-        { "value": "Acknowledged", "label": "Acknowledged" },
-        { "value": "NotFound", "label": "NotFound" },
-        { "value": "Inactive", "label": "Inactive" },
-        { "value": "Pending", "label": "Pending" },
-        { "value": "SelectMatch", "label": "SelectMatch" },
-        { "value": "Skipped", "label": "Skipped" }
-      ]
-    },
-    {
-      "name": "DandbCompanyId",
-      "label": "D&B Company ID",
-      "type": "Lookup",
-      "referenceTo": [
-        "DandBCompany"
-      ],
-      "relationshipName": "DandbCompany"
-    },
-    {
-      "name": "DunsNumber",
-      "label": "D-U-N-S Number",
-      "type": "Text",
-      "length": 9
-    },
-    {
-      "name": "Jigsaw",
-      "label": "Data.com Key",
-      "type": "Text",
-      "length": 20
-    },
-    {
-      "name": "NaicsCode",
-      "label": "NAICS Code",
-      "type": "Text",
-      "length": 8
-    },
-    {
-      "name": "NaicsDesc",
-      "label": "NAICS Description",
-      "type": "Text",
-      "length": 120
-    },
-    {
-      "name": "OperatingHoursId",
-      "label": "Operating Hour ID",
-      "type": "Lookup",
-      "referenceTo": [
-        "OperatingHours"
-      ],
-      "relationshipName": "OperatingHours"
-    },
-    {
-      "name": "Tier",
-      "label": "Tier",
-      "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": []
-    },
-    {
-      "name": "Tradestyle",
-      "label": "Tradestyle",
-      "type": "Text",
       "length": 255
     },
     {

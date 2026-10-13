@@ -10,6 +10,15 @@
   "searchable": false,
   "hasOwner": false,
   "fields": [
-    { "name": "Name", "label": "Call Center Name", "type": "Text", "length": 80, "nillable": false, "updateable": false, "idLookup": true, "nameField": true }
+    {
+      "name": "Name",
+      "label": "Call Center Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "updateable": false,
+      "idLookup": true,
+      "nameField": true
+    }
   ]
 }

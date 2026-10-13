@@ -6,32 +6,56 @@
   "hasOwner": false,
   "fields": [
     {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox"
+    },
+    {
+      "name": "IsArchived",
+      "label": "Archived",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Name",
       "label": "Product Name",
       "type": "Text",
       "length": 255,
-      "nameField": true,
       "createable": false,
-      "updateable": false
+      "updateable": false,
+      "nameField": true
     },
     {
       "name": "Pricebook2Id",
       "label": "Price Book ID",
       "type": "Lookup",
-      "referenceTo": ["Pricebook2"],
-      "relationshipName": "Pricebook2",
-      "childRelationshipName": "PricebookEntries",
       "nillable": false,
-      "updateable": false
+      "updateable": false,
+      "referenceTo": [
+        "Pricebook2"
+      ],
+      "relationshipName": "Pricebook2",
+      "childRelationshipName": "PricebookEntries"
     },
     {
       "name": "Product2Id",
       "label": "Product ID",
       "type": "Lookup",
-      "referenceTo": ["Product2"],
-      "relationshipName": "Product2",
-      "childRelationshipName": "PricebookEntries",
       "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2",
+      "childRelationshipName": "PricebookEntries"
+    },
+    {
+      "name": "ProductCode",
+      "label": "Product Code",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
       "updateable": false
     },
     {
@@ -43,29 +67,9 @@
       "nillable": false
     },
     {
-      "name": "IsActive",
-      "label": "Active",
-      "type": "Checkbox"
-    },
-    {
       "name": "UseStandardPrice",
       "label": "Use Standard Price",
       "type": "Checkbox"
-    },
-    {
-      "name": "ProductCode",
-      "label": "Product Code",
-      "type": "Text",
-      "length": 255,
-      "createable": false,
-      "updateable": false
-    },
-    {
-      "name": "IsArchived",
-      "label": "Archived",
-      "type": "Checkbox",
-      "createable": false,
-      "updateable": false
     }
   ]
 }

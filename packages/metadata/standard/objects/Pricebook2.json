@@ -6,15 +6,6 @@
   "hasOwner": false,
   "fields": [
     {
-      "name": "Name",
-      "label": "Price Book Name",
-      "type": "Text",
-      "length": 255,
-      "nillable": false,
-      "idLookup": true,
-      "nameField": true
-    },
-    {
       "name": "Description",
       "label": "Description",
       "type": "Text",
@@ -26,15 +17,15 @@
       "type": "Checkbox"
     },
     {
-      "name": "IsStandard",
-      "label": "Standard Price Book",
+      "name": "IsArchived",
+      "label": "Archived",
       "type": "Checkbox",
       "createable": false,
       "updateable": false
     },
     {
-      "name": "IsArchived",
-      "label": "Archived",
+      "name": "IsStandard",
+      "label": "Standard Price Book",
       "type": "Checkbox",
       "createable": false,
       "updateable": false
@@ -52,6 +43,15 @@
       "type": "DateTime",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Price Book Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
     }
   ]
 }

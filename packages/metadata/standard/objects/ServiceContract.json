@@ -10,6 +10,13 @@
   "searchable": true,
   "hasOwner": true,
   "fields": [
-    { "name": "Name", "label": "Contract Name", "type": "Text", "length": 255, "nillable": false, "nameField": true }
+    {
+      "name": "Name",
+      "label": "Contract Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "nameField": true
+    }
   ]
 }

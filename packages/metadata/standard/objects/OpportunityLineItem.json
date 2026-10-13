@@ -6,42 +6,84 @@
   "hasOwner": false,
   "fields": [
     {
+      "name": "Description",
+      "label": "Line Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "Discount",
+      "label": "Discount",
+      "type": "Percent",
+      "precision": 3,
+      "scale": 2
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ListPrice",
+      "label": "List Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Name",
       "label": "Opportunity Product Name",
       "type": "Text",
       "length": 255,
-      "nameField": true,
       "createable": false,
-      "updateable": false
+      "updateable": false,
+      "nameField": true
     },
     {
       "name": "OpportunityId",
       "label": "Opportunity ID",
       "type": "Lookup",
-      "referenceTo": ["Opportunity"],
-      "relationshipName": "Opportunity",
-      "childRelationshipName": "OpportunityLineItems",
       "nillable": false,
-      "updateable": false
+      "updateable": false,
+      "referenceTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity",
+      "childRelationshipName": "OpportunityLineItems"
     },
     {
       "name": "PricebookEntryId",
       "label": "Price Book Entry ID",
       "type": "Lookup",
-      "referenceTo": ["PricebookEntry"],
-      "relationshipName": "PricebookEntry",
-      "childRelationshipName": "OpportunityLineItems",
       "nillable": false,
-      "updateable": false
+      "updateable": false,
+      "referenceTo": [
+        "PricebookEntry"
+      ],
+      "relationshipName": "PricebookEntry",
+      "childRelationshipName": "OpportunityLineItems"
     },
     {
       "name": "Product2Id",
       "label": "Product ID",
       "type": "Lookup",
-      "referenceTo": ["Product2"],
+      "updateable": false,
+      "referenceTo": [
+        "Product2"
+      ],
       "relationshipName": "Product2",
-      "childRelationshipName": "OpportunityLineItems",
-      "updateable": false
+      "childRelationshipName": "OpportunityLineItems"
     },
     {
       "name": "ProductCode",
@@ -60,36 +102,16 @@
       "nillable": false
     },
     {
-      "name": "UnitPrice",
-      "label": "Sales Price",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2,
-      "defaultedOnCreate": true
+      "name": "ServiceDate",
+      "label": "Date",
+      "type": "Date"
     },
     {
-      "name": "TotalPrice",
-      "label": "Total Price",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2,
-      "defaultedOnCreate": true
-    },
-    {
-      "name": "ListPrice",
-      "label": "List Price",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2,
-      "createable": false,
-      "updateable": false
-    },
-    {
-      "name": "Discount",
-      "label": "Discount",
-      "type": "Percent",
+      "name": "SortOrder",
+      "label": "Sort Order",
+      "type": "Number",
       "precision": 3,
-      "scale": 2
+      "scale": 0
     },
     {
       "name": "Subtotal",
@@ -101,36 +123,20 @@
       "updateable": false
     },
     {
-      "name": "ServiceDate",
-      "label": "Date",
-      "type": "Date"
+      "name": "TotalPrice",
+      "label": "Total Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "defaultedOnCreate": true
     },
     {
-      "name": "Description",
-      "label": "Line Description",
-      "type": "Text",
-      "length": 255
-    },
-    {
-      "name": "SortOrder",
-      "label": "Sort Order",
-      "type": "Number",
-      "precision": 3,
-      "scale": 0
-    },
-    {
-      "name": "LastReferencedDate",
-      "label": "Last Referenced Date",
-      "type": "DateTime",
-      "createable": false,
-      "updateable": false
-    },
-    {
-      "name": "LastViewedDate",
-      "label": "Last Viewed Date",
-      "type": "DateTime",
-      "createable": false,
-      "updateable": false
+      "name": "UnitPrice",
+      "label": "Sales Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "defaultedOnCreate": true
     }
   ]
 }

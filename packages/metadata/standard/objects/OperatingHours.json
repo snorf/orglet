@@ -10,6 +10,14 @@
   "searchable": true,
   "hasOwner": true,
   "fields": [
-    { "name": "Name", "label": "Name", "type": "Text", "length": 80, "nillable": false, "idLookup": true, "nameField": true }
+    {
+      "name": "Name",
+      "label": "Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    }
   ]
 }

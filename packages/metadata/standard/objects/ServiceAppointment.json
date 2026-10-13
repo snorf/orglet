@@ -10,6 +10,16 @@
   "searchable": true,
   "hasOwner": true,
   "fields": [
-    { "name": "AppointmentNumber", "label": "Appointment Number", "type": "AutoNumber", "displayFormat": "{00000000}", "nameField": true, "idLookup": true, "createable": false, "updateable": false, "defaultedOnCreate": true }
+    {
+      "name": "AppointmentNumber",
+      "label": "Appointment Number",
+      "type": "AutoNumber",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
+    }
   ]
 }

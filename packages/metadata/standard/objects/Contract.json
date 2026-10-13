@@ -9,23 +9,23 @@
       "name": "AccountId",
       "label": "Account ID",
       "type": "Lookup",
+      "nillable": false,
       "referenceTo": [
         "Account"
       ],
       "relationshipName": "Account",
-      "childRelationshipName": "Contracts",
-      "nillable": false
+      "childRelationshipName": "Contracts"
     },
     {
       "name": "ActivatedById",
       "label": "Activated By ID",
       "type": "Lookup",
+      "createable": false,
+      "updateable": false,
       "referenceTo": [
         "User"
       ],
-      "relationshipName": "ActivatedBy",
-      "createable": false,
-      "updateable": false
+      "relationshipName": "ActivatedBy"
     },
     {
       "name": "ActivatedDate",
@@ -59,8 +59,6 @@
       "name": "BillingGeocodeAccuracy",
       "label": "Billing Geocode Accuracy",
       "type": "Picklist",
-      "compoundFieldName": "BillingAddress",
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "Address",
@@ -106,7 +104,9 @@
           "value": "Unknown",
           "label": "Unknown"
         }
-      ]
+      ],
+      "restrictedPicklist": true,
+      "compoundFieldName": "BillingAddress"
     },
     {
       "name": "BillingLatitude",
@@ -163,12 +163,12 @@
       "name": "ContractNumber",
       "label": "Contract Number",
       "type": "AutoNumber",
-      "displayFormat": "{00000000}",
-      "nameField": true,
-      "idLookup": true,
       "createable": false,
       "updateable": false,
-      "defaultedOnCreate": true
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
     },
     {
       "name": "ContractTerm",
@@ -248,7 +248,6 @@
       "name": "OwnerExpirationNotice",
       "label": "Owner Expiration Notice",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "15",
@@ -274,7 +273,8 @@
           "value": "120",
           "label": "120 Days"
         }
-      ]
+      ],
+      "restrictedPicklist": true
     },
     {
       "name": "Pricebook2Id",
@@ -320,8 +320,6 @@
       "name": "ShippingGeocodeAccuracy",
       "label": "Shipping Geocode Accuracy",
       "type": "Picklist",
-      "compoundFieldName": "ShippingAddress",
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "Address",
@@ -367,7 +365,9 @@
           "value": "Unknown",
           "label": "Unknown"
         }
-      ]
+      ],
+      "restrictedPicklist": true,
+      "compoundFieldName": "ShippingAddress"
     },
     {
       "name": "ShippingLatitude",
@@ -432,7 +432,6 @@
       "nillable": false,
       "createable": false,
       "updateable": false,
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "Draft",
@@ -454,7 +453,8 @@
           "value": "Expired",
           "label": "Expired"
         }
-      ]
+      ],
+      "restrictedPicklist": true
     }
   ]
 }

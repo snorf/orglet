@@ -10,6 +10,15 @@
   "searchable": true,
   "hasOwner": false,
   "fields": [
-    { "name": "Name", "label": "Entitlement Name", "type": "Text", "length": 255, "nillable": false, "groupable": false, "sortable": false, "nameField": true }
+    {
+      "name": "Name",
+      "label": "Entitlement Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "nameField": true,
+      "sortable": false,
+      "groupable": false
+    }
   ]
 }

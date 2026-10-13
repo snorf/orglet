@@ -7,13 +7,70 @@
   "undeletable": false,
   "hasOwner": false,
   "fields": [
-    { "name": "Name", "label": "Name", "type": "Text", "length": 80, "nillable": false, "nameField": true },
-    { "name": "DeveloperName", "label": "Record Type Name", "type": "Text", "length": 80, "nillable": false },
-    { "name": "NamespacePrefix", "label": "Namespace Prefix", "type": "Text", "length": 15, "createable": false, "updateable": false },
-    { "name": "Description", "label": "Description", "type": "Text", "length": 255 },
-    { "name": "BusinessProcessId", "label": "Business Process ID", "type": "Lookup", "referenceTo": ["BusinessProcess"], "relationshipName": "BusinessProcess" },
-    { "name": "SobjectType", "label": "SObject Type Name", "type": "Picklist", "nillable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [] },
-    { "name": "IsActive", "label": "Active", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
-    { "name": "IsPersonType", "label": "Is Person Type", "type": "Checkbox", "nillable": false, "createable": false, "updateable": false, "defaultedOnCreate": true, "defaultValue": "false" }
+    {
+      "name": "BusinessProcessId",
+      "label": "Business Process ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "BusinessProcess"
+      ],
+      "relationshipName": "BusinessProcess"
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "DeveloperName",
+      "label": "Record Type Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "IsPersonType",
+      "label": "Is Person Type",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "Name",
+      "label": "Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "nameField": true
+    },
+    {
+      "name": "NamespacePrefix",
+      "label": "Namespace Prefix",
+      "type": "Text",
+      "length": 15,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SobjectType",
+      "label": "SObject Type Name",
+      "type": "Picklist",
+      "nillable": false,
+      "updateable": false,
+      "picklistValues": [],
+      "restrictedPicklist": true
+    }
   ]
 }

@@ -10,7 +10,25 @@
   "searchable": false,
   "hasOwner": false,
   "fields": [
-    { "name": "Name", "label": "License Name", "type": "Text", "length": 80, "nillable": false, "createable": false, "updateable": false, "idLookup": true, "nameField": true },
-    { "name": "MasterLabel", "label": "Master Label", "type": "Text", "length": 80, "nillable": false, "createable": false, "updateable": false }
+    {
+      "name": "MasterLabel",
+      "label": "Master Label",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "License Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "idLookup": true,
+      "nameField": true
+    }
   ]
 }
