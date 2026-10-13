@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-10-13T20:11:37.819Z"
+stopped_at: Completed 09-03-PLAN.md
+last_updated: "2026-10-13T20:47:10.230Z"
 last_activity: 2026-10-13
 progress:
   total_phases: 16
   completed_phases: 1
   total_plans: 19
-  completed_plans: 12
+  completed_plans: 13
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 09 (baseline-generator-parity-ownerid-narrowing) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 Status: Ready to execute
 Last activity: 2026-10-13
 
@@ -102,6 +102,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 08 P06 | 10min | 2 tasks | 8 files |
 | Phase 08 P07 | 10min | 2 tasks | 4 files |
 | Phase 09 P01 | 20min | 3 tasks | 12 files |
+| Phase 09 P03 | 31min | 2 tasks | 41 files |
 
 ## Accumulated Context
 
@@ -170,6 +171,8 @@ Recent decisions affecting current work:
 - [Phase 07]: 07-03: empty Bulk 2.0 upload and Jigsaw* tests excluded as not-implemented, upsert-without-Id as test-defect; no orglet code change (07-04 branch B)
 - [Phase 08]: 08-02: KeyPrefixProvenance type name; validateBaseline hard-fails in buildOrgSchema; m0 custom-metadata guard is a conservative assumption
 - [Phase 08]: 08-08: sigha unary ! and Owner:User colon branches prepared locally in sigha-upstream (reuse NOT builtin; colon absorbed in scanIdentifier); nothing pushed
+- [Phase 09]: 09-03: BusinessProcess is documented in the Object Reference as 'Business Process' and is extracted; NOT_IN_PDF is empty
+- [Phase 09]: 09-03: PDF field-table labels are matched by text, not column position (bulleted field groups shift the details column); Limit: N characters also yields maxLength
 
 ### Pending Todos
 
@@ -193,6 +196,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T20:11:37.815Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-10-13T20:47:10.227Z
+Stopped at: Completed 09-03-PLAN.md
 Resume file: None
