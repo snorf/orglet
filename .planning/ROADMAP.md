@@ -49,7 +49,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
   5. Groundwork for later phases is observable: structured diagnostic records (`Diagnostic`/`SkippedItem`/`FormulaFailure`) exist beside the unchanged warning strings and are covered by a test; `scripts/sync-sigha.sh` runs on Linux in CI (no BSD-only `sed`) and orglet-side expectation tests for `!`, `!=`, colon syntax and `:`/`!` inside string literals exist (red until Phase 12); the upstream sigha PR links are recorded in `packages/sigha/VENDOR.md`; and a Group-owned test audit list (every test, fixture and conformance check that relies on a Group owner) is committed in the phase directory for Phase 9.
 **Plans**: 10 plans
 Plans:
-- [ ] 08-01-PLAN.md — migrate() safety net: FK pre-check -> UNSUPPORTED:schema-fk, catalog-skip for existing indexes/sequences (MIGR-02, MIGR-04)
+- [x] 08-01-PLAN.md — migrate() safety net: FK pre-check -> UNSUPPORTED:schema-fk, catalog-skip for existing indexes/sequences (MIGR-02, MIGR-04)
 - [ ] 08-02-PLAN.md — nullable keyPrefix + keyPrefixSource, baseline validation, null-prefix fixture, null-aware schema primitives (BASE2-05)
 - [ ] 08-03-PLAN.md — null-prefix ripple through engine, SOQL and describe; build green again (BASE2-05)
 - [ ] 08-04-PLAN.md — portable sync-sigha.sh + CI sigha-sync-check, VENDOR pending section, it.fails expectation tests, Group-owned audit (SC5)
