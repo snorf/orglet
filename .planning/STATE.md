@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-10-13T13:35:54.400Z"
+stopped_at: Completed 08-08-PLAN.md
+last_updated: "2026-10-13T13:37:08.232Z"
 last_activity: 2026-10-13
 progress:
   total_phases: 16
   completed_phases: 0
   total_plans: 10
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 08 (upgrade-safety-net-nullable-key-prefixes) — EXECUTING
-Plan: 4 of 10
+Plan: 5 of 10
 Status: Ready to execute
 Last activity: 2026-10-13
 
@@ -94,6 +94,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 08 P01 | 15min | 2 tasks | 3 files |
 | Phase 08 P04 | 15min | 3 tasks | 6 files |
 | Phase 08 P02 | 12min | 2 tasks | 13 files |
+| Phase 08 P08 | 15min | 2 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -161,6 +162,7 @@ Recent decisions affecting current work:
 - [Phase 07]: 07-01: --strict only affects check; Bulk sf__Error format is 'CODE:message:fields --'
 - [Phase 07]: 07-03: empty Bulk 2.0 upload and Jigsaw* tests excluded as not-implemented, upsert-without-Id as test-defect; no orglet code change (07-04 branch B)
 - [Phase 08]: 08-02: KeyPrefixProvenance type name; validateBaseline hard-fails in buildOrgSchema; m0 custom-metadata guard is a conservative assumption
+- [Phase 08]: 08-08: sigha unary ! and Owner:User colon branches prepared locally in sigha-upstream (reuse NOT builtin; colon absorbed in scanIdentifier); nothing pushed
 
 ### Pending Todos
 
@@ -184,6 +186,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T13:35:54.396Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-10-13T13:37:08.228Z
+Stopped at: Completed 08-08-PLAN.md
 Resume file: None
