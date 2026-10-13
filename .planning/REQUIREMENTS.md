@@ -21,7 +21,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Upgrade safety
 
-- [ ] **MIGR-01**: A database created with the v1.0 baseline, containing Group-owned and `--import`
+- [x] **MIGR-01**: A database created with the v1.0 baseline, containing Group-owned and `--import`
   rows, upgrades to the v1.1 baseline with `orglet up` without data loss, on pglite and Postgres 16,
   with the resulting warning set asserted by a test.
 - [x] **MIGR-02**: When a narrowed `OwnerId` (or any new single-target lookup) would add a foreign
@@ -217,7 +217,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MIGR-01 | Phase 8 | Pending |
+| MIGR-01 | Phase 8 | Complete |
 | MIGR-02 | Phase 8 | Complete |
 | MIGR-03 | Phase 9 | Pending |
 | MIGR-04 | Phase 8 | Complete |
