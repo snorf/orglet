@@ -3,6 +3,8 @@
  * sequences, indexes and foreign keys; widens columns whose type grew. Anything destructive
  * (dropping tables or columns, narrowing types) only happens with `force` and is otherwise
  * reported as an `UNSUPPORTED:schema-*` warning, so a reload never loses data by accident.
+ * A foreign key that existing rows would violate is skipped with an `UNSUPPORTED:schema-fk` warning
+ * and retried on the next run.
  * Newly added roll-up summary columns are backfilled once.
  */
 import type { FieldDef, OrgSchema } from "@orglet/metadata";
@@ -38,8 +40,6 @@ interface ExistingColumn {
   column: string;
   sqlType: string;
 }
-
-const isPgForeignKeyViolation = (err: unknown): boolean => typeof err === "object" && err !== null && (err as { code?: string }).code === "23503";
 
 async function existingColumns(client: PoolClient, orgSchema: string): Promise<ExistingColumn[]> {
   const res = await client.query<{ table_name: string; column_name: string; data_type: string; character_maximum_length: number | null; numeric_precision: number | null; numeric_scale: number | null }>(
@@ -97,6 +97,16 @@ async function existingConstraintNames(client: PoolClient, orgSchema: string): P
   return new Set(res.rows.map((r) => r.conname));
 }
 
+async function existingIndexNames(client: PoolClient, orgSchema: string): Promise<Set<string>> {
+  const res = await client.query<{ indexname: string }>(`SELECT indexname FROM pg_indexes WHERE schemaname = $1`, [orgSchema]);
+  return new Set(res.rows.map((r) => r.indexname));
+}
+
+async function existingSequenceNames(client: PoolClient, orgSchema: string): Promise<Set<string>> {
+  const res = await client.query<{ sequencename: string }>(`SELECT sequencename FROM pg_sequences WHERE schemaname = $1`, [orgSchema]);
+  return new Set(res.rows.map((r) => r.sequencename));
+}
+
 export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOptions = {}): Promise<MigrateResult> {
   const orgSchema = options.orgSchema ?? DEFAULT_ORG_SCHEMA;
   const force = options.force ?? false;
@@ -149,25 +159,39 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
       else warnings.push(`UNSUPPORTED:schema-drop table ${table} is no longer in the metadata; kept (use --force to drop)`);
     }
 
-    // 2. Sequences, indexes, foreign keys (all idempotent).
+    // 2. Sequences, indexes, foreign keys. Existing sequences and indexes are read from the catalog once and
+    // skipped, so a second run executes no CREATE INDEX / CREATE SEQUENCE (D-04).
     const constraints = await existingConstraintNames(client, orgSchema);
+    const indexes = await existingIndexNames(client, orgSchema);
+    const sequences = await existingSequenceNames(client, orgSchema);
     for (const plan of plans) {
-      for (const seq of plan.sequences) await run(sequenceSql(orgSchema, seq));
-      for (const ix of plan.indexes) await run(indexSql(orgSchema, plan.table, ix));
+      for (const seq of plan.sequences) {
+        if (sequences.has(seq)) continue;
+        await run(sequenceSql(orgSchema, seq));
+        sequences.add(seq);
+      }
+      for (const ix of plan.indexes) {
+        if (indexes.has(ix.name)) continue;
+        await run(indexSql(orgSchema, plan.table, ix));
+        indexes.add(ix.name); // two planned indexes can share a truncated identifier() name
+      }
       for (const fk of plan.foreignKeys) {
         if (constraints.has(fk.name)) continue;
-        try {
-          await run(foreignKeySql(orgSchema, plan.table, fk));
-        } catch (err) {
-          // Adding a foreign key validates existing rows. A lookup that was unchecked until now
-          // (its target object was not modelled yet, or rows came in through --import) can hold
-          // Ids with no target row; name the table and column instead of a bare constraint error.
-          if (!isPgForeignKeyViolation(err)) throw err;
-          throw new Error(
-            `cannot add foreign key ${fk.name}: ${orgSchema}.${plan.table}.${fk.column} holds values with no matching row in ${orgSchema}.${fk.referencesTable}; clear or correct those values (for example lookups loaded with --import whose target records were not imported) and run again`,
-            { cause: err },
+        // D-01..D-03: adding a foreign key validates existing rows, and a failed ADD CONSTRAINT aborts the whole
+        // transaction. A table created in this run is empty; only a table that existed before can hold values with
+        // no target row (lookups loaded with --import, or a target that was not modelled until now). Count them
+        // first, skip the FK and warn; nothing is deleted or rewritten, and the next run checks again.
+        if (existingTables.has(plan.table)) {
+          const bad = await client.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM ${quote(orgSchema)}.${quote(plan.table)} t WHERE t.${quote(fk.column)} IS NOT NULL AND NOT EXISTS (SELECT 1 FROM ${quote(orgSchema)}.${quote(fk.referencesTable)} r WHERE r."id" = t.${quote(fk.column)})`,
           );
+          const n = Number(bad.rows[0]?.n ?? 0);
+          if (n > 0) {
+            warnings.push(`UNSUPPORTED:schema-fk foreign key ${fk.name} not added: ${plan.table}.${fk.column} holds ${n} value(s) with no matching row in ${fk.referencesTable}; correct or clear them and run orglet up again`);
+            continue;
+          }
         }
+        await run(foreignKeySql(orgSchema, plan.table, fk));
       }
     }
 

@@ -61,6 +61,7 @@ describe("migrate", () => {
     expect(result.warnings).toEqual([]);
     const changing = result.statements.filter((s) => /^(CREATE TABLE|ALTER TABLE .* (ADD|DROP|ALTER) COLUMN|DROP TABLE)/.test(s));
     expect(changing).toEqual([]);
+    expect(result.statements.filter((s) => /^CREATE (UNIQUE )?INDEX|^CREATE SEQUENCE/.test(s))).toEqual([]);
   });
 
   it("adds foreign keys for lookups to known objects, unique indexes for unique fields, and sequences for auto-numbers", async () => {
@@ -151,7 +152,7 @@ describe("migrate across the thin standard-object upgrade", () => {
     expect(await fkNames(org)).toEqual(expect.arrayContaining(FK_TO_THIN));
   });
 
-  it("thin: an upgrade whose new foreign key meets a dangling Id fails naming table, column and target, and rolls back", async () => {
+  it("thin: an upgrade whose new foreign key meets a dangling Id completes, skips that key with one schema-fk warning, keeps the row, and adds the key once the row is corrected", async () => {
     const org = freshOrg();
     await migrate(pool, before, { orgSchema: org });
     const client = await pool.connect();
@@ -167,11 +168,23 @@ describe("migrate across the thin standard-object upgrade", () => {
     } finally {
       client.release();
     }
-    await expect(migrate(pool, after, { orgSchema: org })).rejects.toThrow(
-      `cannot add foreign key fk_case_businesshoursid: ${org}.case.businesshoursid holds values with no matching row in ${org}.businesshours`,
-    );
+    const up = await migrate(pool, after, { orgSchema: org });
+    expect(up.warnings).toEqual([
+      "UNSUPPORTED:schema-fk foreign key fk_case_businesshoursid not added: case.businesshoursid holds 1 value(s) with no matching row in businesshours; correct or clear them and run orglet up again",
+    ]);
+    expect(up.statements.filter((s) => s.includes("fk_case_businesshoursid"))).toEqual([]);
+    const row = await pool.query<{ businesshoursid: string }>(`SELECT "businesshoursid" FROM ${quote(org)}."case" WHERE "id" = $1`, ["500000000000001AAA"]);
+    expect(row.rows).toEqual([{ businesshoursid: "01m000000000001AAA" }]);
     const tables = await pool.query<{ n: string }>(`SELECT count(*)::text AS n FROM information_schema.tables WHERE table_schema = $1 AND table_name = 'businesshours'`, [org]);
-    expect(tables.rows[0]?.n).toBe("0"); // the whole upgrade rolled back
+    expect(tables.rows[0]?.n).toBe("1");
+    expect(await fkNames(org)).toEqual(expect.arrayContaining(FK_TO_THIN.filter((n) => n !== "fk_case_businesshoursid")));
+    expect(await fkNames(org)).not.toContain("fk_case_businesshoursid");
+    // D-02: the skip is not remembered; once the value is corrected the next run adds the key silently.
+    await pool.query(`UPDATE ${quote(org)}."case" SET "businesshoursid" = NULL WHERE "id" = $1`, ["500000000000001AAA"]);
+    const again = await migrate(pool, after, { orgSchema: org });
+    expect(again.warnings).toEqual([]);
+    expect(again.statements.filter((s) => s.includes("fk_case_businesshoursid"))).toHaveLength(1);
+    expect(await fkNames(org)).toContain("fk_case_businesshoursid");
   });
 });
 
