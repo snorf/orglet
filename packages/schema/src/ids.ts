@@ -46,10 +46,22 @@ export function keyPrefixOf(id: string): string {
  * characters. This is the one rule for polymorphic lookups (Owner -> User|Group, What, Who):
  * the write path's reference check, the formula parent loader and the SOQL compiler's
  * prefix joins all agree on it. Undefined when no target in `targets` has that prefix.
+ * A target whose keyPrefix is null (D-08) is never a candidate: its Ids cannot be told apart by prefix.
  */
-export function matchTargetByPrefix<T extends { readonly keyPrefix: string }>(targets: readonly T[], id: string): T | undefined {
+export function matchTargetByPrefix<T extends { readonly keyPrefix: string | null }>(targets: readonly T[], id: string): T | undefined {
   const prefix = keyPrefixOf(id);
   return targets.find((t) => t.keyPrefix === prefix);
+}
+
+/**
+ * The target a lookup value points at, given how many targets the field declares. A single-target lookup
+ * whose target has no key prefix (D-08) cannot be checked by prefix, so its one target is the answer;
+ * polymorphic lookups and prefixed targets follow matchTargetByPrefix.
+ */
+export function matchLookupTarget<T extends { readonly keyPrefix: string | null }>(targets: readonly T[], declaredTargets: number, id: string): T | undefined {
+  const only = targets[0];
+  if (declaredTargets === 1 && targets.length === 1 && only !== undefined && only.keyPrefix === null) return only;
+  return matchTargetByPrefix(targets, id);
 }
 
 function base62(n: number, width: number): string {
