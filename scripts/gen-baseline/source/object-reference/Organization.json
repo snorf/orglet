@@ -1,0 +1,801 @@
+{
+  "object": "Organization",
+  "fields": {
+    "Address": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "AllowsSelfServiceLogin": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "City": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ComplianceBccEmail": {
+      "type": "email",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "maxLength": 80
+    },
+    "Country": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "maxLength": 80
+    },
+    "CountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DailyWebToCaseCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "DailyWebToCaseLimit": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "DailyWebToLeadCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "DailyWebToLeadLimit": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "DefaultAccountAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultAccountAndContactAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Restricted picklist"
+      ]
+    },
+    "DefaultCalendarAccess": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultCampaignAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultCaseAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultContactAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultLeadAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultLocaleSidKey": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DefaultOpportunityAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultPricebookAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DefaultTerritoryCaseAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "DefaultTerritoryContactAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "DefaultTerritoryOppAccess": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Division": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Fax": {
+      "type": "phone",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    },
+    "FiscalYearStartMonth": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HomepageHtml": {
+      "type": "textarea",
+      "properties": [
+        "Nillable",
+        "Update"
+      ]
+    },
+    "InstanceName": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "IsSandbox": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "LanguageLocaleKey": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastWebToCaseDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "LastWebToLeadDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "Latitude": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Longitude": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "MaxActionsPerRule": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "MaxRulesPerEntity": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "MonthlyPageViewsEntitlement": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "MonthlyPageViewsUsed": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "NamespacePrefix": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "idLookup"
+      ],
+      "maxLength": 15
+    },
+    "OrganizationType": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "Phone": {
+      "type": "phone",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PostalCode": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 20
+    },
+    "PreferencesEventScheduler": {
+      "type": "boolean",
+      "properties": [
+        "Update"
+      ]
+    },
+    "PreferencesPublicSectorTaxRevEnabled": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Update"
+      ]
+    },
+    "PreferencesRequireOpportunityProducts": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Update"
+      ]
+    },
+    "PreferencesS1BrowserEnabled": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Update"
+      ]
+    },
+    "PreferencesTerminateOldestSession": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Update"
+      ]
+    },
+    "PreferencesTransactionSecurityPolicy": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Update"
+      ]
+    },
+    "PrimaryContact": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 80
+    },
+    "ReceivesAdminInfoEmails": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ReceivesInfoEmails": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SelfServicDefaultCaseOrigin": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceCasePlural": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceCaseSingle": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceCaseSubmitRecordTypeId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceEmailSenderAddress": {
+      "type": "email",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceEmailSenderName": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceEmailUserOnCaseCreationTemplateId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceEnabledForResponseRules": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceFeatureConfig": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceLogoutUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceMaxNumSuggestions": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceNewCommentCheckedByDefault": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "SelfServiceNewCommentTemplateId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceNewPassTemplateId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceNewUserTemplateId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServicePageHeight": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServicePageWidth": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceSelfClosedCaseStatus": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceSolutionCategoryAvailable": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "SelfServiceSolutionCategoryStartNodeId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceSolutionPlural": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceSolutionSingle": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceStyleSheetUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceWelcomePageConfig": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SelfServiceWelcomeText": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 32000
+    },
+    "SignupCountryIsoCode": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "State": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 80
+    },
+    "StateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Street": {
+      "type": "textarea",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 255
+    },
+    "TimeZoneSidKey": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "TrialExpirationDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "UiSkin": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "UsesStartDateAsFiscalYearName": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "UsesWebToCase": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "UsesWebToLead": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "WebToCaseAssignedEmailTemplateId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "WebToCaseCreatedEmailTemplateId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "WebToCaseDefaultCreatorId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "WebToCaseDefaultOrigin": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    }
+  }
+}

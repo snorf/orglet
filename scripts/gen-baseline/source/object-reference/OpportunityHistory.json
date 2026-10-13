@@ -1,0 +1,93 @@
+{
+  "object": "OpportunityHistory",
+  "fields": {
+    "Amount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CloseDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ExpectedRevenue": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ForecastCategory": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "IsDeleted": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "OpportunityId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity",
+      "relationshipType": "lookup"
+    },
+    "PrevAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PrevCloseDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Probability": {
+      "type": "percent",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "StageName": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    }
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "object": "Group",
+  "fields": {
+    "DefaultDivision": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DeveloperName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DoesIncludeBosses": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DoesSendEmailToMembers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Email": {
+      "type": "email",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "OwnerId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Organization",
+        "User"
+      ],
+      "relationshipName": "Owner",
+      "relationshipType": "lookup"
+    },
+    "QueueRoutingConfigId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Delete",
+        "Query",
+        "Retrieve",
+        "Update"
+      ]
+    },
+    "RelatedId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "User",
+        "UserRole"
+      ],
+      "relationshipName": "Related",
+      "relationshipType": "lookup"
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "chatter",
+        "enabled-phrase",
+        "person-accounts"
+      ]
+    }
+  }
+}

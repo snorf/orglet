@@ -1,0 +1,84 @@
+{
+  "object": "UserLicense",
+  "fields": {
+    "LicenseDefinitionKey": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "gating": [
+        "chatter",
+        "knowledge"
+      ]
+    },
+    "MasterLabel": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "MonthlyLoginsEntitlement": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "MonthlyLoginsUsed": {
+      "type": "int",
+      "properties": [
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "TotalLicenses": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "UsedLicenses": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "UsedLicensesLastUpdated": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Sort",
+        "aggregate"
+      ]
+    }
+  }
+}

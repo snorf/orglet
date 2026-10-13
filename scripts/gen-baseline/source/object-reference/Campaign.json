@@ -1,0 +1,567 @@
+{
+  "object": "Campaign",
+  "fields": {
+    "ActualCost": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AmountAllOpportunities": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "AmountWonOpportunities": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "BriefId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Record"
+      ],
+      "relationshipName": "Brief",
+      "relationshipType": "lookup"
+    },
+    "BudgetedCost": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CampaignImageId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CampaignMemberRecordTypeId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "RecordType"
+      ],
+      "relationshipName": "CampaignMemberRecordType",
+      "relationshipType": "lookup"
+    },
+    "CampaignStage": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "CreatedByID": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "Creator",
+      "relationshipType": "lookup"
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Nillable"
+      ]
+    },
+    "EndDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ExpectedResponse": {
+      "type": "percent",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ExpectedRevenue": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyActualCost": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyAmountAllOpportunities": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "HierarchyAmountWonOpportunities": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "HierarchyBudgetedCost": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyExpectedRevenue": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyNumberOfContacts": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyNumberOfConvertedLeads": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyNumberOfLeads": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyNumberOfOpportunities": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyNumberOfResponses": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyNumberOfWonOpportunities": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HierarchyNumberSent": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HierarchyTotalEmailsDelivered": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyTotalFormSubmissions": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyTotalFormViews": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyTotalLandingPageFormSubmissions": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyTotalLandingPageViews": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyUniqueEmailOpens": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyUniqueEmailTrackedLinkClicks": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "HierarchyUniqueMarketingLinkClicks": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "IsActive": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "LastActivityDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastModifiedById": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipType": "lookup"
+    },
+    "LastReferencedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "NumberOfContacts": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NumberOfConvertedLeads": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NumberOfLeads": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NumberOfOpportunities": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NumberOfResponses": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NumberOfWonOpportunities": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NumberSent": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "OwnerId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "Owner",
+      "relationshipType": "lookup"
+    },
+    "ParentCampaign": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "ParentId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "Campaign"
+      ],
+      "relationshipName": "Parent",
+      "relationshipType": "lookup"
+    },
+    "RecordTypeId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "StartDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "maxLength": 40
+    },
+    "TenantId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "PardotTenant"
+      ],
+      "relationshipType": "lookup"
+    },
+    "TotalAmountAllOpportunities": {
+      "type": "currency",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalAmountAllWonOpportunities": {
+      "type": "currency",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalEmailsDelivered": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalFormSubmissions": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalFormViews": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalLandingPageFormSubmissions": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalLandingPageViews": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalNumberofLeads": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalNumberofOpportunities": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalNumberofResponses": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TotalNumberofWonOpportunities": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "maxLength": 40
+    },
+    "UniqueEmailOpens": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "UniqueEmailTrackedLinkClicks": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "UniqueMarketingLinkClicks": {
+      "type": "int",
+      "properties": [
+        "Filter"
+      ]
+    }
+  }
+}

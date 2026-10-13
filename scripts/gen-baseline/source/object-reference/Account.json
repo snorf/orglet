@@ -1,0 +1,1394 @@
+{
+  "object": "Account",
+  "fields": {
+    "AccountNumber": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    },
+    "AccountSource": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ActivityMetricId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ActivityMetric"
+      ],
+      "relationshipName": "ActivityMetric"
+    },
+    "ActivityMetricRollupId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ActivityMetricRollup"
+      ],
+      "relationshipName": "ActivityMetricRollup"
+    },
+    "AnnualRevenue": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingAddress": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "BillingCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    },
+    "BillingCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 80
+    },
+    "BillingCountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingGeocodeAccuracy": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 20
+    },
+    "BillingState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 80
+    },
+    "BillingStateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ChannelProgramLevelName": {
+      "type": "string",
+      "properties": [
+        "Group",
+        "Nillable"
+      ]
+    },
+    "ChannelProgramName": {
+      "type": "string",
+      "properties": [
+        "Group",
+        "Nillable"
+      ]
+    },
+    "CleanStatus": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "data-com"
+      ]
+    },
+    "CommerceCustomerReference": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CommerceGroupReference": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CommerceOrganizationReference": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ConnectionReceivedId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ConnectionSentId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "DunsNumber": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 9,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "Fax": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "FirstName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "Industry": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    },
+    "IsBuyer": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsCustomerPortal": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "IsPartner": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "IsPersonAccount": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "IsPriorityRecord": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Group"
+      ]
+    },
+    "Jigsaw": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 20,
+      "gating": [
+        "data-com",
+        "person-accounts"
+      ]
+    },
+    "JigsawCompanyId": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "data-com"
+      ]
+    },
+    "LastActivityDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 80,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "MasterRecordId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "Account"
+      ],
+      "relationshipName": "MasterRecord",
+      "relationshipType": "lookup"
+    },
+    "MiddleName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "NaicsCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 8,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "NaicsDesc": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 120,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 255,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "NumberOfEmployees": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "OperatingHoursId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase",
+        "field-service"
+      ],
+      "refersTo": [
+        "OperatingHours"
+      ],
+      "relationshipName": "OperatingHours",
+      "relationshipType": "lookup"
+    },
+    "OwnerId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "Owner",
+      "relationshipType": "lookup"
+    },
+    "Ownership": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ParentId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Account"
+      ],
+      "relationshipName": "Parent",
+      "relationshipType": "lookup"
+    },
+    "PersonActionCadenceAssigneeId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "Group",
+        "User"
+      ],
+      "relationshipName": "PersonActionCadenceAssignee"
+    },
+    "PersonActionCadenceId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ActionCadence"
+      ],
+      "relationshipName": "PersonActionCadence"
+    },
+    "PersonActionCadenceState": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "PersonAssistantName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 40,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonAssistantPhone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 40,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonBirthDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonContactId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonDepartment": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 80
+    },
+    "PersonEmail": {
+      "type": "email",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonEmailBouncedDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonEmailBouncedReason": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonGenderIdentity": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PersonHasOptedOutOfEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonHomePhone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonIndividualId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PersonLeadSource": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingAddress": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingCountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingGeocodeAccuracy": {
+      "type": "picklist",
+      "properties": [
+        "Nillable",
+        "Query",
+        "Restricted picklist",
+        "Retrieve"
+      ]
+    },
+    "PersonMailingLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingStateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMailingStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 255,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonMobilePhone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherCountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherPhone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherStateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonOtherStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "PersonPronouns": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PersonReportsToId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ],
+      "refersTo": [
+        "Contact"
+      ],
+      "relationshipName": "PersonReportsTo",
+      "relationshipType": "lookup"
+    },
+    "PersonScheduledResumeDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PersonTitle": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 80,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "Phone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    },
+    "PhotoUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Rating": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecordTypeId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Salutation": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "ShippingAddress": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "ShippingCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingCountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingGeocodeAccuracy": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingStateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Sic": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "SicDesc": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "Site": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Suffix": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40,
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "TickerSymbol": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "Tradestyle": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Website": {
+      "type": "url",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "YearStarted": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    }
+  }
+}
