@@ -9,7 +9,7 @@
  * children that point at it.
  */
 import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
-import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchTargetByPrefix, rollupSelectSql, type Pool, type PoolClient } from "@orglet/schema";
+import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchLookupTarget, rollupSelectSql, type Pool, type PoolClient } from "@orglet/schema";
 import { asString, evaluateCompiled, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
@@ -376,7 +376,8 @@ export class DmlEngine {
     const w: Work = { index, errors: coerced.errors, changes: coerced.values, next: { ...coerced.values } };
     const given = coerced.values["Id"];
     if (typeof given === "string") {
-      if (keyPrefixOf(given) !== obj.keyPrefix) w.errors.push(Errors.malformedId("Id", "Id", given));
+      // D-08: an object without a key prefix accepts any well-formed Id (coercion already checked the format; import mode only, D-10).
+      if (obj.keyPrefix !== null && keyPrefixOf(given) !== obj.keyPrefix) w.errors.push(Errors.malformedId("Id", "Id", given));
       else w.id = given;
       delete w.changes["Id"];
     }
@@ -411,7 +412,7 @@ export class DmlEngine {
     const rows = await this.store.loadByIds(client, obj, ids, true);
     for (const w of work) {
       if (!w.id || w.errors.length > 0) continue;
-      if (keyPrefixOf(w.id) !== obj.keyPrefix) {
+      if (obj.keyPrefix !== null && keyPrefixOf(w.id) !== obj.keyPrefix) {
         w.errors.push(Errors.malformedId("Id", "Id", w.id));
         continue;
       }
@@ -432,7 +433,15 @@ export class DmlEngine {
     // Build the prospective row: defaults + system fields (insert) or old + changes (update).
     for (const w of live()) {
       if (operation === "insert") {
-        w.id ??= generateId(obj.keyPrefix);
+        if (w.id === undefined) {
+          // D-08: never mint an Id for an object without a confirmed key prefix. Outside import mode the
+          // object-flag check (createable: false, D-10) has already refused the insert.
+          if (obj.keyPrefix === null) {
+            w.errors.push(Errors.requiredMissing(["Id"]));
+            continue;
+          }
+          w.id = generateId(obj.keyPrefix);
+        }
         w.next = { ...(await this.defaults(client, obj, w.changes, session, globals)), ...w.changes };
         const audit = { IsDeleted: false, CreatedDate: now, CreatedById: session.userId, LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now };
         // Import mode keeps supplied audit values; otherwise the platform sets them.
@@ -687,7 +696,7 @@ export class DmlEngine {
         const id = w.next[field.name];
         if (typeof id !== "string") continue;
         const targets = (field.referenceTo ?? []).map((n) => this.schema.getObject(n)).filter((o): o is SObjectDef => o !== undefined);
-        const target = matchTargetByPrefix(targets, id);
+        const target = matchLookupTarget(targets, (field.referenceTo ?? []).length, id);
         if (!target) {
           // Unknown target object (e.g. Group): accept unchecked. Known targets: wrong prefix is a bad reference.
           if (targets.length === (field.referenceTo ?? []).length) w.errors.push(Errors.invalidCrossReference(field.name));
