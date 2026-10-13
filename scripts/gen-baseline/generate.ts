@@ -99,7 +99,7 @@ function bootstrapPins(inputs: GeneratorInputs): number {
         else if (want === undefined && have !== undefined) pin[key] = null;
       }
       for (const c of d?.conflicts ?? []) if (!(c.fact in pin)) pin[c.fact] = fixture[c.fact] ?? null;
-      fieldPins[field.name] = pin;
+      fieldPins[field.name] = Object.fromEntries(FIELD_KEY_ORDER.filter((k) => k in pin).map((k) => [k, pin[k]]));
     }
     pins[object] = { object: objectFacts, fields: fieldPins };
   }
