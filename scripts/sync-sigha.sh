@@ -1,18 +1,27 @@
 #!/usr/bin/env bash
 # Vendors the engine layers of sigha (https://github.com/rfaulhaber/sigha, MIT) into
-# packages/sigha/src. Usage: scripts/sync-sigha.sh [<git rev>|<local clone dir>]
+# packages/sigha/src. Usage: scripts/sync-sigha.sh [<git rev>|<local clone dir>]  (SIGHA_DEST overrides the target dir)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-DEST=packages/sigha
+DEST=${SIGHA_DEST:-packages/sigha}
+mkdir -p "$DEST"
 SRC=${1:-main}
+CLEANUP=""
+trap 'if [ -n "$CLEANUP" ]; then rm -rf "$CLEANUP"; fi' EXIT
 if [ -d "$SRC" ]; then
   CLONE=$SRC
 else
   CLONE=$(mktemp -d)
+  CLEANUP=$CLONE
   git clone -q https://github.com/rfaulhaber/sigha.git "$CLONE"
   git -C "$CLONE" checkout -q "$SRC"
 fi
 REV=$(git -C "$CLONE" rev-parse HEAD)
+# D-19: the hand-maintained upstream PR section survives every re-sync of VENDOR.md.
+UPSTREAM_SECTION=""
+if [ -f "$DEST/VENDOR.md" ]; then
+  UPSTREAM_SECTION=$(sed -n -E '/^## (Pending upstream changes|Upstream changes)$/,$p' "$DEST/VENDOR.md")
+fi
 rm -rf "$DEST/src" "$DEST/corpus"
 mkdir -p "$DEST/src" "$DEST/corpus"
 for layer in syntax registry analysis engine i18n; do
@@ -35,9 +44,10 @@ for t in conformance org-conformance; do
 done
 # decimal.js ships CommonJS typings; under NodeNext its default import resolves to the module
 # namespace. The named export is identical at runtime and types cleanly.
-find "$DEST/src" -name '*.ts' -exec sed -i '' 's#^import Decimal from "decimal.js";#import { Decimal } from "decimal.js";#' {} \;
+find "$DEST/src" -name '*.ts' -exec sed -i.bak 's#^import Decimal from "decimal.js";#import { Decimal } from "decimal.js";#' {} \;
 # Upstream imports with explicit .ts extensions (bundler resolution); NodeNext wants .js.
-find "$DEST/src" -name '*.ts' -exec sed -i '' -E 's#(from "\.{1,2}/[^"]+)\.ts"#\1.js"#g' {} \;
+find "$DEST/src" -name '*.ts' -exec sed -i.bak -E 's#(from "\.{1,2}/[^"]+)\.ts"#\1.js"#g' {} \;
+find "$DEST/src" -name '*.bak' -delete
 cp "$CLONE/LICENSE" "$DEST/LICENSE"
 cp "$CLONE/NOTICE" "$DEST/NOTICE"
 cat > "$DEST/VENDOR.md" <<MD
@@ -51,6 +61,9 @@ Contents: the dependency-free engine layers \`syntax/\`, \`registry/\`, \`analys
 \`engine/\`, \`i18n/\` and the golden corpus. Nothing here is edited by hand; run
 \`scripts/sync-sigha.sh <rev>\` to update. Behaviour changes belong upstream.
 MD
+if [ -n "$UPSTREAM_SECTION" ]; then
+  printf '\n%s\n' "$UPSTREAM_SECTION" >> "$DEST/VENDOR.md"
+fi
 cat > "$DEST/src/index.ts" <<TS
 // @orglet/sigha: vendored sigha engine layers. Do not edit src/* by hand; see VENDOR.md.
 export * from "./syntax/index.js";

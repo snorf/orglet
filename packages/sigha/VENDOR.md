@@ -7,3 +7,13 @@ Synced: 2026-09-25
 Contents: the dependency-free engine layers `syntax/`, `registry/`, `analysis/`,
 `engine/`, `i18n/` and the golden corpus. Nothing here is edited by hand; run
 `scripts/sync-sigha.sh <rev>` to update. Behaviour changes belong upstream.
+
+## Pending upstream changes
+
+Changes orglet needs from sigha are proposed upstream, never patched into `src/` (D-18, D-19).
+`scripts/sync-sigha.sh` carries this section over on every sync.
+
+| Change | Branch | Pull request | Status |
+|--------|--------|--------------|--------|
+| Unary `!` as logical NOT (`!ISBLANK(x)`) | `snorf/sigha:feat/unary-bang` | not opened yet | branch being prepared |
+| `Relationship:Object.Field` colon syntax (`Owner:User.Email`) | `snorf/sigha:feat/polymorphic-colon-ref` | not opened yet | branch being prepared |
