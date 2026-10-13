@@ -84,7 +84,7 @@ function readOnly(f: FieldDef): FieldDef {
   return f;
 }
 
-function systemFields(hasOwner: boolean): { head: FieldDef[]; tail: FieldDef[] } {
+function systemFields(hasOwner: boolean, ownerTargets?: readonly ("User" | "Group")[]): { head: FieldDef[]; tail: FieldDef[] } {
   const id = readOnly(baseField("Id", "Record ID", "Id", false));
   id.nillable = false;
   id.idLookup = true;
@@ -115,7 +115,7 @@ function systemFields(hasOwner: boolean): { head: FieldDef[]; tail: FieldDef[] }
     const owner = baseField("OwnerId", "Owner ID", "Lookup", false);
     owner.nillable = false;
     owner.defaultedOnCreate = true;
-    owner.referenceTo = ["User", "Group"];
+    owner.referenceTo = [...(ownerTargets ?? ["User", "Group"])];
     owner.relationshipName = "Owner";
     tail.push(owner);
   }
@@ -172,6 +172,7 @@ function fromStandardJson(
   copy("sortable");
   copy("groupable");
   copy("description");
+  copy("featureGated");
 
   if (j.type === "Picklist" || j.type === "MultiselectPicklist") {
     if (j.standardValueSet !== undefined) {
@@ -217,7 +218,7 @@ function fromStandardJson(
 }
 
 function fromStandardObject(j: StandardObjectJson, standardValueSets: Map<string, StandardValueSetDef>): SObjectDef {
-  const sys = systemFields(j.hasOwner);
+  const sys = systemFields(j.hasOwner, j.ownerTargets);
   return {
     name: j.name,
     label: j.label,
@@ -440,6 +441,16 @@ const PROVENANCE = new Set<string>(["doc", "sdk-fixture", "de-describe", "unveri
 export function validateBaseline(objects: readonly StandardObjectJson[]): void {
   const seen = new Map<string, string>();
   for (const o of objects) {
+    if (o.ownerTargets !== undefined) {
+      if (!o.hasOwner) throw new Error(`invalid baseline: ${o.name} has ownerTargets but no owner (hasOwner is false)`);
+      if (o.ownerTargets.length === 0) throw new Error(`invalid baseline: ${o.name} has an empty ownerTargets`);
+      const named = new Set<string>();
+      for (const t of o.ownerTargets as string[]) {
+        if (t !== "User" && t !== "Group") throw new Error(`invalid baseline: ${o.name} has ownerTargets entry ${t}; only User and Group are allowed`);
+        if (named.has(t)) throw new Error(`invalid baseline: ${o.name} lists ${t} twice in ownerTargets`);
+        named.add(t);
+      }
+    }
     if (o.keyPrefixSource !== undefined && !PROVENANCE.has(o.keyPrefixSource)) throw new Error(`invalid baseline: ${o.name} has unknown keyPrefixSource ${String(o.keyPrefixSource)}`);
     if (o.keyPrefix === null) {
       if (o.createable !== false) throw new Error(`invalid baseline: ${o.name} has keyPrefix null but is createable; a prefix-less object must set "createable": false`);

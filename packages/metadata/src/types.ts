@@ -143,6 +143,8 @@ export interface FieldDef {
   visibleLines?: number;
   inlineHelpText?: string;
   description?: string;
+  /** Standard field that exists only when an org feature is enabled (D-09). Never exposed in describe (D-10). */
+  featureGated?: boolean;
   /** Standard fields only: docs say the field exists but is read-only or rarely settable. */
   filterable: boolean;
   sortable: boolean;
@@ -193,7 +195,7 @@ export interface SObjectDef {
   undeletable: boolean;
   queryable: boolean;
   searchable: boolean;
-  /** Has `OwnerId` (User/Group). Master-detail children inherit the parent's owner and have none. */
+  /** Has `OwnerId` (User and/or Group, see StandardObjectJson.ownerTargets). Master-detail children inherit the parent's owner and have none. */
   hasOwner: boolean;
   /** Metadata API `sharingModel`; ignored by the engine in phase 0. */
   sharingModel?: string;
@@ -263,6 +265,8 @@ export interface StandardObjectJson {
   queryable?: boolean;
   searchable?: boolean;
   hasOwner: boolean;
+  /** OwnerId targets when narrower than the default ["User", "Group"] (D-11). Only with hasOwner. */
+  ownerTargets?: ("User" | "Group")[];
   fields: StandardFieldJson[];
 }
 
@@ -302,4 +306,6 @@ export interface StandardFieldJson {
   sortable?: boolean;
   groupable?: boolean;
   description?: string;
+  /** Exists only when an org feature is enabled; always nullable (D-09). Not a describe key (D-10). */
+  featureGated?: boolean;
 }

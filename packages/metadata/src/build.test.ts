@@ -643,3 +643,56 @@ describe("nullable key prefixes (D-08..D-12)", () => {
     expect(() => buildOrgSchema(withObjects({ ...link(), keyPrefix }))).toThrow(message);
   });
 });
+
+describe("owner targets and feature-gated fields in the baseline (D-09, D-11)", () => {
+  let real: Baseline;
+  beforeAll(async () => {
+    real = await loadBaseline();
+  });
+  const narrow = (extra: Record<string, unknown> = {}): StandardObjectJson =>
+    ({
+      name: "NarrowOwned",
+      label: "Narrow Owned",
+      labelPlural: "Narrow Owneds",
+      keyPrefix: null,
+      keyPrefixSource: "unverified",
+      createable: false,
+      hasOwner: true,
+      ownerTargets: ["User"],
+      fields: [{ name: "Name", label: "Name", type: "Text", length: 80, nillable: false, idLookup: true, nameField: true }],
+      ...extra,
+    });
+  const withObjects = (...extra: StandardObjectJson[]): Baseline => ({ ...real, objects: [...real.objects, ...extra] });
+
+  it("an owned object without ownerTargets keeps the polymorphic User/Group owner", () => {
+    expect(buildOrgSchema(real).schema.getField("Case", "OwnerId")?.referenceTo).toEqual(["User", "Group"]);
+  });
+
+  it("ownerTargets narrows OwnerId.referenceTo and nothing else", () => {
+    const owner = buildOrgSchema(withObjects(narrow())).schema.getField("NarrowOwned", "OwnerId");
+    expect(owner).toMatchObject({ referenceTo: ["User"], relationshipName: "Owner", nillable: false, defaultedOnCreate: true });
+  });
+
+  it.each([
+    [{ ownerTargets: [] }, "invalid baseline: NarrowOwned has an empty ownerTargets"],
+    [{ ownerTargets: ["User", "User"] }, "invalid baseline: NarrowOwned lists User twice in ownerTargets"],
+    [{ ownerTargets: ["Calendar"] }, "invalid baseline: NarrowOwned has ownerTargets entry Calendar; only User and Group are allowed"],
+    [{ hasOwner: false }, "invalid baseline: NarrowOwned has ownerTargets but no owner (hasOwner is false)"],
+  ])("invalid ownerTargets %j is rejected by the baseline loader", (override, message) => {
+    expect(() => buildOrgSchema(withObjects(narrow(override)))).toThrow(message);
+  });
+
+  it("a featureGated field loads as a plain nullable field carrying the tag", () => {
+    const gated = narrow({
+      hasOwner: false,
+      ownerTargets: undefined,
+      fields: [
+        { name: "Name", label: "Name", type: "Text", length: 80, nillable: false, idLookup: true, nameField: true },
+        { name: "GatedThing", label: "Gated Thing", type: "Text", length: 40, featureGated: true },
+      ],
+    });
+    const schema = buildOrgSchema(withObjects(gated)).schema;
+    expect(schema.getField("NarrowOwned", "GatedThing")).toMatchObject({ featureGated: true, nillable: true });
+    expect("featureGated" in schema.getField("NarrowOwned", "Name")!).toBe(false);
+  });
+});
