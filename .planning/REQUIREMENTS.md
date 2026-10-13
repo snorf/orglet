@@ -21,10 +21,10 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Upgrade safety
 
-- [ ] **MIGR-01**: A database created with the v1.0 baseline, containing Group-owned and `--import`
+- [x] **MIGR-01**: A database created with the v1.0 baseline, containing Group-owned and `--import`
   rows, upgrades to the v1.1 baseline with `orglet up` without data loss, on pglite and Postgres 16,
   with the resulting warning set asserted by a test.
-- [ ] **MIGR-02**: When a narrowed `OwnerId` (or any new single-target lookup) would add a foreign
+- [x] **MIGR-02**: When a narrowed `OwnerId` (or any new single-target lookup) would add a foreign
   key on a populated column that holds rows violating it, `migrate()` names every offending table,
   column and row count, logs one `UNSUPPORTED:schema-fk` warning per column, skips that foreign key
   and completes; it never deletes or rewrites data.
@@ -32,7 +32,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   object that existed in v1.0, and a v1-vs-v2 diff gate fails when a v1.0 field disappears or
   narrows without an allowlisted reason, so an upgrade never leaves permanent `schema-drop` or
   `schema-narrow` warnings.
-- [ ] **MIGR-04**: `migrate()` skips `CREATE INDEX` for indexes that already exist, so a large
+- [x] **MIGR-04**: `migrate()` skips `CREATE INDEX` for indexes that already exist, so a large
   baseline upgrade is idempotent and `orglet up` on an up-to-date database stays silent.
 
 ### Baseline v2 (standard objects and fields)
@@ -58,7 +58,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   QuoteLineItem, Entitlement, Product2, Pricebook2, PricebookEntry, EmailMessage, FeedItem,
   Address), so plain `Owner.X` formula traversal and `Owner.X` SOQL compile on User-only objects
   while polymorphic behaviour from v1.0 is unchanged on queue-enabled objects.
-- [ ] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
+- [x] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
   independent public sources or stored as `null` with a source label; an object with a null prefix
   still loads, describes and is reference-checked, and the generator never invents a prefix.
 - [ ] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
@@ -217,15 +217,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MIGR-01 | Phase 8 | Pending |
-| MIGR-02 | Phase 8 | Pending |
+| MIGR-01 | Phase 8 | Complete |
+| MIGR-02 | Phase 8 | Complete |
 | MIGR-03 | Phase 9 | Pending |
-| MIGR-04 | Phase 8 | Pending |
+| MIGR-04 | Phase 8 | Complete |
 | BASE2-01 | Phase 9 | Pending |
 | BASE2-02 | Phase 9 | Pending |
 | BASE2-03 | Phase 9 | Pending |
 | BASE2-04 | Phase 9 | Pending |
-| BASE2-05 | Phase 8 | Pending |
+| BASE2-05 | Phase 8 | Complete |
 | BASE2-06 | Phase 10 | Pending |
 | BASE2-07 | Phase 10 | Pending |
 | BASE2-08 | Phase 10 | Pending |

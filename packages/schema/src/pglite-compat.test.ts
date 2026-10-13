@@ -56,6 +56,16 @@ describe("backend compatibility", () => {
     expect(constraints.rows.map((r) => r.conname)).toContain("child_parent_fk");
   });
 
+  it("lists indexes through pg_indexes and sequences through pg_sequences exactly as migrate.ts reads them", async () => {
+    await pool.query(`CREATE INDEX ix_child_parent ON ${s}.child (parent_id)`);
+    await pool.query(`CREATE SEQUENCE ${s}.seq_parent_n`);
+    const indexes = await pool.query<{ indexname: string }>(`SELECT indexname FROM pg_indexes WHERE schemaname = $1`, [orgSchema]);
+    expect(indexes.rows.map((r) => r.indexname)).toContain("ix_child_parent");
+    expect(indexes.rows.map((r) => r.indexname)).toContain("parent_pkey");
+    const sequences = await pool.query<{ sequencename: string }>(`SELECT sequencename FROM pg_sequences WHERE schemaname = $1`, [orgSchema]);
+    expect(sequences.rows.map((r) => r.sequencename)).toContain("seq_parent_n");
+  });
+
   it("scopes SET LOCAL session_replication_role = replica to the transaction", async () => {
     const inside = await withTransaction(pool, async (client) => {
       await client.query("SET LOCAL session_replication_role = replica");

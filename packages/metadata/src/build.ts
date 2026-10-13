@@ -2,6 +2,7 @@
  * Merges the standard-object baseline with an SFDX source project into an OrgSchema.
  */
 import { readdir, readFile } from "node:fs/promises";
+import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import type {
@@ -31,6 +32,8 @@ export interface BuildResult {
   schema: OrgSchemaImpl;
   /** Things in the project that were skipped or partially loaded, prefixed `UNSUPPORTED:<area>`. */
   warnings: string[];
+  /** Structured form of `warnings`, same order (D-15). */
+  diagnostics: Diagnostic[];
 }
 
 export async function loadBaseline(dir: string = STANDARD_DIR): Promise<Baseline> {
@@ -220,6 +223,7 @@ function fromStandardObject(j: StandardObjectJson, standardValueSets: Map<string
     label: j.label,
     labelPlural: j.labelPlural,
     keyPrefix: j.keyPrefix,
+    ...(j.keyPrefixSource !== undefined ? { keyPrefixSource: j.keyPrefixSource } : {}),
     custom: false,
     createable: j.createable ?? true,
     updateable: j.updateable ?? true,
@@ -425,8 +429,35 @@ function customKeyPrefix(index: number): string {
   return `a${hi}${lo}`;
 }
 
+const PROVENANCE = new Set<string>(["doc", "sdk-fixture", "de-describe", "unverified"]);
+
+/**
+ * Baseline files are orglet's own data, so a bad one is a bug and a hard error, not an UNSUPPORTED warning
+ * (D-10). A null prefix must come with a source label and a non-createable object, because nothing may
+ * mint an Id for it; every other prefix must be a real-looking, unique standard prefix that can never
+ * collide with a custom-object (a00..azz) or custom-metadata (m0x, conservative guard) prefix (D-12).
+ */
+export function validateBaseline(objects: readonly StandardObjectJson[]): void {
+  const seen = new Map<string, string>();
+  for (const o of objects) {
+    if (o.keyPrefixSource !== undefined && !PROVENANCE.has(o.keyPrefixSource)) throw new Error(`invalid baseline: ${o.name} has unknown keyPrefixSource ${String(o.keyPrefixSource)}`);
+    if (o.keyPrefix === null) {
+      if (o.createable !== false) throw new Error(`invalid baseline: ${o.name} has keyPrefix null but is createable; a prefix-less object must set "createable": false`);
+      if (o.keyPrefixSource === undefined) throw new Error(`invalid baseline: ${o.name} has keyPrefix null but no keyPrefixSource`);
+      continue;
+    }
+    if (!/^[0-9A-Za-z]{3}$/.test(o.keyPrefix)) throw new Error(`invalid baseline: ${o.name} key prefix ${o.keyPrefix} is not three alphanumeric characters`);
+    if (/^a[0-9A-Za-z]{2}$/.test(o.keyPrefix)) throw new Error(`invalid baseline: ${o.name} key prefix ${o.keyPrefix} is in the custom-object range a00..azz`);
+    if (o.keyPrefix.startsWith("m0")) throw new Error(`invalid baseline: ${o.name} key prefix ${o.keyPrefix} is in the custom-metadata range m0*`);
+    const other = seen.get(o.keyPrefix);
+    if (other !== undefined) throw new Error(`invalid baseline: key prefix ${o.keyPrefix} is used by both ${other} and ${o.name}`);
+    seen.set(o.keyPrefix, o.name);
+  }
+}
+
 export function buildOrgSchema(baseline: Baseline, project?: SourceProject): BuildResult {
-  const warnings: string[] = [...(project?.warnings ?? [])];
+  validateBaseline(baseline.objects);
+  const sink: DiagnosticSink = { warnings: [...(project?.warnings ?? [])], diagnostics: [...(project?.diagnostics ?? [])] };
   const standardValueSets = new Map(baseline.standardValueSets);
   for (const s of project?.standardValueSets ?? []) standardValueSets.set(s.name, s);
   const globalValueSets = new Map<string, GlobalValueSetDef>();
@@ -450,7 +481,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     const target = objects.get(o.name.toLowerCase());
     if (!target) {
       const area = /__(e|mdt|x|b|share|history|feed)$/i.test(o.name) ? "object-kind" : "standard-object";
-      warnings.push(`UNSUPPORTED:${area} ${o.name} skipped`);
+      pushDiagnostic(sink, { area, kind: "object", object: o.name, message: `${o.name} skipped` } satisfies SkippedItem);
       continue;
     }
     if (o.label !== undefined) target.label = o.label;
@@ -471,7 +502,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
         continue;
       }
       if (!/__c$/i.test(sf.fullName)) {
-        warnings.push(`UNSUPPORTED:standard-field ${o.name}.${sf.fullName} is not in the baseline and was skipped`);
+        pushDiagnostic(sink, { area: "standard-field", kind: "field", object: o.name, field: sf.fullName, message: `${o.name}.${sf.fullName} is not in the baseline and was skipped` } satisfies SkippedItem);
         continue;
       }
       target.fields.push(fromSourceField(sf, o.name, sets));
@@ -480,7 +511,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     target.recordTypes.push(...o.recordTypes);
   }
 
-  resolveRollups(objects, pending, warnings, rollupField);
+  resolveRollups(objects, pending, sink, rollupField);
 
   // Dangling references are allowed (e.g. Campaign not in phase 0) but reported once per target.
   const missing = new Set<string>();
@@ -491,7 +522,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
       }
     }
   }
-  for (const m of [...missing].sort()) warnings.push(`UNSUPPORTED:reference-target ${m} is referenced but not defined; lookups to it are unchecked`);
+  for (const m of [...missing].sort()) pushDiagnostic(sink, { area: "reference-target", object: m, message: `${m} is referenced but not defined; lookups to it are unchecked` });
 
-  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings };
+  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings: sink.warnings, diagnostics: sink.diagnostics };
 }

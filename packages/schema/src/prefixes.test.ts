@@ -301,6 +301,15 @@ describe("dropKeyPrefixes before any reconcile", () => {
 describe("reconcileKeyPrefixes", () => {
   const orgA = freshOrg();
 
+  it("persisted custom prefixes are assigned without a null-prefix standard object ever claiming or receiving a prefix", async () => {
+    const fixture = await loadBaseline(fileURLToPath(new URL("../../metadata/test/fixtures/null-prefix/", import.meta.url)));
+    const schema = buildOrgSchema({ ...baseline, objects: [...baseline.objects, ...fixture.objects] }, project).schema;
+    const r = await reconcileKeyPrefixes(pool, schema, { orgSchema: freshOrg() });
+    expect(r.assignments.length).toBeGreaterThan(0);
+    for (const a of r.assignments) expect(a.keyPrefix).toMatch(/^[0-9A-Za-z]{3}$/);
+    expect(schema.getObject("PrefixlessThing")?.keyPrefix).toBeNull();
+  });
+
   it("two-build: keeps every existing assignment when a newcomer shifts the provisional scheme", async () => {
     const first = build(project.objects);
     const r1 = await reconcileKeyPrefixes(pool, first, { orgSchema: orgA });

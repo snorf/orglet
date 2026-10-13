@@ -2,7 +2,7 @@
  * Compiles every validation rule, formula field and default-value expression in the schema
  * once, and computes read-time projections (formula and compound fields) on rows.
  */
-import type { FieldDef, OrgSchema, SObjectDef, ValidationRuleDef } from "@orglet/metadata";
+import { formatDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
 import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type EvaluationContext, type RecordData, type RecordValue } from "@orglet/formula";
 
 export interface CompiledRule {
@@ -17,6 +17,8 @@ export interface CompiledField {
 
 export class FormulaRegistry {
   readonly warnings: string[] = [];
+  /** Structured form of `warnings`, same order (D-15). */
+  readonly diagnostics: FormulaFailure[] = [];
   private readonly rules = new Map<string, CompiledRule[]>();
   private readonly fields = new Map<string, CompiledField[]>();
   private readonly defaults = new Map<string, CompiledFormula>();
@@ -29,7 +31,7 @@ export class FormulaRegistry {
         obj.validationRules
           .filter((r) => r.active)
           .flatMap((rule) => {
-            const compiled = this.tryCompile(rule.errorConditionFormula, obj, "validation_rule", `validation rule ${obj.name}.${rule.name}`);
+            const compiled = this.tryCompile(rule.errorConditionFormula, obj, "validation_rule", `validation rule ${obj.name}.${rule.name}`, undefined);
             return compiled ? [{ rule, compiled }] : [];
           }),
       );
@@ -38,24 +40,33 @@ export class FormulaRegistry {
         obj.fields
           .filter((f) => f.formula !== undefined)
           .flatMap((field) => {
-            const compiled = this.tryCompile(field.formula ?? "", obj, "formula_field", `formula field ${obj.name}.${field.name}`, field.formulaTreatBlanksAs);
+            const compiled = this.tryCompile(field.formula ?? "", obj, "formula_field", `formula field ${obj.name}.${field.name}`, field.name, field.formulaTreatBlanksAs);
             return compiled ? [{ field, compiled }] : [];
           }),
       );
       for (const field of obj.fields) {
         if (field.defaultValue === undefined || field.formula !== undefined) continue;
-        const compiled = this.tryCompile(field.defaultValue, obj, "default_value", `default value ${obj.name}.${field.name}`);
+        const compiled = this.tryCompile(field.defaultValue, obj, "default_value", `default value ${obj.name}.${field.name}`, field.name);
         if (compiled) this.defaults.set(`${key}.${field.name.toLowerCase()}`, compiled);
       }
     }
   }
 
-  private tryCompile(source: string, obj: SObjectDef, context: "validation_rule" | "formula_field" | "default_value", what: string, treatBlanksAs?: "BlankAsBlank" | "BlankAsZero"): CompiledFormula | undefined {
+  private tryCompile(source: string, obj: SObjectDef, context: "validation_rule" | "formula_field" | "default_value", what: string, field: string | undefined, treatBlanksAs?: "BlankAsBlank" | "BlankAsZero"): CompiledFormula | undefined {
     try {
       return compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}) });
     } catch (err) {
       if (err instanceof FormulaCompileError) {
-        this.warnings.push(`UNSUPPORTED:formula ${what} skipped: ${err.message}`);
+        const failure: FormulaFailure = {
+          area: "formula",
+          what,
+          object: obj.name,
+          ...(field !== undefined ? { field } : {}),
+          ...(err.missing !== undefined ? { missing: err.missing } : {}),
+          message: `${what} skipped: ${err.message}`,
+        };
+        this.diagnostics.push(failure);
+        this.warnings.push(formatDiagnostic(failure));
         return undefined;
       }
       throw err;

@@ -1,0 +1,15 @@
+{
+  "name": "BusinessProcess",
+  "label": "Business Process",
+  "labelPlural": "Business Processes",
+  "keyPrefix": "019",
+  "createable": true,
+  "updateable": true,
+  "deletable": false,
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Name", "type": "Text", "length": 80, "nillable": false, "idLookup": true, "nameField": true }
+  ]
+}

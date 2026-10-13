@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
-import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, type OrgSchema } from "@orglet/metadata";
 import { compileSoql, type CompiledQuery } from "./compile.js";
 import { SoqlError } from "./errors.js";
 
@@ -395,5 +395,28 @@ describe("TYPEOF", () => {
     const e = rejected("SELECT TYPEOF Owner WHEN User THEN Nope END FROM Case");
     expect(e.errorCode).toBe("INVALID_FIELD");
     expect(e.message).toMatch(/entity 'User'/);
+  });
+});
+
+describe("polymorphic lookups with a target that has no key prefix (D-08)", () => {
+  let nullSchema: OrgSchema;
+  beforeAll(async () => {
+    const real = await loadBaseline();
+    const extra = await loadBaseline(fileURLToPath(new URL("../../metadata/test/fixtures/null-prefix/", import.meta.url)));
+    nullSchema = buildOrgSchema({ ...real, objects: [...real.objects, ...extra.objects] }).schema;
+  });
+  const nullSql = (soql: string) => compileSoql(soql, { schema: nullSchema, orgSchema: "org", now, includeDeleted: false }).sql.replace(/\s+/g, " ");
+
+  it("never joins an object without a key prefix and never emits a null literal", () => {
+    const q = nullSql("SELECT Id, Subject.Name FROM PrefixlessLink");
+    expect(q).toContain("= '005'");
+    expect(q).not.toContain("'null'");
+    expect(q).not.toContain("prefixlessthing");
+  });
+
+  it("leaves it out of the TYPEOF CASE", () => {
+    const q = nullSql("SELECT Id, TYPEOF Subject WHEN User THEN Name END FROM PrefixlessLink");
+    expect(q).toContain("WHEN '005' THEN 'User'");
+    expect(q).not.toContain("'null'");
   });
 });

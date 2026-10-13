@@ -25,6 +25,11 @@ runs executed in CI on every push. After v1.0 a large real enterprise-org retrie
 it loads (141 objects, ~3 600 fields) but with several hundred warnings in a handful of areas, which
 define the next milestone.
 
+**v1.1 progress:** Phase 8 complete 2026-10-13 — upgrade safety net (populated v1.0 upgrade test on
+pglite and Postgres 16, `UNSUPPORTED:schema-fk`, idempotent second `up`), nullable key prefixes end to
+end, structured diagnostic records beside the unchanged warning strings, and the two upstream sigha
+branches pushed to snorf/sigha (PRs not yet opened).
+
 ## Current Milestone: v1.1 real-org fidelity
 
 **Goal:** A large, real enterprise-org retrieve loads with zero warnings for everything it itself
@@ -165,6 +170,13 @@ Phase 0 (headless API) shipped 2026-09-25 and is verified by the upstream SDK su
   jsforce pinned to sha `9bae14e`, `simple-salesforce==1.12.10`; Bulk 2.0 `sf__Error`
   separator fixed to `:Name --` — Phase 7 (2026-10-12)
 
+Validated in Phase 8 (v1.1, 2026-10-13):
+
+- ✓ A populated v1.0 database upgrades under the current code without data loss: FK violations
+  downgrade to `UNSUPPORTED:schema-fk` warnings and a second `orglet up` is silent — MIGR-01, MIGR-02, MIGR-04
+- ✓ Standard objects without a confirmed key prefix load with `keyPrefix: null` plus a source label,
+  describe correctly and never take part in prefix-based polymorphic matching — BASE2-05
+
 ### Active
 
 Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements are defined in
@@ -295,4 +307,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-12 at the start of v1.1 real-org fidelity*
+*Last updated: 2026-10-13 after Phase 8 (upgrade safety net & nullable key prefixes)*

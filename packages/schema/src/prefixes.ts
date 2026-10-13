@@ -6,7 +6,7 @@
  * precedence and collision rule is unit-testable; the DB wrapper is a thin
  * read -> scan -> plan -> insert -> mutate transaction around it.
  */
-import type { OrgSchema } from "@orglet/metadata";
+import type { Diagnostic, OrgSchema, SObjectDef } from "@orglet/metadata";
 import { DEFAULT_ORG_SCHEMA, INTERNAL_SCHEMA, quote, tableName } from "./columns.js";
 import { withTransaction, type Pool } from "./db.js";
 import { ensureInternalSchema } from "./internal.js";
@@ -228,9 +228,17 @@ export interface ReconcileKeyPrefixesOptions {
 }
 
 export interface ReconcileKeyPrefixesResult {
-  /** Rows written this run, in custom-object name order; empty when every custom object already had a row. */
+  /** Rows written this run, in custom-object name order; empty when every custom object has a row. */
   assignments: KeyPrefixAssignment[];
   warnings: string[];
+  /** Structured form of `warnings` (D-15); empty today, like warnings. */
+  diagnostics: Diagnostic[];
+}
+
+function provisionalPrefix(obj: SObjectDef): string {
+  // buildOrgSchema gives every custom object a provisional a00..azz prefix; null here is a bug, not data.
+  if (obj.keyPrefix === null) throw new Error(`custom object ${obj.name} has no provisional key prefix`);
+  return obj.keyPrefix;
 }
 
 /**
@@ -248,7 +256,8 @@ export async function reconcileKeyPrefixes(pool: Pool, schema: OrgSchema, option
 
     const all = [...schema.objects.values()];
     const customObjects = all.filter((o) => o.custom).sort((a, b) => a.name.localeCompare(b.name));
-    const standard = all.filter((o) => !o.custom).map((o) => ({ name: o.name, keyPrefix: o.keyPrefix }));
+    // A standard object without a key prefix (D-08) claims nothing.
+    const standard = all.flatMap((o) => (!o.custom && o.keyPrefix !== null ? [{ name: o.name, keyPrefix: o.keyPrefix }] : []));
 
     const persistedRows = await client.query<{ object_name: string; key_prefix: string }>(`SELECT object_name, key_prefix FROM ${TABLE} WHERE org_schema = $1`, [orgSchema]);
     const persisted = new Map(persistedRows.rows.map((r) => [r.object_name.toLowerCase(), { name: r.object_name, keyPrefix: r.key_prefix }]));
@@ -267,7 +276,7 @@ export async function reconcileKeyPrefixes(pool: Pool, schema: OrgSchema, option
     }
 
     const plan = planKeyPrefixes({
-      custom: customObjects.map((o) => ({ name: o.name, provisional: o.keyPrefix })),
+      custom: customObjects.map((o) => ({ name: o.name, provisional: provisionalPrefix(o) })),
       standard,
       persisted,
       observed,
@@ -285,7 +294,7 @@ export async function reconcileKeyPrefixes(pool: Pool, schema: OrgSchema, option
       if (value !== undefined) obj.keyPrefix = value;
     }
 
-    return { assignments: plan.assignments, warnings: plan.warnings };
+    return { assignments: plan.assignments, warnings: plan.warnings, diagnostics: [] };
   });
 }
 

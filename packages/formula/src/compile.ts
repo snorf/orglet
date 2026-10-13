@@ -48,13 +48,23 @@ export interface CompiledFormula {
   diagnostics: Diagnostic[];
 }
 
+/** A field reference that does not resolve: the object it was looked up on and the missing name. */
+export interface MissingField {
+  object: string;
+  field: string;
+}
+
 export class FormulaCompileError extends Error {
+  /** The reference that does not resolve, when that is the failure (D-15): consumers never parse the message. */
+  readonly missing: MissingField | undefined;
   constructor(
     message: string,
     readonly diagnostics: Diagnostic[] = [],
+    missing?: MissingField,
   ) {
     super(message);
     this.name = "FormulaCompileError";
+    this.missing = missing;
   }
 }
 
@@ -74,8 +84,8 @@ interface Resolver {
   usesRecordState: boolean;
 }
 
-function fieldNotFound(name: string): FormulaCompileError {
-  return new FormulaCompileError(`Field ${name} does not exist. Check spelling.`);
+function fieldNotFound(name: string, missing?: MissingField): FormulaCompileError {
+  return new FormulaCompileError(`Field ${name} does not exist. Check spelling.`, [], missing);
 }
 
 /** Resolve a dotted path from `objectName` and return the canonical path and leaf field. */
@@ -88,12 +98,12 @@ function resolvePath(schema: OrgSchema, objectName: string, path: readonly strin
     const last = i === path.length - 1;
     if (last) {
       const field = schema.getField(current.name, segment);
-      if (!field) throw fieldNotFound(path.join("."));
+      if (!field) throw fieldNotFound(path.join("."), { object: current.name, field: segment });
       canonical.push(field.name);
       return { path: canonical, field };
     }
     const resolved = schema.resolveRelationship(current.name, segment);
-    if (resolved === undefined) throw fieldNotFound(path.join("."));
+    if (resolved === undefined) throw fieldNotFound(path.join("."), { object: current.name, field: segment });
     // A polymorphic lookup (Owner: User|Group, What, Who) has no single parent object; Salesforce
     // formulas reach it only as Owner:User.Field. Plain traversal fails like an unknown field (D-08).
     if ((resolved.field.referenceTo?.length ?? 0) > 1) throw fieldNotFound(path.join("."));

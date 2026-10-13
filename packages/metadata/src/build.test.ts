@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { fileURLToPath } from "node:url";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type FieldType, type SourceField, type SourceFilterItem, type SourceObject } from "./index.js";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type FieldType, type SourceField, type SourceFilterItem, type SourceObject, type StandardObjectJson } from "./index.js";
+import { formatDiagnostic } from "./diagnostics.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 
@@ -286,6 +287,22 @@ describe("examples/acme merged onto the baseline", () => {
     ]);
     expect(built.schema.getObject("Dangler__c")).toBeDefined();
   });
+
+  it("records a reference-target diagnostic beside the unchanged warning string", async () => {
+    const baseline = await loadBaseline();
+    const project = await readSourceProject(ACME);
+    const dangler: SourceObject = {
+      name: "Dangler__c",
+      fields: [{ fullName: "Target__c", label: "Target", type: "Lookup", referenceTo: "NoSuchObject__c", relationshipName: "Target" }],
+      validationRules: [],
+      recordTypes: [],
+    };
+    const built = buildOrgSchema(baseline, { ...project, objects: [...project.objects, dangler] });
+    expect(built.diagnostics.filter((d) => d.area === "reference-target")).toEqual([
+      { area: "reference-target", object: "NoSuchObject__c", message: "NoSuchObject__c is referenced but not defined; lookups to it are unchecked" },
+    ]);
+    expect(built.warnings).toEqual(built.diagnostics.map(formatDiagnostic));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -400,6 +417,14 @@ describe("roll-up summary resolution", () => {
     const r = build([sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")])], thin);
     expect(r.schema.getField("Opportunity", "Items_Total__c")).toBeUndefined();
     expect(rollupWarnings(r)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-target Opportunity\.Items_Total__c: /)]);
+  });
+
+  it("a dropped roll-up is recorded as a rollup SkippedItem naming object and field", () => {
+    const thin: Baseline = { ...baseline, objects: baseline.objects.filter((o) => o.name !== "OpportunityLineItem") };
+    const r = build([sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")])], thin);
+    expect(r.diagnostics.filter((d) => d.area === "rollup-target")).toEqual([
+      { area: "rollup-target", kind: "rollup", object: "Opportunity", field: "Items_Total__c", message: expect.stringMatching(/^Opportunity\.Items_Total__c: .*; field skipped$/) as string },
+    ]);
   });
 
   it("unresolvable references warn rollup-target and drop the field", () => {
@@ -561,5 +586,60 @@ describe("roll-up summary filters", () => {
 
   it("acme still loads with zero warnings", async () => {
     expect((await loadOrgSchema({ projectDir: ACME })).warnings).toEqual([]);
+  });
+});
+
+describe("nullable key prefixes (D-08..D-12)", () => {
+  const NULL_PREFIX = fileURLToPath(new URL("../test/fixtures/null-prefix/", import.meta.url));
+  let real: Baseline;
+  let fixture: Baseline;
+  beforeAll(async () => {
+    real = await loadBaseline();
+    fixture = await loadBaseline(NULL_PREFIX);
+  });
+  const thing = () => fixture.objects.find((o) => o.name === "PrefixlessThing")!;
+  const link = () => fixture.objects.find((o) => o.name === "PrefixlessLink")!;
+  const withObjects = (...extra: unknown[]): Baseline => ({ ...real, objects: [...real.objects, ...(extra as StandardObjectJson[])] });
+
+  it("every baseline prefix is three alphanumerics, unique, and outside the custom and custom-metadata ranges", () => {
+    const prefixes = real.objects.flatMap((o) => (o.keyPrefix === null ? [] : [o.keyPrefix]));
+    for (const p of prefixes) {
+      expect(p).toMatch(/^[0-9A-Za-z]{3}$/);
+      expect(p).not.toMatch(/^a[0-9A-Za-z]{2}$/);
+      expect(p.startsWith("m0")).toBe(false);
+    }
+    expect(new Set(prefixes).size).toBe(prefixes.length);
+    expect(() => buildOrgSchema(real)).not.toThrow();
+  });
+
+  it("a standard object with a null key prefix loads, keeps null and its source label, and is a valid reference target", () => {
+    const r = buildOrgSchema(withObjects(thing(), link()));
+    expect(r.schema.getObject("PrefixlessThing")).toMatchObject({ keyPrefix: null, keyPrefixSource: "unverified", createable: false });
+    expect(r.warnings.filter((w) => w.includes("reference-target PrefixlessThing"))).toEqual([]);
+  });
+
+  it("a null key prefix on a createable object is a hard baseline error", () => {
+    const msg = 'invalid baseline: PrefixlessThing has keyPrefix null but is createable; a prefix-less object must set "createable": false';
+    expect(() => buildOrgSchema(withObjects({ ...thing(), createable: true }))).toThrow(msg);
+    const { createable: _c, ...omitted } = thing();
+    expect(() => buildOrgSchema(withObjects(omitted))).toThrow(msg);
+  });
+
+  it("a null key prefix without a source label is a hard baseline error", () => {
+    const { keyPrefixSource: _s, ...unlabelled } = thing();
+    expect(() => buildOrgSchema(withObjects(unlabelled))).toThrow("invalid baseline: PrefixlessThing has keyPrefix null but no keyPrefixSource");
+  });
+
+  it("an unknown key prefix source is a hard baseline error", () => {
+    expect(() => buildOrgSchema(withObjects({ ...thing(), keyPrefixSource: "guess" }))).toThrow("invalid baseline: PrefixlessThing has unknown keyPrefixSource guess");
+  });
+
+  it.each([
+    ["0z", "invalid baseline: PrefixlessLink key prefix 0z is not three alphanumeric characters"],
+    ["001", "invalid baseline: key prefix 001 is used by both Account and PrefixlessLink"],
+    ["a0Q", "invalid baseline: PrefixlessLink key prefix a0Q is in the custom-object range a00..azz"],
+    ["m00", "invalid baseline: PrefixlessLink key prefix m00 is in the custom-metadata range m0*"],
+  ])("key prefix %s is rejected by the baseline loader", (keyPrefix, message) => {
+    expect(() => buildOrgSchema(withObjects({ ...link(), keyPrefix }))).toThrow(message);
   });
 });

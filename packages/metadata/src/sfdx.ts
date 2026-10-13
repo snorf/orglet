@@ -5,6 +5,7 @@
  */
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, basename } from "node:path";
+import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
 import { parseMetadataXml, str, bool, num, list, child, type XmlNode } from "./xml.js";
 import type {
   DeleteConstraint,
@@ -84,6 +85,8 @@ export interface SourceProject {
   standardValueSets: StandardValueSetDef[];
   /** `UNSUPPORTED:<area>` notes for metadata that was skipped rather than loaded. */
   warnings: string[];
+  /** Structured form of `warnings`, same order (D-15); always set by readSourceProject. */
+  diagnostics?: Diagnostic[];
 }
 
 const CUSTOM_FIELD_TYPES = new Set<string>([
@@ -177,8 +180,8 @@ function readFilterItems(node: XmlNode): SourceFilterItem[] {
   });
 }
 
-/** Parse one field; unsupported field types are reported in `warnings` and skipped (undefined). */
-function parseField(node: XmlNode, file: string, warnings: string[]): SourceField | undefined {
+/** Parse one field; unsupported field types are reported in the sink and skipped (undefined). */
+function parseField(node: XmlNode, file: string, sink: DiagnosticSink): SourceField | undefined {
   const fullName = str(node, "fullName");
   if (!fullName) throw new Error(`${file}: <fullName> missing`);
   const f: SourceField = { fullName };
@@ -186,7 +189,7 @@ function parseField(node: XmlNode, file: string, warnings: string[]): SourceFiel
   if (type !== undefined) {
     if (!CUSTOM_FIELD_TYPES.has(type)) throw new Error(`${file}: unknown field type ${type}`);
     if (type === "ExternalLookup" || type === "IndirectLookup" || type === "MetadataRelationship") {
-      warnings.push(`UNSUPPORTED:field-type ${file}: field type ${type} is not supported yet; field skipped`);
+      pushDiagnostic(sink, { area: "field-type", kind: "field", field: fullName, message: `${file}: field type ${type} is not supported yet; field skipped` } satisfies SkippedItem);
       return undefined;
     }
     // Hierarchy is a self-referencing lookup (Account.ParentId, User.ManagerId).
@@ -283,7 +286,7 @@ function parseRecordType(node: XmlNode, file: string): RecordTypeDef {
   return rt;
 }
 
-async function readObjectDir(dir: string, warnings: string[]): Promise<SourceObject> {
+async function readObjectDir(dir: string, sink: DiagnosticSink): Promise<SourceObject> {
   const name = basename(dir);
   const obj: SourceObject = { name, fields: [], validationRules: [], recordTypes: [] };
 
@@ -310,7 +313,7 @@ async function readObjectDir(dir: string, warnings: string[]): Promise<SourceObj
     }
     // Metadata-format style: fields/validationRules/recordTypes inlined in the object file.
     for (const f of list(node, "fields")) {
-      const parsed = parseField(f, objFile, warnings);
+      const parsed = parseField(f, objFile, sink);
       if (parsed) obj.fields.push(parsed);
     }
     for (const r of list(node, "validationRules")) obj.validationRules.push(parseValidationRule(r, objFile));
@@ -320,7 +323,7 @@ async function readObjectDir(dir: string, warnings: string[]): Promise<SourceObj
   }
 
   for (const file of await filesWithSuffix(join(dir, "fields"), ".field-meta.xml")) {
-    const parsed = parseField(parseMetadataXml(await readFile(file, "utf8"), "CustomField"), file, warnings);
+    const parsed = parseField(parseMetadataXml(await readFile(file, "utf8"), "CustomField"), file, sink);
     if (parsed) obj.fields.push(parsed);
   }
   for (const file of await filesWithSuffix(join(dir, "validationRules"), ".validationRule-meta.xml")) {
@@ -355,13 +358,16 @@ async function readStandardValueSet(file: string): Promise<StandardValueSetDef> 
 
 export async function readSourceProject(rootDir: string): Promise<SourceProject> {
   const packageDirectories = await readPackageDirectories(rootDir);
-  const project: SourceProject = { rootDir, packageDirectories, objects: [], globalValueSets: [], standardValueSets: [], warnings: [] };
+  const warnings: string[] = [];
+  const diagnostics: Diagnostic[] = [];
+  const sink: DiagnosticSink = { warnings, diagnostics };
+  const project: SourceProject = { rootDir, packageDirectories, objects: [], globalValueSets: [], standardValueSets: [], warnings, diagnostics };
 
   for (const pkgDir of packageDirectories) {
     for (const objectsDir of await findDirs(pkgDir, "objects")) {
       const entries = await readdir(objectsDir, { withFileTypes: true });
       for (const e of entries.filter((e) => e.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
-        project.objects.push(await readObjectDir(join(objectsDir, e.name), project.warnings));
+        project.objects.push(await readObjectDir(join(objectsDir, e.name), sink));
       }
     }
     for (const dir of await findDirs(pkgDir, "globalValueSets")) {

@@ -3,7 +3,7 @@
  * rules that reference `Account.Owner.Alias` find the values nested in the record.
  */
 import type { OrgSchema, SObjectDef } from "@orglet/metadata";
-import { matchTargetByPrefix, type Queryable } from "@orglet/schema";
+import { matchLookupTarget, type Queryable } from "@orglet/schema";
 import type { RecordData } from "@orglet/formula";
 import type { Store } from "./store.js";
 
@@ -34,7 +34,7 @@ export async function loadParents(client: Queryable, store: Store, obj: SObjectD
     // Group-owned record's Owner comes from Group, not from the first declared target.
     const byTarget = new Map<SObjectDef, string[]>();
     for (const id of ids) {
-      const target = matchTargetByPrefix(rel.targets, id);
+      const target = matchLookupTarget(rel.targets, rel.declared, id);
       if (target) byTarget.set(target, [...(byTarget.get(target) ?? []), id]);
     }
     const parents = new Map<string, RecordData>();
@@ -46,8 +46,8 @@ export async function loadParents(client: Queryable, store: Store, obj: SObjectD
   }
 }
 
-function relationship(schema: OrgSchema, obj: SObjectDef, relationshipName: string): { field: string; targets: SObjectDef[]; polymorphic: boolean } | undefined {
+function relationship(schema: OrgSchema, obj: SObjectDef, relationshipName: string): { field: string; targets: SObjectDef[]; polymorphic: boolean; declared: number } | undefined {
   const resolved = schema.resolveRelationship(obj.name, relationshipName);
   if (resolved === undefined) return undefined;
-  return { field: resolved.field.name, targets: resolved.targets, polymorphic: (resolved.field.referenceTo?.length ?? 0) > 1 };
+  return { field: resolved.field.name, targets: resolved.targets, polymorphic: (resolved.field.referenceTo?.length ?? 0) > 1, declared: resolved.field.referenceTo?.length ?? 1 };
 }

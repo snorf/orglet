@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: ready_to_plan
-stopped_at: "v1.1 roadmap created; Phase 8 not started"
-last_updated: "2026-10-12T12:58:25.821Z"
-last_activity: 2026-10-12
+status: planning
+stopped_at: Phase 8 complete 2026-10-13 (verified, 2 human UAT items open)
+last_updated: "2026-10-13T13:55:47.761Z"
+last_activity: 2026-10-13
 progress:
-  total_phases: 7
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 16
+  completed_phases: 1
+  total_plans: 10
+  completed_plans: 10
+  percent: 14
 ---
 
 # Project State
@@ -23,17 +23,17 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 8 — Upgrade Safety Net & Nullable Key Prefixes (v1.1 real-org fidelity)
+**Current focus:** Phase 9 — Baseline Generator, Parity & OwnerId Narrowing (v1.1 real-org fidelity)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 8 of 14 (Upgrade Safety Net & Nullable Key Prefixes) — not started
+Phase: 9 of 14 (Baseline Generator, Parity & OwnerId Narrowing) — not started
 Plan: —
 Status: Ready to plan
-Last activity: 2026-10-12 — v1.1 roadmap created (phases 8-14)
+Last activity: 2026-10-13 — Phase 8 complete (10 plans, verified; sigha PRs and CI sync-check open as UAT)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 14%
 
 ## Performance Metrics
 
@@ -91,6 +91,16 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 07 P03 | n/a | 3 tasks | 1 files |
 | Phase 07 P04 | 15min | 2 tasks | 3 files |
 | Phase 07 P06 | 20min | 3 tasks | 7 files |
+| Phase 08 P01 | 15min | 2 tasks | 3 files |
+| Phase 08 P04 | 15min | 3 tasks | 6 files |
+| Phase 08 P02 | 12min | 2 tasks | 13 files |
+| Phase 08 P08 | 15min | 2 tasks | 0 files |
+| Phase 08 P03 | 15min | 2 tasks | 7 files |
+| Phase 08 P09 | 10min | 3 tasks | 0 files |
+| Phase 08 P10 | 15min | 3 tasks | 1 files |
+| Phase 08 P05 | 20min | 3 tasks | 11 files |
+| Phase 08 P06 | 10min | 2 tasks | 8 files |
+| Phase 08 P07 | 10min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -157,6 +167,8 @@ Recent decisions affecting current work:
 - [Phase 06]: Bulk query rejection wording is orglet's own (undocumented by Salesforce); semi-joins accepted; query abort from UploadComplete/InProgress, delete from JobComplete/Aborted/Failed
 - [Phase 07]: 07-01: --strict only affects check; Bulk sf__Error format is 'CODE:message:fields --'
 - [Phase 07]: 07-03: empty Bulk 2.0 upload and Jigsaw* tests excluded as not-implemented, upsert-without-Id as test-defect; no orglet code change (07-04 branch B)
+- [Phase 08]: 08-02: KeyPrefixProvenance type name; validateBaseline hard-fails in buildOrgSchema; m0 custom-metadata guard is a conservative assumption
+- [Phase 08]: 08-08: sigha unary ! and Owner:User colon branches prepared locally in sigha-upstream (reuse NOT builtin; colon absorbed in scanIdentifier); nothing pushed
 
 ### Pending Todos
 
@@ -180,6 +192,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-12T12:25:12.498Z
-Stopped at: Completed 07-06-PLAN.md
+Last session: 2026-10-13T13:52:44.434Z
+Stopped at: Completed 08-07-PLAN.md
 Resume file: None

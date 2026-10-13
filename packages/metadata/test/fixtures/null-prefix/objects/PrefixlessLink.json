@@ -1,0 +1,12 @@
+{
+  "name": "PrefixlessLink",
+  "label": "Prefixless Link",
+  "labelPlural": "Prefixless Links",
+  "keyPrefix": "0zz",
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Name", "type": "Text", "length": 80, "nillable": false, "idLookup": true, "nameField": true },
+    { "name": "ThingId", "label": "Thing ID", "type": "Lookup", "referenceTo": ["PrefixlessThing"], "relationshipName": "Thing" },
+    { "name": "SubjectId", "label": "Subject ID", "type": "Lookup", "referenceTo": ["User", "PrefixlessThing"], "relationshipName": "Subject" }
+  ]
+}

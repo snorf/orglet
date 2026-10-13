@@ -1,0 +1,15 @@
+{
+  "name": "DandBCompany",
+  "label": "D&B Company",
+  "labelPlural": "D&B Companies",
+  "keyPrefix": "06E",
+  "createable": true,
+  "updateable": true,
+  "deletable": true,
+  "undeletable": true,
+  "searchable": true,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Company Name", "type": "Text", "length": 255, "nillable": false, "nameField": true }
+  ]
+}

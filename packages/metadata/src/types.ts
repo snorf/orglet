@@ -171,12 +171,21 @@ export interface RecordTypeDef {
   picklistValues: RecordTypePicklistValues[];
 }
 
+/**
+ * Where a standard object's key prefix comes from (D-11). Prefixes are data, never guessed: `doc` (public
+ * documentation), `sdk-fixture` (open-source SDK test fixtures), `de-describe` (the author's own Developer
+ * Edition describe), `unverified` (no public source; the prefix is null, as describe reports for prefix-less objects).
+ */
+export type KeyPrefixProvenance = "doc" | "sdk-fixture" | "de-describe" | "unverified";
+
 export interface SObjectDef {
   /** API name, canonical casing. */
   name: string;
   label: string;
   labelPlural: string;
-  keyPrefix: string;
+  /** Null when no prefix is confirmed (D-08): such an object is never matched by Id prefix and never mints Ids. */
+  keyPrefix: string | null;
+  keyPrefixSource?: KeyPrefixProvenance;
   custom: boolean;
   createable: boolean;
   updateable: boolean;
@@ -244,7 +253,9 @@ export interface StandardObjectJson {
   name: string;
   label: string;
   labelPlural: string;
-  keyPrefix: string;
+  keyPrefix: string | null;
+  /** Optional for the existing files; required when keyPrefix is null. */
+  keyPrefixSource?: KeyPrefixProvenance;
   createable?: boolean;
   updateable?: boolean;
   deletable?: boolean;

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { generateId, keyPrefixOf, matchTargetByPrefix, normalizeId, toCaseSafeId } from "./ids.js";
+import { generateId, keyPrefixOf, matchLookupTarget, matchTargetByPrefix, normalizeId, toCaseSafeId } from "./ids.js";
 
 describe("case-safe ID checksum", () => {
   // Pairs published in Salesforce community answers and widely reused in test suites.
@@ -91,5 +91,30 @@ describe("matchTargetByPrefix", () => {
 
   it("compares prefixes case-sensitively like Salesforce Ids", () => {
     expect(matchTargetByPrefix([user, group], "00g000000000001")).toBeUndefined();
+  });
+});
+
+describe("null key prefix targets (D-08)", () => {
+  const user = { name: "User", keyPrefix: "005" };
+  const group = { name: "Group", keyPrefix: "00G" };
+  const thing = { name: "Thing", keyPrefix: null };
+
+  it("a target without a key prefix is never matched by an Id's prefix", () => {
+    expect(matchTargetByPrefix([thing, user], generateId("005"))).toBe(user);
+    expect(matchTargetByPrefix([thing], generateId("005"))).toBeUndefined();
+    expect(matchTargetByPrefix([thing], "9Zz000000000001AAA")).toBeUndefined();
+  });
+
+  it("a single-target lookup to an object without a key prefix resolves to that object", () => {
+    expect(matchLookupTarget([thing], 1, "9Zz000000000001AAA")).toBe(thing);
+  });
+
+  it("a polymorphic lookup never resolves to a target without a key prefix", () => {
+    expect(matchLookupTarget([thing, user], 2, "9Zz000000000001AAA")).toBeUndefined();
+    expect(matchLookupTarget([user, group], 2, generateId("00G"))).toBe(group);
+  });
+
+  it("a single prefixed target keeps the prefix check", () => {
+    expect(matchLookupTarget([user], 1, generateId("00G"))).toBeUndefined();
   });
 });

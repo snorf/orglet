@@ -1,0 +1,71 @@
+{
+  "name": "PricebookEntry",
+  "label": "Price Book Entry",
+  "labelPlural": "Price Book Entries",
+  "keyPrefix": "01u",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Product Name",
+      "type": "Text",
+      "length": 255,
+      "nameField": true,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Pricebook2Id",
+      "label": "Price Book ID",
+      "type": "Lookup",
+      "referenceTo": ["Pricebook2"],
+      "relationshipName": "Pricebook2",
+      "childRelationshipName": "PricebookEntries",
+      "nillable": false,
+      "updateable": false
+    },
+    {
+      "name": "Product2Id",
+      "label": "Product ID",
+      "type": "Lookup",
+      "referenceTo": ["Product2"],
+      "relationshipName": "Product2",
+      "childRelationshipName": "PricebookEntries",
+      "nillable": false,
+      "updateable": false
+    },
+    {
+      "name": "UnitPrice",
+      "label": "List Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "nillable": false
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox"
+    },
+    {
+      "name": "UseStandardPrice",
+      "label": "Use Standard Price",
+      "type": "Checkbox"
+    },
+    {
+      "name": "ProductCode",
+      "label": "Product Code",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsArchived",
+      "label": "Archived",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}

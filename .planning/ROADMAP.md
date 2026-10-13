@@ -27,7 +27,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 
 **Milestone goal:** A large, real enterprise-org retrieve loads with zero warnings for everything it itself references. Standard objects nothing references are reported as information, not warnings.
 
-- [ ] **Phase 8: Upgrade Safety Net & Nullable Key Prefixes** - A populated v1.0 database upgrades without data loss; FK violations downgrade to warnings; objects may have no key prefix
+- [x] **Phase 8: Upgrade Safety Net & Nullable Key Prefixes** - A populated v1.0 database upgrades without data loss; FK violations downgrade to warnings; objects may have no key prefix (completed 2026-10-13)
 - [ ] **Phase 9: Baseline Generator, Parity & OwnerId Narrowing** - A deterministic generator reproduces the 35 existing objects, then adds every documented field and per-object OwnerId targets
 - [ ] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart
 - [ ] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load
@@ -47,7 +47,18 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
   3. A second `orglet up` on an up-to-date database prints no warnings and executes no `CREATE INDEX` for indexes that already exist.
   4. A standard object with a `null` key prefix (source-labelled) loads, appears in describe, is accepted as a reference target by `orglet check`, and is excluded from prefix-based polymorphic matching; no prefix is ever invented.
   5. Groundwork for later phases is observable: structured diagnostic records (`Diagnostic`/`SkippedItem`/`FormulaFailure`) exist beside the unchanged warning strings and are covered by a test; `scripts/sync-sigha.sh` runs on Linux in CI (no BSD-only `sed`) and orglet-side expectation tests for `!`, `!=`, colon syntax and `:`/`!` inside string literals exist (red until Phase 12); the upstream sigha PR links are recorded in `packages/sigha/VENDOR.md`; and a Group-owned test audit list (every test, fixture and conformance check that relies on a Group owner) is committed in the phase directory for Phase 9.
-**Plans**: TBD
+**Plans**: 10 plans
+Plans:
+- [x] 08-01-PLAN.md — migrate() safety net: FK pre-check -> UNSUPPORTED:schema-fk, catalog-skip for existing indexes/sequences (MIGR-02, MIGR-04)
+- [x] 08-02-PLAN.md — nullable keyPrefix + keyPrefixSource, baseline validation, null-prefix fixture, null-aware schema primitives (BASE2-05)
+- [x] 08-03-PLAN.md — null-prefix ripple through engine, SOQL and describe; build green again (BASE2-05)
+- [x] 08-04-PLAN.md — portable sync-sigha.sh + CI sigha-sync-check, VENDOR pending section, it.fails expectation tests, Group-owned audit (SC5)
+- [x] 08-05-PLAN.md — Diagnostic/SkippedItem/FormulaFailure + shared formatter; metadata and schema sources emit diagnostics (SC5)
+- [x] 08-06-PLAN.md — FormulaCompileError.missing; FormulaRegistry/runQuery/DmlEngine diagnostics (SC5)
+- [x] 08-07-PLAN.md — v1.0 baseline snapshot fixture + populated upgrade test on both backends (MIGR-01, MIGR-04)
+- [x] 08-08-PLAN.md — upstream sigha branches for unary ! and colon syntax in an external clone (SC5)
+- [x] 08-09-PLAN.md — checkpoints: approve fork snorf/sigha, approve push (SC5)
+- [x] 08-10-PLAN.md — push approved branches, Johan opens PRs, record links in VENDOR.md (SC5)
 **Research flag**: none.
 
 ### Phase 9: Baseline Generator, Parity & OwnerId Narrowing
@@ -136,7 +147,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 | 5. Roll-Up Summary Fields | v1.0 | 7/7 | Complete | 2026-10-09 |
 | 6. Bulk API 2.0 Persistence | v1.0 | 6/6 | Complete | 2026-10-10 |
 | 7. Conformance Re-Run & Milestone Acceptance | v1.0 | 6/6 | Complete | 2026-10-12 |
-| 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 0/TBD | Not started | - |
+| 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 10/10 | Complete | 2026-10-13 |
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 0/TBD | Not started | - |
 | 10. Business Standard Objects | v1.1 | 0/TBD | Not started | - |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 0/TBD | Not started | - |

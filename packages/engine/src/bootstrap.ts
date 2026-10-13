@@ -34,6 +34,12 @@ function need(schema: OrgSchema, name: string): SObjectDef {
   return obj;
 }
 
+/** Seed rows are minted here, so every seed object needs a key prefix; a null one is a baseline bug. */
+function prefixOf(obj: SObjectDef): string {
+  if (obj.keyPrefix === null) throw new Error(`baseline object ${obj.name} has no key prefix, but bootstrapOrg mints its seed rows`);
+  return obj.keyPrefix;
+}
+
 export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: BootstrapOptions): Promise<BootstrapResult> {
   const store = new Store(schema, options.orgSchema);
   const organization = need(schema, "Organization");
@@ -55,9 +61,9 @@ export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: Boots
       const org = await client.query<{ id: string }>(`SELECT "id" FROM ${store.table(organization)} LIMIT 1`);
       session = { userId: existing.rows[0].id, profileId: existing.rows[0].profileid, organizationId: org.rows[0]?.id ?? "" };
     } else {
-      const orgId = generateId(organization.keyPrefix);
-      const profileId = generateId(profile.keyPrefix);
-      const userId = generateId(user.keyPrefix);
+      const orgId = generateId(prefixOf(organization));
+      const profileId = generateId(prefixOf(profile));
+      const userId = generateId(prefixOf(user));
       const system = { IsDeleted: false, CreatedDate: now, CreatedById: userId, LastModifiedDate: now, LastModifiedById: userId, SystemModstamp: now };
       // The user row must come first: every other row's CreatedById points at it.
       await store.insert(client, user, {
@@ -97,12 +103,12 @@ export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: Boots
     // default BusinessHours (an imported one too) counts as present.
     const defaultHours = await client.query<{ id: string }>(`SELECT "id" FROM ${store.table(businessHours)} WHERE "isdefault" = true AND "isdeleted" = false LIMIT 1`);
     if (!defaultHours.rows[0]) {
-      await store.insert(client, businessHours, { Id: generateId(businessHours.keyPrefix), Name: SEED_BUSINESS_HOURS, IsDefault: true, IsActive: true, ...stamp });
+      await store.insert(client, businessHours, { Id: generateId(prefixOf(businessHours)), Name: SEED_BUSINESS_HOURS, IsDefault: true, IsActive: true, ...stamp });
     }
     const license = await client.query<{ id: string }>(`SELECT "id" FROM ${store.table(userLicense)} WHERE "masterlabel" = $1 AND "isdeleted" = false LIMIT 1`, [SEED_USER_LICENSE]);
     let licenseId = license.rows[0]?.id;
     if (licenseId === undefined) {
-      licenseId = generateId(userLicense.keyPrefix);
+      licenseId = generateId(prefixOf(userLicense));
       await store.insert(client, userLicense, { Id: licenseId, Name: SEED_USER_LICENSE, MasterLabel: SEED_USER_LICENSE, ...stamp });
     }
     // Link the admin profile only while it has no license; an imported or user-set value stays.
@@ -115,7 +121,7 @@ export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: Boots
       for (const rt of obj.recordTypes) {
         const key = `${obj.name}.${rt.name}`.toLowerCase();
         if (recordTypeIds.has(key)) continue;
-        const id = generateId(recordType.keyPrefix);
+        const id = generateId(prefixOf(recordType));
         await store.insert(client, recordType, {
           Id: id,
           Name: rt.label,

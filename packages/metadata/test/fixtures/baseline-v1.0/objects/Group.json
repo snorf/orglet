@@ -1,0 +1,73 @@
+{
+  "name": "Group",
+  "label": "Group",
+  "labelPlural": "Groups",
+  "keyPrefix": "00G",
+  "hasOwner": true,
+  "deletable": true,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Group Name",
+      "type": "Text",
+      "length": 40,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "DeveloperName",
+      "label": "API Name",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "Type",
+      "label": "Group Type",
+      "type": "Picklist",
+      "nillable": false,
+      "updateable": false,
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "Regular", "label": "Regular", "default": true },
+        { "value": "Role", "label": "Role" },
+        { "value": "RoleAndSubordinates", "label": "Role and Subordinates" },
+        { "value": "RoleAndSubordinatesInternal", "label": "Role and Subordinates, Internal" },
+        { "value": "Queue", "label": "Queue" },
+        { "value": "AllCustomerPortal", "label": "All Customer Portal Users" },
+        { "value": "Organization", "label": "Organization" },
+        { "value": "PRMOrganization", "label": "Partner Organization" },
+        { "value": "Territory", "label": "Territory" },
+        { "value": "TerritoryAndSubordinates", "label": "Territory and Subordinates" },
+        { "value": "Manager", "label": "Manager Group" },
+        { "value": "ManagerAndSubordinatesInternal", "label": "Manager Group and Subordinates, Internal" },
+        { "value": "ChannelProgramGroup", "label": "Channel Program Group" },
+        { "value": "GuestUserGroup", "label": "Guest User Group" }
+      ]
+    },
+    {
+      "name": "RelatedId",
+      "label": "Related ID",
+      "type": "Lookup",
+      "referenceTo": ["User", "UserRole"],
+      "relationshipName": "Related",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Email",
+      "label": "Group Email",
+      "type": "Email"
+    },
+    {
+      "name": "DoesSendEmailToMembers",
+      "label": "Send Email to Members",
+      "type": "Checkbox"
+    },
+    {
+      "name": "DoesIncludeBosses",
+      "label": "Grant Access Using Hierarchies",
+      "type": "Checkbox"
+    }
+  ]
+}
