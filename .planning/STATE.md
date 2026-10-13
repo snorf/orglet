@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: verifying
-stopped_at: Completed 08-07-PLAN.md
+status: planning
+stopped_at: Phase 8 complete 2026-10-13 (verified, 2 human UAT items open)
 last_updated: "2026-10-13T13:55:47.761Z"
 last_activity: 2026-10-13
 progress:
@@ -11,7 +11,7 @@ progress:
   completed_phases: 1
   total_plans: 10
   completed_plans: 10
-  percent: 0
+  percent: 14
 ---
 
 # Project State
@@ -23,17 +23,17 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 08 — upgrade-safety-net-nullable-key-prefixes
+**Current focus:** Phase 9 — Baseline Generator, Parity & OwnerId Narrowing (v1.1 real-org fidelity)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 999.1
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-10-13
+Phase: 9 of 14 (Baseline Generator, Parity & OwnerId Narrowing) — not started
+Plan: —
+Status: Ready to plan
+Last activity: 2026-10-13 — Phase 8 complete (10 plans, verified; sigha PRs and CI sync-check open as UAT)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 14%
 
 ## Performance Metrics
 
