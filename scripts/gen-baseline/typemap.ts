@@ -127,6 +127,12 @@ export function flagsFrom(tokens: readonly string[] | undefined): Partial<Standa
   return out;
 }
 
+/** The sf-skills `field_reference.length` when that entry is text-typed (it also reports 18 for ids and 255 for picklists). */
+export function sfTextLength(field: SourceField): number | undefined {
+  const type = field.sf?.referenceType;
+  return field.sf?.length !== undefined && type !== undefined && TEXT_TOKENS.has(type.toLowerCase()) ? field.sf.length : undefined;
+}
+
 /**
  * Text length precedence (D-05): sf-skills `field_reference.length` (only when that entry is itself text-typed; it
  * also reports 18 for ids and 255 for picklists) beats the Object Reference maximum, except for textarea where
@@ -135,7 +141,7 @@ export function flagsFrom(tokens: readonly string[] | undefined): Partial<Standa
 export function lengthFor(field: SourceField, token: string): Fact<number> | undefined {
   const lower = token.toLowerCase();
   if (!TEXT_TOKENS.has(lower)) return undefined;
-  const sfLength = field.sf?.length !== undefined && field.sf.referenceType !== undefined && TEXT_TOKENS.has(field.sf.referenceType.toLowerCase()) ? field.sf.length : undefined;
+  const sfLength = sfTextLength(field);
   const docLength = field.doc?.maxLength;
   if (sfLength !== undefined && docLength !== undefined && sfLength === docLength) return { value: sfLength, provenance: "verified" };
   const [first, second]: [Fact<number> | undefined, Fact<number> | undefined] =
