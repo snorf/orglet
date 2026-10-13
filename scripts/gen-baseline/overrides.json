@@ -1,0 +1,215 @@
+{
+  "objects": {
+    "Account": {
+      "keyPrefix": {
+        "value": "001",
+        "source": "sdk-fixture",
+        "ref": "jsforce@9bae14ea0f1b9dff3b0cb0862a3e5f525f25a29f:test/query-pagination.mock.test.ts:59"
+      }
+    },
+    "Asset": {
+      "keyPrefix": {
+        "value": "02i",
+        "source": "unverified"
+      }
+    },
+    "BusinessHours": {
+      "keyPrefix": {
+        "value": "01m",
+        "source": "unverified"
+      }
+    },
+    "BusinessProcess": {
+      "keyPrefix": {
+        "value": "019",
+        "source": "unverified"
+      }
+    },
+    "CallCenter": {
+      "keyPrefix": {
+        "value": "04v",
+        "source": "unverified"
+      }
+    },
+    "Campaign": {
+      "keyPrefix": {
+        "value": "701",
+        "source": "unverified"
+      }
+    },
+    "CampaignMember": {
+      "keyPrefix": {
+        "value": "00v",
+        "source": "unverified"
+      }
+    },
+    "Case": {
+      "keyPrefix": {
+        "value": "500",
+        "source": "unverified"
+      }
+    },
+    "Contact": {
+      "keyPrefix": {
+        "value": "003",
+        "source": "unverified"
+      }
+    },
+    "Contract": {
+      "keyPrefix": {
+        "value": "800",
+        "source": "unverified"
+      }
+    },
+    "DandBCompany": {
+      "keyPrefix": {
+        "value": "06E",
+        "source": "unverified"
+      }
+    },
+    "Entitlement": {
+      "keyPrefix": {
+        "value": "550",
+        "source": "unverified"
+      }
+    },
+    "Event": {
+      "keyPrefix": {
+        "value": "00U",
+        "source": "unverified"
+      }
+    },
+    "ExternalDataSource": {
+      "keyPrefix": {
+        "value": "0XC",
+        "source": "unverified"
+      }
+    },
+    "Group": {
+      "keyPrefix": {
+        "value": "00G",
+        "source": "unverified"
+      }
+    },
+    "IdeaTheme": {
+      "keyPrefix": {
+        "value": "0Bg",
+        "source": "unverified"
+      }
+    },
+    "Individual": {
+      "keyPrefix": {
+        "value": "0PK",
+        "source": "unverified"
+      }
+    },
+    "Lead": {
+      "keyPrefix": {
+        "value": "00Q",
+        "source": "unverified"
+      }
+    },
+    "OperatingHours": {
+      "keyPrefix": {
+        "value": "0OH",
+        "source": "unverified"
+      }
+    },
+    "Opportunity": {
+      "keyPrefix": {
+        "value": "006",
+        "source": "unverified"
+      }
+    },
+    "OpportunityHistory": {
+      "keyPrefix": {
+        "value": "008",
+        "source": "unverified"
+      }
+    },
+    "OpportunityLineItem": {
+      "keyPrefix": {
+        "value": "00k",
+        "source": "unverified"
+      }
+    },
+    "Organization": {
+      "keyPrefix": {
+        "value": "00D",
+        "source": "unverified"
+      }
+    },
+    "Pricebook2": {
+      "keyPrefix": {
+        "value": "01s",
+        "source": "unverified"
+      }
+    },
+    "PricebookEntry": {
+      "keyPrefix": {
+        "value": "01u",
+        "source": "unverified"
+      }
+    },
+    "Product2": {
+      "keyPrefix": {
+        "value": "01t",
+        "source": "unverified"
+      }
+    },
+    "Profile": {
+      "keyPrefix": {
+        "value": "00e",
+        "source": "unverified"
+      }
+    },
+    "RecordType": {
+      "keyPrefix": {
+        "value": "012",
+        "source": "unverified"
+      }
+    },
+    "ServiceAppointment": {
+      "keyPrefix": {
+        "value": "08p",
+        "source": "unverified"
+      }
+    },
+    "ServiceContract": {
+      "keyPrefix": {
+        "value": "810",
+        "source": "unverified"
+      }
+    },
+    "SocialPost": {
+      "keyPrefix": {
+        "value": "0ST",
+        "source": "unverified"
+      }
+    },
+    "Task": {
+      "keyPrefix": {
+        "value": "00T",
+        "source": "unverified"
+      }
+    },
+    "User": {
+      "keyPrefix": {
+        "value": "005",
+        "source": "unverified"
+      }
+    },
+    "UserLicense": {
+      "keyPrefix": {
+        "value": "100",
+        "source": "unverified"
+      }
+    },
+    "UserRole": {
+      "keyPrefix": {
+        "value": "00E",
+        "source": "unverified"
+      }
+    }
+  }
+}
