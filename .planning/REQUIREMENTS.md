@@ -217,41 +217,41 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MIGR-01 | TBD | Pending |
-| MIGR-02 | TBD | Pending |
-| MIGR-03 | TBD | Pending |
-| MIGR-04 | TBD | Pending |
-| BASE2-01 | TBD | Pending |
-| BASE2-02 | TBD | Pending |
-| BASE2-03 | TBD | Pending |
-| BASE2-04 | TBD | Pending |
-| BASE2-05 | TBD | Pending |
-| BASE2-06 | TBD | Pending |
-| BASE2-07 | TBD | Pending |
-| BASE2-08 | TBD | Pending |
-| CMDT-01 | TBD | Pending |
-| CMDT-02 | TBD | Pending |
-| CMDT-03 | TBD | Pending |
-| CMDT-04 | TBD | Pending |
-| CSET-01 | TBD | Pending |
-| CSET-02 | TBD | Pending |
-| FORM-01 | TBD | Pending |
-| FORM-02 | TBD | Pending |
-| FORM-03 | TBD | Pending |
-| FORM-04 | TBD | Pending |
-| FORM-05 | TBD | Pending |
-| ROLL2-01 | TBD | Pending |
-| CHECK-01 | TBD | Pending |
-| CHECK-02 | TBD | Pending |
-| ACC2-01 | TBD | Pending |
-| ACC2-02 | TBD | Pending |
-| ACC2-03 | TBD | Pending |
+| MIGR-01 | Phase 8 | Pending |
+| MIGR-02 | Phase 8 | Pending |
+| MIGR-03 | Phase 9 | Pending |
+| MIGR-04 | Phase 8 | Pending |
+| BASE2-01 | Phase 9 | Pending |
+| BASE2-02 | Phase 9 | Pending |
+| BASE2-03 | Phase 9 | Pending |
+| BASE2-04 | Phase 9 | Pending |
+| BASE2-05 | Phase 8 | Pending |
+| BASE2-06 | Phase 10 | Pending |
+| BASE2-07 | Phase 10 | Pending |
+| BASE2-08 | Phase 10 | Pending |
+| CMDT-01 | Phase 11 | Pending |
+| CMDT-02 | Phase 11 | Pending |
+| CMDT-03 | Phase 11 | Pending |
+| CMDT-04 | Phase 11 | Pending |
+| CSET-01 | Phase 11 | Pending |
+| CSET-02 | Phase 11 | Pending |
+| FORM-01 | Phase 12 | Pending |
+| FORM-02 | Phase 12 | Pending |
+| FORM-03 | Phase 12 | Pending |
+| FORM-04 | Phase 12 | Pending |
+| FORM-05 | Phase 12 | Pending |
+| ROLL2-01 | Phase 13 | Pending |
+| CHECK-01 | Phase 14 | Pending |
+| CHECK-02 | Phase 14 | Pending |
+| ACC2-01 | Phase 14 | Pending |
+| ACC2-02 | Phase 14 | Pending |
+| ACC2-03 | Phase 14 | Pending |
 
 **Coverage:**
 - v1 requirements: 29 total
-- Mapped to phases: 0
-- Unmapped: 29 ⚠️ (filled by roadmap)
+- Mapped to phases: 29
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-10-12*
-*Last updated: 2026-10-12 at milestone v1.1 start*
+*Last updated: 2026-10-12 after v1.1 roadmap creation*
