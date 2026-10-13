@@ -5,6 +5,12 @@
         "value": "001",
         "source": "sdk-fixture",
         "ref": "jsforce@9bae14ea0f1b9dff3b0cb0862a3e5f525f25a29f:test/query-pagination.mock.test.ts:59"
+      },
+      "fields": {
+        "Tier": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        }
       }
     },
     "Asset": {
@@ -47,6 +53,28 @@
       "keyPrefix": {
         "value": "500",
         "source": "unverified"
+      },
+      "fields": {
+        "EntitlementId": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "MilestoneStatus": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "MilestoneStatusIcon": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "ProductId": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "SlaExitDate": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        }
       }
     },
     "Contact": {
@@ -77,6 +105,24 @@
       "keyPrefix": {
         "value": "00U",
         "source": "unverified"
+      },
+      "fields": {
+        "Attendees": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "Email": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "Phone": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "ServiceAppointmentId": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        }
       }
     },
     "ExternalDataSource": {
@@ -107,6 +153,20 @@
       "keyPrefix": {
         "value": "00Q",
         "source": "unverified"
+      },
+      "fields": {
+        "CampaignId": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "DoNotCall": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "LastTransferDate": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        }
       }
     },
     "OperatingHours": {
@@ -155,6 +215,16 @@
       "keyPrefix": {
         "value": "01t",
         "source": "unverified"
+      },
+      "fields": {
+        "SellerId": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "SourceProductId": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        }
       }
     },
     "Profile": {
@@ -191,12 +261,32 @@
       "keyPrefix": {
         "value": "00T",
         "source": "unverified"
+      },
+      "fields": {
+        "Email": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "Phone": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        }
       }
     },
     "User": {
       "keyPrefix": {
         "value": "005",
         "source": "unverified"
+      },
+      "fields": {
+        "IsSystemControlled": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        },
+        "WorkspaceId": {
+          "keep": true,
+          "reason": "present in v1.0, absent from sources"
+        }
       }
     },
     "UserLicense": {

@@ -117,3 +117,19 @@ jobs:
           diff packages/sigha/LICENSE "$RUNNER_TEMP/sigha/LICENSE"
           diff packages/sigha/NOTICE "$RUNNER_TEMP/sigha/NOTICE"
           git diff --exit-code -- packages/sigha/src packages/sigha/corpus
+
+  baseline-gen-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # D-18/SC1: committed baseline == regeneration from committed inputs; untracked output also fails.
+      - run: |
+          pnpm baseline:gen
+          git diff --exit-code -- packages/metadata/standard
+          test -z "$(git status --porcelain -- packages/metadata/standard)"
