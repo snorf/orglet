@@ -58,7 +58,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   QuoteLineItem, Entitlement, Product2, Pricebook2, PricebookEntry, EmailMessage, FeedItem,
   Address), so plain `Owner.X` formula traversal and `Owner.X` SOQL compile on User-only objects
   while polymorphic behaviour from v1.0 is unchanged on queue-enabled objects.
-- [ ] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
+- [x] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
   independent public sources or stored as `null` with a source label; an object with a null prefix
   still loads, describes and is reference-checked, and the generator never invents a prefix.
 - [ ] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
@@ -225,7 +225,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE2-02 | Phase 9 | Pending |
 | BASE2-03 | Phase 9 | Pending |
 | BASE2-04 | Phase 9 | Pending |
-| BASE2-05 | Phase 8 | Pending |
+| BASE2-05 | Phase 8 | Complete |
 | BASE2-06 | Phase 10 | Pending |
 | BASE2-07 | Phase 10 | Pending |
 | BASE2-08 | Phase 10 | Pending |
