@@ -1,0 +1,57 @@
+{
+  "name": "Pricebook2",
+  "label": "Price Book",
+  "labelPlural": "Price Books",
+  "keyPrefix": "01s",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Price Book Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox"
+    },
+    {
+      "name": "IsStandard",
+      "label": "Standard Price Book",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsArchived",
+      "label": "Archived",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "ExternalDataSource",
+  "label": "External Data Source",
+  "labelPlural": "External Data Sources",
+  "keyPrefix": "0XC",
+  "createable": false,
+  "updateable": false,
+  "deletable": false,
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    { "name": "DeveloperName", "label": "Name", "type": "Text", "length": 80, "nillable": false, "createable": false, "updateable": false, "nameField": true }
+  ]
+}

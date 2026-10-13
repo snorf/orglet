@@ -1,0 +1,121 @@
+{
+  "name": "UserRole",
+  "label": "Role",
+  "labelPlural": "Roles",
+  "keyPrefix": "00E",
+  "hasOwner": false,
+  "createable": true,
+  "deletable": true,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "DeveloperName",
+      "label": "Role Name",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "ParentRoleId",
+      "label": "Parent Role ID",
+      "type": "Lookup",
+      "referenceTo": ["UserRole"],
+      "relationshipName": "ParentRole",
+      "childRelationshipName": "ChildRoles"
+    },
+    {
+      "name": "RollupDescription",
+      "label": "Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "OpportunityAccessForAccountOwner",
+      "label": "Opportunity Access",
+      "type": "Picklist",
+      "nillable": false,
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "None", "label": "None" },
+        { "value": "Read", "label": "Read" },
+        { "value": "Edit", "label": "Edit" }
+      ]
+    },
+    {
+      "name": "CaseAccessForAccountOwner",
+      "label": "Case Access",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "picklistValues": [
+        { "value": "None", "label": "None" },
+        { "value": "Read", "label": "Read" },
+        { "value": "Edit", "label": "Edit" }
+      ]
+    },
+    {
+      "name": "ContactAccessForAccountOwner",
+      "label": "Contact Access",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        { "value": "None", "label": "None" },
+        { "value": "Read", "label": "Read" },
+        { "value": "Edit", "label": "Edit" }
+      ]
+    },
+    {
+      "name": "PortalType",
+      "label": "Portal Type",
+      "type": "Picklist",
+      "restrictedPicklist": true,
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        { "value": "None", "label": "None", "default": true },
+        { "value": "CustomerPortal", "label": "Customer Portal" },
+        { "value": "Partner", "label": "Partner" }
+      ]
+    },
+    {
+      "name": "PortalAccountId",
+      "label": "Portal Account ID",
+      "type": "Lookup",
+      "referenceTo": ["Account"],
+      "relationshipName": "PortalAccount",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PortalAccountOwnerId",
+      "label": "Portal Account Owner ID",
+      "type": "Lookup",
+      "referenceTo": ["User"],
+      "relationshipName": "PortalAccountOwner",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MayForecastManagerShare",
+      "label": "Forecast Manager Can Share",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ForecastUserId",
+      "label": "User ID",
+      "type": "Lookup",
+      "referenceTo": ["User"],
+      "relationshipName": "ForecastUser"
+    }
+  ]
+}

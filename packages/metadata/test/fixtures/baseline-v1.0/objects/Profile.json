@@ -1,0 +1,30 @@
+{
+  "name": "Profile",
+  "label": "Profile",
+  "labelPlural": "Profiles",
+  "keyPrefix": "00e",
+  "deletable": true,
+  "undeletable": false,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Name", "type": "Text", "length": 255, "nillable": false, "idLookup": true, "nameField": true },
+    { "name": "Description", "label": "Description", "type": "Text", "length": 255 },
+    { "name": "UserLicenseId", "label": "User License ID", "type": "Lookup", "nillable": false, "updateable": false, "referenceTo": ["UserLicense"], "relationshipName": "UserLicense", "childRelationshipName": "Profiles" },
+    { "name": "UserType", "label": "User Type", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
+      { "value": "Standard", "label": "Standard" },
+      { "value": "PowerPartner", "label": "Partner" },
+      { "value": "PowerCustomerSuccess", "label": "Customer Portal Manager" },
+      { "value": "CustomerSuccess", "label": "Customer Portal User" },
+      { "value": "Guest", "label": "Guest" },
+      { "value": "CspLitePortal", "label": "High Volume Portal" }
+    ] },
+    { "name": "PermissionsModifyAllData", "label": "Modify All Data", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "PermissionsViewAllData", "label": "View All Data", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "PermissionsApiEnabled", "label": "API Enabled", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "PermissionsManageUsers", "label": "Manage Users", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "PermissionsCustomizeApplication", "label": "Customize Application", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "PermissionsRunReports", "label": "Run Reports", "type": "Checkbox", "nillable": false, "defaultedOnCreate": true, "defaultValue": "false" },
+    { "name": "LastViewedDate", "label": "Last Viewed Date", "type": "DateTime", "createable": false, "updateable": false },
+    { "name": "LastReferencedDate", "label": "Last Referenced Date", "type": "DateTime", "createable": false, "updateable": false }
+  ]
+}

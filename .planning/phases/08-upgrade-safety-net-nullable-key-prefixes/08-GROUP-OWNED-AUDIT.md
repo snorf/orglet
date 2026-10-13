@@ -84,6 +84,8 @@ needs no row.
 |------|-------|-----------|---------------------|
 | packages/metadata/standard/objects/Group.json | whole file (the Group object definition itself) | n.a. | n.a. |
 | packages/metadata/standard/objects/User.json | 89 (`DefaultGroupNotificationFrequency`, unrelated word), 101 (`DelegatedApproverId` referenceTo Group/User: a non-owner lookup to Group) | n.a. | decide whether Group stays a target here |
+| packages/metadata/test/fixtures/baseline-v1.0/objects/Group.json | whole file (frozen v1.0 copy of the Group object) | incidental (frozen v1.0 baseline snapshot, never edited) | n.a. |
+| packages/metadata/test/fixtures/baseline-v1.0/objects/User.json | same hits as the live User.json (frozen v1.0 copy) | incidental (frozen v1.0 baseline snapshot, never edited) | n.a. |
 
 ## Completeness check
 

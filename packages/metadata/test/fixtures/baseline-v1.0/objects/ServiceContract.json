@@ -1,0 +1,15 @@
+{
+  "name": "ServiceContract",
+  "label": "Service Contract",
+  "labelPlural": "Service Contracts",
+  "keyPrefix": "810",
+  "createable": true,
+  "updateable": true,
+  "deletable": true,
+  "undeletable": true,
+  "searchable": true,
+  "hasOwner": true,
+  "fields": [
+    { "name": "Name", "label": "Contract Name", "type": "Text", "length": 255, "nillable": false, "nameField": true }
+  ]
+}

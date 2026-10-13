@@ -1,0 +1,15 @@
+{
+  "name": "ServiceAppointment",
+  "label": "Service Appointment",
+  "labelPlural": "Service Appointments",
+  "keyPrefix": "08p",
+  "createable": true,
+  "updateable": true,
+  "deletable": true,
+  "undeletable": true,
+  "searchable": true,
+  "hasOwner": true,
+  "fields": [
+    { "name": "AppointmentNumber", "label": "Appointment Number", "type": "AutoNumber", "displayFormat": "{00000000}", "nameField": true, "idLookup": true, "createable": false, "updateable": false, "defaultedOnCreate": true }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "OperatingHours",
+  "label": "Operating Hours",
+  "labelPlural": "Operating Hours",
+  "keyPrefix": "0OH",
+  "createable": true,
+  "updateable": true,
+  "deletable": true,
+  "undeletable": true,
+  "searchable": true,
+  "hasOwner": true,
+  "fields": [
+    { "name": "Name", "label": "Name", "type": "Text", "length": 80, "nillable": false, "idLookup": true, "nameField": true }
+  ]
+}

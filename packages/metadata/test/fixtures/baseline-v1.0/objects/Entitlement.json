@@ -1,0 +1,15 @@
+{
+  "name": "Entitlement",
+  "label": "Entitlement",
+  "labelPlural": "Entitlements",
+  "keyPrefix": "550",
+  "createable": true,
+  "updateable": true,
+  "deletable": true,
+  "undeletable": true,
+  "searchable": true,
+  "hasOwner": false,
+  "fields": [
+    { "name": "Name", "label": "Entitlement Name", "type": "Text", "length": 255, "nillable": false, "groupable": false, "sortable": false, "nameField": true }
+  ]
+}

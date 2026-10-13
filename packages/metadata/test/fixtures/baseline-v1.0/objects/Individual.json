@@ -1,0 +1,17 @@
+{
+  "name": "Individual",
+  "label": "Individual",
+  "labelPlural": "Individuals",
+  "keyPrefix": "0PK",
+  "createable": true,
+  "updateable": true,
+  "deletable": true,
+  "undeletable": true,
+  "searchable": true,
+  "hasOwner": true,
+  "fields": [
+    { "name": "Name", "label": "Name", "type": "Name", "length": 121, "createable": false, "updateable": false, "nameField": true },
+    { "name": "FirstName", "label": "First Name", "type": "Text", "length": 40, "compoundFieldName": "Name" },
+    { "name": "LastName", "label": "Last Name", "type": "Text", "length": 80, "nillable": false, "compoundFieldName": "Name" }
+  ]
+}
