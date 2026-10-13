@@ -7,7 +7,7 @@
  * and retried on the next run.
  * Newly added roll-up summary columns are backfilled once.
  */
-import type { FieldDef, OrgSchema } from "@orglet/metadata";
+import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type FieldDef, type OrgSchema } from "@orglet/metadata";
 import { DEFAULT_ORG_SCHEMA, columnName, quote, type ColumnSpec } from "./columns.js";
 import {
   addColumnSql,
@@ -33,6 +33,8 @@ export interface MigrateResult {
   /** Executed statements, in order. */
   statements: string[];
   warnings: string[];
+  /** Structured form of `warnings`, same order (D-15). */
+  diagnostics: Diagnostic[];
 }
 
 interface ExistingColumn {
@@ -112,7 +114,7 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
   const force = options.force ?? false;
   const plans = planSchema(schema);
   const statements: string[] = [];
-  const warnings: string[] = [];
+  const sink: DiagnosticSink = { warnings: [], diagnostics: [] };
 
   await withTransaction(pool, async (client) => {
     const run = async (sql: string, params?: unknown[]) => {
@@ -144,19 +146,27 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
           const field = plan.object.fields.find((f) => f.rollup !== undefined && columnName(f) === column.name);
           if (field) backfills.push({ plan, field });
         } else if (current.sqlType !== column.sqlType) {
-          await reconcileType(plan, column, current, force, run, warnings, orgSchema);
+          await reconcileType(plan, column, current, force, run, sink, orgSchema);
         }
       }
       for (const name of cols.keys()) {
         if (plan.columns.some((c) => c.name === name)) continue;
         if (force) await run(`ALTER TABLE ${quote(orgSchema)}.${quote(plan.table)} DROP COLUMN ${quote(name)}`);
-        else warnings.push(`UNSUPPORTED:schema-drop column ${plan.table}.${name} is no longer in the metadata; kept (use --force to drop)`);
+        else {
+          const field = fieldOf(plan, name);
+          pushDiagnostic(sink, {
+            area: "schema-drop",
+            object: plan.object.name,
+            ...(field !== undefined ? { field } : {}),
+            message: `column ${plan.table}.${name} is no longer in the metadata; kept (use --force to drop)`,
+          });
+        }
       }
     }
     for (const table of existingTables.keys()) {
       if (plans.some((p) => p.table === table)) continue;
       if (force) await run(`DROP TABLE ${quote(orgSchema)}.${quote(table)} CASCADE`);
-      else warnings.push(`UNSUPPORTED:schema-drop table ${table} is no longer in the metadata; kept (use --force to drop)`);
+      else pushDiagnostic(sink, { area: "schema-drop", message: `table ${table} is no longer in the metadata; kept (use --force to drop)` });
     }
 
     // 2. Sequences, indexes, foreign keys. Existing sequences and indexes are read from the catalog once and
@@ -187,7 +197,13 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
           );
           const n = Number(bad.rows[0]?.n ?? 0);
           if (n > 0) {
-            warnings.push(`UNSUPPORTED:schema-fk foreign key ${fk.name} not added: ${plan.table}.${fk.column} holds ${n} value(s) with no matching row in ${fk.referencesTable}; correct or clear them and run orglet up again`);
+            const field = fieldOf(plan, fk.column);
+            pushDiagnostic(sink, {
+              area: "schema-fk",
+              object: plan.object.name,
+              ...(field !== undefined ? { field } : {}),
+              message: `foreign key ${fk.name} not added: ${plan.table}.${fk.column} holds ${n} value(s) with no matching row in ${fk.referencesTable}; correct or clear them and run orglet up again`,
+            });
             continue;
           }
         }
@@ -207,8 +223,11 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
     }
   });
 
-  return { statements, warnings };
+  return { statements, warnings: sink.warnings, diagnostics: sink.diagnostics };
 }
+
+/** API name of the stored field behind a column, when there is one (system columns have none). */
+const fieldOf = (plan: TablePlan, column: string): string | undefined => plan.object.fields.find((f) => columnName(f) === column)?.name;
 
 async function reconcileType(
   plan: TablePlan,
@@ -216,14 +235,18 @@ async function reconcileType(
   current: ExistingColumn,
   force: boolean,
   run: (sql: string) => Promise<void>,
-  warnings: string[],
+  sink: DiagnosticSink,
   orgSchema: string,
 ): Promise<void> {
   if (isWidening(current.sqlType, column.sqlType) || force) {
     await run(alterColumnTypeSql(orgSchema, plan.table, column));
   } else {
-    warnings.push(
-      `UNSUPPORTED:schema-narrow column ${plan.table}.${column.name} is ${current.sqlType} in the database but ${column.sqlType} in the metadata; kept (use --force to convert)`,
-    );
+    const field = fieldOf(plan, column.name);
+    pushDiagnostic(sink, {
+      area: "schema-narrow",
+      object: plan.object.name,
+      ...(field !== undefined ? { field } : {}),
+      message: `column ${plan.table}.${column.name} is ${current.sqlType} in the database but ${column.sqlType} in the metadata; kept (use --force to convert)`,
+    });
   }
 }

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, OrgSchemaImpl, type FieldDef, type FieldType, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
+import { buildOrgSchema, formatDiagnostic, loadBaseline, loadOrgSchema, OrgSchemaImpl, type FieldDef, type FieldType, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
 import type { Pool } from "./db.js";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { migrate } from "./migrate.js";
@@ -108,6 +108,8 @@ describe("migrate", () => {
       expect.stringContaining("UNSUPPORTED:schema-narrow column project__c.code__c"),
       expect.stringContaining("UNSUPPORTED:schema-drop column project__c.extra__c"),
     ]);
+    expect(back.diagnostics.map((d) => d.area)).toEqual(["schema-narrow", "schema-drop"]);
+    expect(back.diagnostics[0]).toMatchObject({ object: "Project__c", field: "Code__c" });
     expect((await columns("project__c")).get("code__c")).toBe("character varying(40)");
 
     const forced = await migrate(pool, schema, { orgSchema, force: true });
@@ -172,6 +174,15 @@ describe("migrate across the thin standard-object upgrade", () => {
     expect(up.warnings).toEqual([
       "UNSUPPORTED:schema-fk foreign key fk_case_businesshoursid not added: case.businesshoursid holds 1 value(s) with no matching row in businesshours; correct or clear them and run orglet up again",
     ]);
+    expect(up.diagnostics).toEqual([
+      {
+        area: "schema-fk",
+        object: "Case",
+        field: "BusinessHoursId",
+        message: "foreign key fk_case_businesshoursid not added: case.businesshoursid holds 1 value(s) with no matching row in businesshours; correct or clear them and run orglet up again",
+      },
+    ]);
+    expect(up.warnings).toEqual(up.diagnostics.map(formatDiagnostic));
     expect(up.statements.filter((s) => s.includes("fk_case_businesshoursid"))).toEqual([]);
     const row = await pool.query<{ businesshoursid: string }>(`SELECT "businesshoursid" FROM ${quote(org)}."case" WHERE "id" = $1`, ["500000000000001AAA"]);
     expect(row.rows).toEqual([{ businesshoursid: "01m000000000001AAA" }]);

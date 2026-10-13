@@ -6,7 +6,7 @@
  * precedence and collision rule is unit-testable; the DB wrapper is a thin
  * read -> scan -> plan -> insert -> mutate transaction around it.
  */
-import type { OrgSchema, SObjectDef } from "@orglet/metadata";
+import type { Diagnostic, OrgSchema, SObjectDef } from "@orglet/metadata";
 import { DEFAULT_ORG_SCHEMA, INTERNAL_SCHEMA, quote, tableName } from "./columns.js";
 import { withTransaction, type Pool } from "./db.js";
 import { ensureInternalSchema } from "./internal.js";
@@ -228,9 +228,11 @@ export interface ReconcileKeyPrefixesOptions {
 }
 
 export interface ReconcileKeyPrefixesResult {
-  /** Rows written this run, in custom-object name order; empty when every custom object already had a row. */
+  /** Rows written this run, in custom-object name order; empty when every custom object has a row. */
   assignments: KeyPrefixAssignment[];
   warnings: string[];
+  /** Structured form of `warnings` (D-15); empty today, like warnings. */
+  diagnostics: Diagnostic[];
 }
 
 function provisionalPrefix(obj: SObjectDef): string {
@@ -292,7 +294,7 @@ export async function reconcileKeyPrefixes(pool: Pool, schema: OrgSchema, option
       if (value !== undefined) obj.keyPrefix = value;
     }
 
-    return { assignments: plan.assignments, warnings: plan.warnings };
+    return { assignments: plan.assignments, warnings: plan.warnings, diagnostics: [] };
   });
 }
 

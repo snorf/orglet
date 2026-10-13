@@ -41,7 +41,7 @@ export interface DiagnosticSink {
 }
 
 /** Record a diagnostic and its warning string together, in the same order, so the two lists never drift. */
-export function pushDiagnostic(sink: DiagnosticSink, d: Diagnostic): void {
+export function pushDiagnostic<D extends Diagnostic>(sink: DiagnosticSink, d: D): void {
   sink.diagnostics.push(d);
   sink.warnings.push(formatDiagnostic(d));
 }
