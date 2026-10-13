@@ -112,9 +112,8 @@ const MASTER_DETAIL_REFUSAL = "Account.SyntheticParentId: MasterDetail on an obj
 const SYNTHETIC_PROPERTIES = ["Create", "Filter", "Group", "Sort", "Update"];
 
 /**
- * Account only, in full mode, with its sources pruned to the v1.0 inventory plus one synthetic reference field. Full
- * mode on the unpruned sources is 09-07's job (it aborts today on Account.ConnectionReceivedId, a Lookup whose
- * Refers To neither source states), so the pruning is what lets the field loop reach the synthetic field.
+ * Account only, in full mode, with its sources pruned to the v1.0 inventory plus one synthetic reference field, so the
+ * refusal is tested on exactly one new field rather than on the whole step-B inventory.
  */
 function syntheticAccountInputs(relationshipType: "lookup" | "master-detail"): GeneratorInputs {
   const clone = structuredClone(inputs);
@@ -124,8 +123,10 @@ function syntheticAccountInputs(relationshipType: "lookup" | "master-detail"): G
   const sf = clone.sfSkills.get("Account")!;
   const doc = clone.objectReference.get("Account")!;
   for (const map of [sf.fields, sf.fieldReference, doc.fields]) for (const name of [...map.keys()]) if (!v1Names.has(name)) map.delete(name);
-  sf.fields.set("SyntheticParentId", { type: "reference", properties: SYNTHETIC_PROPERTIES, refersTo: ["Contact"], relationshipName: "SyntheticParent" });
-  doc.fields.set("SyntheticParentId", { type: "reference", properties: SYNTHETIC_PROPERTIES, refersTo: ["Contact"], relationshipName: "SyntheticParent", relationshipType });
+  // The target is Account itself: the pruned object list holds only Account, and 09-06 skips a new Lookup whose target is
+  // outside objects.json before it could reach the field loop's emit step (the MasterDetail refusal still runs first).
+  sf.fields.set("SyntheticParentId", { type: "reference", properties: SYNTHETIC_PROPERTIES, refersTo: ["Account"], relationshipName: "SyntheticParent" });
+  doc.fields.set("SyntheticParentId", { type: "reference", properties: SYNTHETIC_PROPERTIES, refersTo: ["Account"], relationshipName: "SyntheticParent", relationshipType });
   return clone;
 }
 
@@ -148,14 +149,14 @@ describe("MasterDetail refusal (MIGR-03)", () => {
 
   it("the same field as a Lookup is emitted, and in v1-only mode it is out of scope", () => {
     const lookup = regenerate(syntheticAccountInputs("lookup"), { v1Only: false });
-    expect(accountField(lookup, "SyntheticParentId")).toMatchObject({ type: "Lookup", referenceTo: ["Contact"] });
+    expect(accountField(lookup, "SyntheticParentId")).toMatchObject({ type: "Lookup", referenceTo: ["Account"] });
     const v1Scope = regenerate(syntheticAccountInputs("master-detail"), { v1Only: true });
     expect(account(v1Scope).fields.some((f) => f.name === "SyntheticParentId")).toBe(false);
   });
 
   it("an overrides.json set cannot introduce a MasterDetail on a v1.0 object either", () => {
     const viaOverride = syntheticAccountInputs("lookup");
-    viaOverride.overrides.objects.Account!.fields!.SyntheticParentId = { set: { type: "MasterDetail", referenceTo: ["Contact"] }, reason: "test" };
+    viaOverride.overrides.objects.Account!.fields!.SyntheticParentId = { set: { type: "MasterDetail", referenceTo: ["Account"] }, reason: "test" };
     expectGeneratorError(() => generate(viaOverride, { v1Only: false }), MASTER_DETAIL_REFUSAL);
   });
 

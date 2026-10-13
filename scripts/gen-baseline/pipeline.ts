@@ -5,9 +5,17 @@
  * CLI (generate.ts) and the vitest parity gate call this same function, so "regenerate in memory" and "regenerate on
  * disk" cannot diverge (D-18/D-19). Precedence per fact: overrides > v1 pins > source-derived > type defaults; a fact
  * the two sources disagree on must be settled by a pin or an override, otherwise generation aborts (D-03).
+ *
+ * Full mode (`v1Only: false`, BASE2-02 step B) adds every field the sources document to the 35 objects. A field new to a
+ * v1.0 object follows extra rules (locked decisions 4 and 5): unsupported types and references to objects outside
+ * objects.json are skipped and reported, gated fields are tagged and never required, required-looking fields are forced
+ * nullable, field_reference-only fields are read-only, picklists carry no values. v1.0 fields (those with a pin) are
+ * never touched by these rules, so step B cannot change what step A reproduced. Full mode also emits PROVENANCE.json
+ * (D-04): per-object counts of facts by provenance, the non-verified facts per field, and the skip/gating lists.
  */
 import type { StandardFieldJson, StandardObjectJson } from "@orglet/metadata";
 import { GeneratorError } from "./errors.js";
+import { matchGating } from "./gating.js";
 import { codeUnit, sourceFieldsOf, type FieldOverride, type GeneratorInputs, type ObjectOverride, type Overrides, type SourceField } from "./sources.js";
 import { compoundParent, flagsFrom, humanise, isTextType, lengthFor, mapType, sfTextLength, type Provenance } from "./typemap.js";
 
@@ -19,6 +27,8 @@ export const FIELD_KEY_ORDER = ["name", "label", "type", "length", "precision", 
 export interface GenerateOptions {
   /** Emit only the objects and fields v1-pins.json lists, in the exact v1.0 key set (SC2 step 1). 09-07 sets false. */
   v1Only: boolean;
+  /** Return unresolved source conflicts in `report.conflicts` instead of aborting (`--report` and the step-B tests). */
+  collectConflicts?: boolean;
 }
 export const CLI_OPTIONS: GenerateOptions = { v1Only: true };
 
@@ -30,12 +40,18 @@ export interface Conflict {
 }
 
 export interface DerivedField {
+  source: SourceField;
   json: Partial<StandardFieldJson> & { name: string };
   conflicts: Conflict[];
   /** Per emitted fact (type, length, label, flags, referenceTo, ...). */
   provenance: Record<string, Provenance>;
   /** Set when the source type is not a physical column; `json` then holds only the name. */
   skip?: { reason: "system" | "unsupported"; sourceType: string };
+}
+
+export interface SkipCounts {
+  fieldType: number;
+  referenceTarget: number;
 }
 
 export interface GeneratorReport {
@@ -51,6 +67,22 @@ export interface GeneratorReport {
   unsupportedTypes: string[];
   /** `Object.Field.fact` source disagreements settled by an overrides.json `set`. */
   overrideResolved: string[];
+  /** Full mode: new fields omitted from the output, by kind (locked decision 4): `Object.Field (<token>)` and `Object.Field -> <targets>`. */
+  skipped: { fieldType: string[]; referenceTarget: string[]; perObject: Record<string, SkipCounts> };
+  /** Full mode: documented fields dropped by an overrides.json `skip` entry. */
+  skippedByOverride: string[];
+  /** Full mode: source names the loader provides itself (system fields, matched case-insensitively because Postgres columns are). */
+  excludedSystem: string[];
+  /** Full mode: new fields the sources mark required whose `nillable: false` was not written (locked decision 5). */
+  forcedNullable: string[];
+  /** Full mode: `Object.Field` -> gating keyword ids, every heuristic hit on a new field (D-08 review list). */
+  gating: Record<string, string[]>;
+  /** Full mode: new fields known only from sf-skills `field_reference`, emitted read-only. */
+  sdkOnly: string[];
+  /** Unresolved source conflicts (only populated with `collectConflicts`; otherwise generation aborts). */
+  conflicts: { unresolved: string[]; byFact: Record<string, number> };
+  /** Full mode: new fields in sf-skills `fields` or the Object Reference (documented) vs. new fields actually emitted (any source). */
+  totals: { documentedNew: number; generatedNew: number; sdkOnlyCandidates: number; skippedDocumented: number; skippedSdkOnly: number };
 }
 
 export interface GenerateResult {
@@ -120,7 +152,7 @@ export function deriveField(field: SourceField, addressFields: ReadonlySet<strin
   const docMapped = tokens.sf !== undefined && tokens.doc !== undefined ? mapType(field.object, field.name, tokens.doc, context) : undefined;
   const typeName = (m: ReturnType<typeof mapType>): string => ("skip" in m ? `skip:${m.skip}` : m.type);
   both("type", typeName(mapped), docMapped === undefined ? undefined : typeName(docMapped), (a, b) => a === b);
-  if ("skip" in mapped) return { json: { name: field.name }, conflicts, provenance, skip: { reason: mapped.skip, sourceType: mapped.sourceType } };
+  if ("skip" in mapped) return { source: field, json: { name: field.name }, conflicts, provenance, skip: { reason: mapped.skip, sourceType: mapped.sourceType } };
 
   const json: DerivedField["json"] = { name: field.name, label: "", type: mapped.type };
   if (field.sf?.label) {
@@ -174,7 +206,7 @@ export function deriveField(field: SourceField, addressFields: ReadonlySet<strin
     json.compoundFieldName = compound;
     provenance.compoundFieldName = "verified";
   }
-  return { json, conflicts, provenance };
+  return { source: field, json, conflicts, provenance };
 }
 
 /** Source-derived fields of one object, keyed by name; used by generate() and by `--bootstrap-pins`. */
@@ -211,16 +243,75 @@ function applyPins(json: Record<string, unknown>, pins: Record<string, unknown>)
   }
 }
 
+/** Keys recursively sorted by code-unit order so PROVENANCE.json and `--report` are deterministic (D-19). */
+export function sortKeysDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeysDeep);
+  if (value !== null && typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    return Object.fromEntries(Object.keys(source).sort(codeUnit).map((k) => [k, sortKeysDeep(source[k])]));
+  }
+  return value;
+}
+
+/** The loader adds these (standard/README.md); compared lower-cased because `columnName` lower-cases, so `CreatedByID` is the same column. */
+const SYSTEM_FIELD_NAMES: ReadonlySet<string> = new Set(["id", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "ownerid"]);
+const isSystemName = (name: string): boolean => SYSTEM_FIELD_NAMES.has(name.toLowerCase());
+/** In sf-skills `fields` or in the Object Reference; `field_reference`-only entries have no `type` (only `referenceType`). */
+const isDocumented = (field: SourceField): boolean => field.sf?.type !== undefined || field.doc !== undefined;
+const PICKLIST_PER_ORG_KEYS = ["picklistValues", "restrictedPicklist", "standardValueSet"] as const;
+
+/** Per-field provenance for PROVENANCE.json: `v1.0` (pinned) and `override` beat the derived tag; facts with no tag are type-derived (`verified`). */
+export type FactProvenance = Provenance | "v1.0" | "override";
+const COUNT_KEYS = { verified: "verified", "sdk-only": "sdkOnly", "doc-only": "docOnly", guessed: "guessed", "v1.0": "v1", override: "override" } as const satisfies Record<FactProvenance, string>;
+
+interface ProvenanceCounts {
+  fields: number;
+  verified: number;
+  sdkOnly: number;
+  docOnly: number;
+  guessed: number;
+  v1: number;
+  override: number;
+  featureGated: number;
+  skippedFieldType: number;
+  skippedReferenceTarget: number;
+}
+
+/** Gating ids for a new field: PDF `gating`, the keyword list over sf-skills prose, `ispersonaccount_fields` (D-08; Research Pattern 4). */
+function gatingIds(field: SourceField): { ids: string[]; provenance: Provenance } {
+  const doc = field.doc?.gating ?? [];
+  const sf = [...(field.sf?.description ? matchGating(field.sf.description) : []), ...(field.personAccount ? ["person-accounts"] : [])];
+  const ids = [...new Set([...doc, ...sf])].sort(codeUnit);
+  return { ids, provenance: doc.length > 0 && sf.length > 0 ? "verified" : doc.length > 0 ? "doc-only" : "sdk-only" };
+}
+
 export function generate(inputs: GeneratorInputs, options: GenerateOptions): GenerateResult {
   validateOverrides(inputs.overrides);
   const pins = inputs.pins;
   if (options.v1Only && !pins) throw new GeneratorError("v1-pins.json is missing; run `pnpm baseline:gen --bootstrap-pins` once");
   for (const object of Object.keys(pins ?? {})) if (!inputs.objects.includes(object)) throw new GeneratorError(`v1-pins.json lists ${object}, which is not in objects.json`);
 
-  const report: GeneratorReport = { pinnedFields: [], unpinnedV1Fields: [], conflictsSettledByPin: [], guessed: [], unsupportedTypes: [], overrideResolved: [] };
-  const unresolved: string[] = [];
+  const report: GeneratorReport = {
+    pinnedFields: [],
+    unpinnedV1Fields: [],
+    conflictsSettledByPin: [],
+    guessed: [],
+    unsupportedTypes: [],
+    overrideResolved: [],
+    skipped: { fieldType: [], referenceTarget: [], perObject: {} },
+    skippedByOverride: [],
+    excludedSystem: [],
+    forcedNullable: [],
+    gating: {},
+    sdkOnly: [],
+    conflicts: { unresolved: [], byFact: {} },
+    totals: { documentedNew: 0, generatedNew: 0, sdkOnlyCandidates: 0, skippedDocumented: 0, skippedSdkOnly: 0 },
+  };
   const files = new Map<string, string>();
   const objects = options.v1Only ? inputs.objects.filter((o) => pins?.[o]) : inputs.objects;
+  const knownObjects = new Set(inputs.objects);
+  const provenanceCounts: Record<string, ProvenanceCounts> = {};
+  const provenanceObjects: Record<string, { keyPrefix: string; fields: Record<string, Record<string, FactProvenance>> }> = {};
 
   for (const object of objects) {
     const override: ObjectOverride | undefined = inputs.overrides.objects[object];
@@ -236,36 +327,73 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
     }
     const objectJson: StandardObjectJson = { ...objectFacts, name: object, label: objectFacts.label, labelPlural: objectFacts.labelPlural, keyPrefix: override.keyPrefix.value, hasOwner: objectFacts.hasOwner, fields: [] };
     if (!options.v1Only) objectJson.keyPrefixSource = override.keyPrefix.source;
+    const counts: ProvenanceCounts = { fields: 0, verified: 0, sdkOnly: 0, docOnly: 0, guessed: 0, v1: 0, override: 0, featureGated: 0, skippedFieldType: 0, skippedReferenceTarget: 0 };
+    const fieldProvenance: Record<string, Record<string, FactProvenance>> = {};
+    const skip = (kind: keyof SkipCounts, d: DerivedField, entry: string): void => {
+      report.skipped[kind].push(entry);
+      counts[kind === "fieldType" ? "skippedFieldType" : "skippedReferenceTarget"]++;
+      if (isDocumented(d.source)) report.totals.skippedDocumented++;
+      else report.totals.skippedSdkOnly++;
+    };
 
     const fieldOverrides: Record<string, FieldOverride> = override.fields ?? {};
     const names = new Set<string>();
     if (options.v1Only) for (const name of Object.keys(objectPins?.fields ?? {})) names.add(name);
     else {
-      for (const [name, d] of derived) if (!d.skip || d.skip.reason !== "system") names.add(name);
+      for (const [name, d] of derived) {
+        if (isSystemName(name) || d.skip?.reason === "system") report.excludedSystem.push(`${object}.${name}`);
+        else names.add(name);
+      }
       for (const [name, o] of Object.entries(fieldOverrides)) if (o.keep) names.add(name);
     }
-    for (const [name, o] of Object.entries(fieldOverrides)) if (o.skip) names.delete(name);
+    for (const [name, o] of Object.entries(fieldOverrides)) {
+      if (!o.skip || !names.has(name)) continue;
+      names.delete(name);
+      if (!options.v1Only) report.skippedByOverride.push(`${object}.${name}`);
+    }
+    if (!options.v1Only) {
+      for (const name of names) {
+        const d = derived.get(name);
+        if (!d || objectPins?.fields[name]) continue;
+        if (isDocumented(d.source)) report.totals.documentedNew++;
+        else report.totals.sdkOnlyCandidates++;
+      }
+    }
 
     for (const name of [...names].sort(codeUnit)) {
       const where = `${object}.${name}`;
       const fieldPins = objectPins?.fields[name];
       const fieldOverride = fieldOverrides[name];
       const d = derived.get(name);
+      // A field new to this object: full mode only, no v1.0 pin. v1.0 fields never see the step-B rules below.
+      const isNew = !options.v1Only && !fieldPins;
       if (d?.skip && !fieldPins) {
-        if (d.skip.reason === "unsupported") report.unsupportedTypes.push(`UNSUPPORTED:field-type ${where} (${d.skip.sourceType})`);
+        if (d.skip.reason === "unsupported") {
+          report.unsupportedTypes.push(`UNSUPPORTED:field-type ${where} (${d.skip.sourceType})`);
+          skip("fieldType", d, `${where} (${d.skip.sourceType})`);
+        }
         continue;
       }
       if (!d && !fieldOverride?.keep) throw new GeneratorError(`${where} is in v1.0 but in neither source; add an overrides.json keep entry`);
       const json: Record<string, unknown> = { ...(d?.json ?? { name }) };
+      const facts: Record<string, FactProvenance> = {};
+      for (const [fact, p] of Object.entries(d?.provenance ?? {})) facts[fact] = p;
       if (fieldPins) {
         applyPins(json, fieldPins);
+        for (const fact of Object.keys(fieldPins)) facts[fact] = "v1.0";
         (Object.keys(fieldPins).length > 0 ? report.pinnedFields : report.unpinnedV1Fields).push(where);
       }
-      if (fieldOverride?.set) Object.assign(json, fieldOverride.set);
+      if (fieldOverride?.set) {
+        Object.assign(json, fieldOverride.set);
+        for (const fact of Object.keys(fieldOverride.set)) facts[fact] = "override";
+      }
       for (const c of d?.conflicts ?? []) {
         if (fieldOverride?.set && c.fact in fieldOverride.set) report.overrideResolved.push(`${where}.${c.fact}`);
         else if (fieldPins && c.fact in fieldPins) report.conflictsSettledByPin.push(`${where}.${c.fact}`);
-        else unresolved.push(`${where}.${c.fact}: sf-skills=${c.sf} object-reference=${c.doc}`);
+        else {
+          report.conflicts.unresolved.push(`${where}.${c.fact}: sf-skills=${c.sf} object-reference=${c.doc}`);
+          report.conflicts.byFact[c.fact] = (report.conflicts.byFact[c.fact] ?? 0) + 1;
+        }
       }
       for (const [fact, p] of Object.entries(d?.provenance ?? {})) {
         if (p === "guessed" && json[fact] !== undefined && !(fieldPins && fact in fieldPins) && !(fieldOverride?.set && fact in fieldOverride.set)) report.guessed.push(`${where}.${fact}`);
@@ -276,15 +404,93 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
       if (json.type === "MasterDetail" && objectPins && !fieldPins) {
         throw new GeneratorError(`${where}: MasterDetail on an object that existed in v1.0 would add a NOT NULL column to a populated table; model it as Lookup in overrides.json`);
       }
+      if (isNew && d) {
+        const set = fieldOverride?.set ?? {};
+        if (json.type === "Lookup" || json.type === "MasterDetail") {
+          // Rule 2: a target outside objects.json would make the loader warn UNSUPPORTED:reference-target on every run, and
+          // dropping one target of a polymorphic lookup would silently make it single-target; the whole field is skipped.
+          const targets = Array.isArray(json.referenceTo) ? (json.referenceTo as string[]) : [];
+          if (targets.length === 0) {
+            skip("referenceTarget", d, `${where} -> (none stated)`);
+            continue;
+          }
+          if (targets.some((t) => !knownObjects.has(t))) {
+            skip("referenceTarget", d, `${where} -> ${targets.join(", ")}`);
+            continue;
+          }
+        }
+        if (!isDocumented(d.source)) {
+          // Rule 5: field_reference states labels, types and lengths but no Create/Update properties; read-only is the safe shape.
+          for (const flag of ["createable", "updateable"] as const) {
+            if (flag in set) continue;
+            json[flag] = false;
+            facts[flag] = "sdk-only";
+          }
+          report.sdkOnly.push(where);
+        }
+        // Rule 6: standard picklist values are per org (Pitfall B4); the field exists, its values do not.
+        if (json.type === "Picklist" || json.type === "MultiselectPicklist") for (const key of PICKLIST_PER_ORG_KEYS) if (!(key in set)) delete json[key];
+        // Rule 3: gating. An override decides when present; otherwise any heuristic hit gates the field (D-08, D-09).
+        const gating = gatingIds(d.source);
+        if (gating.ids.length > 0) report.gating[where] = gating.ids;
+        const gated = fieldOverride?.featureGated ?? gating.ids.length > 0;
+        if (gated) {
+          if (fieldOverride?.featureGated === true && gating.ids.length === 0) report.gating[where] = ["override"];
+          json.featureGated = true;
+          facts.featureGated = fieldOverride?.featureGated === undefined ? gating.provenance : "override";
+          if (set.nillable === false) throw new GeneratorError(`${where}: a feature-gated field is never nillable: false (D-09); drop the override or set featureGated: false with a reason`);
+          delete json.nillable;
+          counts.featureGated++;
+        } else if (json.nillable === false && json.createable !== false && json.defaultedOnCreate !== true && json.type !== "Checkbox" && !("nillable" in set)) {
+          // Rule 4: a field documented as required would start failing inserts that work today (Research Pitfall 3). Checkbox
+          // is exempt: the engine defaults an absent Checkbox to false before the required check, exactly as v1.0 writes them.
+          delete json.nillable;
+          report.forcedNullable.push(where);
+        }
+        report.totals.generatedNew++;
+      }
       if ((json.type === "Lookup" || json.type === "MasterDetail") && !(Array.isArray(json.referenceTo) && json.referenceTo.length > 0)) {
         throw new GeneratorError(`${where}: ${json.type} without referenceTo; neither source states Refers To, pin or override it`);
       }
       objectJson.fields.push(json as unknown as StandardFieldJson);
+      counts.fields++;
+      const notVerified: Record<string, FactProvenance> = {};
+      for (const key of Object.keys(json)) {
+        if (key === "name") continue;
+        const p: FactProvenance = facts[key] ?? "verified";
+        counts[COUNT_KEYS[p]]++;
+        if (p !== "verified") notVerified[key] = p;
+      }
+      if (Object.keys(notVerified).length > 0) fieldProvenance[name] = notVerified;
+    }
+    // Two names differing only in case would share one lower-cased Postgres column (sf-skills irregularity, Research Pitfall 8).
+    const lowered = new Map<string, string>();
+    for (const field of objectJson.fields) {
+      const previous = lowered.get(field.name.toLowerCase());
+      if (previous !== undefined) throw new GeneratorError(`${object}: fields ${previous} and ${field.name} differ only in case and would share one Postgres column; skip one in overrides.json`);
+      lowered.set(field.name.toLowerCase(), field.name);
     }
     files.set(`objects/${object}.json`, serialise(orderObjectJson(objectJson)));
+    report.skipped.perObject[object] = { fieldType: counts.skippedFieldType, referenceTarget: counts.skippedReferenceTarget };
+    provenanceCounts[object] = counts;
+    provenanceObjects[object] = { keyPrefix: override.keyPrefix.source, fields: fieldProvenance };
   }
 
-  if (unresolved.length > 0) throw new GeneratorError(`unresolved source conflicts (settle each with a v1-pins.json pin or an overrides.json set):\n  ${unresolved.join("\n  ")}`);
-  for (const list of Object.values(report) as string[][]) list.sort(codeUnit);
+  if (report.conflicts.unresolved.length > 0 && !options.collectConflicts) {
+    throw new GeneratorError(`unresolved source conflicts (settle each with a v1-pins.json pin or an overrides.json set):\n  ${report.conflicts.unresolved.sort(codeUnit).join("\n  ")}`);
+  }
+  const lists: string[][] = [report.pinnedFields, report.unpinnedV1Fields, report.conflictsSettledByPin, report.guessed, report.unsupportedTypes, report.overrideResolved, report.skipped.fieldType, report.skipped.referenceTarget, report.skippedByOverride, report.excludedSystem, report.forcedNullable, report.sdkOnly, report.conflicts.unresolved];
+  for (const list of lists) list.sort(codeUnit);
+  if (!options.v1Only) {
+    const provenance = {
+      pins: { sfSkills: inputs.snapshots.sfSkills.revision, objectReference: inputs.snapshots.objectReference },
+      counts: provenanceCounts,
+      objects: provenanceObjects,
+      skipped: { fieldType: report.skipped.fieldType, referenceTarget: report.skipped.referenceTarget },
+      forcedNullable: report.forcedNullable,
+      gating: report.gating,
+    };
+    files.set("PROVENANCE.json", serialise(sortKeysDeep(provenance)));
+  }
   return { files, report };
 }

@@ -7,6 +7,10 @@
         "ref": "jsforce@9bae14ea0f1b9dff3b0cb0862a3e5f525f25a29f:test/query-pagination.mock.test.ts:59"
       },
       "fields": {
+        "PersonBirthdate": {
+          "skip": true,
+          "reason": "sf-skills field_reference spelling of the documented PersonBirthDate; both would map to one lower-cased Postgres column"
+        },
         "Tier": {
           "keep": true,
           "reason": "present in v1.0, absent from sources"
@@ -93,6 +97,68 @@
       "keyPrefix": {
         "value": "06E",
         "source": "unverified"
+      },
+      "fields": {
+        "Country": {
+          "set": {
+            "length": 80
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 80, Object Reference maximum 40; the larger value is taken so no documented value is rejected"
+        },
+        "FifthSic": {
+          "set": {
+            "length": 8
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 4, Object Reference maximum 8; the larger value is taken so no documented value is rejected"
+        },
+        "FourthSic": {
+          "set": {
+            "length": 8
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 4, Object Reference maximum 8; the larger value is taken so no documented value is rejected"
+        },
+        "MailingCountry": {
+          "set": {
+            "length": 80
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 80, Object Reference maximum 40; the larger value is taken so no documented value is rejected"
+        },
+        "MailingState": {
+          "set": {
+            "length": 80
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 80, Object Reference maximum 20; the larger value is taken so no documented value is rejected"
+        },
+        "SecondSic": {
+          "set": {
+            "length": 8
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 4, Object Reference maximum 8; the larger value is taken so no documented value is rejected"
+        },
+        "SixthSic": {
+          "set": {
+            "length": 8
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 4, Object Reference maximum 8; the larger value is taken so no documented value is rejected"
+        },
+        "State": {
+          "set": {
+            "length": 80
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 80, Object Reference maximum 20; the larger value is taken so no documented value is rejected"
+        },
+        "ThirdSic": {
+          "set": {
+            "length": 8
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 4, Object Reference maximum 8; the larger value is taken so no documented value is rejected"
+        },
+        "URL": {
+          "set": {
+            "length": 255
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 255, Object Reference maximum 104; the larger value is taken so no documented value is rejected"
+        }
       }
     },
     "Entitlement": {
@@ -129,6 +195,12 @@
       "keyPrefix": {
         "value": "0XC",
         "source": "unverified"
+      },
+      "fields": {
+        "IsWritable": {
+          "skip": true,
+          "reason": "sf-skills field_reference spelling of the documented isWritable; both would map to one lower-cased Postgres column"
+        }
       }
     },
     "Group": {
@@ -158,6 +230,10 @@
         "CampaignId": {
           "keep": true,
           "reason": "present in v1.0, absent from sources"
+        },
+        "DandBCompanyId": {
+          "skip": true,
+          "reason": "sf-skills and Object Reference spelling of the v1.0 field DandbCompanyId; both would map to one lower-cased Postgres column"
         },
         "DoNotCall": {
           "keep": true,
@@ -231,6 +307,16 @@
       "keyPrefix": {
         "value": "00e",
         "source": "unverified"
+      },
+      "fields": {
+        "Permissions": {
+          "skip": true,
+          "reason": "placeholder for the per-permission boolean family (Permissions<Name>), not a field (09-03 KNOWN_GAPS)"
+        },
+        "PermissionsPermissionName": {
+          "skip": true,
+          "reason": "Object Reference placeholder for the per-permission boolean family (Permissions<Name>), not a field (09-03 DOC_ONLY_REVIEWED)"
+        }
       }
     },
     "RecordType": {
@@ -249,6 +335,20 @@
       "keyPrefix": {
         "value": "810",
         "source": "unverified"
+      },
+      "fields": {
+        "BillingCountry": {
+          "set": {
+            "length": 80
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 80, Object Reference maximum 40; the larger value is taken so no documented value is rejected"
+        },
+        "BillingState": {
+          "set": {
+            "length": 80
+          },
+          "reason": "sources disagree on length: sf-skills field_reference 80, Object Reference maximum 20; the larger value is taken so no documented value is rejected"
+        }
       }
     },
     "SocialPost": {

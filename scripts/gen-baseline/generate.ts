@@ -3,14 +3,15 @@
  * scripts/gen-baseline and writes packages/metadata/standard/objects/*.json (D-02). `--check` compares instead of
  * writing and exits 1 listing every differing, missing or stray file (the CI drift gate, D-18). `--bootstrap-pins` is a
  * one-off maintenance mode that derives v1-pins.json and the overrides.json keep entries from the frozen v1.0 fixture;
- * it is the only mode that reads the fixture.
+ * it is the only mode that reads the fixture. `--report` runs full mode (every documented field) in memory with
+ * `collectConflicts` and prints the report as sorted JSON without writing anything: the step-B review input (09-06).
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import type { StandardObjectJson } from "@orglet/metadata";
-import { CLI_OPTIONS, deriveFromSources, FIELD_KEY_ORDER, generate, GeneratorError, OBJECT_KEY_ORDER, orderKeys, serialise, type GeneratorReport } from "./pipeline.js";
+import { CLI_OPTIONS, deriveFromSources, FIELD_KEY_ORDER, generate, GeneratorError, OBJECT_KEY_ORDER, orderKeys, serialise, sortKeysDeep, type GeneratorReport } from "./pipeline.js";
 import { codeUnit, loadInputs, type FieldOverride, type GeneratorInputs, type ObjectPins, type Overrides, type Pins } from "./sources.js";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -117,20 +118,30 @@ function bootstrapPins(inputs: GeneratorInputs): number {
   return 0;
 }
 
+/** Full-mode report for review; nothing is written (locked decision: Johan sees the numbers before 09-07 regenerates). */
+function printFullReport(inputs: GeneratorInputs): number {
+  const { report } = generate(inputs, { v1Only: false, collectConflicts: true });
+  process.stdout.write(serialise(sortKeysDeep(report)));
+  return 0;
+}
+
 async function main(argv: string[]): Promise<number> {
-  const check = argv.includes("--check");
-  const bootstrap = argv.includes("--bootstrap-pins");
-  const unknown = argv.filter((a) => a !== "--check" && a !== "--bootstrap-pins");
-  if (unknown.length > 0) {
-    console.error(`unknown argument(s): ${unknown.join(" ")}; usage: generate.ts [--check | --bootstrap-pins]`);
+  const MODES = ["--check", "--bootstrap-pins", "--report"];
+  const unknown = argv.filter((a) => !MODES.includes(a));
+  if (unknown.length > 0 || argv.length > 1) {
+    console.error(`${unknown.length > 0 ? `unknown argument(s): ${unknown.join(" ")}` : "one mode at a time"}; usage: generate.ts [--check | --bootstrap-pins | --report]`);
     return 2;
   }
   const inputs = await loadInputs(ROOT);
-  return bootstrap ? bootstrapPins(inputs) : writeOrCheck(inputs, check);
+  if (argv.includes("--report")) return printFullReport(inputs);
+  return argv.includes("--bootstrap-pins") ? bootstrapPins(inputs) : writeOrCheck(inputs, argv.includes("--check"));
 }
 
+// exitCode rather than process.exit: on macOS a piped stdout is asynchronous and exit() would truncate `--report`.
 main(process.argv.slice(2)).then(
-  (code) => process.exit(code),
+  (code) => {
+    process.exitCode = code;
+  },
   (err: unknown) => {
     if (err instanceof GeneratorError) console.error(`error: ${err.message}`);
     else console.error(err instanceof Error ? err.stack : String(err));

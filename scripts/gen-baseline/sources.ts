@@ -107,6 +107,12 @@ export interface AllowlistEntry {
   reason: string;
 }
 
+/** The two source pins from the VENDOR.md files, recorded in PROVENANCE.json (D-01); never a timestamp of the run. */
+export interface Snapshots {
+  sfSkills: { revision: string };
+  objectReference: { url: string; lastModified: string; sha256: string };
+}
+
 export interface GeneratorInputs {
   objects: string[];
   sfSkills: Map<string, SfSkillsObject>;
@@ -114,6 +120,7 @@ export interface GeneratorInputs {
   overrides: Overrides;
   pins?: Pins;
   allowlist: AllowlistEntry[];
+  snapshots: Snapshots;
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -315,6 +322,25 @@ export function parseAllowlist(raw: unknown): AllowlistEntry[] {
   });
 }
 
+function vendorLine(where: string, text: string, key: string): string {
+  const match = new RegExp(`^${key}: (.+)$`, "m").exec(text);
+  if (!match) throw new GeneratorError(`${where}: missing "${key}:" line`);
+  return match[1]!.trim();
+}
+
+/** The pins both VENDOR.md files state; the generator copies them into PROVENANCE.json and never reads the network. */
+export function parseSnapshots(sfSkillsVendor: string, objectReferenceVendor: string): Snapshots {
+  const sfWhere = "source/sf-skills/VENDOR.md";
+  const docWhere = "source/object-reference/VENDOR.md";
+  const revision = vendorLine(sfWhere, sfSkillsVendor, "Revision");
+  if (!/^[0-9a-f]{40}$/.test(revision)) throw new GeneratorError(`${sfWhere}: Revision must be a 40-hex commit SHA, got ${JSON.stringify(revision)}`);
+  const sha256 = vendorLine(docWhere, objectReferenceVendor, "sha256");
+  if (!/^[0-9a-f]{64}$/.test(sha256)) throw new GeneratorError(`${docWhere}: sha256 must be 64 hex characters, got ${JSON.stringify(sha256)}`);
+  // "Source: <url> (© ...)": the URL is the first token.
+  const url = vendorLine(docWhere, objectReferenceVendor, "Source").split(/\s+/)[0]!;
+  return { sfSkills: { revision }, objectReference: { url, lastModified: vendorLine(docWhere, objectReferenceVendor, "Last-Modified"), sha256 } };
+}
+
 /** Read every committed input under `<root>/scripts/gen-baseline`. Missing per-object source files are allowed (sf-skills lacks BusinessProcess). */
 export async function loadInputs(root: string): Promise<GeneratorInputs> {
   const dir = join(root, "scripts", "gen-baseline");
@@ -335,6 +361,7 @@ export async function loadInputs(root: string): Promise<GeneratorInputs> {
     objectReference,
     overrides: parseOverrides(await readJson(join(dir, "overrides.json"))),
     allowlist: parseAllowlist(await readJson(join(dir, "diff-allowlist.json"))),
+    snapshots: parseSnapshots(await readFile(join(dir, "source", "sf-skills", "VENDOR.md"), "utf8"), await readFile(join(dir, "source", "object-reference", "VENDOR.md"), "utf8")),
   };
   const pinsPath = join(dir, "v1-pins.json");
   if (existsSync(pinsPath)) inputs.pins = parsePins(await readJson(pinsPath));
