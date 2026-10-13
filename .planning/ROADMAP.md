@@ -71,7 +71,14 @@ Plans:
   3. `orglet check` on a retrieve using documented fields of those 35 objects reports zero `UNSUPPORTED:standard-field`, and feature-gated fields appear in describe as nullable fields tagged `featureGated`.
   4. `Owner.Name` in a formula and in SOQL compiles on Account, Contact, Opportunity, Contract, Asset and Campaign, while Case, Lead and Task owner queries still return User and Group owners as in v1.0 (`conformance/poly-check` stays green).
   5. The Phase 8 populated-database upgrade test still passes with the v2 baseline, with only the expected, allowlisted warnings.
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 09-01-PLAN.md — scaffolding, sf-skills vendoring at a pinned SHA + CI sync check, key-prefix sources (BASE2-01)
+- [ ] 09-02-PLAN.md — loader contract: ownerTargets/featureGated; upgrade test admits additive growth (BASE2-03, BASE2-04, SC5)
+- [ ] 09-03-PLAN.md — facts-only Object Reference PDF extraction + gating keyword list (BASE2-01, BASE2-03, MIGR-03)
+- [ ] 09-04-PLAN.md — step A: deterministic generator + v1.0 pins reproduce the 35 objects; CI drift gate (BASE2-01, BASE2-02)
+- [ ] 09-05-PLAN.md — v1-vs-v2 diff gate with allowlist, MasterDetail refusal, failure modes, prose scan (MIGR-03)
+- [ ] 09-06-PLAN.md — step B: every documented field, feature gating, provenance, SC3 proof (BASE2-02, BASE2-03)
+- [ ] 09-07-PLAN.md — per-object ownerTargets, SC4 tests, D-14 upgrade case, audit, conformance (BASE2-04)
 **Research flag**: design spike (not a full research phase) on type mapping, string-length rules and single-source flags.
 
 ### Phase 10: Business Standard Objects
