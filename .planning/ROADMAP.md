@@ -58,7 +58,7 @@ Plans:
 - [ ] 08-07-PLAN.md — v1.0 baseline snapshot fixture + populated upgrade test on both backends (MIGR-01, MIGR-04)
 - [x] 08-08-PLAN.md — upstream sigha branches for unary ! and colon syntax in an external clone (SC5)
 - [x] 08-09-PLAN.md — checkpoints: approve fork snorf/sigha, approve push (SC5)
-- [ ] 08-10-PLAN.md — push approved branches, Johan opens PRs, record links in VENDOR.md (SC5)
+- [x] 08-10-PLAN.md — push approved branches, Johan opens PRs, record links in VENDOR.md (SC5)
 **Research flag**: none.
 
 ### Phase 9: Baseline Generator, Parity & OwnerId Narrowing
