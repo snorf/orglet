@@ -4,6 +4,8 @@ export { readSourceProject, UnsupportedMetadataError } from "./sfdx.js";
 export type { SourceProject, SourceObject, SourceField, SourceFilterItem } from "./sfdx.js";
 export { loadBaseline, buildOrgSchema, validateBaseline } from "./build.js";
 export type { Baseline, BuildResult } from "./build.js";
+export { formatDiagnostic, pushDiagnostic } from "./diagnostics.js";
+export type { Diagnostic, SkippedItem, FormulaFailure, DiagnosticSink } from "./diagnostics.js";
 export { OrgSchemaImpl } from "./schema.js";
 
 import { readSourceProject } from "./sfdx.js";
