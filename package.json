@@ -17,6 +17,11 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "baseline:gen": "tsx scripts/gen-baseline/generate.ts",
+    "baseline:check": "tsx scripts/gen-baseline/generate.ts --check",
+    "baseline:snapshot": "tsx scripts/gen-baseline/snapshot-pdf.ts",
+    "baseline:sync": "bash scripts/sync-sfdocs.sh",
+    "typecheck:scripts": "tsc -p tsconfig.scripts.json",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down"
   },

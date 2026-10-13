@@ -26,6 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm lint
+      - run: if compgen -G "scripts/gen-baseline/*.ts" > /dev/null; then pnpm typecheck:scripts; fi
       - run: pnpm test
 
   test-postgres:
