@@ -107,3 +107,107 @@ describe("v1-vs-v2 diff gate (MIGR-03, D-16..D-18)", () => {
     expect(() => parseAllowlist([])).toThrow(/expected \{ entries: \[\.\.\.\] \}/);
   });
 });
+
+const MASTER_DETAIL_REFUSAL = "Account.SyntheticParentId: MasterDetail on an object that existed in v1.0 would add a NOT NULL column to a populated table; model it as Lookup in overrides.json";
+const SYNTHETIC_PROPERTIES = ["Create", "Filter", "Group", "Sort", "Update"];
+
+/**
+ * Account only, in full mode, with its sources pruned to the v1.0 inventory plus one synthetic reference field. Full
+ * mode on the unpruned sources is 09-07's job (it aborts today on Account.ConnectionReceivedId, a Lookup whose
+ * Refers To neither source states), so the pruning is what lets the field loop reach the synthetic field.
+ */
+function syntheticAccountInputs(relationshipType: "lookup" | "master-detail"): GeneratorInputs {
+  const clone = structuredClone(inputs);
+  clone.objects = ["Account"];
+  clone.pins = { Account: clone.pins!.Account! };
+  const v1Names = new Set(Object.keys(clone.pins.Account!.fields));
+  const sf = clone.sfSkills.get("Account")!;
+  const doc = clone.objectReference.get("Account")!;
+  for (const map of [sf.fields, sf.fieldReference, doc.fields]) for (const name of [...map.keys()]) if (!v1Names.has(name)) map.delete(name);
+  sf.fields.set("SyntheticParentId", { type: "reference", properties: SYNTHETIC_PROPERTIES, refersTo: ["Contact"], relationshipName: "SyntheticParent" });
+  doc.fields.set("SyntheticParentId", { type: "reference", properties: SYNTHETIC_PROPERTIES, refersTo: ["Contact"], relationshipName: "SyntheticParent", relationshipType });
+  return clone;
+}
+
+function expectGeneratorError(run: () => unknown, message: RegExp | string): void {
+  let caught: unknown;
+  try {
+    run();
+  } catch (e) {
+    caught = e;
+  }
+  expect(caught).toBeInstanceOf(GeneratorError);
+  if (typeof message === "string") expect((caught as Error).message).toBe(message);
+  else expect((caught as Error).message).toMatch(message);
+}
+
+describe("MasterDetail refusal (MIGR-03)", () => {
+  it("the generator refuses a new MasterDetail field on an object that existed in v1.0", () => {
+    expectGeneratorError(() => generate(syntheticAccountInputs("master-detail"), { v1Only: false }), MASTER_DETAIL_REFUSAL);
+  });
+
+  it("the same field as a Lookup is emitted, and in v1-only mode it is out of scope", () => {
+    const lookup = regenerate(syntheticAccountInputs("lookup"), { v1Only: false });
+    expect(accountField(lookup, "SyntheticParentId")).toMatchObject({ type: "Lookup", referenceTo: ["Contact"] });
+    const v1Scope = regenerate(syntheticAccountInputs("master-detail"), { v1Only: true });
+    expect(account(v1Scope).fields.some((f) => f.name === "SyntheticParentId")).toBe(false);
+  });
+
+  it("an overrides.json set cannot introduce a MasterDetail on a v1.0 object either", () => {
+    const viaOverride = syntheticAccountInputs("lookup");
+    viaOverride.overrides.objects.Account!.fields!.SyntheticParentId = { set: { type: "MasterDetail", referenceTo: ["Contact"] }, reason: "test" };
+    expectGeneratorError(() => generate(viaOverride, { v1Only: false }), MASTER_DETAIL_REFUSAL);
+  });
+
+  it("the refusal ignores the allowlist", () => {
+    const allowlisted = syntheticAccountInputs("master-detail");
+    allowlisted.allowlist = [{ object: "Account", field: "SyntheticParentId", kind: "narrowed", reason: "test" }];
+    expectGeneratorError(() => generate(allowlisted, { v1Only: false }), MASTER_DETAIL_REFUSAL);
+  });
+});
+
+describe("generator failure modes", () => {
+  const withInputs = (edit: (clone: GeneratorInputs) => void): GeneratorInputs => {
+    const clone = structuredClone(inputs);
+    edit(clone);
+    return clone;
+  };
+
+  it("an unknown source type token aborts, naming the field", () => {
+    const unknownType = withInputs((c) => c.objectReference.get("Account")!.fields.set("SyntheticWeird", { type: "weirdtype" }));
+    expectGeneratorError(() => generate(unknownType, CLI_OPTIONS), /^Account\.SyntheticWeird: unknown source type "weirdtype"/);
+  });
+
+  it("an overrides entry without a reason aborts", () => {
+    const noReason = withInputs((c) => {
+      c.overrides.objects.Account!.fields!.Tier!.reason = "";
+    });
+    expectGeneratorError(() => generate(noReason, CLI_OPTIONS), /^overrides\.json Account\.Tier: every field override needs a non-empty reason/);
+  });
+
+  it("a key prefix sourced from a describe aborts (D-07: never from an org)", () => {
+    const describeSourced = withInputs((c) => {
+      (c.overrides.objects.Account!.keyPrefix as { source: string }).source = "de-describe";
+    });
+    expectGeneratorError(() => generate(describeSourced, CLI_OPTIONS), /^overrides\.json Account: keyPrefix\.source must be one of doc\|sdk-fixture\|unverified/);
+  });
+
+  it("a pinned v1.0 field that both sources dropped aborts without a keep entry", () => {
+    const dropped = withInputs((c) => {
+      const sf = c.sfSkills.get("Account")!;
+      sf.fields.delete("AccountNumber");
+      sf.fieldReference.delete("AccountNumber");
+      c.objectReference.get("Account")!.fields.delete("AccountNumber");
+    });
+    expectGeneratorError(() => generate(dropped, CLI_OPTIONS), /^Account\.AccountNumber is in v1\.0 but in neither source; add an overrides\.json keep entry/);
+  });
+
+  it("a source conflict on a field with no pin or override aborts", () => {
+    const conflicting = withInputs((c) => {
+      const doc = c.objectReference.get("Account")!.fields.get("AccountNumber")!;
+      doc.properties = doc.properties!.filter((p) => p !== "Create");
+    });
+    expect(inputs.pins!.Account!.fields.AccountNumber).toEqual({});
+    expectGeneratorError(() => generate(conflicting, CLI_OPTIONS), /unresolved source conflicts[\s\S]*Account\.AccountNumber\.createable: sf-skills=true object-reference=false/);
+  });
+});

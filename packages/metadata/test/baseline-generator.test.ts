@@ -63,6 +63,28 @@ describe("baseline generator (BASE2-01, BASE2-02 step A)", () => {
     expect(v1.report.unpinnedV1Fields.length).toBeGreaterThanOrEqual(200);
   });
 
+  it("generated files contain no documentation prose (SC1)", () => {
+    // Labels and picklist values are short noun phrases; a sentence terminator followed by a new sentence is prose.
+    const PROSE = /\b[a-z]{3,}[.!?] [A-Z][a-z]+ [a-z]{2,}/;
+    const scan = (where: string, value: unknown): void => {
+      if (typeof value === "string") {
+        expect(value.length, `${where}: ${value}`).toBeLessThanOrEqual(100);
+        expect(value, where).not.toMatch(PROSE);
+      } else if (Array.isArray(value)) {
+        value.forEach((v, i) => scan(`${where}[${i}]`, v));
+      } else if (value !== null && typeof value === "object") {
+        for (const [key, v] of Object.entries(value)) {
+          expect(key, where).not.toBe("description");
+          scan(`${where}.${key}`, v);
+        }
+      }
+    };
+    for (const [path, text] of generate(inputs, CLI_OPTIONS).files) scan(path, JSON.parse(text));
+    const committed = readdirSync(`${STANDARD_DIR}objects/`).filter((f) => f.endsWith(".json"));
+    expect(committed.length).toBeGreaterThan(0);
+    for (const file of committed) scan(file, JSON.parse(readFileSync(`${STANDARD_DIR}objects/${file}`, "utf8")));
+  });
+
   it("no conflict is left unresolved", () => {
     // generate() throws on an unresolved conflict, so reaching here means every disagreement was settled;
     // the report must say by what.
