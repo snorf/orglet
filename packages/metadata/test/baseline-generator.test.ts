@@ -92,3 +92,153 @@ describe("baseline generator (BASE2-01, BASE2-02 step A)", () => {
     for (const entry of [...v1.report.conflictsSettledByPin, ...v1.report.overrideResolved]) expect(entry).toMatch(/^[A-Za-z0-9]+\.[A-Za-z0-9]+\.[a-zA-Z]+$/);
   });
 });
+
+// System fields are added by the loader (standard/README.md); the sources list them, the generator must not.
+const SYSTEM_FIELDS = new Set(["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId"]);
+const parseObjects = (result: GenerateResult): Map<string, StandardObjectJson> =>
+  new Map([...result.files].filter(([path]) => path.startsWith("objects/")).map(([, text]) => JSON.parse(text) as StandardObjectJson).map((o) => [o.name, o]));
+/** `Obj.Field` prefix of a report entry such as `Obj.Field (token)` or `Obj.Field -> Target`. */
+const fieldOf = (entry: string): string => entry.split(" ")[0]!;
+
+describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
+  let full: GenerateResult;
+  let objects: Map<string, StandardObjectJson>;
+
+  beforeAll(() => {
+    full = generate(inputs, { v1Only: false, collectConflicts: true });
+    objects = parseObjects(full);
+  });
+
+  it("v1.0 fields are unchanged by step B", () => {
+    for (const [path, text] of v1.files) {
+      const v1Object = JSON.parse(text) as StandardObjectJson;
+      const fullObject = objects.get(v1Object.name)!;
+      expect(fullObject, path).toBeDefined();
+      for (const field of v1Object.fields) expect(fullObject.fields.find((f) => f.name === field.name), `${v1Object.name}.${field.name}`).toEqual(field);
+    }
+  });
+
+  it("every documented field of the 35 is generated or reported as skipped", () => {
+    const skipped = new Set([...full.report.skipped.fieldType, ...full.report.skipped.referenceTarget].map(fieldOf));
+    const excluded = new Set(full.report.excludedSystem);
+    let documented = 0;
+    for (const object of inputs.objects) {
+      const generated = new Set(objects.get(object)!.fields.map((f) => f.name));
+      const overrides = inputs.overrides.objects[object]?.fields ?? {};
+      const names = new Set([...(inputs.sfSkills.get(object)?.fields.keys() ?? []), ...(inputs.objectReference.get(object)?.fields.keys() ?? [])]);
+      for (const name of names) {
+        if (SYSTEM_FIELDS.has(name) || overrides[name]?.skip) continue;
+        documented++;
+        const where = `${object}.${name}`;
+        expect(generated.has(name) || skipped.has(where) || excluded.has(where), where).toBe(true);
+      }
+    }
+    expect(documented).toBeGreaterThan(1000);
+    expect(full.report.totals.documentedNew).toBeGreaterThan(700);
+    expect(full.report.totals.generatedNew).toBeGreaterThan(0);
+  });
+
+  it("a gated field is tagged and never required", () => {
+    let gated = 0;
+    for (const object of objects.values()) {
+      for (const field of object.fields) {
+        if (!field.featureGated) continue;
+        gated++;
+        expect(field.featureGated, `${object.name}.${field.name}`).toBe(true);
+        expect(field.nillable, `${object.name}.${field.name}`).not.toBe(false);
+        expect(full.report.gating[`${object.name}.${field.name}`], `${object.name}.${field.name} has no gating entry`).toBeDefined();
+      }
+    }
+    expect(gated).toBeGreaterThan(0);
+    const dataCom = (object: string): string[] => Object.entries(full.report.gating).filter(([k, ids]) => k.startsWith(`${object}.`) && ids.includes("data-com") && objects.get(object)!.fields.some((f) => f.name === k.slice(object.length + 1))).map(([k]) => k);
+    expect(dataCom("Contact").length).toBeGreaterThan(0);
+    expect(dataCom("Lead").length).toBeGreaterThan(0);
+  });
+
+  it("Person Account fields on Account are gated", () => {
+    const personAccount = inputs.sfSkills.get("Account")!.personAccountFields;
+    expect(personAccount.size).toBeGreaterThan(0);
+    const generated = objects.get("Account")!.fields.filter((f) => personAccount.has(f.name));
+    expect(generated.length).toBeGreaterThan(0);
+    for (const field of generated) expect(field.featureGated, `Account.${field.name}`).toBe(true);
+  });
+
+  it("required-looking new fields are forced nullable and listed", () => {
+    expect(full.report.forcedNullable.length).toBeGreaterThan(0);
+    for (const where of full.report.forcedNullable) {
+      const [object, name] = where.split(".") as [string, string];
+      const field = objects.get(object)!.fields.find((f) => f.name === name)!;
+      expect(field, where).toBeDefined();
+      const restored = inputs.overrides.objects[object]?.fields?.[name]?.set?.nillable === false;
+      if (!restored) expect(field.nillable, where).not.toBe(false);
+    }
+  });
+
+  it("sdk-only fields (field_reference only) are read-only", () => {
+    expect(full.report.sdkOnly.length).toBeGreaterThan(0);
+    for (const where of full.report.sdkOnly) {
+      const [object, name] = where.split(".") as [string, string];
+      const field = objects.get(object)!.fields.find((f) => f.name === name)!;
+      expect(field, where).toBeDefined();
+      expect(field.createable, where).toBe(false);
+      expect(field.updateable, where).toBe(false);
+    }
+  });
+
+  it("no generated field references an object outside the object list", () => {
+    const known = new Set(inputs.objects);
+    for (const object of objects.values()) {
+      for (const field of object.fields) for (const target of field.referenceTo ?? []) expect(known.has(target), `${object.name}.${field.name} -> ${target}`).toBe(true);
+    }
+    expect(full.report.skipped.referenceTarget.length).toBeGreaterThan(0);
+  });
+
+  it("every object carries keyPrefixSource matching overrides.json", () => {
+    expect(objects.size).toBe(inputs.objects.length);
+    for (const object of objects.values()) expect(object.keyPrefixSource, object.name).toBe(inputs.overrides.objects[object.name]!.keyPrefix.source);
+  });
+
+  it("PROVENANCE.json is part of the output, holds no prose, and its per-object skip counts equal the report's skipped lists", () => {
+    const text = full.files.get("PROVENANCE.json");
+    expect(text).toBeDefined();
+    const provenance = JSON.parse(text!) as { pins: { sfSkills: string; objectReference: { sha256: string } }; counts: Record<string, { skippedFieldType: number; skippedReferenceTarget: number }>; skipped: { fieldType: string[]; referenceTarget: string[] } };
+    expect(provenance.pins.sfSkills).toMatch(/^[0-9a-f]{40}$/);
+    expect(provenance.pins.objectReference.sha256).toMatch(/^[0-9a-f]{64}$/);
+    const PROSE = /\b[a-z]{3,}[.!?] [A-Z][a-z]+ [a-z]{2,}/;
+    const scan = (where: string, value: unknown): void => {
+      if (typeof value === "string") expect(value, where).not.toMatch(PROSE);
+      else if (Array.isArray(value)) value.forEach((v, i) => scan(`${where}[${i}]`, v));
+      else if (value !== null && typeof value === "object") for (const [key, v] of Object.entries(value)) scan(`${where}.${key}`, v);
+    };
+    scan("PROVENANCE.json", provenance);
+    expect(provenance.skipped).toEqual(full.report.skipped.perObject === undefined ? undefined : { fieldType: full.report.skipped.fieldType, referenceTarget: full.report.skipped.referenceTarget });
+    for (const object of inputs.objects) {
+      const counts = provenance.counts[object]!;
+      expect(counts, object).toBeDefined();
+      expect(counts.skippedFieldType, object).toBe(full.report.skipped.fieldType.filter((e) => fieldOf(e).startsWith(`${object}.`)).length);
+      expect(counts.skippedReferenceTarget, object).toBe(full.report.skipped.referenceTarget.filter((e) => fieldOf(e).startsWith(`${object}.`)).length);
+      expect(full.report.skipped.perObject[object], object).toEqual({ fieldType: counts.skippedFieldType, referenceTarget: counts.skippedReferenceTarget });
+    }
+  });
+
+  it("no new MasterDetail on a v1.0 object is generated", () => {
+    for (const object of objects.values()) {
+      const pins = inputs.pins![object.name];
+      if (!pins) continue;
+      for (const field of object.fields) if (field.type === "MasterDetail") expect(pins.fields[field.name], `${object.name}.${field.name}`).toBeDefined();
+    }
+  });
+
+  it("collectConflicts returns an unresolved conflict in the report instead of throwing", () => {
+    const clone = structuredClone(inputs);
+    const doc = clone.objectReference.get("Lead")!.fields;
+    const sf = clone.sfSkills.get("Lead")!.fields;
+    sf.set("StepBConflict", { type: "string", properties: ["Create", "Filter", "Nillable", "Update"] });
+    doc.set("StepBConflict", { type: "textarea", properties: ["Create", "Filter", "Nillable", "Update"] });
+    expect(() => generate(clone, { v1Only: false })).toThrow(/Lead\.StepBConflict\.type/);
+    const collected = generate(clone, { v1Only: false, collectConflicts: true });
+    expect(collected.report.conflicts.unresolved.some((c) => c.startsWith("Lead.StepBConflict.type:"))).toBe(true);
+    expect(collected.report.conflicts.byFact.type).toBeGreaterThanOrEqual(1);
+    expect(full.report.conflicts.unresolved).toEqual([]);
+  });
+});
