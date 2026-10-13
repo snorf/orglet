@@ -123,3 +123,33 @@ describe("evaluateCompiled", () => {
     expect(r.error).toMatch(/^#Error!/);
   });
 });
+
+describe("FormulaCompileError.missing", () => {
+  const failure = (fn: () => unknown): FormulaCompileError => {
+    try {
+      fn();
+    } catch (e) {
+      if (e instanceof FormulaCompileError) return e;
+      throw e;
+    }
+    throw new Error("expected a FormulaCompileError");
+  };
+
+  it("an unknown field reference carries the missing object and field as data", () => {
+    const e = failure(() => rule("ISBLANK(Nope__c)"));
+    expect(e.missing).toEqual({ object: "Account", field: "Nope__c" });
+    expect(e.message).toBe("Field Nope__c does not exist. Check spelling.");
+  });
+
+  it("an unknown field on a parent object names the parent as the missing object", () => {
+    expect(failure(() => rule("Account.Nope__c = 'x'", "Contact")).missing).toEqual({ object: "Account", field: "Nope__c" });
+  });
+
+  it("an unknown relationship is missing on the object it was looked up on", () => {
+    expect(failure(() => rule("Nope__r.Name = 'x'", "Contact")).missing).toEqual({ object: "Contact", field: "Nope__r" });
+  });
+
+  it("plain traversal through a polymorphic lookup reports nothing missing", () => {
+    expect(failure(() => rule("Owner.Alias = 'x'")).missing).toBeUndefined();
+  });
+});
