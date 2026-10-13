@@ -15,5 +15,10 @@ Changes orglet needs from sigha are proposed upstream, never patched into `src/`
 
 | Change | Branch | Pull request | Status |
 |--------|--------|--------------|--------|
-| Unary `!` as logical NOT (`!ISBLANK(x)`) | `snorf/sigha:feat/unary-bang` | not opened yet | branch being prepared |
-| `Relationship:Object.Field` colon syntax (`Owner:User.Email`) | `snorf/sigha:feat/polymorphic-colon-ref` | not opened yet | branch being prepared |
+| Unary `!` as logical NOT (`!ISBLANK(x)`) | `snorf/sigha:feat/unary-bang` | not opened yet | pushed to fork, PR not opened yet |
+| `Relationship:Object.Field` colon syntax (`Owner:User.Email`) | `snorf/sigha:feat/polymorphic-colon-ref` | not opened yet | pushed to fork, PR not opened yet |
+
+Compare URLs (PRs to be opened by Johan):
+
+- https://github.com/rfaulhaber/sigha/compare/main...snorf:sigha:feat/unary-bang
+- https://github.com/rfaulhaber/sigha/compare/main...snorf:sigha:feat/polymorphic-colon-ref
