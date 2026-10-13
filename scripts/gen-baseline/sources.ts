@@ -99,12 +99,21 @@ export interface ObjectPins {
 }
 export type Pins = Record<string, ObjectPins>;
 
+/** A deliberate migration exception (D-16): the diff gate accepts this v1.0 field disappearing or narrowing. */
+export interface AllowlistEntry {
+  object: string;
+  field: string;
+  kind: "removed" | "narrowed";
+  reason: string;
+}
+
 export interface GeneratorInputs {
   objects: string[];
   sfSkills: Map<string, SfSkillsObject>;
   objectReference: Map<string, ObjectReferenceObject>;
   overrides: Overrides;
   pins?: Pins;
+  allowlist: AllowlistEntry[];
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -292,6 +301,20 @@ function parsePins(raw: unknown): Pins {
   return raw as Pins;
 }
 
+/** diff-allowlist.json states migration exceptions, never facts; each entry needs a reason like every other hand entry. */
+export function parseAllowlist(raw: unknown): AllowlistEntry[] {
+  if (!isRecord(raw) || !Array.isArray(raw.entries)) throw new GeneratorError("diff-allowlist.json: expected { entries: [...] }");
+  return raw.entries.map((entry: unknown, i): AllowlistEntry => {
+    const where = `diff-allowlist.json entries[${i}]`;
+    if (!isRecord(entry)) throw new GeneratorError(`${where}: expected an object`);
+    const { object, field, kind, reason } = entry;
+    if (typeof object !== "string" || object === "" || typeof field !== "string" || field === "") throw new GeneratorError(`${where}: object and field must be non-empty strings`);
+    if (kind !== "removed" && kind !== "narrowed") throw new GeneratorError(`${where} (${object}.${field}): kind must be one of removed|narrowed`);
+    if (typeof reason !== "string" || reason.trim() === "") throw new GeneratorError(`${where} (${object}.${field}): every allowlist entry needs a non-empty reason`);
+    return { object, field, kind, reason };
+  });
+}
+
 /** Read every committed input under `<root>/scripts/gen-baseline`. Missing per-object source files are allowed (sf-skills lacks BusinessProcess). */
 export async function loadInputs(root: string): Promise<GeneratorInputs> {
   const dir = join(root, "scripts", "gen-baseline");
@@ -306,7 +329,13 @@ export async function loadInputs(root: string): Promise<GeneratorInputs> {
     const docPath = join(dir, "source", "object-reference", `${object}.json`);
     if (existsSync(docPath)) objectReference.set(object, parseObjectReference(object, await readJson(docPath)));
   }
-  const inputs: GeneratorInputs = { objects, sfSkills, objectReference, overrides: parseOverrides(await readJson(join(dir, "overrides.json"))) };
+  const inputs: GeneratorInputs = {
+    objects,
+    sfSkills,
+    objectReference,
+    overrides: parseOverrides(await readJson(join(dir, "overrides.json"))),
+    allowlist: parseAllowlist(await readJson(join(dir, "diff-allowlist.json"))),
+  };
   const pinsPath = join(dir, "v1-pins.json");
   if (existsSync(pinsPath)) inputs.pins = parsePins(await readJson(pinsPath));
   return inputs;

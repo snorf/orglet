@@ -78,8 +78,8 @@ function parseSized(sqlType: string): { base: string; a: number; b: number } | u
   return { base: m[1] ?? "", a: Number(m[2]), b: Number(m[3] ?? 0) };
 }
 
-/** True when changing a column from `from` to `to` cannot lose data. */
-function isWidening(from: string, to: string): boolean {
+/** True when changing a column from `from` to `to` cannot lose data. Shared with the baseline diff gate (MIGR-03). */
+export function isWidening(from: string, to: string): boolean {
   if (from === to) return true;
   const f = parseSized(from);
   const t = parseSized(to);
