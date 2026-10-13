@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 09-04-PLAN.md
-last_updated: "2026-10-13T21:09:29.013Z"
+stopped_at: Completed 09-05-PLAN.md
+last_updated: "2026-10-13T21:21:52.448Z"
 last_activity: 2026-10-13
 progress:
   total_phases: 16
   completed_phases: 1
   total_plans: 19
-  completed_plans: 14
+  completed_plans: 15
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 09 (baseline-generator-parity-ownerid-narrowing) — EXECUTING
-Plan: 5 of 9
+Plan: 6 of 9
 Status: Ready to execute
 Last activity: 2026-10-13
 
@@ -104,6 +104,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 09 P01 | 20min | 3 tasks | 12 files |
 | Phase 09 P03 | 31min | 2 tasks | 41 files |
 | Phase 09 P04 | 14min | 3 tasks | 44 files |
+| Phase 09 P05 | 10min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -176,6 +177,8 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-03: PDF field-table labels are matched by text, not column position (bulleted field groups shift the details column); Limit: N characters also yields maxLength
 - [Phase 09]: 09-04: 20 of 35 v1.0 files were not code-unit sorted; D-19 sort applied, parity test compares fields by name; reformat is whitespace plus field order, no content change
 - [Phase 09]: 09-04: combobox -> Picklist, id skipped, Restricted picklist -> restrictedPicklist; 19 v1.0 fields kept via overrides keep entries, no keepObject (BusinessProcess is in the PDF)
+- [Phase 09]: diffGate compares sqlTypeFor output with migrate()'s exported isWidening, so the gate and migrate() share one definition of narrowing (MIGR-03)
+- [Phase 09]: MasterDetail refusal lives in pipeline.ts after pins and overrides; 'existed in v1.0' = object has a v1-pins entry, 'new' = no field pin; allowlist is never consulted
 
 ### Pending Todos
 
@@ -199,6 +202,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T21:09:29.008Z
-Stopped at: Completed 09-04-PLAN.md
+Last session: 2026-10-13T21:21:52.444Z
+Stopped at: Completed 09-05-PLAN.md
 Resume file: None

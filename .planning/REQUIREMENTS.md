@@ -28,7 +28,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   key on a populated column that holds rows violating it, `migrate()` names every offending table,
   column and row count, logs one `UNSUPPORTED:schema-fk` warning per column, skips that foreign key
   and completes; it never deletes or rewrites data.
-- [ ] **MIGR-03**: The baseline generator refuses to emit a new MasterDetail (NOT NULL) column on an
+- [x] **MIGR-03**: The baseline generator refuses to emit a new MasterDetail (NOT NULL) column on an
   object that existed in v1.0, and a v1-vs-v2 diff gate fails when a v1.0 field disappears or
   narrows without an allowlisted reason, so an upgrade never leaves permanent `schema-drop` or
   `schema-narrow` warnings.
@@ -219,7 +219,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | MIGR-01 | Phase 8 | Complete |
 | MIGR-02 | Phase 8 | Complete |
-| MIGR-03 | Phase 9 | Pending |
+| MIGR-03 | Phase 9 | Complete |
 | MIGR-04 | Phase 8 | Complete |
 | BASE2-01 | Phase 9 | Pending |
 | BASE2-02 | Phase 9 | Pending |
