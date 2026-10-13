@@ -54,7 +54,7 @@ Plans:
 - [x] 08-03-PLAN.md — null-prefix ripple through engine, SOQL and describe; build green again (BASE2-05)
 - [x] 08-04-PLAN.md — portable sync-sigha.sh + CI sigha-sync-check, VENDOR pending section, it.fails expectation tests, Group-owned audit (SC5)
 - [x] 08-05-PLAN.md — Diagnostic/SkippedItem/FormulaFailure + shared formatter; metadata and schema sources emit diagnostics (SC5)
-- [ ] 08-06-PLAN.md — FormulaCompileError.missing; FormulaRegistry/runQuery/DmlEngine diagnostics (SC5)
+- [x] 08-06-PLAN.md — FormulaCompileError.missing; FormulaRegistry/runQuery/DmlEngine diagnostics (SC5)
 - [ ] 08-07-PLAN.md — v1.0 baseline snapshot fixture + populated upgrade test on both backends (MIGR-01, MIGR-04)
 - [x] 08-08-PLAN.md — upstream sigha branches for unary ! and colon syntax in an external clone (SC5)
 - [x] 08-09-PLAN.md — checkpoints: approve fork snorf/sigha, approve push (SC5)
