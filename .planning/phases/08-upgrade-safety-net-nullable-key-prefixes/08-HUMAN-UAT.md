@@ -3,7 +3,7 @@ status: partial
 phase: 08-upgrade-safety-net-nullable-key-prefixes
 source: [08-VERIFICATION.md]
 started: 2026-10-13T13:54:58Z
-updated: 2026-10-13T13:54:58Z
+updated: 2026-10-13T14:00:49Z
 ---
 
 ## Current Test
@@ -18,7 +18,7 @@ result: [pending]
 
 ### 2. Confirm the sigha-sync-check CI job is green on ubuntu-latest
 expected: After the phase branch is pushed, the `sigha-sync-check` job runs scripts/sync-sigha.sh with GNU sed and the diff of packages/sigha/src and corpus is empty
-result: [pending]
+result: passed — CI run 38409450159 on PR #12 (2026-10-13): sigha-sync-check green in 7s, alongside test-pglite, test-postgres and conformance
 
 ### 3. Run the upgrade test against Postgres 16
 expected: packages/engine/src/upgrade.test.ts passes on Postgres as well as pglite
@@ -27,9 +27,9 @@ result: passed — orchestrator ran it with ORGLET_DATABASE_URL against the loca
 ## Summary
 
 total: 3
-passed: 1
+passed: 2
 issues: 0
-pending: 2
+pending: 1
 skipped: 0
 blocked: 0
 
