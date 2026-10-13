@@ -2,6 +2,7 @@
  * Merges the standard-object baseline with an SFDX source project into an OrgSchema.
  */
 import { readdir, readFile } from "node:fs/promises";
+import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import type {
@@ -31,6 +32,8 @@ export interface BuildResult {
   schema: OrgSchemaImpl;
   /** Things in the project that were skipped or partially loaded, prefixed `UNSUPPORTED:<area>`. */
   warnings: string[];
+  /** Structured form of `warnings`, same order (D-15). */
+  diagnostics: Diagnostic[];
 }
 
 export async function loadBaseline(dir: string = STANDARD_DIR): Promise<Baseline> {
@@ -454,7 +457,7 @@ export function validateBaseline(objects: readonly StandardObjectJson[]): void {
 
 export function buildOrgSchema(baseline: Baseline, project?: SourceProject): BuildResult {
   validateBaseline(baseline.objects);
-  const warnings: string[] = [...(project?.warnings ?? [])];
+  const sink: DiagnosticSink = { warnings: [...(project?.warnings ?? [])], diagnostics: [...(project?.diagnostics ?? [])] };
   const standardValueSets = new Map(baseline.standardValueSets);
   for (const s of project?.standardValueSets ?? []) standardValueSets.set(s.name, s);
   const globalValueSets = new Map<string, GlobalValueSetDef>();
@@ -478,7 +481,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     const target = objects.get(o.name.toLowerCase());
     if (!target) {
       const area = /__(e|mdt|x|b|share|history|feed)$/i.test(o.name) ? "object-kind" : "standard-object";
-      warnings.push(`UNSUPPORTED:${area} ${o.name} skipped`);
+      pushDiagnostic(sink, { area, kind: "object", object: o.name, message: `${o.name} skipped` } satisfies SkippedItem);
       continue;
     }
     if (o.label !== undefined) target.label = o.label;
@@ -499,7 +502,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
         continue;
       }
       if (!/__c$/i.test(sf.fullName)) {
-        warnings.push(`UNSUPPORTED:standard-field ${o.name}.${sf.fullName} is not in the baseline and was skipped`);
+        pushDiagnostic(sink, { area: "standard-field", kind: "field", object: o.name, field: sf.fullName, message: `${o.name}.${sf.fullName} is not in the baseline and was skipped` } satisfies SkippedItem);
         continue;
       }
       target.fields.push(fromSourceField(sf, o.name, sets));
@@ -508,7 +511,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     target.recordTypes.push(...o.recordTypes);
   }
 
-  resolveRollups(objects, pending, warnings, rollupField);
+  resolveRollups(objects, pending, sink, rollupField);
 
   // Dangling references are allowed (e.g. Campaign not in phase 0) but reported once per target.
   const missing = new Set<string>();
@@ -519,7 +522,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
       }
     }
   }
-  for (const m of [...missing].sort()) warnings.push(`UNSUPPORTED:reference-target ${m} is referenced but not defined; lookups to it are unchecked`);
+  for (const m of [...missing].sort()) pushDiagnostic(sink, { area: "reference-target", object: m, message: `${m} is referenced but not defined; lookups to it are unchecked` });
 
-  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings };
+  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings: sink.warnings, diagnostics: sink.diagnostics };
 }

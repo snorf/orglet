@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { fileURLToPath } from "node:url";
 import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type FieldType, type SourceField, type SourceFilterItem, type SourceObject, type StandardObjectJson } from "./index.js";
+import { formatDiagnostic } from "./diagnostics.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 
@@ -286,6 +287,22 @@ describe("examples/acme merged onto the baseline", () => {
     ]);
     expect(built.schema.getObject("Dangler__c")).toBeDefined();
   });
+
+  it("records a reference-target diagnostic beside the unchanged warning string", async () => {
+    const baseline = await loadBaseline();
+    const project = await readSourceProject(ACME);
+    const dangler: SourceObject = {
+      name: "Dangler__c",
+      fields: [{ fullName: "Target__c", label: "Target", type: "Lookup", referenceTo: "NoSuchObject__c", relationshipName: "Target" }],
+      validationRules: [],
+      recordTypes: [],
+    };
+    const built = buildOrgSchema(baseline, { ...project, objects: [...project.objects, dangler] });
+    expect(built.diagnostics.filter((d) => d.area === "reference-target")).toEqual([
+      { area: "reference-target", object: "NoSuchObject__c", message: "NoSuchObject__c is referenced but not defined; lookups to it are unchecked" },
+    ]);
+    expect(built.warnings).toEqual(built.diagnostics.map(formatDiagnostic));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -400,6 +417,14 @@ describe("roll-up summary resolution", () => {
     const r = build([sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")])], thin);
     expect(r.schema.getField("Opportunity", "Items_Total__c")).toBeUndefined();
     expect(rollupWarnings(r)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-target Opportunity\.Items_Total__c: /)]);
+  });
+
+  it("a dropped roll-up is recorded as a rollup SkippedItem naming object and field", () => {
+    const thin: Baseline = { ...baseline, objects: baseline.objects.filter((o) => o.name !== "OpportunityLineItem") };
+    const r = build([sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")])], thin);
+    expect(r.diagnostics.filter((d) => d.area === "rollup-target")).toEqual([
+      { area: "rollup-target", kind: "rollup", object: "Opportunity", field: "Items_Total__c", message: expect.stringMatching(/^Opportunity\.Items_Total__c: .*; field skipped$/) as string },
+    ]);
   });
 
   it("unresolvable references warn rollup-target and drop the field", () => {

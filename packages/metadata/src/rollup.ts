@@ -6,6 +6,7 @@
  * load (D-08); every other problem degrades with an UNSUPPORTED:rollup-* warning (D-06, D-07).
  */
 import type { FieldDef, FieldType, RollupDef, RollupFilterDef, RollupFilterOperation, RollupOperation, SObjectDef } from "./types.js";
+import { pushDiagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
 import type { SourceField, SourceFilterItem } from "./sfdx.js";
 
 /** Split `Child__c.Field__c`; anything but exactly one dot is not a roll-up reference. */
@@ -76,12 +77,12 @@ const findField = (obj: SObjectDef, name: string): FieldDef | undefined => obj.f
 /**
  * Resolve Summary fields in place: each resolvable one is pushed onto its object's `fields` via `makeField`,
  * so a later roll-up can summarise it (ROLL-06 chains). Degrades with UNSUPPORTED:rollup-target/-type/
- * -filter/-cycle warnings; throws only for a roll-up over a plain lookup (D-08).
+ * -filter/-cycle diagnostics (and their warning strings); throws only for a roll-up over a plain lookup (D-08).
  */
 export function resolveRollups(
   objects: Map<string, SObjectDef>,
   pending: PendingRollup[],
-  warnings: string[],
+  sink: DiagnosticSink,
   makeField: (sf: SourceField, column: RollupColumn, rollup: RollupDef) => FieldDef,
 ): void {
   let queue = [...pending];
@@ -93,12 +94,15 @@ export function resolveRollups(
       const waitingOn = (child: SObjectDef, name: string): boolean => round.some((q) => q !== item && same(q.objectName, child.name) && same(q.field.fullName, name));
       const outcome = tryResolve(objects, parent, item.field, waitingOn);
       if (outcome.kind === "ok") parent.fields.push(makeField(item.field, outcome.column, outcome.rollup));
-      else if (outcome.kind === "drop") warnings.push(`UNSUPPORTED:${outcome.area} ${parent.name}.${item.field.fullName}: ${outcome.detail}; field skipped`);
+      else if (outcome.kind === "drop") pushDiagnostic(sink, { area: outcome.area, kind: "rollup", object: parent.name, field: item.field.fullName, message: `${parent.name}.${item.field.fullName}: ${outcome.detail}; field skipped` } satisfies SkippedItem);
       else next.push(item);
     }
     if (next.length === round.length) {
       // Nothing resolved and nothing dropped: the remaining roll-ups only wait for each other.
-      for (const item of next) warnings.push(`UNSUPPORTED:rollup-cycle ${parentOf(objects, item).name}.${item.field.fullName}: roll-up summaries summarise each other in a cycle; field skipped`);
+      for (const item of next) {
+        const p = parentOf(objects, item);
+        pushDiagnostic(sink, { area: "rollup-cycle", kind: "rollup", object: p.name, field: item.field.fullName, message: `${p.name}.${item.field.fullName}: roll-up summaries summarise each other in a cycle; field skipped` } satisfies SkippedItem);
+      }
       return;
     }
     queue = next;

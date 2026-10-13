@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { readSourceProject } from "./sfdx.js";
+import { formatDiagnostic } from "./diagnostics.js";
 
 async function project(files: Record<string, string>): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "orglet-sfdx-"));
@@ -108,6 +109,17 @@ describe("readSourceProject", () => {
     const p = await readSourceProject(root);
     expect(p.objects[0]?.fields.map((f) => f.fullName)).toEqual(["Bar__c"]);
     expect(p.warnings).toEqual([expect.stringMatching(/^UNSUPPORTED:field-type .*ExternalLookup/)]);
+  });
+
+  it("records the skipped ExternalLookup as a field-type diagnostic beside the warning string", async () => {
+    const root = await project({
+      "objects/Foo__c/fields/Ext__c.field-meta.xml": field("<fullName>Ext__c</fullName><type>ExternalLookup</type>"),
+    });
+    const p = await readSourceProject(root);
+    expect(p.diagnostics).toEqual([
+      { area: "field-type", kind: "field", field: "Ext__c", message: expect.stringContaining("field type ExternalLookup is not supported yet; field skipped") as string },
+    ]);
+    expect(p.warnings).toEqual((p.diagnostics ?? []).map(formatDiagnostic));
   });
 
   it("reads Hierarchy fields as lookups", async () => {
