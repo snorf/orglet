@@ -271,6 +271,11 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
         if (p === "guessed" && json[fact] !== undefined && !(fieldPins && fact in fieldPins) && !(fieldOverride?.set && fact in fieldOverride.set)) report.guessed.push(`${where}.${fact}`);
       }
       if (typeof json.label !== "string" || typeof json.type !== "string") throw new GeneratorError(`${where}: label and type are required after pins and overrides`);
+      // MIGR-03: columnFor makes MasterDetail NOT NULL, which migrate() cannot add to a table with rows. Checked after
+      // pins and overrides so no layer can introduce one; a field with a pin existed in v1.0 and already has its column.
+      if (json.type === "MasterDetail" && objectPins && !fieldPins) {
+        throw new GeneratorError(`${where}: MasterDetail on an object that existed in v1.0 would add a NOT NULL column to a populated table; model it as Lookup in overrides.json`);
+      }
       if ((json.type === "Lookup" || json.type === "MasterDetail") && !(Array.isArray(json.referenceTo) && json.referenceTo.length > 0)) {
         throw new GeneratorError(`${where}: ${json.type} without referenceTo; neither source states Refers To, pin or override it`);
       }
