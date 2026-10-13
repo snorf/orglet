@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: planning
-stopped_at: Phase 8 context gathered
-last_updated: "2026-10-13T11:39:21.564Z"
-last_activity: 2026-10-12 — v1.1 roadmap created (phases 8-14)
+status: executing
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-10-13T13:35:20.406Z"
+last_activity: 2026-10-13 -- Phase 08 execution started
 progress:
   total_phases: 16
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 10
+  completed_plans: 1
   percent: 0
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 8 — Upgrade Safety Net & Nullable Key Prefixes (v1.1 real-org fidelity)
+**Current focus:** Phase 08 — upgrade-safety-net-nullable-key-prefixes
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 8 of 14 (Upgrade Safety Net & Nullable Key Prefixes) — not started
-Plan: —
-Status: Ready to plan
-Last activity: 2026-10-12 — v1.1 roadmap created (phases 8-14)
+Phase: 08 (upgrade-safety-net-nullable-key-prefixes) — EXECUTING
+Plan: 1 of 10
+Status: Executing Phase 08
+Last activity: 2026-10-13 -- Phase 08 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -180,6 +180,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T11:39:21.560Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-upgrade-safety-net-nullable-key-prefixes/08-CONTEXT.md
+Last session: 2026-10-13T13:35:20.402Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None
