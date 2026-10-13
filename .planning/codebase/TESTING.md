@@ -80,6 +80,7 @@ describe("compileFormula", () => {
 - `it.each([...])` for table-driven cases over fixed input/output pairs, e.g. known 15↔18-character Salesforce ID conversions in `packages/schema/src/ids.test.ts`.
 - Assertions read record data with bracket access (`record["Description"]`) matching the codebase's `Record<string, unknown>` record shape, not dot access.
 - No static `describe.skip`/`it.skip`/`.only`. A test that only works on real Postgres calls `skip(usingPglite, "<reason>")` from its test context (`usingPglite` exported by `test/db.ts`, the one backend signal, D-21); it reports as skipped with the reason, never as passed. Example: the concurrent-transactions test in `pglite-compat.test.ts`.
+- One sanctioned marker for a known upstream gap: `it.fails` (D-20, Phase 8). It asserts the *correct* future behaviour, so vitest reports it as passing while the gap exists and fails it the moment the gap closes, forcing the closing phase to flip it to `it`. Never use it for orglet's own bugs, and never on a case that already passes (the suite goes red). Example: `packages/formula/src/expectations.test.ts` (unary `!` and `Owner:User` colon syntax until the Phase 12 sigha resync).
 
 ## Postgres-Backed Tests: Isolation and Lifecycle
 
