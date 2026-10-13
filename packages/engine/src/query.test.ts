@@ -182,6 +182,7 @@ describe("polymorphic lookups", () => {
     expect(() => compileFormula("Owner:Group.Name = 'Support Queue'", { schema, objectName: "Case", context: "validation_rule" })).toThrow(/UNSUPPORTED:formula/);
     expect(() => compileFormula("Owner.Name = 'Support Queue'", { schema, objectName: "Case", context: "validation_rule" })).toThrow("Field Owner.Name does not exist. Check spelling.");
     expect("warnings" in page).toBe(false);
+    expect("diagnostics" in page).toBe(false);
   });
 
   it("filters and sorts on the concrete owner's name", async () => {
@@ -276,6 +277,7 @@ describe("polymorphic lookups with an unmodelled target", () => {
     expect(page.records).toHaveLength(2);
     for (const r of page.records) expect(r["Owner"]).toBeNull();
     expect(page.warnings).toEqual([warning]);
+    expect(page.diagnostics).toEqual([{ area: "reference-target", message: warning.replace("UNSUPPORTED:reference-target ", "") }]);
   });
 
   it("TYPEOF yields a null owner for an unmodelled prefix even with ELSE, never a synthetic object", async () => {

@@ -3,6 +3,7 @@
  * REST `query` resource: total size, done flag, records with attributes, formula fields
  * computed, and stateless pagination through an offset window.
  */
+import { formatDiagnostic, type Diagnostic } from "@orglet/metadata";
 import type { PoolClient } from "@orglet/schema";
 import { compileSoql, shapeRows, type Row, type SObjectShape } from "@orglet/soql";
 import { asString, type RecordData } from "@orglet/formula";
@@ -27,6 +28,8 @@ export interface QueryPage {
   nextOffset?: number;
   /** UNSUPPORTED:reference-target lines, one per distinct unmodelled key prefix seen while shaping (D-07); absent when none. */
   warnings?: string[];
+  /** Structured form of `warnings`, present exactly when warnings are (D-15). */
+  diagnostics?: Diagnostic[];
 }
 
 export async function runQuery(engine: DmlEngine, session: Session, soql: string, options: QueryOptions = {}): Promise<QueryPage> {
@@ -63,7 +66,10 @@ export async function runQuery(engine: DmlEngine, session: Session, soql: string
     }
     const result: QueryPage = { totalSize, done: !hasMore, records };
     if (hasMore) result.nextOffset = offset + batchSize;
-    if (unmodelled.size > 0) result.warnings = [...unmodelled].sort().map((p) => `UNSUPPORTED:reference-target ${p} matches no object in the org schema`);
+    if (unmodelled.size > 0) {
+      result.diagnostics = [...unmodelled].sort().map((p) => ({ area: "reference-target", message: `${p} matches no object in the org schema` }));
+      result.warnings = result.diagnostics.map(formatDiagnostic);
+    }
     return result;
   } finally {
     client.release();

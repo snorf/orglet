@@ -8,7 +8,7 @@
  * the batch's after-hooks, and a parent that refuses the recomputed row rolls back exactly the
  * children that point at it.
  */
-import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
+import type { FieldDef, FormulaFailure, OrgSchema, SObjectDef } from "@orglet/metadata";
 import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchLookupTarget, rollupSelectSql, type Pool, type PoolClient } from "@orglet/schema";
 import { asString, evaluateCompiled, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
@@ -106,6 +106,10 @@ export class DmlEngine {
 
   get warnings(): string[] {
     return this.formulas.warnings;
+  }
+
+  get diagnostics(): FormulaFailure[] {
+    return this.formulas.diagnostics;
   }
 
   object(name: string): SObjectDef {
