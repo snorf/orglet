@@ -51,7 +51,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 Plans:
 - [x] 08-01-PLAN.md — migrate() safety net: FK pre-check -> UNSUPPORTED:schema-fk, catalog-skip for existing indexes/sequences (MIGR-02, MIGR-04)
 - [x] 08-02-PLAN.md — nullable keyPrefix + keyPrefixSource, baseline validation, null-prefix fixture, null-aware schema primitives (BASE2-05)
-- [ ] 08-03-PLAN.md — null-prefix ripple through engine, SOQL and describe; build green again (BASE2-05)
+- [x] 08-03-PLAN.md — null-prefix ripple through engine, SOQL and describe; build green again (BASE2-05)
 - [x] 08-04-PLAN.md — portable sync-sigha.sh + CI sigha-sync-check, VENDOR pending section, it.fails expectation tests, Group-owned audit (SC5)
 - [ ] 08-05-PLAN.md — Diagnostic/SkippedItem/FormulaFailure + shared formatter; metadata and schema sources emit diagnostics (SC5)
 - [ ] 08-06-PLAN.md — FormulaCompileError.missing; FormulaRegistry/runQuery/DmlEngine diagnostics (SC5)
