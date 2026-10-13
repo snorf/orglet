@@ -161,7 +161,8 @@ class Compiler {
         const fk = `${alias}.${quote(columnName(rel))}`;
         if ((rel.referenceTo?.length ?? 0) > 1) {
           if (scope.inChildSubquery) throw unsupported("polymorphic-subquery", `polymorphic relationship ${rel.relationshipName ?? seg} in a child subquery is not supported yet`);
-          const polyTargets: PolyTarget[] = targets.map((t) => ({ obj: t, alias: this.nextAlias(), prefix: t.keyPrefix }));
+          // D-08: an object without a key prefix cannot be told apart by an Id's first three characters, so it is never a polymorphic join candidate.
+          const polyTargets: PolyTarget[] = targets.flatMap((t) => (t.keyPrefix === null ? [] : [{ obj: t, alias: this.nextAlias(), prefix: t.keyPrefix }]));
           const sql = polyTargets.map((t) => `LEFT JOIN ${this.table(t.obj)} ${t.alias} ON ${t.alias}.${quote("id")} = ${fk} AND left(${fk}, 3) = '${t.prefix}'`).join(" ");
           join = { alias: polyTargets[0]?.alias ?? "", obj: target, sql, poly: { rel, fk, targets: polyTargets } };
         } else {
