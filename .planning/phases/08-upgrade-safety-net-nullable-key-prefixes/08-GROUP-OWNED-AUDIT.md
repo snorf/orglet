@@ -28,6 +28,7 @@ needs no row.
 | packages/engine/src/query.test.ts | 247-290 (orphan `00G` owners with Group removed from the schema, `OwnerId` starts with `00G`) | DB row, literal Id | |
 | packages/engine/src/engine.test.ts | 351-361 (Group row, Group-owned Case, `Owner` parent load) | DB row | |
 | packages/api/src/api.test.ts | 427-439 (REST create of a Group, Group-owned Case, `Owner.Type = 'Group'` query) | DB row | |
+| packages/engine/src/upgrade.test.ts | 67-84 (Queue Group insert, Group-owned Case via DmlEngine and via importMode engine; v1.0 snapshot still has `OwnerId.referenceTo` including Group, so Phase 9 must decide whether the upgraded org keeps these rows valid) | DB row | |
 
 ## Tests with literal 00G Ids or prefixes
 
