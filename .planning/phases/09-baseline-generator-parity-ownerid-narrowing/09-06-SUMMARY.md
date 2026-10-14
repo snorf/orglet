@@ -174,3 +174,36 @@ None.
 
 ## Self-Check: PASSED
 Files (pipeline.ts, sources.ts, generate.ts, overrides.json, baseline-generator.test.ts, baseline-gate.test.ts, this SUMMARY) and commits c7d5d63, 1df16ee exist; `git ls-files` holds no PDF; `packages/metadata/standard` and `scripts/gen-baseline/source` are unchanged.
+
+## Checkpoint decision
+
+Decision: settle-conflicts — name rule for lookups. Target-less Lookups (the 79 skipped as `reference-target` with no Refers To in either source) whose field name is `<ModelledObject>Id`, including the `Person<ModelledObject>Id` and `Partner<ModelledObject>Id` prefixed forms, get `referenceTo: [<ModelledObject>]` via overrides.json `set` entries with a reason. `<ModelledObject>` must be one of the 35 names in scripts/gen-baseline/objects.json. The remaining target-less lookups stay skipped as reported. Profile.Permissions* is kept. The accepted skip ratio is the new, lower number after this rule.
+
+Accepted skip ratio: 10.1% documented (83/818), 12.1% raw (99/818)
+
+Computation: the pattern `^(Person|Partner)?(<Name>)Id$` matches N = 13 of the 79 target-less skips (all 13 are documented fields, none sdk-only), so documented (96 - 13)/818 = 83/818 and raw (112 - 13)/818 = 99/818. The other 66 target-less lookups stay skipped (e.g. Opportunity.PricebookId, the Connection*Id and ActionCadence*Id families, Organization.*TemplateId).
+
+### Fields covered by the rule (13) -> referenceTo
+
+| Field | referenceTo |
+|-------|-------------|
+| Account.PersonContactId | [Contact] |
+| Account.PersonIndividualId | [Individual] |
+| BusinessHours.BusinessHoursId | [BusinessHours] |
+| Entitlement.AccountId | [Account] |
+| Entitlement.AssetId | [Asset] |
+| Entitlement.BusinessHoursId | [BusinessHours] |
+| Entitlement.ServiceContractId | [ServiceContract] |
+| Lead.PartnerAccountId | [Account] |
+| Opportunity.PartnerAccountId | [Account] |
+| Product2.RecordTypeId | [RecordType] |
+| ServiceContract.AccountId | [Account] |
+| ServiceContract.ContactId | [Contact] |
+| ServiceContract.Pricebook2Id | [Pricebook2] |
+
+Each overrides.json entry uses the reason text `settle-conflicts rule (09-06 checkpoint): field name names modelled object <Name>; neither source states Refers To` with <Name> replaced by the referenceTo object. Note BusinessHours.BusinessHoursId is a self-named match of the rule as stated; 09-07 should keep it (rule is mechanical) but may flag it in its summary.
+
+### Notes for 09-07
+- Implement the rule as overrides.json `set: { referenceTo: [...] }` entries (hand facts, D-06), not as a generic generator inference.
+- Use the accepted documented ratio (10.1%, i.e. 83/818 = 0.1015) as SKIP_RATIO_MAX.
+- Profile.Permissions* stays as generated. No code or packages/metadata/standard change was made at this checkpoint.

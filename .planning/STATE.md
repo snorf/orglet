@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: "09-06 Task 2 checkpoint:decision — awaiting Johan's choice on the step-B report (proceed | settle-conflicts | revise-skip-policy)"
-last_updated: "2026-10-13T21:41:25.776Z"
-last_activity: 2026-10-13
+stopped_at: Completed 09-06-PLAN.md (settle-conflicts decision recorded)
+last_updated: "2026-10-14T07:02:39.521Z"
+last_activity: 2026-10-14
 progress:
   total_phases: 16
   completed_phases: 1
@@ -29,9 +29,9 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 09 (baseline-generator-parity-ownerid-narrowing) — EXECUTING
-Plan: 6 of 9
+Plan: 7 of 9
 Status: Ready to execute
-Last activity: 2026-10-13
+Last activity: 2026-10-14
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -183,6 +183,7 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-06: a new Lookup whose Refers To neither source states is skipped and reported as reference-target (none stated), never aborted; v1.0 fields keep the abort
 - [Phase 09]: 09-06: Checkbox is exempt from the forced-nullable rule (engine defaults an absent Checkbox to false before the required check; v1.0 writes nillable:false on 65/80 Checkboxes)
 - [Phase 09]: 09-06: system names excluded case-insensitively and emitted case collisions abort (columnName lower-cases); length conflicts on new fields settled by the larger value via 12 overrides
+- [Phase 09]: 09-06 checkpoint: settle-conflicts, name rule for target-less lookups (13 fields via overrides set referenceTo in 09-07); accepted skip ratio 10.1% documented (83/818), 12.1% raw (99/818)
 
 ### Pending Todos
 
@@ -206,6 +207,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T21:41:25.772Z
-Stopped at: 09-06 Task 2 checkpoint:decision — awaiting Johan's choice on the step-B report (proceed | settle-conflicts | revise-skip-policy)
+Last session: 2026-10-14T07:02:39.517Z
+Stopped at: Completed 09-06-PLAN.md (settle-conflicts decision recorded)
 Resume file: None
