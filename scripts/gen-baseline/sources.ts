@@ -83,8 +83,22 @@ export interface FieldOverride {
   reason: string;
 }
 
+export interface ObjectFlagsOverride {
+  createable?: boolean;
+  updateable?: boolean;
+  deletable?: boolean;
+  undeletable?: boolean;
+  queryable?: boolean;
+  searchable?: boolean;
+  reason: string;
+}
+
 export interface ObjectOverride {
   keyPrefix: KeyPrefixOverride;
+  /** Hand fact for objects without v1 pins: neither source states object labels (research C1). */
+  labels?: { label: string; labelPlural: string; reason: string };
+  /** Wins over Supported Calls; a value that differs is reported override-resolved (D-10, D-12). */
+  flags?: ObjectFlagsOverride;
   keepObject?: { reason: string };
   ownerTargets?: { value: ("User" | "Group")[]; reason: string; ref?: string };
   fields?: Record<string, FieldOverride>;

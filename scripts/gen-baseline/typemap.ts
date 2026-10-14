@@ -51,6 +51,16 @@ export const TYPE_MAP: Readonly<Record<string, TypeRule>> = {
   anytype: { kind: "skip", reason: "unsupported" },
   complexvalue: { kind: "skip", reason: "unsupported" },
   location: { kind: "skip", reason: "unsupported" },
+  // Phase 10 tokens. CaseMilestone.TimeRemainingInHrs/Mins print "text".
+  text: { kind: "field", type: "Text" },
+  // sf-skills spells it timeOnly; mapType lower-cases.
+  timeonly: { kind: "field", type: "Time" },
+  // ContentVersion.ContentSizeLong.
+  long: { kind: "field", type: "Number", precision: 18, scale: 0, guessed: true },
+  // Location.
+  integer: { kind: "field", type: "Number", precision: 18, scale: 0, guessed: true },
+  // QuoteLineItem.Status: a picklist whose values depend on another field.
+  "dynamic picklist": { kind: "field", type: "Picklist" },
 };
 
 export interface MappedType {
@@ -66,7 +76,7 @@ export interface MappedType {
 
 export type TypeMapping = MappedType | { skip: "system" | "unsupported"; sourceType: string };
 
-export const TEXT_TOKENS: ReadonlySet<string> = new Set(["string", "phone", "url", "email", "textarea"]);
+export const TEXT_TOKENS: ReadonlySet<string> = new Set(["string", "phone", "url", "email", "textarea", "text"]);
 
 export function isTextType(type: FieldType): boolean {
   return type === "Text" || type === "TextArea" || type === "LongTextArea" || type === "Phone" || type === "Url" || type === "Email";

@@ -188,11 +188,23 @@ describe("generator failure modes", () => {
     expectGeneratorError(() => generate(noReason, CLI_OPTIONS), /^overrides\.json Account\.Tier: every field override needs a non-empty reason/);
   });
 
-  it("a key prefix sourced from a describe aborts (D-07: never from an org)", () => {
+  it("a key prefix from the author's own DE describe is accepted with a ref (Phase 10 D-01 reverses the Phase 9 D-07 guard for this one case)", () => {
     const describeSourced = withInputs((c) => {
-      (c.overrides.objects.Account!.keyPrefix as { source: string }).source = "de-describe";
+      c.overrides.objects.Account!.keyPrefix = { value: "001", source: "de-describe", ref: "author's own DE describe, test" };
     });
-    expectGeneratorError(() => generate(describeSourced, CLI_OPTIONS), /^overrides\.json Account: keyPrefix\.source must be one of doc\|sdk-fixture\|unverified/);
+    const account = JSON.parse(generate(describeSourced, CLI_OPTIONS).files.get("objects/Account.json")!) as StandardObjectJson;
+    expect(account.keyPrefixSource).toBe("de-describe");
+  });
+
+  it("a DE-describe key prefix without a ref, or an unknown source, aborts", () => {
+    const noRef = withInputs((c) => {
+      c.overrides.objects.Account!.keyPrefix = { value: "001", source: "de-describe" };
+    });
+    expectGeneratorError(() => generate(noRef, CLI_OPTIONS), /^overrides\.json Account: keyPrefix\.ref is required when source is de-describe/);
+    const unknownSource = withInputs((c) => {
+      (c.overrides.objects.Account!.keyPrefix as { source: string }).source = "org";
+    });
+    expectGeneratorError(() => generate(unknownSource, CLI_OPTIONS), /^overrides\.json Account: keyPrefix\.source must be one of doc\|sdk-fixture\|de-describe\|unverified/);
   });
 
   it("a pinned v1.0 field that both sources dropped aborts without a keep entry", () => {
@@ -212,5 +224,106 @@ describe("generator failure modes", () => {
     });
     expect(inputs.pins!.Account!.fields.AccountNumber).toEqual({});
     expectGeneratorError(() => generate(conflicting, CLI_OPTIONS), /unresolved source conflicts[\s\S]*Account\.AccountNumber\.createable: sf-skills=true object-reference=false/);
+  });
+});
+
+describe("objects without v1 pins (Phase 10 D-10, D-11, D-18)", () => {
+  const unpinned = (edit?: (clone: GeneratorInputs) => void): GeneratorInputs => {
+    const clone = structuredClone(inputs);
+    delete clone.pins!.BusinessHours;
+    clone.objectReference.get("BusinessHours")!.supportedCalls = ["create", "describeLayout", "describeSObjects", "query", "retrieve", "search", "update", "upsert"];
+    clone.overrides.objects.BusinessHours!.labels = { label: "Business Hours", labelPlural: "Business Hours", reason: "test" };
+    edit?.(clone);
+    return clone;
+  };
+  const businessHours = (from: GeneratorInputs): StandardObjectJson =>
+    JSON.parse(generate(from, CLI_OPTIONS).files.get("objects/BusinessHours.json")!) as StandardObjectJson;
+
+  it("an object without v1 pins takes its DML flags from Supported Calls (D-10)", () => {
+    const o = businessHours(unpinned());
+    expect(o.deletable).toBe(false);
+    expect(o.undeletable).toBe(false);
+    for (const key of ["createable", "updateable", "queryable", "searchable"]) expect(o).not.toHaveProperty(key);
+  });
+
+  it("an overrides.json flags entry wins and is reported when it differs (D-12)", () => {
+    const differs = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.flags = { createable: false, reason: "test" };
+    });
+    expect(businessHours(differs).createable).toBe(false);
+    expect(generate(differs, CLI_OPTIONS).report.overrideResolved).toContain("BusinessHours.flags.createable");
+    const same = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.flags = { updateable: true, reason: "test" };
+    });
+    expect(businessHours(same)).not.toHaveProperty("updateable");
+    expect(generate(same, CLI_OPTIONS).report.overrideResolved).not.toContain("BusinessHours.flags.updateable");
+  });
+
+  it("without Supported Calls or a flags override an object without pins aborts", () => {
+    const none = unpinned((c) => {
+      delete c.objectReference.get("BusinessHours")!.supportedCalls;
+    });
+    expectGeneratorError(() => generate(none, CLI_OPTIONS), /^BusinessHours: object DML flags are stated by neither source/);
+  });
+
+  it("without a labels override an object without pins aborts (research C1)", () => {
+    const none = unpinned((c) => {
+      delete c.overrides.objects.BusinessHours!.labels;
+    });
+    expectGeneratorError(() => generate(none, CLI_OPTIONS), /^BusinessHours: label and labelPlural are stated by neither source; add an overrides\.json labels entry with a reason/);
+  });
+
+  it("hasOwner comes from OwnerId in sf-skills fields or the Object Reference, never from field_reference alone (research C2)", () => {
+    expect(businessHours(unpinned()).hasOwner).toBe(false);
+    const referenceOnly = unpinned((c) => {
+      c.sfSkills.get("BusinessHours")!.fieldReference.set("OwnerId", { referenceType: "reference" });
+    });
+    expect(businessHours(referenceOnly).hasOwner).toBe(false);
+    const owned = unpinned((c) => {
+      c.sfSkills.get("BusinessHours")!.fields.set("OwnerId", { type: "reference", refersTo: ["User"] });
+    });
+    const o = businessHours(owned);
+    expect(o.hasOwner).toBe(true);
+    expect(o.ownerTargets).toEqual(["User"]);
+  });
+
+  it("documented-required fields of an object without pins keep nillable: false (D-18)", () => {
+    const from = unpinned();
+    const name = businessHours(from).fields.find((f) => f.name === "Name")!;
+    expect(name.nillable).toBe(false);
+    expect(generate(from, CLI_OPTIONS).report.forcedNullable.filter((e) => e.startsWith("BusinessHours."))).toEqual([]);
+    const full = generate(inputs, CLI_OPTIONS).report.forcedNullable;
+    expect(full.length).toBeGreaterThan(0);
+    for (const entry of full) expect(inputs.pins).toHaveProperty(entry.split(".")[0]!);
+  });
+
+  it("an AutoNumber set by an override carries no length and no nillable: false", () => {
+    const from = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.fields = {
+        ...c.overrides.objects.BusinessHours!.fields,
+        Name: { set: { type: "AutoNumber", displayFormat: "{00000000}", createable: false, updateable: false, defaultedOnCreate: true, idLookup: true, nameField: true }, reason: "test" },
+      };
+    });
+    const name = businessHours(from).fields.find((f) => f.name === "Name")!;
+    expect(name).not.toHaveProperty("length");
+    expect(name).not.toHaveProperty("nillable");
+  });
+
+  it("a new field never writes a flag equal to the loader default", () => {
+    const from = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.fields = { ...c.overrides.objects.BusinessHours!.fields, Name: { set: { nillable: true }, reason: "test" } };
+    });
+    expect(businessHours(from).fields.find((f) => f.name === "Name")).not.toHaveProperty("nillable");
+  });
+
+  it("a labels or flags entry without a reason aborts", () => {
+    const noReason = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.labels = { label: "Business Hours", labelPlural: "Business Hours", reason: "" };
+    });
+    expectGeneratorError(() => generate(noReason, CLI_OPTIONS), /^overrides\.json BusinessHours: labels needs label, labelPlural and a reason/);
+    const noKey = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.flags = { reason: "x" };
+    });
+    expectGeneratorError(() => generate(noKey, CLI_OPTIONS), /^overrides\.json BusinessHours: flags needs a reason and at least one of createable\|updateable\|deletable\|undeletable\|queryable\|searchable as a boolean/);
   });
 });

@@ -9,7 +9,7 @@
  * Full mode (`v1Only: false`, BASE2-02 step B) adds every field the sources document to the 35 objects. A field new to a
  * v1.0 object follows extra rules (locked decisions 4 and 5): unsupported types and references to objects outside
  * objects.json are skipped and reported, gated fields are tagged and never required, required-looking fields are forced
- * nullable, field_reference-only fields are read-only, picklists carry no values. v1.0 fields (those with a pin) are
+ * nullable (rule 4, v1.0 objects only: objects without v1 pins keep the documented requirement, Phase 10 D-18), field_reference-only fields are read-only, picklists carry no values. v1.0 fields (those with a pin) are
  * never touched by these rules, so step B cannot change what step A reproduced. Full mode also emits PROVENANCE.json
  * (D-04): per-object counts of facts by provenance, the non-verified facts per field, and the skip/gating lists.
  */
@@ -17,7 +17,7 @@ import type { StandardFieldJson, StandardObjectJson } from "@orglet/metadata";
 import { GeneratorError } from "./errors.js";
 import { matchGating } from "./gating.js";
 import { codeUnit, sourceFieldsOf, type FieldOverride, type GeneratorInputs, type ObjectOverride, type Overrides, type SourceField } from "./sources.js";
-import { compoundParent, flagsFrom, humanise, isTextType, lengthFor, mapType, sfTextLength, type Provenance } from "./typemap.js";
+import { compoundParent, flagsFrom, humanise, isTextType, lengthFor, mapType, NEGATIVE_FLAGS, sfTextLength, type Provenance } from "./typemap.js";
 
 export { GeneratorError } from "./errors.js";
 
@@ -220,7 +220,20 @@ export function deriveFromSources(inputs: GeneratorInputs, object: string): Map<
   return new Map(fields.map((f) => [f.name, deriveField(f, addressFields)]));
 }
 
-const KEY_PREFIX_SOURCES: readonly string[] = ["doc", "sdk-fixture", "unverified"];
+// de-describe: the author's own Developer Edition describe, confirmed at a checkpoint and cited in ref (Phase 10 D-01,
+// Phase 3 D-03a); orglet itself never contacts an org.
+const KEY_PREFIX_SOURCES: readonly string[] = ["doc", "sdk-fixture", "de-describe", "unverified"];
+export const OBJECT_FLAGS = ["createable", "updateable", "deletable", "undeletable", "queryable", "searchable"] as const;
+export type ObjectFlag = (typeof OBJECT_FLAGS)[number];
+/** Supported Calls token -> object flag. `upsert` is no flag: the engine derives it from createable && updateable. */
+export const FLAG_BY_CALL: Readonly<Record<string, ObjectFlag>> = { create: "createable", update: "updateable", delete: "deletable", undelete: "undeletable", query: "queryable", search: "searchable" };
+
+/** `false` for every flag whose call is absent from `calls`; the loader defaults object flags to true, so only `false` is ever written. */
+export function flagsFromCalls(calls: readonly string[]): Partial<Record<ObjectFlag, false>> {
+  const out: Partial<Record<ObjectFlag, false>> = {};
+  for (const [call, flag] of Object.entries(FLAG_BY_CALL)) if (!calls.includes(call)) out[flag] = false;
+  return out;
+}
 const hasReason = (v: { reason?: unknown } | undefined): boolean => typeof v?.reason === "string" && v.reason.trim() !== "";
 type OwnerTarget = "User" | "Group";
 /** The loader's default for `OwnerId.referenceTo` (code-unit sorted); `ownerTargets` is written only when narrower (D-11). */
@@ -256,6 +269,29 @@ function ownerTargetsFor(object: string, derived: DerivedField | undefined, over
   return { value: modelled, provenance: sf !== undefined && doc !== undefined ? "verified" : sf !== undefined ? "sdk-only" : "doc-only" };
 }
 
+/**
+ * Object-level facts for an object without v1 pins (Phase 10): labels only from an overrides.json labels entry (research
+ * C1), DML flags from the Object Reference Supported Calls with a flags override winning (D-10, D-12), hasOwner from an
+ * OwnerId in sf-skills `fields` or the Object Reference, never from field_reference alone (research C2).
+ */
+function objectFactsFor(object: string, inputs: GeneratorInputs, override: ObjectOverride, report: GeneratorReport): Partial<StandardObjectJson> & { label: string; labelPlural: string; hasOwner: boolean } {
+  if (!override.labels) throw new GeneratorError(`${object}: label and labelPlural are stated by neither source; add an overrides.json labels entry with a reason`);
+  const calls = inputs.objectReference.get(object)?.supportedCalls;
+  if (!calls && !override.flags) {
+    throw new GeneratorError(`${object}: object DML flags are stated by neither source (no Supported Calls in the Object Reference extraction); add an overrides.json flags entry with a reason`);
+  }
+  const derived: Partial<Record<ObjectFlag, boolean>> = calls ? flagsFromCalls(calls) : {};
+  const flags: Partial<Record<ObjectFlag, false>> = {};
+  for (const flag of OBJECT_FLAGS) {
+    const stated = override.flags?.[flag];
+    const value = stated ?? derived[flag] ?? true;
+    if (stated !== undefined && (derived[flag] ?? true) !== stated) report.overrideResolved.push(`${object}.flags.${flag}`);
+    if (!value) flags[flag] = false;
+  }
+  const hasOwner = inputs.sfSkills.get(object)?.fields.has("OwnerId") === true || inputs.objectReference.get(object)?.fields.has("OwnerId") === true;
+  return { label: override.labels.label, labelPlural: override.labels.labelPlural, hasOwner, ...flags };
+}
+
 /** overrides.json must carry a reason on every hand fact (BASE2-01); key prefixes cite a public source or say unverified (D-07). */
 export function validateOverrides(overrides: Overrides): void {
   for (const [object, entry] of Object.entries(overrides.objects)) {
@@ -265,6 +301,19 @@ export function validateOverrides(overrides: Overrides): void {
     if (!KEY_PREFIX_SOURCES.includes(prefix.source as string)) throw new GeneratorError(`${where}: keyPrefix.source must be one of ${KEY_PREFIX_SOURCES.join("|")}`);
     if (prefix.source !== "unverified" && !prefix.ref) throw new GeneratorError(`${where}: keyPrefix.ref is required when source is ${prefix.source}`);
     if (entry.keepObject && !hasReason(entry.keepObject)) throw new GeneratorError(`${where}: keepObject needs a reason`);
+    if (entry.labels) {
+      const l = entry.labels as Partial<NonNullable<ObjectOverride["labels"]>>;
+      if (!hasReason(l) || typeof l.label !== "string" || l.label === "" || typeof l.labelPlural !== "string" || l.labelPlural === "") {
+        throw new GeneratorError(`${where}: labels needs label, labelPlural and a reason`);
+      }
+    }
+    if (entry.flags) {
+      const f = entry.flags as unknown as Record<string, unknown>;
+      const keys = Object.keys(f).filter((k) => k !== "reason");
+      if (!hasReason(entry.flags) || keys.length === 0 || keys.some((k) => !(OBJECT_FLAGS as readonly string[]).includes(k) || typeof f[k] !== "boolean")) {
+        throw new GeneratorError(`${where}: flags needs a reason and at least one of ${OBJECT_FLAGS.join("|")} as a boolean`);
+      }
+    }
     if (entry.ownerTargets) {
       if (!hasReason(entry.ownerTargets)) throw new GeneratorError(`${where}: ownerTargets needs a reason`);
       const value: unknown = entry.ownerTargets.value;
@@ -354,7 +403,7 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
   const objects = options.v1Only ? inputs.objects.filter((o) => pins?.[o]) : inputs.objects;
   const knownObjects = new Set(inputs.objects);
   const provenanceCounts: Record<string, ProvenanceCounts> = {};
-  const provenanceObjects: Record<string, { keyPrefix: string; ownerTargets?: FactProvenance; fields: Record<string, Record<string, FactProvenance>> }> = {};
+  const provenanceObjects: Record<string, { keyPrefix: string; labels?: "override"; flags?: "override" | "doc-only"; ownerTargets?: FactProvenance; fields: Record<string, Record<string, FactProvenance>> }> = {};
 
   for (const object of objects) {
     const override: ObjectOverride | undefined = inputs.overrides.objects[object];
@@ -364,7 +413,10 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
     if (!inputs.sfSkills.has(object) && !inputs.objectReference.has(object) && !override.keepObject) {
       throw new GeneratorError(`${object} is in neither source; add an overrides.json keepObject entry`);
     }
-    const objectFacts = objectPins?.object ?? {};
+    if (objectPins && (override.labels || override.flags)) {
+      throw new GeneratorError(`${object}: labels and flags overrides are for objects without v1 pins; v1.0 objects keep their pins`);
+    }
+    const objectFacts = objectPins ? objectPins.object : objectFactsFor(object, inputs, override, report);
     if (typeof objectFacts.label !== "string" || typeof objectFacts.labelPlural !== "string" || typeof objectFacts.hasOwner !== "boolean") {
       throw new GeneratorError(`${object}: object facts (label, labelPlural, hasOwner) are stated by neither source; pin them in v1-pins.json`);
     }
@@ -441,6 +493,14 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
         Object.assign(json, fieldOverride.set);
         for (const fact of Object.keys(fieldOverride.set)) facts[fact] = "override";
       }
+      if (!fieldPins) {
+        // v1 convention: an AutoNumber carries neither length nor nillable; flags equal to the loader default are never written.
+        if (json.type === "AutoNumber") {
+          delete json.length;
+          delete json.nillable;
+        }
+        for (const flag of NEGATIVE_FLAGS) if (json[flag] === true) delete json[flag];
+      }
       for (const c of d?.conflicts ?? []) {
         if (fieldOverride?.set && c.fact in fieldOverride.set) report.overrideResolved.push(`${where}.${c.fact}`);
         else if (fieldPins && c.fact in fieldPins) report.conflictsSettledByPin.push(`${where}.${c.fact}`);
@@ -495,9 +555,10 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
           if (set.nillable === false) throw new GeneratorError(`${where}: a feature-gated field is never nillable: false (D-09); drop the override or set featureGated: false with a reason`);
           delete json.nillable;
           counts.featureGated++;
-        } else if (json.nillable === false && json.createable !== false && json.defaultedOnCreate !== true && json.type !== "Checkbox" && !("nillable" in set)) {
-          // Rule 4: a field documented as required would start failing inserts that work today (Research Pitfall 3). Checkbox
-          // is exempt: the engine defaults an absent Checkbox to false before the required check, exactly as v1.0 writes them.
+        } else if (objectPins !== undefined && json.nillable === false && json.createable !== false && json.defaultedOnCreate !== true && json.type !== "Checkbox" && !("nillable" in set)) {
+          // Rule 4, objects with v1 pins only (Phase 10 D-18): a documented-required field new to a v1.0 object would start
+          // failing inserts that work today (Research Pitfall 3). Objects without v1 history keep the documented requirement.
+          // Checkbox is exempt: the engine defaults an absent Checkbox to false before the required check, as v1.0 writes them.
           delete json.nillable;
           report.forcedNullable.push(where);
         }
@@ -527,7 +588,7 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
     files.set(`objects/${object}.json`, serialise(orderObjectJson(objectJson)));
     report.skipped.perObject[object] = { fieldType: counts.skippedFieldType, referenceTarget: counts.skippedReferenceTarget };
     provenanceCounts[object] = counts;
-    provenanceObjects[object] = { keyPrefix: override.keyPrefix.source, ...(ownerProvenance ? { ownerTargets: ownerProvenance } : {}), fields: fieldProvenance };
+    provenanceObjects[object] = { keyPrefix: override.keyPrefix.source, ...(objectPins ? {} : { labels: "override" as const, flags: override.flags ? ("override" as const) : ("doc-only" as const) }), ...(ownerProvenance ? { ownerTargets: ownerProvenance } : {}), fields: fieldProvenance };
   }
 
   if (report.conflicts.unresolved.length > 0 && !options.collectConflicts) {

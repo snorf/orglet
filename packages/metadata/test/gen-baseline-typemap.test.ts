@@ -54,6 +54,18 @@ describe("gen-baseline typemap: type normalisation", () => {
   });
 });
 
+describe("gen-baseline typemap: Phase 10 tokens", () => {
+  it("maps the Phase 10 type tokens", () => {
+    expect(mapType("X", "A", "text", {})).toMatchObject({ type: "Text" });
+    expect(mapType("X", "A", "timeOnly", {})).toMatchObject({ type: "Time" });
+    expect(mapType("X", "A", "long", {})).toMatchObject({ type: "Number", precision: 18, scale: 0, guessed: true });
+    expect(mapType("X", "A", "integer", {})).toMatchObject({ type: "Number", precision: 18, scale: 0, guessed: true });
+    expect(mapType("X", "A", "dynamic picklist", {})).toMatchObject({ type: "Picklist" });
+    const field: SourceField = { object: "X", name: "A", personAccount: false, sf: { type: "text" } };
+    expect(lengthFor(field, "text")).toEqual({ value: 255, provenance: "guessed" });
+  });
+});
+
 describe("gen-baseline typemap: flags", () => {
   it("writes no flag when Create, Update and Nillable are all present", () => {
     expect(flagsFrom(["Create", "Filter", "Nillable", "Sort", "Update"])).toEqual({});
