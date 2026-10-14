@@ -389,7 +389,7 @@ describe("business object references (D-20)", () => {
 
 describe("key-prefix case twins", () => {
   it("prefix routing is exact-case: 01M/01m, 00q/00Q and 00K/00k resolve to different objects", () => {
-    const route = (prefix: string) => matchTargetByPrefix(schema.list(), toCaseSafeId(`${prefix}000000000001`))?.name;
+    const route = (prefix: string) => matchTargetByPrefix([...schema.objects.values()], toCaseSafeId(`${prefix}000000000001`))?.name;
     expect(route("01M")).toBe("AccountTeamMember");
     expect(route("01m")).toBe("BusinessHours");
     expect(route("00q")).toBe("OpportunityTeamMember");
