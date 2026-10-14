@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: executing
-stopped_at: Completed 09-08-PLAN.md
-last_updated: "2026-10-14T07:40:58.223Z"
+status: verifying
+stopped_at: Completed 09-09-PLAN.md (phase 09 complete)
+last_updated: "2026-10-14T07:51:31.918Z"
 last_activity: 2026-10-14
 progress:
   total_phases: 16
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 19
-  completed_plans: 18
+  completed_plans: 19
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ rather than faked.
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 09 (baseline-generator-parity-ownerid-narrowing) — EXECUTING
 Plan: 9 of 9
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-14
 
 Progress: [█░░░░░░░░░] 14%
@@ -108,6 +108,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 09 P06 | 17min | 1 tasks | 6 files |
 | Phase 09 P07 | 17min | 3 tasks | 51 files |
 | Phase 09 P08 | 14min | 2 tasks | 21 files |
+| Phase 09 P09 | 6min | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -194,10 +195,11 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-08: ownerTargets derived from both sources' OwnerId Refers To restricted to User/Group; override wins and is reported override-resolved; a missing or unmodelled target (Calendar, Organization) without an override aborts instead of being dropped by intersection
 - [Phase 09]: 09-08: ownerTargets written only when narrower than [Group, User]; 8 objects User-only (Event by override), 8 stay polymorphic (Group, ServiceContract by override)
 - [Phase 09]: 09-08: BASE2-01 ticked (owner targets now in overrides.json); BASE2-04 left pending for 09-09 (wording names unmodelled objects and Calendar on Event; poly-check re-run)
+- [Phase 09]: 09-09: D-14 scenario lives in upgrade-owner.test.ts with its own schema so upgrade.test.ts EXPECTED_WARNINGS stays []; the Group-owned Account warns exactly once and the FK lands silently after correction
+- [Phase 09]: 09-09: BASE2-04 wording amended to the 35 modelled objects (8 User-only incl. Event by D-12 override, 8 polymorphic incl. Group by override, 19 without OwnerId, Phase 10 forward clause) and ticked; conformance 8/8 PASS locally, poly-check 4/4 both legs
 
 ### Pending Todos
 
-- Narrow baseline OwnerId referenceTo per object (metadata, 2026-10-08)
 - Support Relationship:Object.Field colon syntax for polymorphic formula references (formula, 2026-10-08)
 - v1.0 audit tech debt (see milestones/v1.0-MILESTONE-AUDIT.md): combined Bulk-ingest + roll-up test;
   roll-up re-backfill todo; refresh 04-VERIFICATION.md status after UAT; VALIDATION.md maps; make the
@@ -217,6 +219,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T07:40:58.219Z
-Stopped at: Completed 09-08-PLAN.md
+Last session: 2026-10-14T07:51:31.913Z
+Stopped at: Completed 09-09-PLAN.md (phase 09 complete)
 Resume file: None

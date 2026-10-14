@@ -80,7 +80,7 @@ Plans:
 - [x] 09-06-PLAN.md — step B rules in memory + decision checkpoint on the report (BASE2-02, BASE2-03)
 - [x] 09-07-PLAN.md — step B landing: regenerate v2, SC3 proof, requirement wording aligned (BASE2-02, BASE2-03)
 - [x] 09-08-PLAN.md — per-object ownerTargets and SC4 tests (BASE2-04)
-- [ ] 09-09-PLAN.md — D-14 upgrade case, Group-owned audit, conformance, todo (BASE2-04)
+- [x] 09-09-PLAN.md — D-14 upgrade case, Group-owned audit, conformance, todo (BASE2-04)
 **Research flag**: design spike (not a full research phase) on type mapping, string-length rules and single-source flags.
 *Wording of SC3 aligned with delivered scope on 2026-10-14 (09-07; CONTEXT D-10, phase 9 locked decision 4).*
 

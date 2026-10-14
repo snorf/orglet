@@ -53,13 +53,20 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   as nullable fields tagged `featureGated` in the baseline JSON and described as nullable fields (the
   tag itself is not a describe key), replacing the v1.0 rule of skipping them.
   *Deviation note 2026-10-14: wording aligned with Phase 9 delivered scope (D-10, locked decision 4).*
-- [ ] **BASE2-04**: `OwnerId.referenceTo` is defined per object from the Object Reference (User-only
-  on Account, Contact, Opportunity, Contract, Asset, Campaign, Individual, Solution, ContentVersion;
-  User and Group on Case, Lead, Task, SocialPost, Order, Location, ContactRequest, WorkOrder,
-  ServiceAppointment, OperatingHours, ServiceContract; Calendar and User on Event; none on Quote,
-  QuoteLineItem, Entitlement, Product2, Pricebook2, PricebookEntry, EmailMessage, FeedItem,
-  Address), so plain `Owner.X` formula traversal and `Owner.X` SOQL compile on User-only objects
-  while polymorphic behaviour from v1.0 is unchanged on queue-enabled objects.
+- [x] **BASE2-04**: `OwnerId.referenceTo` is defined per object by the generator as `ownerTargets`,
+  derived from both sources (sf-skills and the Object Reference) for the 35 modelled objects: User-only
+  on Account, Asset, Campaign, Contact, Contract, Event, Individual and Opportunity (Event by a reasoned
+  override, D-12: the documented Calendar owner is not modelled; widen when a Calendar object lands);
+  User and Group on the modelled objects whose owner stays polymorphic (Case, Lead, Task, SocialPost,
+  ServiceAppointment, OperatingHours, ServiceContract, and Group by override because its documented
+  Organization owner is not modelled); none on the 19 objects without `OwnerId` (Entitlement, Product2,
+  Pricebook2, PricebookEntry among them). Plain `Owner.X` formula traversal and `Owner.X` SOQL compile
+  on User-only objects while polymorphic behaviour from v1.0 is unchanged on queue-enabled objects, and a
+  v1.0 database holding a Group-owned row on a now-User-only object upgrades with one
+  `UNSUPPORTED:schema-fk` warning and no rewrite (D-14). Objects added from Phase 10 on (Solution,
+  ContentVersion, Order, Location, ContactRequest, WorkOrder, Quote, QuoteLineItem, EmailMessage,
+  FeedItem, Address) follow the same generator rule when they land.
+  *Deviation note 2026-10-14: wording aligned with Phase 9 delivered scope (09-09; CONTEXT D-11, D-12, D-14).*
 - [x] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
   independent public sources or stored as `null` with a source label; an object with a null prefix
   still loads, describes and is reference-checked, and the generator never invents a prefix.
@@ -226,7 +233,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE2-01 | Phase 9 | Complete |
 | BASE2-02 | Phase 9 | Complete |
 | BASE2-03 | Phase 9 | Complete |
-| BASE2-04 | Phase 9 | Pending |
+| BASE2-04 | Phase 9 | Complete |
 | BASE2-05 | Phase 8 | Complete |
 | BASE2-06 | Phase 10 | Pending |
 | BASE2-07 | Phase 10 | Pending |
