@@ -1,5 +1,19 @@
 {
   "object": "Event",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "AcceptedEventInviteeIds": {
       "type": "junctionidlist",

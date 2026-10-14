@@ -1,5 +1,15 @@
 {
   "object": "RecordType",
+  "supportedCalls": [
+    "create",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "BusinessProcessId": {
       "type": "reference",

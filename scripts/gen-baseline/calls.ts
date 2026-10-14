@@ -10,6 +10,8 @@ export const KNOWN_SUPPORTED_CALLS: readonly string[] = [
   "describeSObjects",
   "getDeleted",
   "getUpdated",
+  // Account, Contact, Lead and Individual; maps to no object flag
+  "merge",
   "query",
   "retrieve",
   "search",

@@ -1,5 +1,17 @@
 {
   "object": "OpportunityLineItem",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "CanUseQuantitySchedule": {
       "type": "boolean",

@@ -1,5 +1,17 @@
 {
   "object": "CampaignMember",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "AccountId": {
       "type": "reference",

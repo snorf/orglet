@@ -1,0 +1,99 @@
+{
+  "object": "AccountContactRelation",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "AccountContactRelationshipCurrency": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AccountId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "ContactId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "EndDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsActive": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsDirect": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "Roles": {
+      "type": "multipicklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "StartDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

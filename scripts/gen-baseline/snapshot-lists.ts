@@ -9,6 +9,8 @@ export const KNOWN_PROPERTY_TOKENS: readonly string[] = [
   "Aggregate",
   "Autonumber",
   "Create",
+  // ContentDocument prints a capital C (Division, IsArchived, IsInternalOnly)
+  "Defaulted on Create",
   "Defaulted on create",
   "Defaulted on create or filter",
   "Delete",
@@ -52,6 +54,9 @@ export const DOC_ONLY_REVIEWED: Readonly<Record<string, Readonly<Record<string, 
   },
   Profile: {
     PermissionsPermissionName: "placeholder name for the per-permission boolean family, not a field; the generator must skip it",
+  },
+  Quote: {
+    InsuranceQuoteType: "documented only in the Object Reference (not in sf-skills fields or field_reference at the pinned revision); its prose names no gating feature; reviewed in Phase 10",
   },
 };
 

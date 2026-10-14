@@ -1,5 +1,17 @@
 {
   "object": "BusinessHours",
+  "supportedCalls": [
+    "create",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "BusinessHoursId": {
       "type": "reference",

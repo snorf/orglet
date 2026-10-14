@@ -1,0 +1,461 @@
+{
+  "object": "ContentVersion",
+  "supportedCalls": [
+    "create",
+    "describeLayout",
+    "describeSObjects",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "Checksum": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentBodyId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ContentBody"
+      ],
+      "relationshipName": "ContentBody",
+      "relationshipType": "lookup"
+    },
+    "ContentDocumentId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "ContentDocument"
+      ],
+      "relationshipName": "ContentDocument",
+      "relationshipType": "lookup"
+    },
+    "ContentLocation": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "social"
+      ]
+    },
+    "ContentModifiedById": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "ContentModifiedBy",
+      "relationshipType": "lookup"
+    },
+    "ContentModifiedDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentSize": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentSizeLong": {
+      "type": "long",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentUrl": {
+      "type": "url",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Division": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ExternalDataSourceId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "ExternalDataSource"
+      ],
+      "relationshipName": "ExternalDataSource",
+      "relationshipType": "lookup"
+    },
+    "ExternalDocumentInfo1": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ExternalDocumentInfo2": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "FeaturedContentBoost": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "FeaturedContentDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "FileExtension": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "FileType": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "FirstPublishLocationId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "IsAssetEnabled": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Group"
+      ]
+    },
+    "IsLatest": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsMajorVersion": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "Language": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "MalwareScanDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "MalwareScanStatus": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NegativeRatingCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "NetworkId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Origin": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "OwnerId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "Owner",
+      "relationshipType": "lookup"
+    },
+    "PathOnClient": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PositiveRatingCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PublishStatus": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "RatingCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ReasonForChange": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecordTypeId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SharingOption": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SharingPrivacy": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "TagCsv": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "TextPreview": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Title": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "VersionData": {
+      "type": "base64",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "VersionDataURL": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "VersionNumber": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    }
+  }
+}

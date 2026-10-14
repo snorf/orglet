@@ -1,5 +1,17 @@
 {
   "object": "User",
+  "supportedCalls": [
+    "create",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "AboutMe": {
       "type": "textarea",

@@ -1,5 +1,12 @@
 {
   "object": "OpportunityHistory",
+  "supportedCalls": [
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve"
+  ],
   "fields": {
     "Amount": {
       "type": "currency",

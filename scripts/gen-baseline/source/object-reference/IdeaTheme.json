@@ -1,5 +1,15 @@
 {
   "object": "IdeaTheme",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update"
+  ],
   "fields": {
     "Categories": {
       "type": "multipicklist",

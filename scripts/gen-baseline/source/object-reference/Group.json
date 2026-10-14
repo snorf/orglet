@@ -1,5 +1,17 @@
 {
   "object": "Group",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "DefaultDivision": {
       "type": "picklist",

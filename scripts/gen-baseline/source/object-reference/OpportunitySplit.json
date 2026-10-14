@@ -1,0 +1,133 @@
+{
+  "object": "OpportunitySplit",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "ArchivedTerritoryName": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HasOpportunityLineItemSplit": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "OpportunityId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity",
+      "relationshipType": "lookup"
+    },
+    "Split": {
+      "type": "string",
+      "properties": [
+        "Autonumber",
+        "Defaulted on create",
+        "Filter",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "SplitAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "SplitNote": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SplitOwnerId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "SplitOwner",
+      "relationshipType": "lookup"
+    },
+    "SplitPercentage": {
+      "type": "percent",
+      "properties": [
+        "Create",
+        "Filter",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SplitTypeId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "OpportunitySplitType"
+      ],
+      "relationshipName": "SplitType",
+      "relationshipType": "lookup"
+    },
+    "Territory2Id": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Territory2"
+      ],
+      "relationshipName": "Territory2",
+      "relationshipType": "lookup"
+    }
+  }
+}

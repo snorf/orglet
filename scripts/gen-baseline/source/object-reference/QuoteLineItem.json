@@ -1,0 +1,882 @@
+{
+  "object": "QuoteLineItem",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "BatchIdentifier": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "BillingFrequency": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "BillingReference": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "CustomProductName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 225
+    },
+    "Discount": {
+      "type": "percent",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DiscountAmount": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Division": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DoesAutomaticallyRenew": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EffectiveGrantDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EndDate": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "EndDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "EndQuantity": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "EndTime": {
+      "type": "time",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "HasQuantitySchedule": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HasRevenueSchedule": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HasSchedule": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsPrimarySegment": {
+      "type": "boolean",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LegalEntityId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "LegalEntity"
+      ],
+      "relationshipName": "LegalEntity"
+    },
+    "LineNumber": {
+      "type": "string",
+      "properties": [
+        "Autonumber",
+        "Defaulted on create",
+        "Filter",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "ListPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ListPriceTotal": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Margin": {
+      "type": "percent",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "MarginAmount": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "NetTotalPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "NetUnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "OpportunityLineItemId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ParentQuoteLineItemId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ],
+      "refersTo": [
+        "QuoteLineItem"
+      ],
+      "relationshipName": "ParentQuoteLineItem",
+      "relationshipType": "lookup"
+    },
+    "PartnerDiscountPercent": {
+      "type": "percent",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PartnerUnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PeriodBoundary": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PeriodBoundaryDay": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PeriodBoundaryStartMonth": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PriceRevisionPolicyId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "relationshipName": "PriceRevisionPolicy"
+    },
+    "PriceWaterfallIdentifier": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PricebookEntryId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "PricingContractId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Contract"
+      ],
+      "relationshipName": "PricingContract"
+    },
+    "PricingTerm": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PricingTermCount": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PricingTermUnit": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "Product2Id": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "ProductInstanceIdentifier": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ProductSellingModelId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ProductSellingModel"
+      ],
+      "relationshipName": "ProductSellingModel",
+      "relationshipType": "lookup"
+    },
+    "ProrationPolicyId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ProrationPolicy"
+      ],
+      "relationshipName": "ProrationPolicy",
+      "relationshipType": "lookup"
+    },
+    "Quantity": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuantityUnitOfMeasureId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "UnitOfMeasure"
+      ],
+      "relationshipName": "QuantityUnitOfMeasure"
+    },
+    "QuoteActionId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "QuoteAction"
+      ],
+      "relationshipName": "QuoteAction",
+      "relationshipType": "lookup"
+    },
+    "QuoteId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "QuoteLineGroupId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "QuoteLineGroup"
+      ],
+      "relationshipName": "QuoteLineGroup"
+    },
+    "QuoteLineItemRecipientId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "QuoteLineItemRecipient"
+      ],
+      "relationshipName": "QuoteLineItemRecipient"
+    },
+    "RampIdentifier": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "RelatedQuoteLineItemId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "relationshipName": "RelatedQuoteLineItem"
+    },
+    "SegmentIdentifier": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "SegmentName": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "SegmentType": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "SellingModelType": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "ServiceDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SortOrder": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "StartEndTimeZone": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartQuantity": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "StartTime": {
+      "type": "time",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartingPriceTotal": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "StartingUnitPriceSource": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "Status": {
+      "type": "dynamic picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SubscriptionTerm": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "SubscriptionTermUnit": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "Subtotal": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalAdjustment": {
+      "type": "percent",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalAdjustmentAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalCost": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalLineAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalMargin": {
+      "type": "percent",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalMarginAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "UnitCost": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "UnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Sort",
+        "Update"
+      ]
+    },
+    "UnitPriceUplift": {
+      "type": "percent",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ValidationResult": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Visibility": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    }
+  }
+}

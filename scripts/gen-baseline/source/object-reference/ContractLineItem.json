@@ -1,0 +1,190 @@
+{
+  "object": "ContractLineItem",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "AssetId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Discount": {
+      "type": "percent",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "EndDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LineItemNumber": {
+      "type": "string",
+      "properties": [
+        "Autonumber",
+        "Defaulted on create",
+        "Filter",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "ListPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "LocationId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ParentContractLineItemId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PricebookEntryId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "Product2Id": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Quantity": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "RootContractLineItemId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ServiceContractId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter"
+      ]
+    },
+    "StartDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "Subtotal": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "TotalPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "UnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    }
+  }
+}

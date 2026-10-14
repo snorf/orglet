@@ -1,0 +1,98 @@
+{
+  "object": "OpportunityContactRole",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "ContactId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact",
+      "relationshipType": "lookup"
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Division": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "IsDeleted": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "IsPrimary": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "OpportunityId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity",
+      "relationshipType": "lookup"
+    },
+    "Role": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

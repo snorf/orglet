@@ -1,0 +1,763 @@
+{
+  "object": "Quote",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "AccountId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AdditionalAddress": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "AdditionalCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalCountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalName": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AdditionalPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalStateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "AdditionalStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillToContactId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingAddress": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "BillingCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingCountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingName": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "BillingPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingStateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BillingStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CalculationStatus": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "CanCreateQuoteLineItems": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Group"
+      ]
+    },
+    "ContactId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContractId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Restricted picklist"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Nillable"
+      ],
+      "maxLength": 32000
+    },
+    "Discount": {
+      "type": "percent",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Email": {
+      "type": "email",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ExpirationDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Fax": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "GrandTotal": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "InsuranceQuoteType": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsSyncing": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LineItemCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update",
+        "idLookup"
+      ],
+      "maxLength": 225
+    },
+    "OpportunityId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter"
+      ]
+    },
+    "Phone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Pricebook2Id": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "QuoteAccountId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Account"
+      ],
+      "relationshipName": "QuoteAccount"
+    },
+    "QuoteNumber": {
+      "type": "string",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "QuoteToAddress": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "QuoteToCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuoteToCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuoteToLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuoteToLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuoteToName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 255
+    },
+    "QuoteToPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuoteToState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuoteToStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecordSource": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "RecordTypeID": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "RelatedWorkId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "field-service"
+      ]
+    },
+    "ShippingAddress": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "ShippingCity": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingCountry": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingCountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingHandling": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "ShippingLatitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingLongitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "ShippingPostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingState": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingStateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShippingStreet": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Subtotal": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "Tax": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "TotalPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "TotalPriceWithTax": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "TotalTaxAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    }
+  }
+}

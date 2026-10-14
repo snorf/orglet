@@ -1,5 +1,20 @@
 {
   "object": "Lead",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "merge",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "ActionCadenceAssigneeId": {
       "type": "reference",

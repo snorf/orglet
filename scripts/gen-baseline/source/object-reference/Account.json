@@ -1,5 +1,20 @@
 {
   "object": "Account",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "merge",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "AccountNumber": {
       "type": "string",

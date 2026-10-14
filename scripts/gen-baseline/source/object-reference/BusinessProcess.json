@@ -1,5 +1,15 @@
 {
   "object": "BusinessProcess",
+  "supportedCalls": [
+    "create",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "Description": {
       "type": "string",

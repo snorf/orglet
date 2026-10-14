@@ -1,5 +1,17 @@
 {
   "object": "UserRole",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "CaseAccessForAccountOwner": {
       "type": "picklist",

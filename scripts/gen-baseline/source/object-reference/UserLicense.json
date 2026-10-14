@@ -1,5 +1,10 @@
 {
   "object": "UserLicense",
+  "supportedCalls": [
+    "describeSObjects",
+    "query",
+    "retrieve"
+  ],
   "fields": {
     "LicenseDefinitionKey": {
       "type": "string",

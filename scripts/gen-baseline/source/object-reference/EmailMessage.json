@@ -1,0 +1,605 @@
+{
+  "object": "EmailMessage",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "ActivityId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AttachmentIds": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "AutomationType": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "BccAddress": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BccIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ]
+    },
+    "CcAddress": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CcIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ]
+    },
+    "ClientThreadIdentifier": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ContentDocumentIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ]
+    },
+    "Division": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "EmailRoutingAddressId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "EmailRoutingAddress"
+      ],
+      "relationshipName": "EmailRoutingAddress",
+      "relationshipType": "lookup"
+    },
+    "EmailTemplateId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "EmailTemplate"
+      ],
+      "relationshipName": "EmailTemplate",
+      "relationshipType": "lookup"
+    },
+    "FirstLinkClickedDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "FirstOpenedDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "FromAddress": {
+      "type": "email",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "FromId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "FromName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "HasAttachment": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HasReply": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "Headers": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "HtmlBody": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Incoming": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsBounced": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsClientManaged": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsDeleted": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "IsExternallyVisible": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsLinkClicked": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsLinkTracked": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsOpened": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsPrivateDraft": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsTracked": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastLinkClickedDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastOpenedDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "MessageDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "MessageIdentifier": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "ParentId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "Case"
+      ],
+      "relationshipName": "Parent",
+      "relationshipType": "lookup"
+    },
+    "RelatedToId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Account",
+        "Accreditation",
+        "AssessmentIndicatorDefinition",
+        "AssessmentTask",
+        "AssessmentTaskContentDocument",
+        "AssessmentTaskDefinition",
+        "AssessmentTaskOrder",
+        "Asset",
+        "AssetRelationship",
+        "AssignedResource",
+        "Award",
+        "BoardCertification",
+        "BusinessLicense",
+        "BusinessMilestone",
+        "BusinessProfile",
+        "Campaign",
+        "CareBarrier",
+        "CareBarrierDeterminant",
+        "CareBarrierType",
+        "CareDeterminant",
+        "CareDeterminantType",
+        "CareDiagnosis",
+        "CareInterventionType",
+        "CareMetricTarget",
+        "CareObservation",
+        "CareObservationComponent",
+        "CarePgmProvHealthcareProvider",
+        "CarePreauth",
+        "CarePreauthItem",
+        "CareProgram",
+        "CareProgramCampaign",
+        "CareProgramEligibilityRule",
+        "CareProgramEnrollee",
+        "CareProgramEnrolleeProduct",
+        "CareProgramEnrollmentCard",
+        "CareProgramGoal",
+        "CareProgramProduct",
+        "CareProgramProvider",
+        "CareProgramTeamMember",
+        "CareProviderAdverseAction",
+        "CareProviderFacilitySpecialty",
+        "CareProviderSearchableField",
+        "CareRegisteredDevice",
+        "CareRequest",
+        "CareRequestDrug",
+        "CareRequestExtension",
+        "CareRequestItem",
+        "CareSpecialty",
+        "CareSpecialtyTaxonomy",
+        "CareTaxonomy",
+        "Case",
+        "CommSubscriptionConsent",
+        "ContactEncounter",
+        "ContactEncounterParticipant",
+        "ContactRequest",
+        "Contract",
+        "CoverageBenefit",
+        "CoverageBenefitItem",
+        "CreditMemo",
+        "DelegatedAccount",
+        "DocumentChecklistItem",
+        "EnrollmentEligibilityCriteria",
+        "HealthcareFacility",
+        "HealthcareFacilityNetwork",
+        "HealthcarePayerNetwork",
+        "HealthcarePractitionerFacility",
+        "HealthcareProvider",
+        "HealthcareProviderNpi",
+        "HealthcareProviderSpecialty",
+        "HealthcareProviderTaxonomy",
+        "IdentityDocument",
+        "Image",
+        "IndividualApplication",
+        "Invoice",
+        "ListEmail",
+        "Location",
+        "MemberPlan",
+        "Opportunity",
+        "Order",
+        "OtherComponentTask",
+        "PartyConsent",
+        "PersonLifeEvent",
+        "PlanBenefit",
+        "PlanBenefitItem",
+        "ProcessException",
+        "Product2",
+        "ProductItem",
+        "ProductRequest",
+        "ProductRequestLineItem",
+        "ProductTransfer",
+        "PurchaserPlan",
+        "ReceivedDocument",
+        "ResourceAbsence",
+        "ReturnOrder",
+        "ReturnOrderLineItem",
+        "ServiceAppointment",
+        "ServiceResource",
+        "Shift",
+        "Shipment",
+        "ShipmentItem",
+        "Solution",
+        "Visit",
+        "VisitedParty",
+        "VolunteerProject",
+        "WorkOrder",
+        "WorkOrderLineItem"
+      ],
+      "relationshipName": "RelatedTo",
+      "relationshipType": "lookup"
+    },
+    "ReplyToEmailMessageId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "EmailMessage"
+      ],
+      "relationshipName": "ReplyToEmailMessage",
+      "relationshipType": "lookup"
+    },
+    "Source": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Subject": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "TextBody": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "ThreadIdentifier": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "ToAddress": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ToIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ]
+    },
+    "ValidatedFromAddress": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

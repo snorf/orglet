@@ -1,5 +1,14 @@
 {
   "object": "Campaign",
+  "supportedCalls": [
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search"
+  ],
   "fields": {
     "ActualCost": {
       "type": "currency",

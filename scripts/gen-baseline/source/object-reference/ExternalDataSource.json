@@ -1,5 +1,10 @@
 {
   "object": "ExternalDataSource",
+  "supportedCalls": [
+    "describeSObjects",
+    "query",
+    "retrieve"
+  ],
   "fields": {
     "AuthProviderId": {
       "type": "reference",

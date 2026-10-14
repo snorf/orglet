@@ -1,0 +1,161 @@
+{
+  "object": "CaseMilestone",
+  "supportedCalls": [
+    "describeLayout",
+    "describeSObjects",
+    "query",
+    "retrieve",
+    "update"
+  ],
+  "fields": {
+    "BusinessHoursId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CaseId": {
+      "type": "reference",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "CompletionDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "ElapsedTimeInDays": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "ElapsedTimeInHrs": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "ElapsedTimeInMins": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "IsCompleted": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "IsViolated": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "MilestoneTypeId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "StartDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "TargetDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter"
+      ]
+    },
+    "TargetResponseInDays": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TargetResponseInHrs": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TargetResponseInMins": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TimeRemainingInDays": {
+      "type": "double",
+      "properties": [
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TimeRemainingInHrs": {
+      "type": "text",
+      "properties": [
+        "Nillable"
+      ]
+    },
+    "TimeRemainingInMins": {
+      "type": "text",
+      "properties": [
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TimeSinceTargetInDays": {
+      "type": "double",
+      "properties": [
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TimeSinceTargetInHrs": {
+      "type": "string",
+      "properties": [
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TimeSinceTargetInMins": {
+      "type": "string",
+      "properties": [
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    }
+  }
+}

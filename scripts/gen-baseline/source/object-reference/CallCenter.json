@@ -1,5 +1,13 @@
 {
   "object": "CallCenter",
+  "supportedCalls": [
+    "create",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve"
+  ],
   "fields": {
     "AdapterUrl": {
       "type": "string",

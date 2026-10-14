@@ -1,5 +1,19 @@
 {
   "object": "Pricebook2",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "Description": {
       "type": "string",

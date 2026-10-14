@@ -1,0 +1,64 @@
+{
+  "object": "CaseContactRole",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "CasesId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Case"
+      ],
+      "relationshipName": "Cases",
+      "relationshipType": "lookup"
+    },
+    "ContactId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact",
+      "relationshipType": "lookup"
+    },
+    "IsDeleted": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "Role": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

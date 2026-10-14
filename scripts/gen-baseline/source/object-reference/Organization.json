@@ -1,5 +1,13 @@
 {
   "object": "Organization",
+  "supportedCalls": [
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update"
+  ],
   "fields": {
     "Address": {
       "type": "address",

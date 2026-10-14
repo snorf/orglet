@@ -1,5 +1,18 @@
 {
   "object": "Entitlement",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "AccountId": {
       "type": "reference",

@@ -1,5 +1,17 @@
 {
   "object": "Profile",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
   "fields": {
     "Description": {
       "type": "string",

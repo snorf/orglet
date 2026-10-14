@@ -8,7 +8,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { KNOWN_SUPPORTED_CALLS } from "../../../scripts/gen-baseline/calls.js";
-import { DOC_ONLY_REVIEWED, KNOWN_GAPS, KNOWN_PROPERTY_TOKENS, NOT_IN_PDF } from "../../../scripts/gen-baseline/snapshot-lists.js";
+import { DOC_ONLY_REVIEWED, KNOWN_GAPS, KNOWN_PROPERTY_TOKENS, NO_SUPPORTED_CALLS, NOT_IN_PDF } from "../../../scripts/gen-baseline/snapshot-lists.js";
 
 const ROOT = fileURLToPath(new URL("../../../scripts/gen-baseline/", import.meta.url));
 const DIR = `${ROOT}source/object-reference/`;
@@ -101,14 +101,39 @@ describe("Object Reference extraction (committed facts)", () => {
     expect(problems).toEqual([]);
   });
 
-  it("supportedCalls, when present, are sorted, unique and from KNOWN_SUPPORTED_CALLS", () => {
+  it("every object has supportedCalls unless listed in NO_SUPPORTED_CALLS; they are sorted, unique and from KNOWN_SUPPORTED_CALLS", () => {
     const problems: string[] = [];
     for (const [object, e] of extracted) {
-      if (e.supportedCalls === undefined) continue;
+      if (e.supportedCalls === undefined) {
+        if (!(object in NO_SUPPORTED_CALLS)) problems.push(`${object} has no supportedCalls and is not in NO_SUPPORTED_CALLS`);
+        continue;
+      }
+      if (object in NO_SUPPORTED_CALLS) problems.push(`${object} stale NO_SUPPORTED_CALLS entry`);
       const sorted = [...new Set(e.supportedCalls)].sort();
       if (JSON.stringify(sorted) !== JSON.stringify(e.supportedCalls)) problems.push(`${object} supportedCalls not sorted and unique`);
       for (const c of e.supportedCalls) if (!KNOWN_SUPPORTED_CALLS.includes(c)) problems.push(`${object} supportedCalls ${c}`);
     }
+    expect(problems).toEqual([]);
+  });
+
+  it("the 18 business objects' Supported Calls give the DML flags research Q4 expects", () => {
+    const ALL = ["create", "update", "delete", "undelete", "search"];
+    const CUD = ["create", "update", "delete"];
+    const expected: Record<string, { present: string[]; absent: string[] }> = {};
+    for (const o of ["Quote", "QuoteLineItem", "Order", "ContractLineItem", "EmailMessage", "Location", "Address"]) expected[o] = { present: ALL, absent: [] };
+    for (const o of ["OrderItem", "AccountContactRelation", "AccountTeamMember", "OpportunityTeamMember", "OpportunityContactRole", "OpportunitySplit", "CaseContactRole"]) {
+      expected[o] = { present: CUD, absent: ["undelete", "search"] };
+    }
+    expected["ContentDocument"] = { present: ["delete", "undelete", "update", "search"], absent: ["create"] };
+    expected["ContentVersion"] = { present: ["create", "update", "search"], absent: ["delete", "undelete"] };
+    expected["FeedItem"] = { present: ["create", "update", "delete", "search"], absent: ["undelete"] };
+    const problems: string[] = [];
+    for (const [object, { present, absent }] of Object.entries(expected)) {
+      const calls = extracted.get(object)?.supportedCalls ?? [];
+      for (const c of present) if (!calls.includes(c)) problems.push(`${object} should list ${c}()`);
+      for (const c of absent) if (calls.includes(c)) problems.push(`${object} should not list ${c}()`);
+    }
+    expect(extracted.get("CaseMilestone")?.supportedCalls).toEqual(["describeLayout", "describeSObjects", "query", "retrieve", "update"]);
     expect(problems).toEqual([]);
   });
 
@@ -118,7 +143,7 @@ describe("Object Reference extraction (committed facts)", () => {
       for (const [f, facts] of Object.entries(e.fields)) {
         for (const p of facts.properties ?? []) if (!KNOWN_PROPERTY_TOKENS.includes(p)) problems.push(`${object}.${f} property ${p}`);
         if (facts.relationshipType !== undefined && !["lookup", "master-detail"].includes(facts.relationshipType)) problems.push(`${object}.${f} relationshipType ${facts.relationshipType}`);
-        if (facts.type !== undefined && !/^[a-z]+$/.test(facts.type)) problems.push(`${object}.${f} type ${facts.type}`);
+        if (facts.type !== undefined && !/^[a-z0-9]+( [a-z]+)?$/.test(facts.type)) problems.push(`${object}.${f} type ${facts.type}`);
       }
     }
     expect(problems).toEqual([]);
