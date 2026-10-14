@@ -32,8 +32,12 @@ created: 2026-10-14
 - **Before `/gsd:verify-work`:** full suite on pglite and on Postgres 16 (`ORGLET_DATABASE_URL=postgres://orglet:orglet@localhost:5433/orglet pnpm test`) and `conformance/run-all.sh` green (Plan 10-06)
 - **Max feedback latency:** quick command ~10 s
 
-Known red window: after Plan 10-04 Task 1's commit `pnpm baseline:check` fails until Task 2 regenerates (objects.json
-lists 18 objects without overrides/generated files). The full suite is green again at the end of 10-04 Task 3.
+Known red window (exact): from Plan 10-04 Task 1's commit to Task 2's commit, `pnpm baseline:check`,
+`packages/metadata/test/baseline-generator.test.ts`, `packages/metadata/test/baseline-gate.test.ts` and
+`packages/metadata/test/documented-fields.test.ts` fail, because objects.json lists 18 objects without overrides entries or
+generated files. Task 2 also carries every existing-test update the new data forces (build.test.ts NO_NAME_FIELD and owner
+lists, upgrade.test.ts NEW_TABLES, migrate.test.ts if needed), so the full pglite suite is green at Task 2's commit; Task 3
+only adds tests. 10-04's SUMMARY records the two commit shas.
 
 ---
 
@@ -47,8 +51,8 @@ lists 18 objects without overrides/generated files). The full suite is green aga
 | 10-02-02 | 02 | 1 | BASE2-08 | unit | `pnpm vitest run packages/cli` | ✅ extend main.test.ts | ⬜ pending |
 | 10-03-01 | 03 | 1 | BASE2-06 | checkpoint | grep of the answer lines in `10-03-SUMMARY.md` (see plan) | n/a | ⬜ pending |
 | 10-04-01 | 04 | 2 | BASE2-06 | unit + manual pinned network step | `pnpm vitest run packages/metadata/test/object-reference-snapshot.test.ts packages/metadata/test/sfdocs-vendor.test.ts` + pin checks | ✅ extend | ⬜ pending |
-| 10-04-02 | 04 | 2 | BASE2-06, BASE2-07 | unit / drift gate | `pnpm baseline:check && pnpm vitest run packages/metadata/test` | ✅ extend baseline-generator / documented-fields | ⬜ pending |
-| 10-04-03 | 04 | 2 | BASE2-06 | unit + integration | `pnpm vitest run packages/metadata packages/engine/src/upgrade.test.ts packages/schema && pnpm test` | ✅ extend build.test / upgrade.test | ⬜ pending |
+| 10-04-02 | 04 | 2 | BASE2-06, BASE2-07 | unit / drift gate / integration | `pnpm baseline:check && pnpm test` | ✅ extend baseline-generator / documented-fields / build.test lists / upgrade.test | ⬜ pending |
+| 10-04-03 | 04 | 2 | BASE2-06 | unit | `pnpm vitest run packages/metadata && pnpm test` | ✅ extend build.test (BUSINESS table) | ⬜ pending |
 | 10-05-01 | 05 | 3 | BASE2-07 | integration | `pnpm vitest run packages/engine/src/engine.test.ts packages/engine/src/query.test.ts` | ✅ extend | ⬜ pending |
 | 10-05-02 | 05 | 3 | BASE2-06, BASE2-07 | integration | `pnpm vitest run packages/api` | ✅ extend api.test.ts | ⬜ pending |
 | 10-06-01 | 06 | 4 | BASE2-06..08 (SC4) | full suite + conformance | `pnpm test` (pglite + Postgres 16) and `conformance/run-all.sh` | ✅ | ⬜ pending |
@@ -62,14 +66,14 @@ lists 18 objects without overrides/generated files). The full suite is green aga
 | Req | Behaviour | Where |
 |-----|-----------|-------|
 | BASE2-06 | 18 objects load with prefix/source/flags/owner/name field | `build.test.ts` BUSINESS table (10-04-03), `api.test.ts` business describe (10-05-02), describe-check 32 (10-06-01) |
-| BASE2-06 | blob / junction / geolocation omissions listed in the generator report | `baseline-generator.test.ts` (10-04-02), `build.test.ts` "business: blob ..." (10-04-03) |
+| BASE2-06 | blob / junction / geolocation omissions listed in the generator report; polymorphic subsets exactly 19/10/20 | `baseline-generator.test.ts` (10-04-02), `build.test.ts` "business: blob ..." (10-04-03) |
 | BASE2-06 | generated files == regeneration | `pnpm baseline:check` (CI `baseline-gen-check`) |
 | BASE2-06 | Supported Calls extraction and vocabulary | `gen-baseline-typemap.test.ts`, `object-reference-snapshot.test.ts` (10-01-01, 10-04-01) |
 | BASE2-07 | forbidden DML refused (engine, incl. undelete) | `engine.test.ts` BUSINESS_FLAGS + "five documented refusals" (10-05-01) |
 | BASE2-07 | REST 400 envelope | `api.test.ts` "write protection ... business" (10-05-02) |
 | BASE2-07 | lookup codes MALFORMED_ID / INVALID_CROSS_REFERENCE_KEY; case-twin routing | `engine.test.ts` D-20 + case twins (10-05-01) |
 | BASE2-07 | D-18 required fields | `baseline-generator.test.ts` (10-04-02), `engine.test.ts` (10-05-01) |
-| BASE2-07 | upgrade of populated v1.0 DB silent, only 18 CREATE TABLE | `upgrade.test.ts` NEW_TABLES (10-04-03) |
+| BASE2-07 | upgrade of populated v1.0 DB silent, only 18 CREATE TABLE | `upgrade.test.ts` NEW_TABLES (10-04-02) |
 | BASE2-08 | referenced -> warning, unreferenced -> info, roll-up child, PROVENANCE read | `build.test.ts` (10-02-01) |
 | BASE2-08 | info line, `--strict` exit 0, `--quiet` | `main.test.ts` (10-02-02) |
 
