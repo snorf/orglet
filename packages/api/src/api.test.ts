@@ -170,7 +170,10 @@ describe("describe", () => {
     expect(fields.find((f) => f["name"] === "Name")).toMatchObject({ type: "string", length: 255, nillable: false, nameField: true, soapType: "xsd:string" });
     expect(fields.find((f) => f["name"] === "Industry")).toMatchObject({ type: "picklist" });
     expect((fields.find((f) => f["name"] === "Tier__c")?.["picklistValues"] as Json[]).map((v) => v["value"])).toEqual(["Gold", "Silver", "Bronze"]);
-    expect(fields.find((f) => f["name"] === "OwnerId")).toMatchObject({ type: "reference", referenceTo: ["User", "Group"], relationshipName: "Owner", namePointing: true });
+    // BASE2-04: Account's owner is User-only; Case stays polymorphic (queue-owned).
+    expect(fields.find((f) => f["name"] === "OwnerId")).toMatchObject({ type: "reference", referenceTo: ["User"], relationshipName: "Owner", namePointing: true, polymorphicForeignKey: false });
+    const caseFields = json(await get(`${V}/sobjects/Case/describe`))["fields"] as Json[];
+    expect(caseFields.find((f) => f["name"] === "OwnerId")).toMatchObject({ referenceTo: ["User", "Group"], polymorphicForeignKey: true });
     expect((describe["childRelationships"] as Json[]).find((c) => c["relationshipName"] === "Contacts")).toMatchObject({ childSObject: "Contact", field: "AccountId" });
 
     const project = json(await get(`${V}/sobjects/Project__c/describe`));

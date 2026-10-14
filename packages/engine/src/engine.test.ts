@@ -362,4 +362,15 @@ describe("polymorphic parents", () => {
     expect(records[1]?.["Owner"]).toMatchObject({ Id: session.userId, Alias: "admin" });
     expect(records[2]?.["Owner"]).toBeNull();
   });
+
+  it("a Group Id on Account.OwnerId is rejected like Salesforce does", async () => {
+    // BASE2-04 / D-15: Account.OwnerId is User-only, so a queue Id is INVALID_CROSS_REFERENCE_KEY; Case stays queue-owned.
+    const groupId = await one("Group", { Name: "Account Queue", DeveloperName: "Account_Queue", Type: "Queue" });
+    const [account] = await engine.insert(session, "Account", [{ Name: "Queue owned", OwnerId: groupId }]);
+    expect(account).toMatchObject({ success: false });
+    expect(account?.errors[0]).toMatchObject({ statusCode: "INVALID_CROSS_REFERENCE_KEY", fields: ["OwnerId"] });
+    const [kase] = await engine.insert(session, "Case", [{ Subject: "Queue owned", OwnerId: groupId }]);
+    expect(kase).toMatchObject({ success: true });
+    expect((await engine.retrieve(session, "Case", [kase!.id!])).get(kase!.id!)).toMatchObject({ OwnerId: groupId });
+  });
 });

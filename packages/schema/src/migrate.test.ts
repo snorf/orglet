@@ -72,7 +72,8 @@ describe("migrate", () => {
     const names = fks.rows.map((r) => r.conname);
     expect(names).toContain("fk_project__c_account__c");
     expect(names).toContain("fk_contact_accountid");
-    expect(names).not.toContain("fk_account_ownerid"); // polymorphic User/Group: no FK
+    expect(names).toContain("fk_account_ownerid"); // Account owner is User-only (BASE2-04)
+    expect(names).not.toContain("fk_case_ownerid"); // polymorphic User/Group: no FK
 
     const idx = await pool.query<{ indexname: string; indexdef: string }>(`SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = $1`, [orgSchema]);
     const byName = new Map(idx.rows.map((r) => [r.indexname, r.indexdef]));

@@ -28,15 +28,27 @@ describe("compileSoql", () => {
     expect(compile("SELECT Id FROM Account", true).sql).not.toContain("isdeleted");
   });
 
-  it("joins parents once per relationship path, a polymorphic owner once per target with a prefix filter, and nests them in the shape", () => {
+  it("joins parents once per relationship path, a User-only owner as a plain join, and nests them in the shape", () => {
+    // Account.OwnerId is User-only since BASE2-04, so its owner joins without a key-prefix filter.
     const q = compile("SELECT Id, Account.Name, Account.Industry, Account.Owner.Alias FROM Contact");
     expect(q.sql).toContain('LEFT JOIN "org"."account" t1 ON t1."id" = t0."accountid"');
+    expect(q.sql).toContain('LEFT JOIN "org"."user" t2 ON t2."id" = t1."ownerid" WHERE');
+    expect(q.sql).not.toContain("00G");
+    expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(2);
+    const shape = q.shape.kind === "sobject" ? q.shape : undefined;
+    expect(shape?.parents.get("Account")?.fields.map((f) => f.name)).toEqual(["Name", "Industry"]);
+    expect(shape?.parents.get("Account")?.parents.get("Owner")?.fields.map((f) => f.name)).toEqual(["Alias"]);
+  });
+
+  it("joins a polymorphic owner reached through a parent once per target with a prefix filter", () => {
+    const q = compile("SELECT Id, Parent.Subject, Parent.Owner.Alias FROM Case");
+    expect(q.sql).toContain('LEFT JOIN "org"."case" t1 ON t1."id" = t0."parentid"');
     expect(q.sql).toContain('LEFT JOIN "org"."user" t2 ON t2."id" = t1."ownerid" AND left(t1."ownerid", 3) = \'005\'');
     expect(q.sql).toContain('LEFT JOIN "org"."group" t3 ON t3."id" = t1."ownerid" AND left(t1."ownerid", 3) = \'00G\'');
     expect((q.sql.match(/LEFT JOIN/g) ?? []).length).toBe(3);
     const shape = q.shape.kind === "sobject" ? q.shape : undefined;
-    expect(shape?.parents.get("Account")?.fields.map((f) => f.name)).toEqual(["Name", "Industry"]);
-    expect(shape?.parents.get("Account")?.parents.get("Owner")?.fields.map((f) => f.name)).toEqual(["Alias"]);
+    expect(shape?.parents.get("Parent")?.fields.map((f) => f.name)).toEqual(["Subject"]);
+    expect(shape?.parents.get("Parent")?.parents.get("Owner")?.fields.map((f) => f.name)).toEqual(["Alias"]);
   });
 
   it("compiles child subqueries as correlated JSON aggregates with their own order and limit", () => {
@@ -160,6 +172,19 @@ describe("polymorphic relationships", () => {
     expect(q.sql).toContain(`lower(${TYPE_CASE}) = lower($1)`);
     expect(q.sql).not.toContain('t2."type"');
     expect(q.params).toEqual(["Group"]);
+  });
+
+  it("Owner.Name and Owner.Department compile on User-owned objects as a plain lookup", () => {
+    // BASE2-04 / SC4: User-only OwnerId is an ordinary lookup, so any User field is reachable and no Name pseudo-object applies.
+    for (const o of ["Account", "Contact", "Opportunity", "Contract", "Asset", "Campaign"]) {
+      const q = compile(`SELECT Owner.Name FROM ${o}`);
+      expect(q.sql, o).toContain('"org"."user" t1 ON t1."id" = t0."ownerid"');
+      expect(q.sql, o).not.toContain("00G");
+    }
+    const q = compile("SELECT Id FROM Account WHERE Owner.Department = 'x'");
+    expect(q.sql).toContain('t1."department"');
+    expect(q.sql).not.toContain("CASE left");
+    expect(q.sql).not.toContain("00G");
   });
 
   it("filters user-only Name fields on the User target only", () => {

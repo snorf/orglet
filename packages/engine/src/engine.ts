@@ -702,7 +702,7 @@ export class DmlEngine {
         const targets = (field.referenceTo ?? []).map((n) => this.schema.getObject(n)).filter((o): o is SObjectDef => o !== undefined);
         const target = matchLookupTarget(targets, (field.referenceTo ?? []).length, id);
         if (!target) {
-          // Unknown target object (e.g. Group): accept unchecked. Known targets: wrong prefix is a bad reference.
+          // Unknown target object (not in the baseline): accept unchecked. Known targets: wrong prefix is a bad reference.
           if (targets.length === (field.referenceTo ?? []).length) w.errors.push(Errors.invalidCrossReference(field.name));
           continue;
         }

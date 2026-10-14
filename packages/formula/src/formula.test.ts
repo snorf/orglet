@@ -40,9 +40,19 @@ describe("compileFormula", () => {
   });
 
   it("rejects plain traversal through a polymorphic lookup like a real org and keeps unknown globals explicit", () => {
-    expect(() => rule("Owner.Alias = 'x'")).toThrow("Field Owner.Alias does not exist. Check spelling."); // OwnerId is User|Group (D-08, D-15)
+    expect(() => rule("Owner.Alias = 'x'", "Case")).toThrow("Field Owner.Alias does not exist. Check spelling."); // Case OwnerId is User|Group (D-08, D-15, BASE2-04)
     expect(() => rule("Owner.Name = 'x'", "Case")).toThrow("Field Owner.Name does not exist. Check spelling.");
     expect(() => rule("$Setup.Foo__c.Bar__c")).toThrow(/UNSUPPORTED:formula-global/);
+  });
+
+  it("Owner fields resolve on objects whose owner is always a User", () => {
+    // BASE2-04 / SC4: the Object Reference states User alone for these, so plain Owner.X compiles as on a real org.
+    for (const o of ["Account", "Contact", "Opportunity", "Contract", "Asset", "Campaign"]) {
+      const c = rule("Owner.Name = 'x'", o);
+      expect(c.parentPaths, o).toEqual([["Owner"]]);
+      expect(c.references[0], o).toMatchObject({ key: "Owner.Name", path: ["Owner", "Name"] });
+    }
+    expect(rule("Owner.Alias = 'x'").references[0]).toMatchObject({ key: "Owner.Alias", type: "Text" });
   });
 
   it("reports the Owner:Object colon syntax as UNSUPPORTED:formula until sigha parses it", () => {
@@ -150,6 +160,6 @@ describe("FormulaCompileError.missing", () => {
   });
 
   it("plain traversal through a polymorphic lookup reports nothing missing", () => {
-    expect(failure(() => rule("Owner.Alias = 'x'")).missing).toBeUndefined();
+    expect(failure(() => rule("Owner.Alias = 'x'", "Case")).missing).toBeUndefined(); // Case OwnerId is User|Group
   });
 });
