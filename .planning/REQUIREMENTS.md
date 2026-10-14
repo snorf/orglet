@@ -37,7 +37,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Baseline v2 (standard objects and fields)
 
-- [ ] **BASE2-01**: A deterministic generator under `scripts/` produces the baseline JSON for a listed
+- [x] **BASE2-01**: A deterministic generator under `scripts/` produces the baseline JSON for a listed
   set of standard objects from a vendored, licence-attributed snapshot of Salesforce's published
   object catalogue (Apache-2.0), cross-checked at generation time against the public Object Reference
   PDF; a flag is "verified" when both agree and otherwise carries a provenance mark; disagreements
@@ -223,7 +223,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MIGR-02 | Phase 8 | Complete |
 | MIGR-03 | Phase 9 | Complete |
 | MIGR-04 | Phase 8 | Complete |
-| BASE2-01 | Phase 9 | Pending |
+| BASE2-01 | Phase 9 | Complete |
 | BASE2-02 | Phase 9 | Complete |
 | BASE2-03 | Phase 9 | Complete |
 | BASE2-04 | Phase 9 | Pending |

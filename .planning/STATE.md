@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 09-07-PLAN.md
-last_updated: "2026-10-14T07:24:08.487Z"
+stopped_at: Completed 09-08-PLAN.md
+last_updated: "2026-10-14T07:40:58.223Z"
 last_activity: 2026-10-14
 progress:
   total_phases: 16
   completed_phases: 1
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 18
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 09 (baseline-generator-parity-ownerid-narrowing) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 Status: Ready to execute
 Last activity: 2026-10-14
 
@@ -107,6 +107,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 09 P05 | 10min | 2 tasks | 9 files |
 | Phase 09 P06 | 17min | 1 tasks | 6 files |
 | Phase 09 P07 | 17min | 3 tasks | 51 files |
+| Phase 09 P08 | 14min | 2 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -190,6 +191,9 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-07: SKIP_RATIO_MAX 0.103 (84/818 documented; Product2.RecordTypeId is field_reference-only so Johan's 83 was off by one; raw 99/818 matches) - Johan to confirm
 - [Phase 09]: 09-07: Postgres test leg runs vitest maxWorkers 3; a v2 org schema (~500 relations, ~190 FKs) in one migrate() transaction exhausted the default lock table with 10 parallel files
 - [Phase 09]: 09-07: BASE2-02 and BASE2-03 ticked under amended wording (D-10); BASE2-01 left for 09-08 (ownerTargets overrides)
+- [Phase 09]: 09-08: ownerTargets derived from both sources' OwnerId Refers To restricted to User/Group; override wins and is reported override-resolved; a missing or unmodelled target (Calendar, Organization) without an override aborts instead of being dropped by intersection
+- [Phase 09]: 09-08: ownerTargets written only when narrower than [Group, User]; 8 objects User-only (Event by override), 8 stay polymorphic (Group, ServiceContract by override)
+- [Phase 09]: 09-08: BASE2-01 ticked (owner targets now in overrides.json); BASE2-04 left pending for 09-09 (wording names unmodelled objects and Calendar on Event; poly-check re-run)
 
 ### Pending Todos
 
@@ -213,6 +217,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T07:24:08.484Z
-Stopped at: Completed 09-07-PLAN.md
+Last session: 2026-10-14T07:40:58.219Z
+Stopped at: Completed 09-08-PLAN.md
 Resume file: None
