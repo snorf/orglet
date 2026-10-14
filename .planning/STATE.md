@@ -205,6 +205,7 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-03: OpportunitySplit 049 and all 18 prefixes confirmed from the author's own DE describe (no D-02); four labelPlural and the OpportunitySplit name field corrected from DE; ContentVersion.ContentDocumentId nullable override accepted as a stopgap, full file upload tracked as backlog 999.10
 - [Phase 10]: 10-04: duplicate-spelling skips go on the field_reference-only spelling; Entitlement lookup on documented LocationID, OrderItem on RelatedOrderItemID
 - [Phase 10]: 10-04: OpportunitySplit.Split generated as AutoNumber name field; merge added to known Supported Calls
+- [Phase 10]: 10-04 fix: field names take the SDK (field_reference/describe) spelling where the Object Reference differs only by case; renameFrom override for PDF spellings without a twin (Quote.RecordTypeId, AccountTeamMember.PhotoUrl); DE describe 2026-10-14 is the evidence
 
 ### Pending Todos
 

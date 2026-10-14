@@ -106,6 +106,30 @@ None.
 - All acceptance-criteria shell/node checks of Task 2 were run and pass (53 object files, NEW_TABLES, Order/CaseMilestone/ContentDocument/ContentVersion/OrderItem flags, VersionData absent, Contract.SourceQuoteId / Case.FeedItemId / Asset.LocationId present, forcedNullable only v1 objects, 61 "neither source states Refers To" reasons).
 - Not run: the suite against a real Postgres 16 (ORGLET_DATABASE_URL was not set; pglite only).
 
+## Deviation fix (post-plan): SDK spelling for case twins
+
+**[Rule 1 - Bug]** Deviations 2 and 3 above kept the Object Reference (PDF) capitalisation. The author's own Developer Edition describe (2026-10-14) returns the SDK spelling wherever the field exists: Entitlement `LocationId`, ContentVersion `VersionDataUrl`, AccountTeamMember and OpportunityTeamMember `PhotoUrl`, ExternalDataSource `IsWritable`. DandBCompany `URL` is spelled `URL` by both and stays. OrderItem `RelatedOrderItemId`, Quote `RecordTypeId` and Account `PersonBirthdate` are absent from the DE (order management, Quote record types and Person Accounts are not enabled), so the same convention was applied (`Id` and `Url` suffixes, `RecordTypeId` like every other object).
+
+| Object | Before | After |
+|--------|--------|-------|
+| OrderItem | RelatedOrderItemID | RelatedOrderItemId |
+| Entitlement | LocationID | LocationId |
+| ContentVersion | VersionDataURL | VersionDataUrl |
+| Quote | RecordTypeID | RecordTypeId |
+| AccountTeamMember | PhotoURL | PhotoUrl |
+| OpportunityTeamMember | PhotoURL | PhotoUrl |
+| Account | PersonBirthDate | PersonBirthdate |
+| ExternalDataSource | isWritable | IsWritable |
+
+**What changed**
+- `sourceFieldsOf` (scripts/gen-baseline/sources.ts) merges a documented name and a `field_reference` name that differ only by case into one field named as `field_reference` spells it. Documented facts win over `field_reference` facts; only the name follows the SDK list. The pairs are reported as `caseSpelling` (generator report and PROVENANCE.json).
+- New `renameFrom` field override (key is the emitted name, value the PDF spelling) for names with no twin: `Quote.RecordTypeId` (from `RecordTypeID`) and `AccountTeamMember.PhotoUrl` (from `PhotoURL`). Listed as `renamedByOverride`.
+- The twin `skip` entries (Account.PersonBirthdate, ContentVersion.VersionDataUrl, ExternalDataSource.IsWritable, OpportunityTeamMember.PhotoUrl, OrderItem.RelatedOrderItemId, Lead.DandBCompanyId) were removed; the Entitlement, OrderItem and Quote hand lookups were re-keyed to the new spellings.
+- Baseline regenerated (8 object files plus PROVENANCE.json). Lead is byte-identical: the v1.0 field `DandbCompanyId` was already in the SDK spelling and is now also reported as a case twin.
+- Tests: generator unit test on synthetic input (documented `CaseTwinID` plus `field_reference` `CaseTwinId` emits `CaseTwinId` with the documented label), loader assertions for the eight fields and their absent old spellings, and the two documented-field coverage tests now compare case-insensitively.
+
+**Upgrade safety:** neither Account.PersonBirthDate nor ExternalDataSource.isWritable is in the v1.0 baseline (checked with `git show v1.0:...`), so the v1-vs-v2 diff gate and the allowlist are untouched. `columnName` lower-cases, so the Postgres column of every renamed field is unchanged and migrate emits no DDL for the rename. Side effects of preferring documented-then-SDK facts: OpportunityTeamMember.PhotoUrl takes the field_reference label "Url for thumbnail sized photo" and OrderItem.RelatedOrderItemId takes "Order Product ID" (both previously a humanised guess); ExternalDataSource.IsWritable takes "Writable External Objects". Review if those labels are unwanted.
+
 ## Self-Check: PASSED
 
 Commits 6a4dbd1, 110e0bf, 67995a5 exist; the summary file and the 18 new object files exist.
