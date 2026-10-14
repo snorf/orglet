@@ -93,7 +93,7 @@
       "createable": false
     },
     {
-      "name": "LocationID",
+      "name": "LocationId",
       "label": "Location ID",
       "type": "Lookup",
       "referenceTo": [

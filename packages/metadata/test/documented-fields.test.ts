@@ -64,8 +64,10 @@ afterAll(async () => {
 describe("documented fields of the standard objects in objects.json (SC3)", () => {
   it("a retrieve using every documented field of the standard objects in objects.json reports no UNSUPPORTED:standard-field outside the generator's reported skips", () => {
     expect(written.size).toBeGreaterThan(1000);
-    const skipped = [...full.report.skipped.fieldType, ...full.report.skipped.referenceTarget].map(fieldOf).filter((f) => written.has(f)).sort(codeUnit);
-    const reported = result.diagnostics.filter((d) => d.area === "standard-field").map((d) => `${d.object}.${d.field}`).sort(codeUnit);
+    // Compared lower-cased: a documented name and its SDK case twin are one field, emitted in the SDK spelling.
+    const writtenLower = new Set([...written].map((f) => f.toLowerCase()));
+    const skipped = [...full.report.skipped.fieldType, ...full.report.skipped.referenceTarget].map(fieldOf).filter((f) => writtenLower.has(f.toLowerCase())).map((f) => f.toLowerCase()).sort(codeUnit);
+    const reported = result.diagnostics.filter((d) => d.area === "standard-field").map((d) => `${d.object}.${d.field}`.toLowerCase()).sort(codeUnit);
     expect(reported).toEqual(skipped);
     expect(result.diagnostics.filter((d) => d.area === "reference-target")).toEqual([]);
     expect(result.warnings.filter((w) => w.startsWith("UNSUPPORTED:standard-field")).length).toBe(skipped.length);

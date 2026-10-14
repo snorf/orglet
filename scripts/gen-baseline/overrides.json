@@ -7,10 +7,6 @@
         "ref": "jsforce@9bae14ea0f1b9dff3b0cb0862a3e5f525f25a29f:test/query-pagination.mock.test.ts:59"
       },
       "fields": {
-        "PersonBirthdate": {
-          "skip": true,
-          "reason": "sf-skills field_reference spelling of the documented PersonBirthDate; both would map to one lower-cased Postgres column"
-        },
         "PersonContactId": {
           "set": {
             "referenceTo": [
@@ -85,6 +81,10 @@
             "relationshipName": "Account"
           },
           "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Account; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "PhotoUrl": {
+          "renameFrom": "PhotoURL",
+          "reason": "the documented PhotoURL has no field_reference twin; the author's own DE describe, 2026-10-14, spells it PhotoUrl on AccountTeamMember and OpportunityTeamMember (Url suffix convention)"
         },
         "UserId": {
           "set": {
@@ -359,10 +359,6 @@
             "nameField": true
           },
           "reason": "no source states the name field; research Q4 / FEATURES F name it; confirmed at the D-04 checkpoint 2026-10-14"
-        },
-        "VersionDataUrl": {
-          "skip": true,
-          "reason": "sf-skills field_reference spelling of the documented VersionDataURL; both would map to one lower-cased Postgres column (precedent Account.PersonBirthdate)"
         }
       }
     },
@@ -605,7 +601,7 @@
           },
           "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object ContractLineItem; neither source states Refers To; additive nullable column on a v1.0 object"
         },
-        "LocationID": {
+        "LocationId": {
           "set": {
             "referenceTo": [
               "Location"
@@ -659,12 +655,6 @@
       "keyPrefix": {
         "value": "0XC",
         "source": "unverified"
-      },
-      "fields": {
-        "IsWritable": {
-          "skip": true,
-          "reason": "sf-skills field_reference spelling of the documented isWritable; both would map to one lower-cased Postgres column"
-        }
       }
     },
     "FeedItem": {
@@ -751,10 +741,6 @@
         "CampaignId": {
           "keep": true,
           "reason": "present in v1.0, absent from sources"
-        },
-        "DandBCompanyId": {
-          "skip": true,
-          "reason": "sf-skills and Object Reference spelling of the v1.0 field DandbCompanyId; both would map to one lower-cased Postgres column"
         },
         "DoNotCall": {
           "keep": true,
@@ -929,10 +915,6 @@
           },
           "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Opportunity; neither source states Refers To; relationshipName guessed from the field name"
         },
-        "PhotoUrl": {
-          "skip": true,
-          "reason": "sf-skills field_reference spelling of the documented PhotoURL; both would map to one lower-cased Postgres column (precedent Account.PersonBirthdate)"
-        },
         "UserId": {
           "set": {
             "referenceTo": [
@@ -1057,7 +1039,7 @@
           },
           "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object QuoteLineItem; neither source states Refers To; relationshipName guessed from the field name"
         },
-        "RelatedOrderItemID": {
+        "RelatedOrderItemId": {
           "set": {
             "referenceTo": [
               "OrderItem"
@@ -1065,10 +1047,6 @@
             "relationshipName": "RelatedOrderItem"
           },
           "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object OrderItem; neither source states Refers To; relationshipName guessed from the field name"
-        },
-        "RelatedOrderItemId": {
-          "skip": true,
-          "reason": "sf-skills field_reference spelling of the documented RelatedOrderItemID; both would map to one lower-cased Postgres column (precedent Account.PersonBirthdate)"
         }
       }
     },
@@ -1221,14 +1199,15 @@
           },
           "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contract; neither source states Refers To; relationshipName guessed from the field name"
         },
-        "RecordTypeID": {
+        "RecordTypeId": {
           "set": {
             "referenceTo": [
               "RecordType"
             ],
             "relationshipName": "RecordType"
           },
-          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object RecordType; neither source states Refers To; relationshipName guessed from the field name"
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object RecordType; neither source states Refers To; relationshipName guessed from the field name; renamed from the documented RecordTypeID to the RecordTypeId spelling every other object uses (the author's DE has no Quote record types, so no describe states it)",
+          "renameFrom": "RecordTypeID"
         },
         "RelatedQuoteId": {
           "set": {

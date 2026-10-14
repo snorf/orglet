@@ -38,6 +38,15 @@
       "updateable": false
     },
     {
+      "name": "IsWritable",
+      "label": "Writable External Objects",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "Language",
       "label": "Master Language",
       "type": "Picklist",
@@ -93,15 +102,6 @@
       "nillable": false,
       "createable": false,
       "updateable": false
-    },
-    {
-      "name": "isWritable",
-      "label": "is Writable",
-      "type": "Checkbox",
-      "nillable": false,
-      "createable": false,
-      "updateable": false,
-      "defaultedOnCreate": true
     }
   ]
 }

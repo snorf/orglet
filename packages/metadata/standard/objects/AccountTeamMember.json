@@ -48,8 +48,8 @@
       "type": "Picklist"
     },
     {
-      "name": "PhotoURL",
-      "label": "Photo URL",
+      "name": "PhotoUrl",
+      "label": "Photo Url",
       "type": "Url",
       "length": 255,
       "createable": false,

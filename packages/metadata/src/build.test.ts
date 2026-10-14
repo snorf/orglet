@@ -175,6 +175,26 @@ describe("standard baseline alone", () => {
     }
   });
 
+  it("baseline field names take the SDK spelling where the Object Reference differs only by case", () => {
+    // Confirmed against the author's own Developer Edition describe (2026-10-14) wherever the field exists there.
+    const names = (o: string): string[] => result.schema.getObject(o)?.fields.map((f) => f.name) ?? [];
+    for (const [object, right, wrong] of [
+      ["Entitlement", "LocationId", "LocationID"],
+      ["OrderItem", "RelatedOrderItemId", "RelatedOrderItemID"],
+      ["ContentVersion", "VersionDataUrl", "VersionDataURL"],
+      ["Quote", "RecordTypeId", "RecordTypeID"],
+      ["AccountTeamMember", "PhotoUrl", "PhotoURL"],
+      ["OpportunityTeamMember", "PhotoUrl", "PhotoURL"],
+      ["Account", "PersonBirthdate", "PersonBirthDate"],
+      ["ExternalDataSource", "IsWritable", "isWritable"],
+    ] as const) {
+      expect(names(object), `${object}.${right}`).toContain(right);
+      expect(names(object), `${object}.${wrong}`).not.toContain(wrong);
+    }
+    // The documented spelling is correct where the SDK list agrees with it.
+    expect(names("DandBCompany")).toContain("URL");
+  });
+
   it("business: case-twin key prefixes stay distinct", () => {
     const prefix = (o: string): string | null | undefined => result.schema.getObject(o)?.keyPrefix;
     expect([prefix("AccountTeamMember"), prefix("BusinessHours")]).toEqual(["01M", "01m"]);

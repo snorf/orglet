@@ -36,8 +36,8 @@
       "relationshipName": "Opportunity"
     },
     {
-      "name": "PhotoURL",
-      "label": "Photo URL",
+      "name": "PhotoUrl",
+      "label": "Url for thumbnail sized photo",
       "type": "Url",
       "length": 255,
       "createable": false,

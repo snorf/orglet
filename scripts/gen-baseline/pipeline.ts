@@ -71,6 +71,10 @@ export interface GeneratorReport {
   skipped: { fieldType: string[]; referenceTarget: string[]; perObject: Record<string, SkipCounts> };
   /** Full mode: documented fields dropped by an overrides.json `skip` entry. */
   skippedByOverride: string[];
+  /** Full mode: `Object.<PDF spelling> -> <SDK spelling>` for documented fields that sf-skills `field_reference` spells differently only by case; the emitted field takes the SDK (describe-derived) spelling. */
+  caseSpelling: string[];
+  /** Full mode: `Object.<PDF spelling> -> <emitted spelling>` for documented fields renamed by an overrides.json `renameFrom` (no field_reference twin to follow). */
+  renamedByOverride: string[];
   /** Full mode: source names the loader provides itself (system fields, matched case-insensitively because Postgres columns are). */
   excludedSystem: string[];
   /** Full mode: new fields the sources mark required whose `nillable: false` was not written (locked decision 5). */
@@ -392,6 +396,8 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
     overrideResolved: [],
     skipped: { fieldType: [], referenceTarget: [], perObject: {} },
     skippedByOverride: [],
+    caseSpelling: [],
+    renamedByOverride: [],
     excludedSystem: [],
     forcedNullable: [],
     gating: {},
@@ -567,6 +573,7 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
       if ((json.type === "Lookup" || json.type === "MasterDetail") && !(Array.isArray(json.referenceTo) && json.referenceTo.length > 0)) {
         throw new GeneratorError(`${where}: ${json.type} without referenceTo; neither source states Refers To, pin or override it`);
       }
+      if (d?.source.respelled && !options.v1Only) (d.source.respelled.reason === "case-twin" ? report.caseSpelling : report.renamedByOverride).push(`${object}.${d.source.respelled.documentedName} -> ${name}`);
       objectJson.fields.push(json as unknown as StandardFieldJson);
       counts.fields++;
       const notVerified: Record<string, FactProvenance> = {};
@@ -594,7 +601,7 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
   if (report.conflicts.unresolved.length > 0 && !options.collectConflicts) {
     throw new GeneratorError(`unresolved source conflicts (settle each with a v1-pins.json pin or an overrides.json set):\n  ${report.conflicts.unresolved.sort(codeUnit).join("\n  ")}`);
   }
-  const lists: string[][] = [report.pinnedFields, report.unpinnedV1Fields, report.conflictsSettledByPin, report.guessed, report.unsupportedTypes, report.overrideResolved, report.skipped.fieldType, report.skipped.referenceTarget, report.skippedByOverride, report.excludedSystem, report.forcedNullable, report.sdkOnly, report.conflicts.unresolved];
+  const lists: string[][] = [report.pinnedFields, report.unpinnedV1Fields, report.conflictsSettledByPin, report.guessed, report.unsupportedTypes, report.overrideResolved, report.skipped.fieldType, report.skipped.referenceTarget, report.skippedByOverride, report.caseSpelling, report.renamedByOverride, report.excludedSystem, report.forcedNullable, report.sdkOnly, report.conflicts.unresolved];
   for (const list of lists) list.sort(codeUnit);
   if (!options.v1Only) {
     const provenance = {
@@ -603,6 +610,8 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
       objects: provenanceObjects,
       skipped: { fieldType: report.skipped.fieldType, referenceTarget: report.skipped.referenceTarget },
       forcedNullable: report.forcedNullable,
+      caseSpelling: report.caseSpelling,
+      renamedByOverride: report.renamedByOverride,
       gating: report.gating,
     };
     files.set("PROVENANCE.json", serialise(sortKeysDeep(provenance)));

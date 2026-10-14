@@ -53,6 +53,8 @@ export interface SourceField {
   doc?: DocFacts;
   /** Listed under sf-skills `ispersonaccount_fields`: a Person Accounts gating signal. */
   personAccount: boolean;
+  /** Set when `name` is not the spelling the documented sources use: the PDF spelling, and why `name` differs (SDK case twin or overrides.json `renameFrom`). */
+  respelled?: { documentedName: string; reason: "case-twin" | "override" };
 }
 
 export interface SfSkillsObject {
@@ -80,6 +82,8 @@ export interface FieldOverride {
   set?: Partial<StandardFieldJson>;
   featureGated?: boolean;
   skip?: true;
+  /** The key is the emitted name; this is the spelling the documented sources use. For a PDF spelling that has no sf-skills `field_reference` twin to take the describe spelling from. */
+  renameFrom?: string;
   reason: string;
 }
 
@@ -294,18 +298,44 @@ export function parseObjectReference(object: string, raw: unknown): ObjectRefere
 }
 
 /** Every field either source knows for `object`, merged and sorted by code-unit name. */
-export function sourceFieldsOf(inputs: Pick<GeneratorInputs, "sfSkills" | "objectReference">, object: string): SourceField[] {
+export function sourceFieldsOf(inputs: Pick<GeneratorInputs, "sfSkills" | "objectReference"> & Partial<Pick<GeneratorInputs, "overrides">>, object: string): SourceField[] {
   const sf = inputs.sfSkills.get(object);
   const doc = inputs.objectReference.get(object);
-  const names = new Set<string>([...(sf?.fields.keys() ?? []), ...(sf?.fieldReference.keys() ?? []), ...(doc?.fields.keys() ?? [])]);
+  const documented = new Set<string>([...(sf?.fields.keys() ?? []), ...(doc?.fields.keys() ?? [])]);
+  const renames = new Map<string, string>();
+  for (const [name, o] of Object.entries(inputs.overrides?.objects[object]?.fields ?? {})) if (o.renameFrom) renames.set(o.renameFrom, name);
+  const referenceByLower = new Map<string, string>();
+  for (const name of sf?.fieldReference.keys() ?? []) referenceByLower.set(name.toLowerCase(), name);
+  // A documented name and a field_reference name that differ only by case are one field (they would share one lower-cased
+  // Postgres column). field_reference is derived from the SDK/describe, so its spelling wins; every documented fact is kept.
+  const canonical = (documentedName: string): { name: string; reason?: "case-twin" | "override" } => {
+    const renamed = renames.get(documentedName);
+    if (renamed !== undefined) return { name: renamed, reason: "override" };
+    const twin = referenceByLower.get(documentedName.toLowerCase());
+    if (twin !== undefined && twin !== documentedName && !documented.has(twin)) return { name: twin, reason: "case-twin" };
+    return { name: documentedName };
+  };
+  const documentedNames = new Map<string, string>();
+  const respelled = new Map<string, "case-twin" | "override">();
+  for (const d of documented) {
+    const c = canonical(d);
+    if (c.name === d) continue;
+    documentedNames.set(c.name, d);
+    respelled.set(c.name, c.reason!);
+  }
+  const names = new Set<string>([...[...documented].map((d) => canonical(d).name), ...(sf?.fieldReference.keys() ?? [])]);
   const out: SourceField[] = [];
   for (const name of [...names].sort(codeUnit)) {
-    const field: SourceField = { object, name, personAccount: sf?.personAccountFields.has(name) ?? false };
-    const fromFields = sf?.fields.get(name);
+    const documentedName = documentedNames.get(name);
+    const own = documentedName ?? name;
+    const field: SourceField = { object, name, personAccount: (sf?.personAccountFields.has(own) ?? false) || (sf?.personAccountFields.has(name) ?? false) };
+    const fromFields = sf?.fields.get(own);
     const fromReference = sf?.fieldReference.get(name);
-    if (fromFields || fromReference) field.sf = { ...fromFields, ...fromReference };
-    const fromDoc = doc?.fields.get(name);
+    // field_reference wins on a shared spelling (existing rule); on a respelled twin the documented facts win and only the name follows field_reference.
+    if (fromFields || fromReference) field.sf = documentedName === undefined ? { ...fromFields, ...fromReference } : { ...fromReference, ...fromFields };
+    const fromDoc = doc?.fields.get(own);
     if (fromDoc) field.doc = fromDoc;
+    if (documentedName !== undefined) field.respelled = { documentedName, reason: respelled.get(name)! };
     out.push(field);
   }
   return out;

@@ -527,7 +527,7 @@
       "updateable": false
     },
     {
-      "name": "RecordTypeID",
+      "name": "RecordTypeId",
       "label": "Record Type ID",
       "type": "Lookup",
       "referenceTo": [

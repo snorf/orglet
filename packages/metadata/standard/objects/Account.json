@@ -442,8 +442,8 @@
       "featureGated": true
     },
     {
-      "name": "PersonBirthDate",
-      "label": "Person Birth Date",
+      "name": "PersonBirthdate",
+      "label": "Birthdate",
       "type": "Date",
       "featureGated": true
     },

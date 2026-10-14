@@ -330,7 +330,7 @@
       "nameField": true
     },
     {
-      "name": "VersionDataURL",
+      "name": "VersionDataUrl",
       "label": "Version Data URL",
       "type": "Text",
       "length": 255,

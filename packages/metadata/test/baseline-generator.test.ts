@@ -120,18 +120,19 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
   });
 
   it("every documented field of the 35 is generated or reported as skipped", () => {
-    const skipped = new Set([...full.report.skipped.fieldType, ...full.report.skipped.referenceTarget].map(fieldOf));
-    const excluded = new Set(full.report.excludedSystem);
+    // Lower-cased: a documented name and its SDK case twin are one field, emitted in the SDK spelling.
+    const skipped = new Set([...full.report.skipped.fieldType, ...full.report.skipped.referenceTarget].map((e) => fieldOf(e).toLowerCase()));
+    const excluded = new Set(full.report.excludedSystem.map((e) => e.toLowerCase()));
     let documented = 0;
     for (const object of inputs.objects) {
-      const generated = new Set(objects.get(object)!.fields.map((f) => f.name));
+      const generated = new Set(objects.get(object)!.fields.map((f) => f.name.toLowerCase()));
       const overrides = inputs.overrides.objects[object]?.fields ?? {};
       const names = new Set([...(inputs.sfSkills.get(object)?.fields.keys() ?? []), ...(inputs.objectReference.get(object)?.fields.keys() ?? [])]);
       for (const name of names) {
         if (SYSTEM_FIELDS.has(name) || overrides[name]?.skip) continue;
         documented++;
         const where = `${object}.${name}`;
-        expect(generated.has(name) || skipped.has(where) || excluded.has(where), where).toBe(true);
+        expect(generated.has(name.toLowerCase()) || skipped.has(where.toLowerCase()) || excluded.has(where.toLowerCase()), where).toBe(true);
       }
     }
     expect(documented).toBeGreaterThan(1000);
@@ -265,6 +266,18 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
     expect(full.report.conflicts.unresolved).toEqual([]);
   });
 
+  it("a documented name and a field_reference name that differ only by case emit the SDK spelling with every documented fact", () => {
+    const clone = structuredClone(inputs);
+    clone.sfSkills.get("Lead")!.fields.set("CaseTwinID", { type: "string", label: "Documented Label", length: 18, properties: ["Create", "Filter", "Nillable", "Update"] });
+    clone.objectReference.get("Lead")!.fields.set("CaseTwinID", { type: "string", length: 18, properties: ["Create", "Filter", "Nillable", "Update"] });
+    clone.sfSkills.get("Lead")!.fieldReference.set("CaseTwinId", { label: "Reference Label" });
+    const result = generate(clone, { v1Only: false });
+    const lead = parseObjects(result).get("Lead")!;
+    expect(lead.fields.filter((f) => f.name.toLowerCase() === "casetwinid").map((f) => f.name)).toEqual(["CaseTwinId"]);
+    expect(lead.fields.find((f) => f.name === "CaseTwinId")).toEqual({ name: "CaseTwinId", label: "Documented Label", type: "Text", length: 255 });
+    expect(result.report.caseSpelling).toContain("Lead.CaseTwinID -> CaseTwinId");
+  });
+
   const BUSINESS = [
     "AccountContactRelation", "AccountTeamMember", "Address", "CaseContactRole", "CaseMilestone", "ContentDocument", "ContentVersion", "ContractLineItem", "EmailMessage",
     "FeedItem", "Location", "OpportunityContactRole", "OpportunitySplit", "OpportunityTeamMember", "Order", "OrderItem", "Quote", "QuoteLineItem",
@@ -309,12 +322,12 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
       "Location.FulfillingBusinessHoursId": "BusinessHours", "Location.PropertyOwnerAccountId": "Account",
       "OpportunityTeamMember.OpportunityId": "Opportunity", "OpportunityTeamMember.UserId": "User", "Order.BillToContactId": "Contact", "Order.OpportunityId": "Opportunity",
       "Order.QuoteId": "Quote", "Order.RecordTypeId": "RecordType", "Order.ShipToContactId": "Contact", "OrderItem.ParentOrderItemId": "OrderItem",
-      "OrderItem.QuoteLineItemId": "QuoteLineItem", "OrderItem.RelatedOrderItemID": "OrderItem", "Quote.AccountId": "Account", "Quote.BillToContactId": "Contact",
+      "OrderItem.QuoteLineItemId": "QuoteLineItem", "OrderItem.RelatedOrderItemId": "OrderItem", "Quote.AccountId": "Account", "Quote.BillToContactId": "Contact",
       "Quote.ContactId": "Contact", "Quote.ContractId": "Contract", "Quote.OpportunityId": "Opportunity", "Quote.PartnerAccountId": "Account", "Quote.Pricebook2Id": "Pricebook2",
-      "Quote.PricingContractId": "Contract", "Quote.RecordTypeID": "RecordType", "Quote.RelatedQuoteId": "Quote", "QuoteLineItem.OpportunityLineItemId": "OpportunityLineItem",
+      "Quote.PricingContractId": "Contract", "Quote.RecordTypeId": "RecordType", "Quote.RelatedQuoteId": "Quote", "QuoteLineItem.OpportunityLineItemId": "OpportunityLineItem",
       "QuoteLineItem.PricebookEntryId": "PricebookEntry", "QuoteLineItem.Product2Id": "Product2", "QuoteLineItem.QuoteId": "Quote",
       // D-19: additive nullable lookups on v1.0 objects
-      "Asset.LocationId": "Location", "Entitlement.LocationID": "Location", "Entitlement.ContractLineItemId": "ContractLineItem", "Case.FeedItemId": "FeedItem",
+      "Asset.LocationId": "Location", "Entitlement.LocationId": "Location", "Entitlement.ContractLineItemId": "ContractLineItem", "Case.FeedItemId": "FeedItem",
     };
     expect(Object.keys(lookups)).toHaveLength(48);
     for (const [where, target] of Object.entries(lookups)) {

@@ -422,8 +422,8 @@
       "updateable": false
     },
     {
-      "name": "RelatedOrderItemID",
-      "label": "Related Order Item ID",
+      "name": "RelatedOrderItemId",
+      "label": "Order Product ID",
       "type": "Lookup",
       "nillable": false,
       "updateable": false,
