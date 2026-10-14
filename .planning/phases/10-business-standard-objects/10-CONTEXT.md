@@ -113,6 +113,30 @@ entitlement milestones), blob upload/download (FILE-01), `--summary`/`--json` re
   ContentDocument). SC1 needs describe and query, not rows; rows come via `--import` or
   bootstrap seeds when someone needs them.
 
+### Post-research decisions (2026-10-14, after 10-RESEARCH.md)
+- **D-18:** Generator rule 4 (forced nullable on required-looking new fields) is restricted to
+  objects that have v1 pins. The 18 new objects keep their documented-required fields: an
+  insert without `Order.EffectiveDate` or `OrderItem.OrderId` fails with
+  `REQUIRED_FIELD_MISSING`. Tests for the 18 must supply the required fields.
+- **D-19:** The four v1-object lookups the generator skipped for lack of a modelled target
+  come back additively: `Asset.LocationId`, `Entitlement.LocationId`,
+  `Entitlement.ContractLineItemId`, `Case.FeedItemId`, via name-rule `set referenceTo`
+  overrides as in 09-06. They are nullable FK columns on existing tables, so
+  `upgrade.test.ts` must stay at `EXPECTED_WARNINGS = []`. Other skipped targets stay skipped.
+- **D-20:** Lookup error codes (resolves D-15): unparsable Id keeps `MALFORMED_ID`
+  (documented); wrong object type and missing row keep `INVALID_CROSS_REFERENCE_KEY` as in
+  v1. SC2 and BASE2-07 get a dated wording adjustment. The official REST example that returns
+  `MALFORMED_ID` for a wrong-type `Document.FolderId` is recorded in Deferred Ideas as a
+  separate future decision, not acted on here.
+- **D-21:** Research corrected the prefix premise: only OpportunitySplit `049` is single-list
+  (checkpoint mandatory; D-02 null fallback if absent from Johan's DE). ContentVersion `068`,
+  ContentDocument `069` and Quote `0Q0` have Salesforce documentation examples and are stored
+  as `doc` with refs. The remaining prefixes are `unverified` with refs to both community
+  lists (D-03). Labels and labelPlural cannot be derived from either source (sf-skills has
+  only `title`), so they are hand overrides with a reason, confirmed at the D-04 checkpoint,
+  which is what D-11's "pin only on gap" already allows. `hasOwner` is derived from `fields`
+  or the Object Reference, never from `field_reference` (Quote trap).
+
 ### Claude's Discretion
 - Delivery order of the 18 (research suggests Order/OrderItem/Quote/QuoteLineItem first,
   content/feed/email objects last).
@@ -273,6 +297,9 @@ entitlement milestones), blob upload/download (FILE-01), `--summary`/`--json` re
 - **`community-list` provenance value** — rejected (D-03); `unverified` + ref is enough.
 - **Seed rows for read-only objects in `examples/acme`** — not needed for SC1; Phase 14
   acceptance fixture (`examples/enterprise`) may want them.
+- **Wrong-type lookup Id error code**: one official REST example (`Document.FolderId` given a
+  `005` Id) returns `MALFORMED_ID` "id value of incorrect type" where v1 returns
+  `INVALID_CROSS_REFERENCE_KEY`. Revisit as its own decision across all objects (D-20).
 - **Re-enabling the excluded jsforce insert-from-file conformance test** — carried from
   Phase 9, optional here, otherwise Phase 14.
 - **PROJECT.md target-features list names only 15 of the 18** (missing OpportunitySplit,
