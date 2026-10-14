@@ -8,7 +8,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { StandardObjectJson } from "@orglet/metadata";
-import { CLI_OPTIONS, generate, type GenerateResult } from "../../../scripts/gen-baseline/pipeline.js";
+import { CLI_OPTIONS, flagsFromCalls, generate, type GenerateResult } from "../../../scripts/gen-baseline/pipeline.js";
 import { loadInputs, type GeneratorInputs } from "../../../scripts/gen-baseline/sources.js";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -224,7 +224,7 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
 
   it("ownerTargets is written only when narrower than the default", () => {
     // BASE2-04 / D-11: absent means User and Group, so an object whose owner stays polymorphic is byte-identical to 09-07.
-    const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "Contract", "Event", "Individual", "Opportunity"];
+    const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "ContentDocument", "ContentVersion", "Contract", "Event", "Individual", "Opportunity"];
     for (const object of objects.values()) {
       if (object.ownerTargets !== undefined) expect([...object.ownerTargets].sort(codeUnit), object.name).not.toEqual(["Group", "User"]);
       if (USER_ONLY.includes(object.name)) expect(object.ownerTargets, object.name).toEqual(["User"]);
@@ -263,5 +263,86 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
     expect(collected.report.conflicts.unresolved.some((c) => c.startsWith("Lead.StepBConflict.type:"))).toBe(true);
     expect(collected.report.conflicts.byFact.type).toBeGreaterThanOrEqual(1);
     expect(full.report.conflicts.unresolved).toEqual([]);
+  });
+
+  const BUSINESS = [
+    "AccountContactRelation", "AccountTeamMember", "Address", "CaseContactRole", "CaseMilestone", "ContentDocument", "ContentVersion", "ContractLineItem", "EmailMessage",
+    "FeedItem", "Location", "OpportunityContactRole", "OpportunitySplit", "OpportunityTeamMember", "Order", "OrderItem", "Quote", "QuoteLineItem",
+  ];
+
+  it("BASE2-06: blob, junction-id-list and compound-geolocation fields of the 18 are omitted and listed in the generator report", () => {
+    const omitted = full.report.unsupportedTypes
+      .map((e) => /^UNSUPPORTED:field-type (\S+)/.exec(e)![1]!)
+      .filter((where) => BUSINESS.includes(where.split(".")[0]!))
+      .sort(codeUnit);
+    expect(omitted).toEqual(["ContentVersion.VersionData", "EmailMessage.BccIds", "EmailMessage.CcIds", "EmailMessage.ContentDocumentIds", "EmailMessage.ToIds", "FeedItem.ContentData", "Location.Location"]);
+    for (const where of omitted) {
+      const [object, name] = where.split(".") as [string, string];
+      expect(objects.get(object)!.fields.some((f) => f.name === name), where).toBe(false);
+    }
+  });
+
+  it("D-18: documented-required fields of the 18 stay required; forcedNullable lists only v1.0 objects", () => {
+    for (const where of full.report.forcedNullable) expect(inputs.pins![where.split(".")[0]!], where).toBeDefined();
+    const nillableOf = (object: string, name: string): boolean | undefined => objects.get(object)!.fields.find((f) => f.name === name)!.nillable;
+    expect(nillableOf("Order", "EffectiveDate")).toBe(false);
+    expect(nillableOf("OrderItem", "OrderId")).toBe(false);
+  });
+
+  it("Supported Calls reproduce the committed DML flags of the 14 thin objects", () => {
+    const thin = ["BusinessHours", "BusinessProcess", "CallCenter", "DandBCompany", "Entitlement", "ExternalDataSource", "IdeaTheme", "Individual", "OperatingHours", "OpportunityHistory", "ServiceAppointment", "ServiceContract", "SocialPost", "UserLicense"];
+    const flags = ["createable", "updateable", "deletable", "undeletable", "queryable", "searchable"] as const;
+    for (const name of thin) {
+      const derived = flagsFromCalls(inputs.objectReference.get(name)!.supportedCalls!);
+      const committed = objects.get(name)!;
+      for (const flag of flags) expect(derived[flag] ?? true, `${name}.${flag}`).toBe(committed[flag] ?? true);
+    }
+  });
+
+  it("every hand lookup target of Phase 10 is generated", () => {
+    const lookups: Record<string, string> = {
+      "AccountContactRelation.AccountId": "Account", "AccountContactRelation.ContactId": "Contact", "AccountTeamMember.AccountId": "Account", "AccountTeamMember.UserId": "User",
+      "CaseMilestone.BusinessHoursId": "BusinessHours", "CaseMilestone.CaseId": "Case", "ContentDocument.ArchivedById": "User", "ContentVersion.RecordTypeId": "RecordType",
+      "ContractLineItem.AssetId": "Asset", "ContractLineItem.LocationId": "Location", "ContractLineItem.ParentContractLineItemId": "ContractLineItem",
+      "ContractLineItem.PricebookEntryId": "PricebookEntry", "ContractLineItem.Product2Id": "Product2", "ContractLineItem.RootContractLineItemId": "ContractLineItem",
+      "ContractLineItem.ServiceContractId": "ServiceContract", "FeedItem.LastEditById": "User", "Location.AccountId": "Account", "Location.BusinessHoursId": "BusinessHours",
+      "Location.FulfillingBusinessHoursId": "BusinessHours", "Location.PropertyOwnerAccountId": "Account",
+      "OpportunityTeamMember.OpportunityId": "Opportunity", "OpportunityTeamMember.UserId": "User", "Order.BillToContactId": "Contact", "Order.OpportunityId": "Opportunity",
+      "Order.QuoteId": "Quote", "Order.RecordTypeId": "RecordType", "Order.ShipToContactId": "Contact", "OrderItem.ParentOrderItemId": "OrderItem",
+      "OrderItem.QuoteLineItemId": "QuoteLineItem", "OrderItem.RelatedOrderItemID": "OrderItem", "Quote.AccountId": "Account", "Quote.BillToContactId": "Contact",
+      "Quote.ContactId": "Contact", "Quote.ContractId": "Contract", "Quote.OpportunityId": "Opportunity", "Quote.PartnerAccountId": "Account", "Quote.Pricebook2Id": "Pricebook2",
+      "Quote.PricingContractId": "Contract", "Quote.RecordTypeID": "RecordType", "Quote.RelatedQuoteId": "Quote", "QuoteLineItem.OpportunityLineItemId": "OpportunityLineItem",
+      "QuoteLineItem.PricebookEntryId": "PricebookEntry", "QuoteLineItem.Product2Id": "Product2", "QuoteLineItem.QuoteId": "Quote",
+      // D-19: additive nullable lookups on v1.0 objects
+      "Asset.LocationId": "Location", "Entitlement.LocationID": "Location", "Entitlement.ContractLineItemId": "ContractLineItem", "Case.FeedItemId": "FeedItem",
+    };
+    expect(Object.keys(lookups)).toHaveLength(48);
+    for (const [where, target] of Object.entries(lookups)) {
+      const [object, name] = where.split(".") as [string, string];
+      const field = objects.get(object)!.fields.find((f) => f.name === name);
+      expect(field?.referenceTo, where).toEqual([target]);
+      expect(field?.relationshipName, where).toBeTruthy();
+    }
+  });
+
+  it("the three polymorphic subsets are exactly the modelled targets", () => {
+    const expected: Record<string, number> = { "FeedItem.ParentId": 19, "EmailMessage.RelatedToId": 10, "ContentVersion.FirstPublishLocationId": 20 };
+    for (const [where, count] of Object.entries(expected)) {
+      const [object, name] = where.split(".") as [string, string];
+      const referenceTo = objects.get(object)!.fields.find((f) => f.name === name)?.referenceTo;
+      expect(referenceTo, where).toHaveLength(count);
+      expect(referenceTo, where).toEqual(inputs.overrides.objects[object]!.fields![name]!.set!.referenceTo);
+      expect(referenceTo, where).toContain("Case");
+      for (const target of referenceTo!) expect(inputs.objects, `${where} -> ${target}`).toContain(target);
+    }
+  });
+
+  it("labels of objects without v1 pins come from overrides.json with a reason", () => {
+    for (const name of BUSINESS) {
+      const labels = inputs.overrides.objects[name]!.labels!;
+      expect(labels.reason, name).toBeTruthy();
+      expect(objects.get(name)!.label, name).toBe(labels.label);
+      expect(objects.get(name)!.labelPlural, name).toBe(labels.labelPlural);
+    }
   });
 });

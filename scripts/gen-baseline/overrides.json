@@ -33,10 +33,111 @@
         }
       }
     },
+    "AccountContactRelation": {
+      "keyPrefix": {
+        "value": "07k",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Account Contact Relationship",
+        "labelPlural": "Account Contact Relationships",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); proposal confirmed at the D-04 checkpoint 2026-10-14"
+      },
+      "fields": {
+        "AccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "Account"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Account; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "ContactId": {
+          "set": {
+            "referenceTo": [
+              "Contact"
+            ],
+            "relationshipName": "Contact"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contact; neither source states Refers To; relationshipName guessed from the field name"
+        }
+      }
+    },
+    "AccountTeamMember": {
+      "keyPrefix": {
+        "value": "01M",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583 (as ACC_TEAM_MEMBER)"
+      },
+      "labels": {
+        "label": "Account Team Member",
+        "labelPlural": "Account Teams",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "AccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "Account"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Account; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "UserId": {
+          "set": {
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "User"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object User; neither source states Refers To; relationshipName guessed from the field name"
+        }
+      }
+    },
+    "Address": {
+      "keyPrefix": {
+        "value": "130",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and apexhours.com/salesforce-object-key-prefix"
+      },
+      "labels": {
+        "label": "Address",
+        "labelPlural": "Addresses",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "Name": {
+          "set": {
+            "type": "AutoNumber",
+            "createable": false,
+            "updateable": false,
+            "defaultedOnCreate": true,
+            "idLookup": true,
+            "nameField": true,
+            "displayFormat": "{00000000}"
+          },
+          "reason": "the Object Reference marks it Autonumber/idLookup; no source states a name field or display format; displayFormat {00000000} is the orglet v1.0 convention (guessed); confirmed at the D-04 checkpoint 2026-10-14"
+        }
+      }
+    },
     "Asset": {
       "keyPrefix": {
         "value": "02i",
         "source": "unverified"
+      },
+      "fields": {
+        "LocationId": {
+          "set": {
+            "referenceTo": [
+              "Location"
+            ],
+            "relationshipName": "Location"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Location; neither source states Refers To; additive nullable column on a v1.0 object"
+        }
       }
     },
     "BusinessHours": {
@@ -89,6 +190,15 @@
           "keep": true,
           "reason": "present in v1.0, absent from sources"
         },
+        "FeedItemId": {
+          "set": {
+            "referenceTo": [
+              "FeedItem"
+            ],
+            "relationshipName": "FeedItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object FeedItem; neither source states Refers To; additive nullable column on a v1.0 object"
+        },
         "MilestoneStatus": {
           "keep": true,
           "reason": "present in v1.0, absent from sources"
@@ -107,16 +217,248 @@
         }
       }
     },
+    "CaseContactRole": {
+      "keyPrefix": {
+        "value": "03j",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Case Contact Role",
+        "labelPlural": "Case Contact Role",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      }
+    },
+    "CaseMilestone": {
+      "keyPrefix": {
+        "value": "555",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and apexhours.com/salesforce-object-key-prefix"
+      },
+      "labels": {
+        "label": "Case Milestone",
+        "labelPlural": "Case Milestones",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "BusinessHoursId": {
+          "set": {
+            "referenceTo": [
+              "BusinessHours"
+            ],
+            "relationshipName": "BusinessHours"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object BusinessHours; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "CaseId": {
+          "set": {
+            "referenceTo": [
+              "Case"
+            ],
+            "relationshipName": "Case"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Case; neither source states Refers To; relationshipName guessed from the field name"
+        }
+      }
+    },
     "Contact": {
       "keyPrefix": {
         "value": "003",
         "source": "unverified"
       }
     },
+    "ContentDocument": {
+      "keyPrefix": {
+        "value": "069",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also Object Reference, ContentDocumentLink Usage: ContentDocumentId = '069D00000000so2'"
+      },
+      "labels": {
+        "label": "Content Document",
+        "labelPlural": "Content Documents",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "ArchivedById": {
+          "set": {
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "ArchivedBy"
+          },
+          "reason": "name rule (Phase 10): a ArchivedById audit-style lookup refers to User like CreatedById; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "Title": {
+          "set": {
+            "nameField": true
+          },
+          "reason": "no source states the name field; research Q4 / FEATURES F name it; confirmed at the D-04 checkpoint 2026-10-14"
+        }
+      }
+    },
+    "ContentVersion": {
+      "keyPrefix": {
+        "value": "068",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also REST API Developer Guide, Insert a ContentVersion: example response id 068D00000000pgOIAQ"
+      },
+      "labels": {
+        "label": "Content Version",
+        "labelPlural": "Content Versions",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "flags": {
+        "updateable": true,
+        "reason": "D-12: the Object Reference Supported Calls lists update() for ContentVersion; the REST API Developer Guide tip on the ContentVersion insert example says ContentVersion doesn't support updates; the Object Reference wins (Phase 3 D-04 precedent). deletable stays false: no delete() in Supported Calls"
+      },
+      "fields": {
+        "ContentDocumentId": {
+          "set": {
+            "nillable": true
+          },
+          "reason": "documented exception to D-18: Object Reference ContentVersion usage says omit ContentDocumentId to create a new document, so the field is optional on insert although its Properties line omits Nillable; the automatic ContentDocument creation is not implemented (Phase 10 scope); accepted at the D-04 checkpoint 2026-10-14"
+        },
+        "FirstPublishLocationId": {
+          "set": {
+            "referenceTo": [
+              "Account",
+              "Asset",
+              "Campaign",
+              "Case",
+              "Contact",
+              "Contract",
+              "EmailMessage",
+              "Event",
+              "Lead",
+              "Location",
+              "OperatingHours",
+              "Opportunity",
+              "Order",
+              "OrderItem",
+              "Organization",
+              "Product2",
+              "ServiceAppointment",
+              "SocialPost",
+              "Task",
+              "User"
+            ]
+          },
+          "reason": "polymorphic subset (Phase 10 research Q4): the sources list 169 targets, orglet models 20 (Account, Asset, Campaign, Case, Contact, Contract, EmailMessage, Event, Lead, Location, OperatingHours, Opportunity, Order, OrderItem, Organization, Product2, ServiceAppointment, SocialPost, Task, User); referenceTo is restricted to the modelled subset (precedent: v1.0 Task.WhatId) so the field is not skipped wholesale; an Id of an unmodelled target type is rejected with INVALID_CROSS_REFERENCE_KEY instead of being unchecked; widen when more targets are modelled"
+        },
+        "RecordTypeId": {
+          "set": {
+            "referenceTo": [
+              "RecordType"
+            ],
+            "relationshipName": "RecordType"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object RecordType; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "Title": {
+          "set": {
+            "nameField": true
+          },
+          "reason": "no source states the name field; research Q4 / FEATURES F name it; confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "VersionDataUrl": {
+          "skip": true,
+          "reason": "sf-skills field_reference spelling of the documented VersionDataURL; both would map to one lower-cased Postgres column (precedent Account.PersonBirthdate)"
+        }
+      }
+    },
     "Contract": {
       "keyPrefix": {
         "value": "800",
         "source": "unverified"
+      }
+    },
+    "ContractLineItem": {
+      "keyPrefix": {
+        "value": "811",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Contract Line Item",
+        "labelPlural": "Contract Line Items",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "AssetId": {
+          "set": {
+            "referenceTo": [
+              "Asset"
+            ],
+            "relationshipName": "Asset"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Asset; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "LineItemNumber": {
+          "set": {
+            "type": "AutoNumber",
+            "createable": false,
+            "updateable": false,
+            "defaultedOnCreate": true,
+            "idLookup": true,
+            "nameField": true,
+            "displayFormat": "{00000000}"
+          },
+          "reason": "the Object Reference marks it Autonumber/idLookup; no source states a name field or display format; displayFormat {00000000} is the orglet v1.0 convention (guessed); confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "LocationId": {
+          "set": {
+            "referenceTo": [
+              "Location"
+            ],
+            "relationshipName": "Location"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Location; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "ParentContractLineItemId": {
+          "set": {
+            "referenceTo": [
+              "ContractLineItem"
+            ],
+            "relationshipName": "ParentContractLineItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object ContractLineItem; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "PricebookEntryId": {
+          "set": {
+            "referenceTo": [
+              "PricebookEntry"
+            ],
+            "relationshipName": "PricebookEntry"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object PricebookEntry; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "Product2Id": {
+          "set": {
+            "referenceTo": [
+              "Product2"
+            ],
+            "relationshipName": "Product2"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Product2; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "RootContractLineItemId": {
+          "set": {
+            "referenceTo": [
+              "ContractLineItem"
+            ],
+            "relationshipName": "RootContractLineItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object ContractLineItem; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "ServiceContractId": {
+          "set": {
+            "referenceTo": [
+              "ServiceContract"
+            ],
+            "relationshipName": "ServiceContract"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object ServiceContract; neither source states Refers To; relationshipName guessed from the field name"
+        }
       }
     },
     "DandBCompany": {
@@ -187,6 +529,43 @@
         }
       }
     },
+    "EmailMessage": {
+      "keyPrefix": {
+        "value": "02s",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Email Message",
+        "labelPlural": "Email Messages",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "Name": {
+          "set": {
+            "nameField": true
+          },
+          "reason": "no source states the name field; research Q4 / FEATURES F name it; confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "RelatedToId": {
+          "set": {
+            "referenceTo": [
+              "Account",
+              "Asset",
+              "Campaign",
+              "Case",
+              "Contract",
+              "Location",
+              "Opportunity",
+              "Order",
+              "Product2",
+              "ServiceAppointment"
+            ]
+          },
+          "reason": "polymorphic subset (Phase 10 research Q4): the sources list 106 targets, orglet models 10 (Account, Asset, Campaign, Case, Contract, Location, Opportunity, Order, Product2, ServiceAppointment); referenceTo is restricted to the modelled subset (precedent: v1.0 Task.WhatId) so the field is not skipped wholesale; an Id of an unmodelled target type is rejected with INVALID_CROSS_REFERENCE_KEY instead of being unchecked; widen when more targets are modelled"
+        }
+      }
+    },
     "Entitlement": {
       "keyPrefix": {
         "value": "550",
@@ -216,6 +595,24 @@
             ]
           },
           "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object BusinessHours; neither source states Refers To"
+        },
+        "ContractLineItemId": {
+          "set": {
+            "referenceTo": [
+              "ContractLineItem"
+            ],
+            "relationshipName": "ContractLineItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object ContractLineItem; neither source states Refers To; additive nullable column on a v1.0 object"
+        },
+        "LocationID": {
+          "set": {
+            "referenceTo": [
+              "Location"
+            ],
+            "relationshipName": "Location"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Location; neither source states Refers To; additive nullable column on a v1.0 object"
         },
         "ServiceContractId": {
           "set": {
@@ -267,6 +664,55 @@
         "IsWritable": {
           "skip": true,
           "reason": "sf-skills field_reference spelling of the documented isWritable; both would map to one lower-cased Postgres column"
+        }
+      }
+    },
+    "FeedItem": {
+      "keyPrefix": {
+        "value": "0D5",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Feed Item",
+        "labelPlural": "Feed Items",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "LastEditById": {
+          "set": {
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "LastEditBy"
+          },
+          "reason": "name rule (Phase 10): a LastEditById audit-style lookup refers to User like CreatedById; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "ParentId": {
+          "set": {
+            "referenceTo": [
+              "Account",
+              "Asset",
+              "Campaign",
+              "Case",
+              "Contact",
+              "ContentDocument",
+              "Contract",
+              "Event",
+              "Lead",
+              "Location",
+              "OperatingHours",
+              "Opportunity",
+              "Order",
+              "OrderItem",
+              "Product2",
+              "ServiceAppointment",
+              "SocialPost",
+              "Task",
+              "User"
+            ]
+          },
+          "reason": "polymorphic subset (Phase 10 research Q4): the sources list 163 targets, orglet models 19 (Account, Asset, Campaign, Case, Contact, ContentDocument, Contract, Event, Lead, Location, OperatingHours, Opportunity, Order, OrderItem, Product2, ServiceAppointment, SocialPost, Task, User); referenceTo is restricted to the modelled subset (precedent: v1.0 Task.WhatId) so the field is not skipped wholesale; an Id of an unmodelled target type is rejected with INVALID_CROSS_REFERENCE_KEY instead of being unchecked; widen when more targets are modelled"
         }
       }
     },
@@ -328,6 +774,62 @@
         }
       }
     },
+    "Location": {
+      "keyPrefix": {
+        "value": "131",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and apexhours.com/salesforce-object-key-prefix"
+      },
+      "labels": {
+        "label": "Location",
+        "labelPlural": "Locations",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "AccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "Account"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Account; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "BusinessHoursId": {
+          "set": {
+            "referenceTo": [
+              "BusinessHours"
+            ],
+            "relationshipName": "BusinessHours"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object BusinessHours; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "FulfillingBusinessHoursId": {
+          "set": {
+            "referenceTo": [
+              "BusinessHours"
+            ],
+            "relationshipName": "FulfillingBusinessHours"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object BusinessHours; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "Name": {
+          "set": {
+            "nameField": true
+          },
+          "reason": "no source states the name field; research Q4 / FEATURES F name it; confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "PropertyOwnerAccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "PropertyOwnerAccount"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Account; neither source states Refers To; relationshipName guessed from the field name"
+        }
+      }
+    },
     "OperatingHours": {
       "keyPrefix": {
         "value": "0OH",
@@ -350,6 +852,18 @@
         }
       }
     },
+    "OpportunityContactRole": {
+      "keyPrefix": {
+        "value": "00K",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Opportunity Contact Role",
+        "labelPlural": "Opportunity Contact Role",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      }
+    },
     "OpportunityHistory": {
       "keyPrefix": {
         "value": "008",
@@ -360,6 +874,202 @@
       "keyPrefix": {
         "value": "00k",
         "source": "unverified"
+      }
+    },
+    "OpportunitySplit": {
+      "keyPrefix": {
+        "value": "049",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also single community list: gist.github.com/FishOfPrey/05f7a742757fce071a09"
+      },
+      "labels": {
+        "label": "Opportunity Split",
+        "labelPlural": "Opportunity Splits",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "Split": {
+          "set": {
+            "type": "AutoNumber",
+            "createable": false,
+            "updateable": false,
+            "defaultedOnCreate": true,
+            "idLookup": true,
+            "nameField": true,
+            "displayFormat": "{00000000}"
+          },
+          "reason": "the Object Reference marks it Autonumber/idLookup; no source states a name field or display format; displayFormat {00000000} is the orglet v1.0 convention (guessed); confirmed at the D-04 checkpoint 2026-10-14"
+        }
+      }
+    },
+    "OpportunityTeamMember": {
+      "keyPrefix": {
+        "value": "00q",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Opportunity Team Member",
+        "labelPlural": "Opportunity Team",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "Name": {
+          "set": {
+            "nameField": true
+          },
+          "reason": "no source states the name field; research Q4 / FEATURES F name it; confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "OpportunityId": {
+          "set": {
+            "referenceTo": [
+              "Opportunity"
+            ],
+            "relationshipName": "Opportunity"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Opportunity; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "PhotoUrl": {
+          "skip": true,
+          "reason": "sf-skills field_reference spelling of the documented PhotoURL; both would map to one lower-cased Postgres column (precedent Account.PersonBirthdate)"
+        },
+        "UserId": {
+          "set": {
+            "referenceTo": [
+              "User"
+            ],
+            "relationshipName": "User"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object User; neither source states Refers To; relationshipName guessed from the field name"
+        }
+      }
+    },
+    "Order": {
+      "keyPrefix": {
+        "value": "801",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Order",
+        "labelPlural": "Orders",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "BillToContactId": {
+          "set": {
+            "referenceTo": [
+              "Contact"
+            ],
+            "relationshipName": "BillToContact"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contact; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "OpportunityId": {
+          "set": {
+            "referenceTo": [
+              "Opportunity"
+            ],
+            "relationshipName": "Opportunity"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Opportunity; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "OrderNumber": {
+          "set": {
+            "type": "AutoNumber",
+            "createable": false,
+            "updateable": false,
+            "defaultedOnCreate": true,
+            "idLookup": true,
+            "nameField": true,
+            "displayFormat": "{00000000}"
+          },
+          "reason": "the Object Reference marks it Autonumber/idLookup; no source states a name field or display format; displayFormat {00000000} is the orglet v1.0 convention (guessed); confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "QuoteId": {
+          "set": {
+            "referenceTo": [
+              "Quote"
+            ],
+            "relationshipName": "Quote"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Quote; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "RecordTypeId": {
+          "set": {
+            "referenceTo": [
+              "RecordType"
+            ],
+            "relationshipName": "RecordType"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object RecordType; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "ShipToContactId": {
+          "set": {
+            "referenceTo": [
+              "Contact"
+            ],
+            "relationshipName": "ShipToContact"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contact; neither source states Refers To; relationshipName guessed from the field name"
+        }
+      }
+    },
+    "OrderItem": {
+      "keyPrefix": {
+        "value": "802",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Order Product",
+        "labelPlural": "Order Products",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "OrderItemNumber": {
+          "set": {
+            "type": "AutoNumber",
+            "createable": false,
+            "updateable": false,
+            "defaultedOnCreate": true,
+            "idLookup": true,
+            "nameField": true,
+            "displayFormat": "{00000000}"
+          },
+          "reason": "the Object Reference marks it Autonumber/idLookup; no source states a name field or display format; displayFormat {00000000} is the orglet v1.0 convention (guessed); confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "ParentOrderItemId": {
+          "set": {
+            "referenceTo": [
+              "OrderItem"
+            ],
+            "relationshipName": "ParentOrderItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object OrderItem; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "QuoteLineItemId": {
+          "set": {
+            "referenceTo": [
+              "QuoteLineItem"
+            ],
+            "relationshipName": "QuoteLineItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object QuoteLineItem; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "RelatedOrderItemID": {
+          "set": {
+            "referenceTo": [
+              "OrderItem"
+            ],
+            "relationshipName": "RelatedOrderItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object OrderItem; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "RelatedOrderItemId": {
+          "skip": true,
+          "reason": "sf-skills field_reference spelling of the documented RelatedOrderItemID; both would map to one lower-cased Postgres column (precedent Account.PersonBirthdate)"
+        }
       }
     },
     "Organization": {
@@ -417,6 +1127,185 @@
         "PermissionsPermissionName": {
           "skip": true,
           "reason": "Object Reference placeholder for the per-permission boolean family (Permissions<Name>), not a field (09-03 DOC_ONLY_REVIEWED)"
+        }
+      }
+    },
+    "Quote": {
+      "keyPrefix": {
+        "value": "0Q0",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also Object Reference, Opportunity SyncedQuoteId Java sample: new ID(\"0Q0D000000002OZ\")"
+      },
+      "labels": {
+        "label": "Quote",
+        "labelPlural": "Quotes",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "AccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "Account"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Account; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "BillToContactId": {
+          "set": {
+            "referenceTo": [
+              "Contact"
+            ],
+            "relationshipName": "BillToContact"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contact; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "ContactId": {
+          "set": {
+            "referenceTo": [
+              "Contact"
+            ],
+            "relationshipName": "Contact"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contact; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "ContractId": {
+          "set": {
+            "referenceTo": [
+              "Contract"
+            ],
+            "relationshipName": "Contract"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contract; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "Name": {
+          "set": {
+            "length": 255,
+            "nameField": true
+          },
+          "reason": "sources disagree: sf-skills 255, Object Reference 225; settled at the D-04 checkpoint 2026-10-14 (09-06 rule: the larger value); name field per research Q4"
+        },
+        "OpportunityId": {
+          "set": {
+            "referenceTo": [
+              "Opportunity"
+            ],
+            "relationshipName": "Opportunity"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Opportunity; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "PartnerAccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ],
+            "relationshipName": "PartnerAccount"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Account; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "Pricebook2Id": {
+          "set": {
+            "referenceTo": [
+              "Pricebook2"
+            ],
+            "relationshipName": "Pricebook2"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Pricebook2; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "PricingContractId": {
+          "set": {
+            "referenceTo": [
+              "Contract"
+            ],
+            "relationshipName": "PricingContract"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Contract; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "RecordTypeID": {
+          "set": {
+            "referenceTo": [
+              "RecordType"
+            ],
+            "relationshipName": "RecordType"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object RecordType; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "RelatedQuoteId": {
+          "set": {
+            "referenceTo": [
+              "Quote"
+            ],
+            "relationshipName": "RelatedQuote"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Quote; neither source states Refers To; relationshipName guessed from the field name"
+        }
+      }
+    },
+    "QuoteLineItem": {
+      "keyPrefix": {
+        "value": "0QL",
+        "source": "de-describe",
+        "ref": "author's own DE describe, 2026-10-14; also two community lists agree: gist.github.com/FishOfPrey/05f7a742757fce071a09 and gist.github.com/Synchro/2c6186203c15dc2bd14bd2c7f6396583"
+      },
+      "labels": {
+        "label": "Quote Line Item",
+        "labelPlural": "Quote Line Items",
+        "reason": "label not stated by either source (sf-skills has only a title, the Object Reference none; research C1); author's own DE describe, 2026-10-14"
+      },
+      "fields": {
+        "Description": {
+          "set": {
+            "length": 255
+          },
+          "reason": "sources disagree: sf-skills 255, Object Reference 225; settled at the D-04 checkpoint 2026-10-14 (09-06 rule: the larger value)"
+        },
+        "LineNumber": {
+          "set": {
+            "type": "AutoNumber",
+            "createable": false,
+            "updateable": false,
+            "defaultedOnCreate": true,
+            "idLookup": true,
+            "nameField": true,
+            "displayFormat": "{00000000}"
+          },
+          "reason": "the Object Reference marks it Autonumber/idLookup; no source states a name field or display format; displayFormat {00000000} is the orglet v1.0 convention (guessed); confirmed at the D-04 checkpoint 2026-10-14"
+        },
+        "OpportunityLineItemId": {
+          "set": {
+            "referenceTo": [
+              "OpportunityLineItem"
+            ],
+            "relationshipName": "OpportunityLineItem"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object OpportunityLineItem; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "PricebookEntryId": {
+          "set": {
+            "referenceTo": [
+              "PricebookEntry"
+            ],
+            "relationshipName": "PricebookEntry"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object PricebookEntry; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "Product2Id": {
+          "set": {
+            "referenceTo": [
+              "Product2"
+            ],
+            "relationshipName": "Product2"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Product2; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "QuoteId": {
+          "set": {
+            "referenceTo": [
+              "Quote"
+            ],
+            "relationshipName": "Quote"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Quote; neither source states Refers To; relationshipName guessed from the field name"
         }
       }
     },

@@ -1,0 +1,670 @@
+{
+  "name": "Order",
+  "label": "Order",
+  "labelPlural": "Orders",
+  "keyPrefix": "801",
+  "keyPrefixSource": "de-describe",
+  "hasOwner": true,
+  "fields": [
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Account"
+    },
+    {
+      "name": "ActivatedById",
+      "label": "Activated By ID",
+      "type": "Lookup",
+      "createable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "ActivatedBy"
+    },
+    {
+      "name": "ActivatedDate",
+      "label": "Activated Date",
+      "type": "DateTime",
+      "createable": false
+    },
+    {
+      "name": "AdjustmentDistributionLogic",
+      "label": "Adjustment Distribution Logic",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AppliedDiscount",
+      "label": "Applied Discount",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AppliedDiscountAmount",
+      "label": "Applied Discount Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BillToContactId",
+      "label": "Bill To Contact ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "BillToContact"
+    },
+    {
+      "name": "BillingAddress",
+      "label": "Billing Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BillingCity",
+      "label": "Billing City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingCountry",
+      "label": "Billing Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingCountryCode",
+      "label": "Billing Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingEmailAddress",
+      "label": "Billing Email Address",
+      "type": "Email",
+      "length": 80
+    },
+    {
+      "name": "BillingGeocodeAccuracy",
+      "label": "Billing Geocode Accuracy",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingLatitude",
+      "label": "Billing Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingLongitude",
+      "label": "Billing Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingPhoneNumber",
+      "label": "Billing Phone Number",
+      "type": "Phone",
+      "length": 40
+    },
+    {
+      "name": "BillingPostalCode",
+      "label": "Billing Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingState",
+      "label": "Billing State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingStateCode",
+      "label": "Billing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingStreet",
+      "label": "Billing Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "CalculationStatus",
+      "label": "Calculation Status",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CompanyAuthorizedById",
+      "label": "Company Authorized By ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "CompanyAuthorizedBy"
+    },
+    {
+      "name": "CompanyAuthorizedDate",
+      "label": "Company Authorized Date",
+      "type": "Date"
+    },
+    {
+      "name": "ContractId",
+      "label": "Contract ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contract"
+      ],
+      "relationshipName": "Contract"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CustomerAuthorizedById",
+      "label": "Customer Authorized By ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "CustomerAuthorizedBy"
+    },
+    {
+      "name": "CustomerAuthorizedDate",
+      "label": "Customer Authorized Date",
+      "type": "Date"
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "DiscountPercent",
+      "label": "Discount Percent",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "EffectiveDate",
+      "label": "Order Start Date",
+      "type": "Date",
+      "nillable": false
+    },
+    {
+      "name": "EndDate",
+      "label": "Order End Date",
+      "type": "Date"
+    },
+    {
+      "name": "ExternalCustomerReference",
+      "label": "External Customer Reference",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "GrandTotalAmount",
+      "label": "Total with Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsReductionOrder",
+      "label": "Reduction Order",
+      "type": "Checkbox",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "LastPricedDate",
+      "label": "Last Priced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Order Name",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "OpportunityId",
+      "label": "Opportunity ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity"
+    },
+    {
+      "name": "OrchestrationSbmsStatus",
+      "label": "Orchestration Submission Status",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OrderManagementReferenceIdentifier",
+      "label": "Order Management Reference Identifier",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "OrderNumber",
+      "label": "Order Number",
+      "type": "AutoNumber",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
+    },
+    {
+      "name": "OrderReferenceNumber",
+      "label": "Order Reference Number",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "OrderedDate",
+      "label": "Ordered Date",
+      "type": "DateTime"
+    },
+    {
+      "name": "OriginalActionType",
+      "label": "Original Action Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OriginalOrderId",
+      "label": "Order ID",
+      "type": "Lookup",
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "referenceTo": [
+        "Order"
+      ],
+      "relationshipName": "OriginalOrder"
+    },
+    {
+      "name": "PoDate",
+      "label": "PO Date",
+      "type": "Date"
+    },
+    {
+      "name": "PoNumber",
+      "label": "PO Number",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "Pricebook2Id",
+      "label": "Price Book ID",
+      "type": "Lookup",
+      "defaultedOnCreate": true,
+      "referenceTo": [
+        "Pricebook2"
+      ],
+      "relationshipName": "Pricebook2"
+    },
+    {
+      "name": "QuoteId",
+      "label": "Quote ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Quote"
+      ],
+      "relationshipName": "Quote"
+    },
+    {
+      "name": "RecordTypeId",
+      "label": "Record Type ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "RecordType"
+      ],
+      "relationshipName": "RecordType"
+    },
+    {
+      "name": "RelatedOrderId",
+      "label": "Order ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Order"
+      ],
+      "relationshipName": "RelatedOrder"
+    },
+    {
+      "name": "RelatedOrderType",
+      "label": "Related Order Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ShipToContactId",
+      "label": "Ship To Contact ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "ShipToContact"
+    },
+    {
+      "name": "ShippingAddress",
+      "label": "Shipping Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ShippingCity",
+      "label": "Shipping City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingCountry",
+      "label": "Shipping Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingCountryCode",
+      "label": "Shipping Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingGeocodeAccuracy",
+      "label": "Shipping Geocode Accuracy",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingLatitude",
+      "label": "Shipping Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingLongitude",
+      "label": "Shipping Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingPostalCode",
+      "label": "Shipping Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingState",
+      "label": "Shipping State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingStateCode",
+      "label": "Shipping State Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingStreet",
+      "label": "Shipping Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "nillable": false
+    },
+    {
+      "name": "StatusCode",
+      "label": "Status Category",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "TaxLocaleType",
+      "label": "Tax Locale Type",
+      "type": "Picklist"
+    },
+    {
+      "name": "TotalAdjDeliveryAmtWithTax",
+      "label": "Total Adjusted Delivery Amount with Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAdjProductAmtWithTax",
+      "label": "Total Adjusted Product Amount with Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAdjustedDeliveryAmount",
+      "label": "Total Adjusted Delivery Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAdjustedDeliveryTaxAmount",
+      "label": "Total Adjusted Delivery Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAdjustedProductAmount",
+      "label": "Total Adjusted Product Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAdjustedProductTaxAmount",
+      "label": "Total Adjusted Product Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAmount",
+      "label": "Order Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAmountOverride",
+      "label": "Total Amount Override",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalDeliveryAdjDistAmount",
+      "label": "Total Delivery Distributed Adjustments",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalDeliveryAdjDistAmtWithTax",
+      "label": "Total Delivery Distributed Adjustments with Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalDeliveryAdjDistTaxAmount",
+      "label": "Total Delivery Distributed Adjustment Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalProductAdjDistAmount",
+      "label": "Total Product Distributed Adjustments",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalProductAdjDistAmtWithTax",
+      "label": "Total Product Distributed Adjustments with Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalProductAdjDistTaxAmount",
+      "label": "Total Product Distributed Adjustment Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalRoundedLineAmount",
+      "label": "Product Subtotal",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalTaxAmount",
+      "label": "Total Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TransactionType",
+      "label": "Transaction Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Type",
+      "label": "Order Type",
+      "type": "Picklist"
+    },
+    {
+      "name": "ValidationResult",
+      "label": "Validation Result",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}

@@ -480,6 +480,15 @@
       "compoundFieldName": "ShippingAddress"
     },
     {
+      "name": "SourceQuoteId",
+      "label": "Source Quote ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Quote"
+      ],
+      "relationshipName": "Contract"
+    },
+    {
       "name": "SpecialTerms",
       "label": "Special Terms",
       "type": "LongTextArea",

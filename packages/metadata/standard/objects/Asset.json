@@ -247,6 +247,15 @@
       "featureGated": true
     },
     {
+      "name": "LocationId",
+      "label": "Location ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Location"
+      ],
+      "relationshipName": "Location"
+    },
+    {
       "name": "Longitude",
       "label": "Longitude",
       "type": "Number",

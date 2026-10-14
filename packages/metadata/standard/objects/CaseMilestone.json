@@ -1,0 +1,233 @@
+{
+  "name": "CaseMilestone",
+  "label": "Case Milestone",
+  "labelPlural": "Case Milestones",
+  "keyPrefix": "555",
+  "keyPrefixSource": "de-describe",
+  "createable": false,
+  "deletable": false,
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "ActualElapsedTimeInDays",
+      "label": "Actual Elapsed Time (Days)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ActualElapsedTimeInHrs",
+      "label": "Actual Elapsed Time (Hours)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ActualElapsedTimeInMins",
+      "label": "Actual Elapsed Time (Mins)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BusinessHoursId",
+      "label": "Business Hours ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "BusinessHours"
+      ],
+      "relationshipName": "BusinessHours"
+    },
+    {
+      "name": "CaseId",
+      "label": "Case ID",
+      "type": "Lookup",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Case"
+      ],
+      "relationshipName": "Case"
+    },
+    {
+      "name": "CompletionDate",
+      "label": "Completion Date",
+      "type": "DateTime",
+      "createable": false
+    },
+    {
+      "name": "ElapsedTimeInDays",
+      "label": "Elapsed Time (Days)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ElapsedTimeInHrs",
+      "label": "Elapsed Time (Hours)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ElapsedTimeInMins",
+      "label": "Elapsed Time (Mins)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsCompleted",
+      "label": "Completed",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsViolated",
+      "label": "Violation",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "StartDate",
+      "label": "Start Date",
+      "type": "DateTime",
+      "createable": false
+    },
+    {
+      "name": "StoppedTimeInDays",
+      "label": "Stopped Time (Days)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StoppedTimeInHrs",
+      "label": "Stopped Time (Hours)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StoppedTimeInMins",
+      "label": "Stopped Time (Mins)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TargetDate",
+      "label": "Target Date",
+      "type": "DateTime",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TargetResponseInDays",
+      "label": "Target Response (Days)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TargetResponseInHrs",
+      "label": "Target Response (Hours)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TargetResponseInMins",
+      "label": "Target Response (Mins)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeRemainingInDays",
+      "label": "Time Remaining (Days)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeRemainingInHrs",
+      "label": "Time Remaining (Hour:Min)",
+      "type": "Text",
+      "length": 10,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeRemainingInMins",
+      "label": "Time Remaining (Min:Sec)",
+      "type": "Text",
+      "length": 10,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeSinceTargetInDays",
+      "label": "Time Since Target (Days)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeSinceTargetInHrs",
+      "label": "Time Since Target (Hour:Min)",
+      "type": "Text",
+      "length": 10,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeSinceTargetInMins",
+      "label": "Time Since Target (Min:Sec)",
+      "type": "Text",
+      "length": 10,
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "name": "ContractLineItem",
+  "label": "Contract Line Item",
+  "labelPlural": "Contract Line Items",
+  "keyPrefix": "811",
+  "keyPrefixSource": "de-describe",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "AssetId",
+      "label": "Asset ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Asset"
+      ],
+      "relationshipName": "Asset"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "Discount",
+      "label": "Discount",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
+    },
+    {
+      "name": "EndDate",
+      "label": "End Date",
+      "type": "Date"
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "Date",
+      "createable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "Date",
+      "createable": false
+    },
+    {
+      "name": "LineItemNumber",
+      "label": "Line Item Number",
+      "type": "AutoNumber",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
+    },
+    {
+      "name": "ListPrice",
+      "label": "List Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LocationId",
+      "label": "Location ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Location"
+      ],
+      "relationshipName": "Location"
+    },
+    {
+      "name": "ParentContractLineItemId",
+      "label": "Contract Line Item ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "ContractLineItem"
+      ],
+      "relationshipName": "ParentContractLineItem"
+    },
+    {
+      "name": "PricebookEntryId",
+      "label": "Price Book Entry ID",
+      "type": "Lookup",
+      "nillable": false,
+      "referenceTo": [
+        "PricebookEntry"
+      ],
+      "relationshipName": "PricebookEntry"
+    },
+    {
+      "name": "Product2Id",
+      "label": "Product ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2"
+    },
+    {
+      "name": "Quantity",
+      "label": "Quantity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "nillable": false
+    },
+    {
+      "name": "RootContractLineItemId",
+      "label": "Contract Line Item ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "ContractLineItem"
+      ],
+      "relationshipName": "RootContractLineItem"
+    },
+    {
+      "name": "ServiceContractId",
+      "label": "Service Contract ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "ServiceContract"
+      ],
+      "relationshipName": "ServiceContract"
+    },
+    {
+      "name": "StartDate",
+      "label": "Start Date",
+      "type": "Date"
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Subtotal",
+      "label": "Subtotal",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalPrice",
+      "label": "Total Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UnitPrice",
+      "label": "Sales Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "nillable": false
+    }
+  ]
+}

@@ -4,8 +4,9 @@
  * `orglet up` does it (reconcileKeyPrefixes -> migrate -> bootstrapOrg, cli/src/main.ts) and must keep every row.
  * Later phases extend EXPECTED_WARNINGS when their baseline change is meant to warn; they never weaken the row or
  * second-run assertions. Since Phase 9 the baseline grows additively: ADD COLUMN and ADD CONSTRAINT are expected,
- * rows are compared on their v1.0 columns, and CREATE/DROP TABLE, DROP COLUMN and ALTER COLUMN ... TYPE stay
- * forbidden. Runs on pglite by default and on Postgres 16 with ORGLET_DATABASE_URL.
+ * rows are compared on their v1.0 columns, and DROP TABLE, DROP COLUMN and ALTER COLUMN ... TYPE stay
+ * forbidden. Since Phase 10 the baseline also grows by new objects: CREATE TABLE is allowed for exactly the 18 Phase 10
+ * tables (NEW_TABLES) and stays forbidden for every v1.0 table. Runs on pglite by default and on Postgres 16 with ORGLET_DATABASE_URL.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -21,6 +22,8 @@ const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const V1_BASELINE = fileURLToPath(new URL("../../metadata/test/fixtures/baseline-v1.0/", import.meta.url));
 /** Warnings the current code is expected to print when upgrading the v1.0 fixture org. Phase 9 v2 baseline: none (every change is an ADD COLUMN or an FK the fixture rows satisfy). */
 const EXPECTED_WARNINGS: string[] = [];
+/** The tables of the 18 objects Phase 10 adds; the only CREATE TABLE statements the upgrade may emit. */
+const NEW_TABLES = ["accountcontactrelation", "accountteammember", "address", "casecontactrole", "casemilestone", "contentdocument", "contentversion", "contractlineitem", "emailmessage", "feeditem", "location", "opportunitycontactrole", "opportunitysplit", "opportunityteammember", "order", "orderitem", "quote", "quotelineitem"];
 const TABLES = ["account", "contact", "case", "group"] as const;
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
 
@@ -114,8 +117,11 @@ describe("upgrading a populated v1.0 database with the current code (MIGR-01)", 
     expect(prefixes.assignments).toEqual([]);
     expect(prefixes.warnings).toEqual([]);
     expect(migration.warnings).toEqual(EXPECTED_WARNINGS);
-    const FORBIDDEN = /^(CREATE TABLE|DROP TABLE|ALTER TABLE \S+ DROP COLUMN|ALTER TABLE \S+ ALTER COLUMN \S+ TYPE)/;
+    const FORBIDDEN = /^(DROP TABLE|ALTER TABLE \S+ DROP COLUMN|ALTER TABLE \S+ ALTER COLUMN \S+ TYPE)/;
     expect(migration.statements.filter((s) => FORBIDDEN.test(s))).toEqual([]);
+    const created = migration.statements.filter((s) => s.startsWith("CREATE TABLE")).map((s) => /^CREATE TABLE "[^"]+"\."([^"]+)"/.exec(s)?.[1]);
+    expect([...created].sort()).toEqual(NEW_TABLES);
+    expect(created.filter((t) => t !== undefined && ["account", "contact", "case", "group"].includes(t))).toEqual([]);
     // SC5 with the v2 baseline: the upgrade is additive, so new columns must actually be added (not a no-op by accident).
     expect(migration.statements.some((s) => /^ALTER TABLE \S+ ADD COLUMN /.test(s))).toBe(true);
     expect(await snapshot()).toEqual(before);

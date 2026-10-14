@@ -1,5 +1,5 @@
 /**
- * SC3 proof for the v2 baseline (BASE2-02): a retrieve that declares every documented field of the 35 standard objects
+ * SC3 proof for the v2 baseline (BASE2-02): a retrieve that declares every documented field of the standard objects
  * loads with no UNSUPPORTED:standard-field except the fields the generator itself reports as skipped (unsupported type,
  * or a reference target outside the object list), and that skipped set stays within the ratio Johan accepted at the
  * 09-06 checkpoint. Runs in memory on the committed inputs plus a temp SFDX project; no network.
@@ -18,6 +18,7 @@ const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
  * Documented skips Johan accepted at the 09-06 checkpoint: 83/818 = 0.1015 assuming all 13 name-rule fields were
  * documented; Product2.RecordTypeId is field_reference-only, so the documented count is 84/818 = 0.1027 (the raw
  * ratio 99/818 = 12.1 % matches the decision exactly). Bound rounded up to three decimals; lowering it is a decision.
+ * Phase 10 (53 objects, 48 Phase 10 hand lookups): observed 122/1410 = 0.0865.
  */
 const SKIP_RATIO_MAX = 0.103;
 // The loader adds these (standard/README.md); matched lower-cased because Postgres columns are.
@@ -60,8 +61,8 @@ afterAll(async () => {
   await rm(projectDir, { recursive: true, force: true });
 });
 
-describe("documented fields of the 35 standard objects (SC3)", () => {
-  it("a retrieve using every documented field of the 35 objects reports no UNSUPPORTED:standard-field outside the generator's reported skips", () => {
+describe("documented fields of the standard objects in objects.json (SC3)", () => {
+  it("a retrieve using every documented field of the standard objects in objects.json reports no UNSUPPORTED:standard-field outside the generator's reported skips", () => {
     expect(written.size).toBeGreaterThan(1000);
     const skipped = [...full.report.skipped.fieldType, ...full.report.skipped.referenceTarget].map(fieldOf).filter((f) => written.has(f)).sort(codeUnit);
     const reported = result.diagnostics.filter((d) => d.area === "standard-field").map((d) => `${d.object}.${d.field}`).sort(codeUnit);

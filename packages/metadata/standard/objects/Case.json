@@ -148,6 +148,17 @@
       "relationshipName": "Entitlement"
     },
     {
+      "name": "FeedItemId",
+      "label": "Feed Item ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "FeedItem"
+      ],
+      "relationshipName": "FeedItem",
+      "featureGated": true
+    },
+    {
       "name": "HasCommentsUnreadByOwner",
       "label": "Has Comments Unread By Owner",
       "type": "Checkbox",

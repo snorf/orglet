@@ -8,7 +8,7 @@ const V1_BASELINE = fileURLToPath(new URL("../test/fixtures/baseline-v1.0/", imp
 
 const SYSTEM_FIELDS = ["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"];
 /** Objects the Object Reference gives no name-equivalent field (D-02); adding one must be a conscious act. */
-const NO_NAME_FIELD = ["OpportunityHistory"];
+const NO_NAME_FIELD = ["AccountContactRelation", "AccountTeamMember", "CaseContactRole", "CaseMilestone", "FeedItem", "OpportunityContactRole", "OpportunityHistory"];
 /** 03-RESEARCH.md Fact Table as amended by CONTEXT D-03a. extra = fields beyond system fields and OwnerId. */
 const THIN: Record<
   string,
@@ -676,8 +676,8 @@ describe("owner targets and feature-gated fields in the baseline (D-09, D-11)", 
   it("each owned standard object's OwnerId targets follow its Object Reference entry (D-11)", () => {
     // BASE2-04: User-only where the Object Reference states only User (Event: Calendar is not modelled, D-12); User and Group
     // where it states both (ServiceContract and Group by override, locked decisions 3 and 4).
-    const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "Contract", "Event", "Individual", "Opportunity"];
-    const USER_AND_GROUP = ["Case", "Group", "Lead", "OperatingHours", "ServiceAppointment", "ServiceContract", "SocialPost", "Task"];
+    const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "ContentDocument", "ContentVersion", "Contract", "Event", "Individual", "Opportunity"];
+    const USER_AND_GROUP = ["Case", "Group", "Lead", "Location", "OperatingHours", "Order", "ServiceAppointment", "ServiceContract", "SocialPost", "Task"];
     const schema = buildOrgSchema(real).schema;
     for (const o of USER_ONLY) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User"]);
     for (const o of USER_AND_GROUP) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User", "Group"]);

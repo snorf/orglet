@@ -1,0 +1,72 @@
+{
+  "name": "OpportunityTeamMember",
+  "label": "Opportunity Team Member",
+  "labelPlural": "Opportunity Team",
+  "keyPrefix": "00q",
+  "keyPrefixSource": "de-describe",
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "Name",
+      "label": "Opportunity Team Member Name",
+      "type": "Text",
+      "length": 361,
+      "createable": false,
+      "updateable": false,
+      "nameField": true
+    },
+    {
+      "name": "OpportunityAccessLevel",
+      "label": "Opportunity Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OpportunityId",
+      "label": "Opportunity ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity"
+    },
+    {
+      "name": "PhotoURL",
+      "label": "Photo URL",
+      "type": "Url",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "TeamMemberRole",
+      "label": "Team Role",
+      "type": "Picklist"
+    },
+    {
+      "name": "Title",
+      "label": "Title",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserId",
+      "label": "User ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "User"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "name": "AccountTeamMember",
+  "label": "Account Team Member",
+  "labelPlural": "Account Teams",
+  "keyPrefix": "01M",
+  "keyPrefixSource": "de-describe",
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "AccountAccessLevel",
+      "label": "Account Access Level",
+      "type": "Picklist"
+    },
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Account"
+    },
+    {
+      "name": "CaseAccessLevel",
+      "label": "Case Access Level",
+      "type": "Picklist"
+    },
+    {
+      "name": "ContactAccessLevel",
+      "label": "Contact Access Level",
+      "type": "Picklist"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency Iso Code",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OpportunityAccessLevel",
+      "label": "Opportunity Access Level",
+      "type": "Picklist"
+    },
+    {
+      "name": "PhotoURL",
+      "label": "Photo URL",
+      "type": "Url",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "TeamMemberRole",
+      "label": "Team Member Role",
+      "type": "Picklist"
+    },
+    {
+      "name": "Title",
+      "label": "Title",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserId",
+      "label": "User ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "User"
+    }
+  ]
+}

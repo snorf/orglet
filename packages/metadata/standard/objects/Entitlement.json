@@ -50,6 +50,17 @@
       "updateable": false
     },
     {
+      "name": "ContractLineItemId",
+      "label": "Contract Line Item ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "ContractLineItem"
+      ],
+      "relationshipName": "ContractLineItem"
+    },
+    {
       "name": "CurrencyIsoCode",
       "label": "Currency ISO Code",
       "type": "Picklist",
@@ -80,6 +91,15 @@
       "label": "Last Viewed Date",
       "type": "Date",
       "createable": false
+    },
+    {
+      "name": "LocationID",
+      "label": "Location ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Location"
+      ],
+      "relationshipName": "Location"
     },
     {
       "name": "Name",

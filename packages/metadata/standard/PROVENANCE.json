@@ -12,17 +12,53 @@
       "v1": 23,
       "verified": 265
     },
+    "AccountContactRelation": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 8,
+      "guessed": 1,
+      "override": 4,
+      "sdkOnly": 7,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 19
+    },
+    "AccountTeamMember": {
+      "docOnly": 0,
+      "featureGated": 1,
+      "fields": 10,
+      "guessed": 12,
+      "override": 4,
+      "sdkOnly": 0,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 22
+    },
+    "Address": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 24,
+      "guessed": 4,
+      "override": 7,
+      "sdkOnly": 54,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 30
+    },
     "Asset": {
       "docOnly": 0,
       "featureGated": 14,
-      "fields": 68,
+      "fields": 69,
       "guessed": 34,
-      "override": 0,
-      "sdkOnly": 83,
+      "override": 2,
+      "sdkOnly": 84,
       "skippedFieldType": 0,
-      "skippedReferenceTarget": 5,
+      "skippedReferenceTarget": 4,
       "v1": 20,
-      "verified": 143
+      "verified": 144
     },
     "BusinessHours": {
       "docOnly": 0,
@@ -86,15 +122,39 @@
     },
     "Case": {
       "docOnly": 0,
-      "featureGated": 3,
-      "fields": 49,
-      "guessed": 13,
-      "override": 0,
+      "featureGated": 4,
+      "fields": 50,
+      "guessed": 14,
+      "override": 2,
       "sdkOnly": 39,
       "skippedFieldType": 0,
-      "skippedReferenceTarget": 6,
+      "skippedReferenceTarget": 5,
       "v1": 53,
-      "verified": 111
+      "verified": 114
+    },
+    "CaseContactRole": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 3,
+      "guessed": 0,
+      "override": 0,
+      "sdkOnly": 3,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 10
+    },
+    "CaseMilestone": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 25,
+      "guessed": 28,
+      "override": 4,
+      "sdkOnly": 47,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 1,
+      "v1": 0,
+      "verified": 61
     },
     "Contact": {
       "docOnly": 4,
@@ -108,17 +168,53 @@
       "v1": 31,
       "verified": 166
     },
+    "ContentDocument": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 20,
+      "guessed": 5,
+      "override": 3,
+      "sdkOnly": 23,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 2,
+      "v1": 0,
+      "verified": 69
+    },
+    "ContentVersion": {
+      "docOnly": 0,
+      "featureGated": 2,
+      "fields": 40,
+      "guessed": 17,
+      "override": 4,
+      "sdkOnly": 53,
+      "skippedFieldType": 1,
+      "skippedReferenceTarget": 2,
+      "v1": 0,
+      "verified": 111
+    },
     "Contract": {
       "docOnly": 0,
       "featureGated": 0,
-      "fields": 54,
-      "guessed": 20,
+      "fields": 55,
+      "guessed": 21,
       "override": 0,
       "sdkOnly": 64,
       "skippedFieldType": 0,
-      "skippedReferenceTarget": 4,
+      "skippedReferenceTarget": 3,
       "v1": 18,
-      "verified": 115
+      "verified": 118
+    },
+    "ContractLineItem": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 21,
+      "guessed": 4,
+      "override": 21,
+      "sdkOnly": 25,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 46
     },
     "DandBCompany": {
       "docOnly": 0,
@@ -132,17 +228,29 @@
       "v1": 2,
       "verified": 180
     },
+    "EmailMessage": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 38,
+      "guessed": 4,
+      "override": 2,
+      "sdkOnly": 48,
+      "skippedFieldType": 4,
+      "skippedReferenceTarget": 5,
+      "v1": 0,
+      "verified": 93
+    },
     "Entitlement": {
       "docOnly": 0,
       "featureGated": 0,
-      "fields": 17,
-      "guessed": 8,
-      "override": 4,
-      "sdkOnly": 21,
+      "fields": 19,
+      "guessed": 9,
+      "override": 8,
+      "sdkOnly": 22,
       "skippedFieldType": 0,
-      "skippedReferenceTarget": 8,
+      "skippedReferenceTarget": 6,
       "v1": 3,
-      "verified": 32
+      "verified": 36
     },
     "Event": {
       "docOnly": 0,
@@ -167,6 +275,18 @@
       "skippedReferenceTarget": 4,
       "v1": 1,
       "verified": 42
+    },
+    "FeedItem": {
+      "docOnly": 0,
+      "featureGated": 1,
+      "fields": 24,
+      "guessed": 15,
+      "override": 3,
+      "sdkOnly": 23,
+      "skippedFieldType": 1,
+      "skippedReferenceTarget": 4,
+      "v1": 0,
+      "verified": 74
     },
     "Group": {
       "docOnly": 0,
@@ -216,6 +336,18 @@
       "v1": 53,
       "verified": 139
     },
+    "Location": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 59,
+      "guessed": 26,
+      "override": 9,
+      "sdkOnly": 139,
+      "skippedFieldType": 1,
+      "skippedReferenceTarget": 2,
+      "v1": 0,
+      "verified": 60
+    },
     "OperatingHours": {
       "docOnly": 0,
       "featureGated": 0,
@@ -240,6 +372,18 @@
       "v1": 31,
       "verified": 146
     },
+    "OpportunityContactRole": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 6,
+      "guessed": 1,
+      "override": 0,
+      "sdkOnly": 5,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 20
+    },
     "OpportunityHistory": {
       "docOnly": 0,
       "featureGated": 0,
@@ -263,6 +407,54 @@
       "skippedReferenceTarget": 2,
       "v1": 12,
       "verified": 87
+    },
+    "OpportunitySplit": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 8,
+      "guessed": 12,
+      "override": 7,
+      "sdkOnly": 0,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 2,
+      "v1": 0,
+      "verified": 26
+    },
+    "OpportunityTeamMember": {
+      "docOnly": 0,
+      "featureGated": 1,
+      "fields": 7,
+      "guessed": 2,
+      "override": 5,
+      "sdkOnly": 8,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 20
+    },
+    "Order": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 87,
+      "guessed": 20,
+      "override": 17,
+      "sdkOnly": 133,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 6,
+      "v1": 0,
+      "verified": 203
+    },
+    "OrderItem": {
+      "docOnly": 0,
+      "featureGated": 0,
+      "fields": 96,
+      "guessed": 45,
+      "override": 13,
+      "sdkOnly": 173,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 14,
+      "v1": 0,
+      "verified": 225
     },
     "Organization": {
       "docOnly": 3,
@@ -323,6 +515,30 @@
       "skippedReferenceTarget": 0,
       "v1": 21,
       "verified": 23
+    },
+    "Quote": {
+      "docOnly": 0,
+      "featureGated": 2,
+      "fields": 94,
+      "guessed": 33,
+      "override": 22,
+      "sdkOnly": 171,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 3,
+      "v1": 0,
+      "verified": 197
+    },
+    "QuoteLineItem": {
+      "docOnly": 0,
+      "featureGated": 3,
+      "fields": 81,
+      "guessed": 36,
+      "override": 16,
+      "sdkOnly": 102,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 13,
+      "v1": 0,
+      "verified": 230
     },
     "RecordType": {
       "docOnly": 0,
@@ -425,6 +641,7 @@
     "BusinessHours.TimeZoneSidKey",
     "BusinessProcess.TableEnumOrId",
     "CallCenter.InternalName",
+    "Contract.SourceQuoteId",
     "DandBCompany.DunsNumber",
     "Entitlement.AccountId",
     "OperatingHours.TimeZone",
@@ -568,6 +785,9 @@
     "Account.Suffix": [
       "person-accounts"
     ],
+    "AccountTeamMember.PhotoURL": [
+      "chatter"
+    ],
     "Asset.ConsequenceOfFailure": [
       "field-service"
     ],
@@ -622,14 +842,27 @@
     "Case.CreatorSmallPhotoUrl": [
       "chatter"
     ],
+    "Case.FeedItemId": [
+      "chatter"
+    ],
     "Contact.IsPersonAccount": [
       "person-accounts"
     ],
     "Contact.JigsawContactId": [
       "data-com"
     ],
+    "ContentVersion.ContentLocation": [
+      "social"
+    ],
+    "ContentVersion.Origin": [
+      "chatter"
+    ],
     "Event.GroupEventType": [
       "person-accounts"
+    ],
+    "FeedItem.Type": [
+      "chatter",
+      "social"
     ],
     "Lead.Division": [
       "enabled-phrase"
@@ -643,10 +876,28 @@
     "Opportunity.PartnerAccountId": [
       "enabled-phrase"
     ],
+    "OpportunityTeamMember.PhotoURL": [
+      "chatter"
+    ],
     "Product2.ConfigureDuringSale": [
       "enabled-phrase"
     ],
     "Product2.IsSoldOnlyWithOtherProds": [
+      "enabled-phrase"
+    ],
+    "Quote.TotalPriceWithTax": [
+      "enabled-phrase"
+    ],
+    "Quote.TotalTaxAmount": [
+      "enabled-phrase"
+    ],
+    "QuoteLineItem.BillingFrequency": [
+      "enabled-phrase"
+    ],
+    "QuoteLineItem.EndDate": [
+      "enabled-phrase"
+    ],
+    "QuoteLineItem.ParentQuoteLineItemId": [
       "enabled-phrase"
     ],
     "ServiceAppointment.SchedEndTime": [
@@ -1346,6 +1597,204 @@
       "keyPrefix": "sdk-fixture",
       "ownerTargets": "verified"
     },
+    "AccountContactRelation": {
+      "fields": {
+        "AccountContactRelationshipCurrency": {
+          "label": "guessed"
+        },
+        "AccountId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ContactId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "EndDate": {
+          "label": "sdk-only"
+        },
+        "IsActive": {
+          "label": "sdk-only"
+        },
+        "IsDirect": {
+          "label": "sdk-only"
+        },
+        "Roles": {
+          "label": "sdk-only"
+        },
+        "StartDate": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
+    "AccountTeamMember": {
+      "fields": {
+        "AccountAccessLevel": {
+          "label": "guessed"
+        },
+        "AccountId": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "CaseAccessLevel": {
+          "label": "guessed"
+        },
+        "ContactAccessLevel": {
+          "label": "guessed"
+        },
+        "CurrencyIsoCode": {
+          "label": "guessed"
+        },
+        "OpportunityAccessLevel": {
+          "label": "guessed"
+        },
+        "PhotoURL": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "TeamMemberRole": {
+          "label": "guessed"
+        },
+        "Title": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "UserId": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
+    "Address": {
+      "fields": {
+        "Address": {
+          "label": "sdk-only"
+        },
+        "AddressType": {
+          "label": "sdk-only"
+        },
+        "City": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Country": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "CurrencyIsoCode": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "DrivingDirections": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Floor": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "GeocodeAccuracy": {
+          "label": "sdk-only"
+        },
+        "HouseNumberSupplement": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "LastReferencedDate": {
+          "label": "sdk-only"
+        },
+        "LastViewedDate": {
+          "label": "sdk-only"
+        },
+        "Latitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "LocationType": {
+          "label": "sdk-only"
+        },
+        "Longitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Name": {
+          "createable": "override",
+          "defaultedOnCreate": "override",
+          "displayFormat": "override",
+          "idLookup": "override",
+          "label": "sdk-only",
+          "nameField": "override",
+          "type": "override",
+          "updateable": "override"
+        },
+        "ParentId": {
+          "label": "sdk-only"
+        },
+        "PostalCode": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "State": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Street": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "StreetSupplement1": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "StreetSupplement2": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TimeZone": {
+          "label": "sdk-only"
+        },
+        "UnitNumber": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
     "Asset": {
       "fields": {
         "AccountId": {
@@ -1466,6 +1915,11 @@
         },
         "LifecycleStartDate": {
           "label": "sdk-only"
+        },
+        "LocationId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "Longitude": {
           "label": "sdk-only",
@@ -2231,6 +2685,11 @@
           "relationshipName": "v1.0",
           "type": "v1.0"
         },
+        "FeedItemId": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
         "HasCommentsUnreadByOwner": {
           "defaultValue": "v1.0",
           "label": "guessed"
@@ -2363,6 +2822,158 @@
       },
       "keyPrefix": "unverified",
       "ownerTargets": "verified"
+    },
+    "CaseContactRole": {
+      "fields": {
+        "CasesId": {
+          "label": "sdk-only"
+        },
+        "ContactId": {
+          "label": "sdk-only"
+        },
+        "Role": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
+    "CaseMilestone": {
+      "fields": {
+        "ActualElapsedTimeInDays": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ActualElapsedTimeInHrs": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ActualElapsedTimeInMins": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "BusinessHoursId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "CaseId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "CompletionDate": {
+          "label": "sdk-only"
+        },
+        "ElapsedTimeInDays": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ElapsedTimeInHrs": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ElapsedTimeInMins": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "IsCompleted": {
+          "label": "sdk-only"
+        },
+        "IsViolated": {
+          "label": "sdk-only"
+        },
+        "StartDate": {
+          "label": "sdk-only"
+        },
+        "StoppedTimeInDays": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "StoppedTimeInHrs": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "StoppedTimeInMins": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TargetDate": {
+          "label": "sdk-only"
+        },
+        "TargetResponseInDays": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "TargetResponseInHrs": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "TargetResponseInMins": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "TimeRemainingInDays": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "TimeRemainingInHrs": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "TimeRemainingInMins": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "TimeSinceTargetInDays": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "TimeSinceTargetInHrs": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "TimeSinceTargetInMins": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
     },
     "Contact": {
       "fields": {
@@ -2687,6 +3298,247 @@
       "keyPrefix": "unverified",
       "ownerTargets": "verified"
     },
+    "ContentDocument": {
+      "fields": {
+        "ArchivedById": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ArchivedDate": {
+          "label": "sdk-only"
+        },
+        "ContentModifiedDate": {
+          "label": "sdk-only"
+        },
+        "ContentSize": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ContentSizeLong": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Division": {
+          "label": "guessed"
+        },
+        "FileExtension": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "FileType": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "IsArchived": {
+          "label": "sdk-only"
+        },
+        "IsInternalOnly": {
+          "label": "sdk-only"
+        },
+        "LastReferencedDate": {
+          "label": "sdk-only"
+        },
+        "LastViewedDate": {
+          "label": "sdk-only"
+        },
+        "LatestPublishedVersionId": {
+          "label": "sdk-only"
+        },
+        "MalwareScanDate": {
+          "label": "sdk-only"
+        },
+        "MalwareScanStatus": {
+          "label": "sdk-only"
+        },
+        "PublishStatus": {
+          "label": "sdk-only"
+        },
+        "SharingOption": {
+          "label": "sdk-only"
+        },
+        "SharingPrivacy": {
+          "label": "sdk-only"
+        },
+        "Title": {
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "nameField": "override"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override",
+      "ownerTargets": "verified"
+    },
+    "ContentVersion": {
+      "fields": {
+        "Checksum": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ContentDocumentId": {
+          "label": "sdk-only"
+        },
+        "ContentLocation": {
+          "label": "sdk-only"
+        },
+        "ContentModifiedById": {
+          "label": "sdk-only"
+        },
+        "ContentModifiedDate": {
+          "label": "sdk-only"
+        },
+        "ContentSize": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ContentSizeLong": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ContentUrl": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "CurrencyIsoCode": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Division": {
+          "label": "guessed"
+        },
+        "ExternalDataSourceId": {
+          "label": "sdk-only"
+        },
+        "ExternalDocumentInfo1": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ExternalDocumentInfo2": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "FeaturedContentBoost": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "FeaturedContentDate": {
+          "label": "sdk-only"
+        },
+        "FileExtension": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "FileType": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "FirstPublishLocationId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "sdk-only"
+        },
+        "IsAssetEnabled": {
+          "label": "sdk-only"
+        },
+        "IsLatest": {
+          "label": "sdk-only"
+        },
+        "IsMajorVersion": {
+          "label": "sdk-only"
+        },
+        "Language": {
+          "label": "guessed"
+        },
+        "MalwareScanDate": {
+          "label": "sdk-only"
+        },
+        "MalwareScanStatus": {
+          "label": "sdk-only"
+        },
+        "NegativeRatingCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Origin": {
+          "label": "sdk-only"
+        },
+        "PathOnClient": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "PositiveRatingCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PublishStatus": {
+          "label": "sdk-only"
+        },
+        "RatingCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ReasonForChange": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "RecordTypeId": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "SharingOption": {
+          "label": "sdk-only"
+        },
+        "SharingPrivacy": {
+          "label": "sdk-only"
+        },
+        "TagCsv": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "TextPreview": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Title": {
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "nameField": "override"
+        },
+        "VersionDataURL": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "VersionNumber": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        }
+      },
+      "flags": "override",
+      "keyPrefix": "de-describe",
+      "labels": "override",
+      "ownerTargets": "verified"
+    },
     "Contract": {
       "fields": {
         "AccountId": {
@@ -2879,6 +3731,9 @@
           "label": "sdk-only",
           "length": "sdk-only"
         },
+        "SourceQuoteId": {
+          "label": "guessed"
+        },
         "SpecialTerms": {
           "label": "sdk-only",
           "length": "sdk-only"
@@ -2902,6 +3757,105 @@
       },
       "keyPrefix": "unverified",
       "ownerTargets": "verified"
+    },
+    "ContractLineItem": {
+      "fields": {
+        "AssetId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "CurrencyIsoCode": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Discount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "EndDate": {
+          "label": "sdk-only"
+        },
+        "LastReferencedDate": {
+          "label": "sdk-only"
+        },
+        "LastViewedDate": {
+          "label": "sdk-only"
+        },
+        "LineItemNumber": {
+          "createable": "override",
+          "defaultedOnCreate": "override",
+          "displayFormat": "override",
+          "idLookup": "override",
+          "label": "sdk-only",
+          "nameField": "override",
+          "type": "override",
+          "updateable": "override"
+        },
+        "ListPrice": {
+          "label": "sdk-only"
+        },
+        "LocationId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ParentContractLineItemId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "PricebookEntryId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "Product2Id": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "Quantity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "RootContractLineItemId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ServiceContractId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "StartDate": {
+          "label": "sdk-only"
+        },
+        "Status": {
+          "label": "sdk-only"
+        },
+        "Subtotal": {
+          "label": "sdk-only"
+        },
+        "TotalPrice": {
+          "label": "sdk-only"
+        },
+        "UnitPrice": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
     },
     "DandBCompany": {
       "fields": {
@@ -3300,6 +4254,143 @@
       },
       "keyPrefix": "unverified"
     },
+    "EmailMessage": {
+      "fields": {
+        "AttachmentIds": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "AutomationType": {
+          "label": "sdk-only"
+        },
+        "BccAddress": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "CcAddress": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ClientThreadIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Division": {
+          "label": "guessed"
+        },
+        "FirstLinkClickedDate": {
+          "label": "sdk-only"
+        },
+        "FirstOpenedDate": {
+          "label": "sdk-only"
+        },
+        "FromAddress": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "FromName": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "HasAttachment": {
+          "label": "sdk-only"
+        },
+        "HasReply": {
+          "label": "sdk-only"
+        },
+        "Headers": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "HtmlBody": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Incoming": {
+          "label": "sdk-only"
+        },
+        "IsBounced": {
+          "label": "guessed"
+        },
+        "IsClientManaged": {
+          "label": "sdk-only"
+        },
+        "IsExternallyVisible": {
+          "label": "sdk-only"
+        },
+        "IsLinkClicked": {
+          "label": "sdk-only"
+        },
+        "IsLinkTracked": {
+          "label": "sdk-only"
+        },
+        "IsOpened": {
+          "label": "guessed"
+        },
+        "IsPrivateDraft": {
+          "label": "guessed"
+        },
+        "IsTracked": {
+          "label": "sdk-only"
+        },
+        "LastLinkClickedDate": {
+          "label": "sdk-only"
+        },
+        "LastOpenedDate": {
+          "label": "sdk-only"
+        },
+        "MessageDate": {
+          "label": "sdk-only"
+        },
+        "MessageIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Name": {
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "nameField": "override"
+        },
+        "ParentId": {
+          "label": "sdk-only"
+        },
+        "RelatedToId": {
+          "label": "sdk-only",
+          "referenceTo": "override"
+        },
+        "ReplyToEmailMessageId": {
+          "label": "sdk-only"
+        },
+        "Source": {
+          "label": "sdk-only"
+        },
+        "Status": {
+          "label": "sdk-only"
+        },
+        "Subject": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "TextBody": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ThreadIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ToAddress": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ValidatedFromAddress": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
     "Entitlement": {
       "fields": {
         "AccountId": {
@@ -3319,6 +4410,11 @@
           "precision": "guessed",
           "scale": "guessed"
         },
+        "ContractLineItemId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
         "CurrencyIsoCode": {
           "createable": "sdk-only",
           "label": "sdk-only",
@@ -3336,6 +4432,11 @@
         },
         "LastViewedDate": {
           "label": "sdk-only"
+        },
+        "LocationID": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "Name": {
           "groupable": "v1.0",
@@ -3629,6 +4730,102 @@
         }
       },
       "keyPrefix": "unverified"
+    },
+    "FeedItem": {
+      "fields": {
+        "Body": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "CommentCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ContentDescription": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "ContentFileName": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "ContentSize": {
+          "label": "guessed",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ContentType": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "HasContent": {
+          "label": "sdk-only"
+        },
+        "HasFeedEntity": {
+          "label": "sdk-only"
+        },
+        "HasLink": {
+          "label": "sdk-only"
+        },
+        "HasVerifiedComment": {
+          "label": "sdk-only"
+        },
+        "InsertedById": {
+          "label": "sdk-only"
+        },
+        "IsClosed": {
+          "label": "sdk-only"
+        },
+        "IsRichText": {
+          "label": "sdk-only"
+        },
+        "LastEditById": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "LastEditDate": {
+          "label": "sdk-only"
+        },
+        "LikeCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "LinkUrl": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "NetworkScope": {
+          "label": "sdk-only"
+        },
+        "ParentId": {
+          "label": "sdk-only",
+          "referenceTo": "override"
+        },
+        "Revision": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Status": {
+          "label": "sdk-only"
+        },
+        "Title": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Type": {
+          "label": "sdk-only"
+        },
+        "Visibility": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
     },
     "Group": {
       "fields": {
@@ -4092,6 +5289,306 @@
       "keyPrefix": "unverified",
       "ownerTargets": "verified"
     },
+    "Location": {
+      "fields": {
+        "AccountId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ActivationDate": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "AssignedFoCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "BusinessHoursId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "CloseDate": {
+          "label": "sdk-only"
+        },
+        "ConstructionEndDate": {
+          "label": "sdk-only"
+        },
+        "ConstructionStartDate": {
+          "label": "sdk-only"
+        },
+        "CurrencyIsoCode": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "DefaultPickupTime": {
+          "label": "sdk-only"
+        },
+        "DefaultProcessingTime": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "DefaultProcessingTimeUnit": {
+          "label": "sdk-only"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "DistributionArea": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "DrivingDirections": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "EarliestPickupTimeOffset": {
+          "label": "guessed",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Email": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ExternalReference": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Fax": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "FoCapacity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "FulfillingBusinessHoursId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "GrossFloorArea": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "GrossFloorAreaUom": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "HasLifeSupport": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "HasSensitiveLoad": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "IsEligibleForPickup": {
+          "label": "guessed"
+        },
+        "IsInventoryLocation": {
+          "label": "sdk-only"
+        },
+        "IsKeyAtPremises": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "IsMobile": {
+          "label": "sdk-only"
+        },
+        "IsOkToEnter": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "IsSupplyGuaranteed": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "LastReferencedDate": {
+          "label": "sdk-only"
+        },
+        "LastViewedDate": {
+          "label": "sdk-only"
+        },
+        "LatestPickupTimeOffset": {
+          "label": "guessed",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Latitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "LocationLevel": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "LocationType": {
+          "label": "sdk-only"
+        },
+        "Longitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "MeterReadInstructions": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "MeterReadWarning": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Mobile": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Name": {
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "nameField": "override"
+        },
+        "NumberOfOccupants": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "OpenDate": {
+          "label": "sdk-only"
+        },
+        "ParentLocationId": {
+          "label": "sdk-only"
+        },
+        "Phone": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "PickupProcessingTime": {
+          "label": "guessed",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PossessionDate": {
+          "label": "sdk-only"
+        },
+        "PrimaryPropertyFunction": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Priority": {
+          "label": "sdk-only"
+        },
+        "PropertyOwnerAccountId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "RemodelEndDate": {
+          "label": "sdk-only"
+        },
+        "RemodelStartDate": {
+          "label": "sdk-only"
+        },
+        "RootLocationId": {
+          "label": "sdk-only"
+        },
+        "ShouldSyncWithOci": {
+          "label": "sdk-only"
+        },
+        "ShouldTrackFoCapacity": {
+          "label": "sdk-only"
+        },
+        "Status": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "SupplyGuaranteeReason": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TimeZone": {
+          "label": "sdk-only"
+        },
+        "VisitorAddressId": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override",
+      "ownerTargets": "verified"
+    },
     "OperatingHours": {
       "fields": {
         "CurrencyIsoCode": {
@@ -4317,6 +5814,31 @@
       "keyPrefix": "unverified",
       "ownerTargets": "verified"
     },
+    "OpportunityContactRole": {
+      "fields": {
+        "ContactId": {
+          "label": "sdk-only"
+        },
+        "CurrencyIsoCode": {
+          "label": "sdk-only"
+        },
+        "Division": {
+          "label": "guessed"
+        },
+        "IsPrimary": {
+          "label": "sdk-only"
+        },
+        "OpportunityId": {
+          "label": "sdk-only"
+        },
+        "Role": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
     "OpportunityHistory": {
       "fields": {
         "Amount": {
@@ -4448,6 +5970,866 @@
         }
       },
       "keyPrefix": "unverified"
+    },
+    "OpportunitySplit": {
+      "fields": {
+        "ArchivedTerritoryName": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "HasOpportunityLineItemSplit": {
+          "label": "guessed"
+        },
+        "OpportunityId": {
+          "label": "guessed"
+        },
+        "Split": {
+          "createable": "override",
+          "defaultedOnCreate": "override",
+          "displayFormat": "override",
+          "idLookup": "override",
+          "label": "guessed",
+          "nameField": "override",
+          "type": "override",
+          "updateable": "override"
+        },
+        "SplitAmount": {
+          "label": "guessed"
+        },
+        "SplitNote": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "SplitOwnerId": {
+          "label": "guessed"
+        },
+        "SplitPercentage": {
+          "label": "guessed",
+          "precision": "guessed",
+          "scale": "guessed"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
+    "OpportunityTeamMember": {
+      "fields": {
+        "Name": {
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "nameField": "override"
+        },
+        "OpportunityAccessLevel": {
+          "label": "sdk-only"
+        },
+        "OpportunityId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "PhotoURL": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "TeamMemberRole": {
+          "label": "sdk-only"
+        },
+        "Title": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "UserId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
+    "Order": {
+      "fields": {
+        "AccountId": {
+          "label": "sdk-only"
+        },
+        "ActivatedById": {
+          "label": "sdk-only"
+        },
+        "ActivatedDate": {
+          "label": "sdk-only"
+        },
+        "AdjustmentDistributionLogic": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "AppliedDiscount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "AppliedDiscountAmount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "BillToContactId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "BillingAddress": {
+          "label": "sdk-only"
+        },
+        "BillingCity": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingCountry": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingCountryCode": {
+          "label": "guessed"
+        },
+        "BillingEmailAddress": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingGeocodeAccuracy": {
+          "label": "sdk-only"
+        },
+        "BillingLatitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "BillingLongitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "BillingPhoneNumber": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingPostalCode": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingState": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingStateCode": {
+          "label": "guessed"
+        },
+        "BillingStreet": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "CalculationStatus": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "CompanyAuthorizedById": {
+          "label": "sdk-only"
+        },
+        "CompanyAuthorizedDate": {
+          "label": "sdk-only"
+        },
+        "ContractId": {
+          "label": "sdk-only"
+        },
+        "CurrencyIsoCode": {
+          "label": "sdk-only"
+        },
+        "CustomerAuthorizedById": {
+          "label": "sdk-only"
+        },
+        "CustomerAuthorizedDate": {
+          "label": "sdk-only"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "DiscountPercent": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "EffectiveDate": {
+          "label": "sdk-only"
+        },
+        "EndDate": {
+          "label": "sdk-only"
+        },
+        "ExternalCustomerReference": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "GrandTotalAmount": {
+          "label": "sdk-only"
+        },
+        "IsReductionOrder": {
+          "label": "sdk-only"
+        },
+        "LastPricedDate": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "LastReferencedDate": {
+          "label": "sdk-only"
+        },
+        "LastViewedDate": {
+          "label": "sdk-only"
+        },
+        "Name": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "OpportunityId": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "OrchestrationSbmsStatus": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "OrderManagementReferenceIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "OrderNumber": {
+          "createable": "override",
+          "defaultedOnCreate": "override",
+          "displayFormat": "override",
+          "idLookup": "override",
+          "label": "sdk-only",
+          "nameField": "override",
+          "type": "override",
+          "updateable": "override"
+        },
+        "OrderReferenceNumber": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "OrderedDate": {
+          "label": "sdk-only"
+        },
+        "OriginalActionType": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "OriginalOrderId": {
+          "label": "sdk-only"
+        },
+        "PoDate": {
+          "label": "sdk-only"
+        },
+        "PoNumber": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Pricebook2Id": {
+          "label": "sdk-only"
+        },
+        "QuoteId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "RecordTypeId": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "RelatedOrderId": {
+          "label": "sdk-only"
+        },
+        "RelatedOrderType": {
+          "label": "sdk-only"
+        },
+        "ShipToContactId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ShippingAddress": {
+          "label": "sdk-only"
+        },
+        "ShippingCity": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingCountry": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingCountryCode": {
+          "label": "guessed"
+        },
+        "ShippingGeocodeAccuracy": {
+          "label": "sdk-only"
+        },
+        "ShippingLatitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ShippingLongitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ShippingPostalCode": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingState": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingStateCode": {
+          "label": "guessed"
+        },
+        "ShippingStreet": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Status": {
+          "label": "sdk-only"
+        },
+        "StatusCode": {
+          "label": "sdk-only"
+        },
+        "TaxLocaleType": {
+          "label": "sdk-only"
+        },
+        "TotalAdjDeliveryAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalAdjProductAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustedDeliveryAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustedDeliveryTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustedProductAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustedProductTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAmountOverride": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalDeliveryAdjDistAmount": {
+          "label": "sdk-only"
+        },
+        "TotalDeliveryAdjDistAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalDeliveryAdjDistTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalProductAdjDistAmount": {
+          "label": "sdk-only"
+        },
+        "TotalProductAdjDistAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalProductAdjDistTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalRoundedLineAmount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TransactionType": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Type": {
+          "label": "sdk-only"
+        },
+        "ValidationResult": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override",
+      "ownerTargets": "verified"
+    },
+    "OrderItem": {
+      "fields": {
+        "AdjustedLineAmount": {
+          "label": "sdk-only"
+        },
+        "AdjustedLineAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "AggregatedQuantity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "AvailableQuantity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "BatchIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingFrequency2": {
+          "label": "sdk-only"
+        },
+        "BillingReference2": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "CurrencyIsoCode": {
+          "label": "sdk-only"
+        },
+        "CustomProductName": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "DeliveryEstimationReference": {
+          "label": "guessed",
+          "length": "guessed"
+        },
+        "DeliveryEstimationTimeZone": {
+          "label": "guessed"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Discount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "DiscountAmount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "DoesAutomaticallyRenew": {
+          "label": "sdk-only"
+        },
+        "EarliestEstimatedDeliveryDate": {
+          "label": "guessed"
+        },
+        "EarliestEstimatedDeliveryTime": {
+          "label": "guessed"
+        },
+        "EffectiveGrantDate": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "EndDate": {
+          "label": "sdk-only"
+        },
+        "EndDateTime": {
+          "label": "sdk-only"
+        },
+        "EndQuantity": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "EndTime": {
+          "label": "sdk-only"
+        },
+        "GrossUnitPrice": {
+          "label": "sdk-only"
+        },
+        "IsOrderItemLocked": {
+          "label": "sdk-only"
+        },
+        "IsPrimarySegment": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "LastEstimatedDeliveryDate": {
+          "label": "guessed"
+        },
+        "LastEstimatedDeliveryTime": {
+          "label": "guessed"
+        },
+        "LineNumber": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ListPrice": {
+          "label": "sdk-only"
+        },
+        "ListPriceTotal": {
+          "label": "guessed"
+        },
+        "Margin": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "MarginAmount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "NetTotalPrice": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "NetUnitPrice": {
+          "label": "sdk-only"
+        },
+        "OrderId": {
+          "label": "sdk-only"
+        },
+        "OrderItemNumber": {
+          "createable": "override",
+          "defaultedOnCreate": "override",
+          "displayFormat": "override",
+          "idLookup": "override",
+          "label": "sdk-only",
+          "nameField": "override",
+          "type": "override",
+          "updateable": "override"
+        },
+        "OriginalOrderItemId": {
+          "label": "sdk-only"
+        },
+        "ParentOrderItemId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "PartnerDiscountPercent": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "PartnerUnitPrice": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "PeriodBoundary": {
+          "label": "sdk-only"
+        },
+        "PeriodBoundaryDay": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PeriodBoundaryStartMonth": {
+          "label": "sdk-only"
+        },
+        "PriceWaterfallIdentifier": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "PricebookEntryId": {
+          "label": "sdk-only"
+        },
+        "PricingTermCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PricingTransactionType": {
+          "label": "guessed"
+        },
+        "ProFormaBillingPeriodAmount": {
+          "label": "guessed"
+        },
+        "Product2Id": {
+          "label": "sdk-only"
+        },
+        "Quantity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "QuoteLineItemId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "RampIdentifier": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ReferencePrice": {
+          "label": "sdk-only"
+        },
+        "RelatedChangeIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "RelatedOrderItemID": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "RevenueCloudPackagingFlag": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "RoundedLineAmount": {
+          "label": "sdk-only"
+        },
+        "RoundedLineAmtWithTax": {
+          "label": "guessed"
+        },
+        "SegmentIdentifier": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "SegmentName": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "SegmentType": {
+          "label": "sdk-only"
+        },
+        "ServiceDate": {
+          "label": "sdk-only"
+        },
+        "ServiceDateTime": {
+          "label": "sdk-only"
+        },
+        "ServiceEndTimeZone": {
+          "label": "sdk-only"
+        },
+        "ServiceTime": {
+          "label": "sdk-only"
+        },
+        "StartQuantity": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "StartingPriceTotal": {
+          "label": "guessed"
+        },
+        "StartingUnitPriceSource": {
+          "label": "guessed"
+        },
+        "Status": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "SubscriptionTerm": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "SupplementalChangeType": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustedLineTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustment": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalAdjustmentAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustmentAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustmentDistAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustmentDistAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustmentDistTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustmentTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalAmtWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalCost": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalLineAdjustmentAmount": {
+          "label": "sdk-only"
+        },
+        "TotalLineAdjustmentAmtWithTax": {
+          "label": "guessed"
+        },
+        "TotalLineAdjustmentTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalLineAmount": {
+          "label": "sdk-only"
+        },
+        "TotalLineTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TotalMargin": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalMarginAmount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalPrice": {
+          "label": "sdk-only"
+        },
+        "TotalTaxAmount": {
+          "label": "sdk-only"
+        },
+        "Type": {
+          "label": "sdk-only"
+        },
+        "TypeCode": {
+          "label": "sdk-only"
+        },
+        "UnitCost": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "UnitPrice": {
+          "label": "sdk-only"
+        },
+        "UnitPriceUplift": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ValidationResult": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
     },
     "Organization": {
       "fields": {
@@ -11342,6 +13724,750 @@
       },
       "keyPrefix": "unverified"
     },
+    "Quote": {
+      "fields": {
+        "AccountId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "AdditionalAddress": {
+          "label": "sdk-only"
+        },
+        "AdditionalCity": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "AdditionalCountry": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "AdditionalCountryCode": {
+          "label": "guessed"
+        },
+        "AdditionalGeocodeAccuracy": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "AdditionalLatitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "AdditionalLongitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "AdditionalName": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "AdditionalPostalCode": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "AdditionalState": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "AdditionalStateCode": {
+          "label": "guessed"
+        },
+        "AdditionalStreet": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "AdjustmentDistributionLogic": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "AppliedDiscount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "AppliedDiscountAmount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "BillToContactId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "BillingAddress": {
+          "label": "sdk-only"
+        },
+        "BillingCity": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingCountry": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingCountryCode": {
+          "label": "guessed"
+        },
+        "BillingGeocodeAccuracy": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "BillingLatitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "BillingLongitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "BillingName": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingPostalCode": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingState": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingStateCode": {
+          "label": "guessed"
+        },
+        "BillingStreet": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "CalculationStatus": {
+          "label": "sdk-only"
+        },
+        "CanCreateQuoteLineItems": {
+          "label": "sdk-only"
+        },
+        "ContactId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ContractId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "CurrencyIsoCode": {
+          "label": "sdk-only"
+        },
+        "Description": {
+          "label": "sdk-only"
+        },
+        "Discount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Email": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ExpirationDate": {
+          "label": "sdk-only"
+        },
+        "Fax": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "GrandTotal": {
+          "label": "sdk-only"
+        },
+        "InsuranceQuoteType": {
+          "label": "guessed",
+          "type": "sdk-only"
+        },
+        "IsSyncing": {
+          "label": "sdk-only"
+        },
+        "LastPricedDate": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "LastReferencedDate": {
+          "label": "sdk-only"
+        },
+        "LastViewedDate": {
+          "label": "sdk-only"
+        },
+        "LineGroupCount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "LineItemCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "Name": {
+          "label": "sdk-only",
+          "length": "override",
+          "nameField": "override"
+        },
+        "OpportunityId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "OriginalActionType": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "PartnerAccountId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Phone": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Pricebook2Id": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "PricingContractId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "QuoteAccountId": {
+          "label": "sdk-only"
+        },
+        "QuoteNumber": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "QuoteToAddress": {
+          "label": "sdk-only"
+        },
+        "QuoteToCity": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "QuoteToCountry": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "QuoteToGeocodeAccuracy": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "QuoteToLatitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "QuoteToLongitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "QuoteToName": {
+          "label": "sdk-only"
+        },
+        "QuoteToPostalCode": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "QuoteToState": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "QuoteToStreet": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "RecordSource": {
+          "label": "guessed"
+        },
+        "RecordTypeID": {
+          "label": "guessed",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "RelatedQuoteId": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "RelatedQuoteType": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ServiceDocumentTemplate": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ShippingAddress": {
+          "label": "sdk-only"
+        },
+        "ShippingCity": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingCountry": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingCountryCode": {
+          "label": "guessed"
+        },
+        "ShippingGeocodeAccuracy": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ShippingHandling": {
+          "label": "sdk-only"
+        },
+        "ShippingLatitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ShippingLongitude": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ShippingName": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingPostalCode": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingState": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "ShippingStateCode": {
+          "label": "guessed"
+        },
+        "ShippingStreet": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "StartDate": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "Status": {
+          "label": "sdk-only"
+        },
+        "Subtotal": {
+          "label": "sdk-only"
+        },
+        "Tax": {
+          "label": "sdk-only"
+        },
+        "TotalPrice": {
+          "label": "sdk-only"
+        },
+        "TotalPriceOverride": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalPriceWithTax": {
+          "label": "sdk-only"
+        },
+        "TotalTaxAmount": {
+          "label": "sdk-only"
+        },
+        "TransactionType": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "ValidationResult": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
+    "QuoteLineItem": {
+      "fields": {
+        "AggregatedQuantity": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "BatchIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "BillingFrequency": {
+          "label": "sdk-only"
+        },
+        "BillingReference": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "CurrencyIsoCode": {
+          "label": "sdk-only"
+        },
+        "CustomProductName": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Description": {
+          "label": "sdk-only",
+          "length": "override"
+        },
+        "Discount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "DiscountAmount": {
+          "label": "sdk-only"
+        },
+        "Division": {
+          "label": "guessed"
+        },
+        "DoesAutomaticallyRenew": {
+          "label": "sdk-only"
+        },
+        "EffectiveGrantDate": {
+          "label": "sdk-only"
+        },
+        "EndDate": {
+          "label": "sdk-only"
+        },
+        "EndDateTime": {
+          "label": "sdk-only"
+        },
+        "EndQuantity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "EndTime": {
+          "label": "sdk-only"
+        },
+        "HasQuantitySchedule": {
+          "label": "sdk-only"
+        },
+        "HasRevenueSchedule": {
+          "label": "sdk-only"
+        },
+        "HasSchedule": {
+          "label": "sdk-only"
+        },
+        "IsPrimarySegment": {
+          "label": "sdk-only"
+        },
+        "LastReferencedDate": {
+          "label": "sdk-only"
+        },
+        "LastViewedDate": {
+          "label": "sdk-only"
+        },
+        "LineNumber": {
+          "createable": "override",
+          "defaultedOnCreate": "override",
+          "displayFormat": "override",
+          "idLookup": "override",
+          "label": "sdk-only",
+          "nameField": "override",
+          "type": "override",
+          "updateable": "override"
+        },
+        "ListPrice": {
+          "label": "sdk-only"
+        },
+        "ListPriceTotal": {
+          "label": "guessed"
+        },
+        "Margin": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "MarginAmount": {
+          "label": "sdk-only"
+        },
+        "NetTotalPrice": {
+          "label": "sdk-only"
+        },
+        "NetUnitPrice": {
+          "label": "sdk-only"
+        },
+        "OpportunityLineItemId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ParentQuoteLineItemId": {
+          "label": "sdk-only"
+        },
+        "PartnerDiscountPercent": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PartnerUnitPrice": {
+          "label": "sdk-only"
+        },
+        "PeriodBoundary": {
+          "label": "sdk-only"
+        },
+        "PeriodBoundaryDay": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PeriodBoundaryStartMonth": {
+          "label": "sdk-only"
+        },
+        "PriceWaterfallIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "PricebookEntryId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "PricingContractId": {
+          "label": "sdk-only"
+        },
+        "PricingTerm": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PricingTermCount": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "PricingTermUnit": {
+          "label": "sdk-only"
+        },
+        "Product2Id": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ProductInstanceIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "Quantity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "QuoteId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "RampIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "RecipientScaledQuantity": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "RelatedQuoteLineItemId": {
+          "label": "sdk-only",
+          "referenceTo": "sdk-only"
+        },
+        "RevenueCloudPackagingFlag": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "length": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "SegmentIdentifier": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "SegmentName": {
+          "label": "sdk-only",
+          "length": "sdk-only"
+        },
+        "SegmentType": {
+          "label": "sdk-only"
+        },
+        "SellingModelType": {
+          "label": "sdk-only"
+        },
+        "ServiceDate": {
+          "label": "sdk-only"
+        },
+        "SortOrder": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "StartDate": {
+          "label": "sdk-only"
+        },
+        "StartDateTime": {
+          "label": "sdk-only"
+        },
+        "StartEndTimeZone": {
+          "label": "sdk-only"
+        },
+        "StartQuantity": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "StartTime": {
+          "label": "sdk-only"
+        },
+        "StartingPriceTotal": {
+          "label": "guessed"
+        },
+        "StartingUnitPriceSource": {
+          "label": "guessed"
+        },
+        "Status": {
+          "label": "sdk-only"
+        },
+        "SubscriptionTerm": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "SubscriptionTermUnit": {
+          "label": "sdk-only"
+        },
+        "Subtotal": {
+          "label": "sdk-only"
+        },
+        "TotalAdjustment": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "TotalAdjustmentAmount": {
+          "label": "sdk-only"
+        },
+        "TotalCost": {
+          "label": "sdk-only"
+        },
+        "TotalLineAmount": {
+          "label": "sdk-only"
+        },
+        "TotalMargin": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "TotalMarginAmount": {
+          "label": "sdk-only"
+        },
+        "TotalPrice": {
+          "label": "sdk-only"
+        },
+        "TotalPriceWithTax": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "TotalTaxAmount": {
+          "createable": "sdk-only",
+          "label": "sdk-only",
+          "type": "sdk-only",
+          "updateable": "sdk-only"
+        },
+        "UnitCost": {
+          "label": "sdk-only"
+        },
+        "UnitPrice": {
+          "label": "sdk-only"
+        },
+        "UnitPriceUplift": {
+          "label": "sdk-only",
+          "precision": "guessed",
+          "scale": "guessed"
+        },
+        "ValidationResult": {
+          "label": "sdk-only"
+        },
+        "Visibility": {
+          "label": "sdk-only"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "de-describe",
+      "labels": "override"
+    },
     "RecordType": {
       "fields": {
         "BusinessProcessId": {
@@ -13267,10 +16393,17 @@
   },
   "skipped": {
     "fieldType": [
+      "ContentVersion.VersionData (base64)",
+      "EmailMessage.BccIds (JunctionIdList)",
+      "EmailMessage.CcIds (JunctionIdList)",
+      "EmailMessage.ContentDocumentIds (JunctionIdList)",
+      "EmailMessage.ToIds (JunctionIdList)",
       "Event.AcceptedEventInviteeIds (JunctionIdList)",
       "Event.DeclinedEventInviteeIds (JunctionIdLIst)",
       "Event.EventWhoIds (JunctionIdList)",
       "Event.UndecidedEventInviteeIds (JunctionIdList)",
+      "FeedItem.ContentData (base64)",
+      "Location.Location (location)",
       "Task.TaskWhoIds (JunctionIdList)"
     ],
     "referenceTarget": [
@@ -13282,7 +16415,6 @@
       "Asset.AssetTypeId -> AssetType",
       "Asset.BindingInstanceTargetId -> (none stated)",
       "Asset.CurrentQuantityUnitId -> (none stated)",
-      "Asset.LocationId -> (none stated)",
       "Asset.SalesStoreId -> RetailStore, WebStore",
       "Campaign.BriefId -> Record",
       "Campaign.CampaignImageId -> (none stated)",
@@ -13293,22 +16425,28 @@
       "Case.CommunityId -> (none stated)",
       "Case.ConnectionReceivedId -> (none stated)",
       "Case.ConnectionSentId -> (none stated)",
-      "Case.FeedItemId -> (none stated)",
       "Case.QuestionId -> (none stated)",
+      "CaseMilestone.MilestoneTypeId -> (none stated)",
       "Contact.ActionCadenceAssigneeId -> (none stated)",
       "Contact.ActionCadenceId -> (none stated)",
       "Contact.ActivityMetricId -> ActivityMetric",
       "Contact.ActivityMetricRollupId -> ActivityMetricRollup",
       "Contact.ConnectionReceivedId -> (none stated)",
       "Contact.ConnectionSentId -> (none stated)",
+      "ContentDocument.ContentAssetId -> ContentAsset",
+      "ContentDocument.ParentId -> (none stated)",
+      "ContentVersion.ContentBodyId -> ContentBody",
+      "ContentVersion.NetworkId -> (none stated)",
       "Contract.ActivityMetricId -> ActivityMetric",
       "Contract.ActivityMetricRollupId -> ActivityMetricRollup",
       "Contract.SourceOpportunityId -> (none stated)",
-      "Contract.SourceQuoteId -> Quote",
+      "EmailMessage.ActionCadenceStepTrackerId -> (none stated)",
+      "EmailMessage.ActivityId -> (none stated)",
+      "EmailMessage.EmailRoutingAddressId -> EmailRoutingAddress",
+      "EmailMessage.EmailTemplateId -> EmailTemplate",
+      "EmailMessage.FromId -> (none stated)",
       "Entitlement.AssetWarrantyID -> (none stated)",
       "Entitlement.AssetWarrantyId -> (none stated)",
-      "Entitlement.ContractLineItemId -> (none stated)",
-      "Entitlement.LocationID -> (none stated)",
       "Entitlement.LocationId -> (none stated)",
       "Entitlement.SlaProcessId -> (none stated)",
       "Entitlement.SvcApptBookingWindows -> (none stated)",
@@ -13317,6 +16455,10 @@
       "ExternalDataSource.LargeIconId -> (none stated)",
       "ExternalDataSource.NamedCredentialId -> NamedCredential",
       "ExternalDataSource.SmallIconId -> (none stated)",
+      "FeedItem.BestCommentId -> FeedComment",
+      "FeedItem.ConnectionId -> (none stated)",
+      "FeedItem.FeedPostId -> (none stated)",
+      "FeedItem.RelatedRecordId -> (none stated)",
       "Group.QueueRoutingConfigId -> (none stated)",
       "IdeaTheme.CommunityId -> (none stated)",
       "Lead.ActionCadenceAssigneeId -> (none stated)",
@@ -13326,6 +16468,8 @@
       "Lead.ConnectionReceivedId -> (none stated)",
       "Lead.ConnectionSentId -> (none stated)",
       "Lead.ScoreIntelligenceId -> (none stated)",
+      "Location.FulfillingBusinessHours -> (none stated)",
+      "Location.LogoId -> ContentAsset",
       "Opportunity.ActivityMetricId -> ActivityMetric",
       "Opportunity.ActivityMetricRollupId -> ActivityMetricRollup",
       "Opportunity.ConnectionReceivedId -> (none stated)",
@@ -13336,6 +16480,28 @@
       "Opportunity.Territory2Id -> (none stated)",
       "OpportunityLineItem.ConnectionReceivedId -> (none stated)",
       "OpportunityLineItem.ConnectionSentId -> (none stated)",
+      "OpportunitySplit.SplitTypeId -> OpportunitySplitType",
+      "OpportunitySplit.Territory2Id -> Territory2",
+      "Order.FulfillmentPlanId -> (none stated)",
+      "Order.LegalEntityId -> (none stated)",
+      "Order.PaymentTermId -> PaymentTerm",
+      "Order.SalesChannelId -> (none stated)",
+      "Order.SalesStoreId -> WebStore",
+      "Order.SalesTransactionTypeId -> (none stated)",
+      "OrderItem.BillingTreatmentId -> (none stated)",
+      "OrderItem.BindingInstanceTargetId -> (none stated)",
+      "OrderItem.LegalEntityId -> (none stated)",
+      "OrderItem.OrderActionId -> OrderAction",
+      "OrderItem.OrderDeliveryGroupId -> OrderDeliveryGroup",
+      "OrderItem.OrderItemGroupId -> (none stated)",
+      "OrderItem.OrderItemRecipientId -> (none stated)",
+      "OrderItem.PriceRevisionPolicyId -> PriceRevisionPolicy",
+      "OrderItem.ProductSellingModelId -> ProductSellingModel",
+      "OrderItem.ProrationPolicyId -> ProrationPolicy",
+      "OrderItem.QuantityUnitOfMeasureId -> (none stated)",
+      "OrderItem.ReplacementGroupId -> (none stated)",
+      "OrderItem.ReservedAtLocationId -> (none stated)",
+      "OrderItem.TaxTreatmentId -> TaxTreatment",
       "Organization.SelfServiceCaseSubmitRecordTypeId -> (none stated)",
       "Organization.SelfServiceEmailUserOnCaseCreationTemplateId -> (none stated)",
       "Organization.SelfServiceNewCommentTemplateId -> (none stated)",
@@ -13353,6 +16519,22 @@
       "Product2.ConnectionSentId -> (none stated)",
       "Product2.TaxPolicyId -> TaxPolicy",
       "Product2.UnitOfMeasureId -> UnitOfMeasure",
+      "Quote.LegalEntityId -> (none stated)",
+      "Quote.RelatedWorkId -> (none stated)",
+      "Quote.SalesTransactionTypeId -> (none stated)",
+      "QuoteLineItem.BillingTreatmentId -> (none stated)",
+      "QuoteLineItem.BindingInstanceTargetId -> (none stated)",
+      "QuoteLineItem.LegalEntityId -> LegalEntity",
+      "QuoteLineItem.PriceRevisionPolicyId -> PriceRevisionPolicy",
+      "QuoteLineItem.ProductSellingModelId -> ProductSellingModel",
+      "QuoteLineItem.ProrationPolicyId -> ProrationPolicy",
+      "QuoteLineItem.QuantityUnitOfMeasureId -> UnitOfMeasure",
+      "QuoteLineItem.QuoteActionId -> QuoteAction",
+      "QuoteLineItem.QuoteLineGroupId -> QuoteLineGroup",
+      "QuoteLineItem.QuoteLineItemRecipientId -> QuoteLineItemRecipient",
+      "QuoteLineItem.QuoteRecipientGroupId -> (none stated)",
+      "QuoteLineItem.ReplacementGroupId -> (none stated)",
+      "QuoteLineItem.TaxTreatmentId -> (none stated)",
       "ServiceAppointment.AppointmentCategoryId -> (none stated)",
       "ServiceAppointment.AppointmentInvitationId -> (none stated)",
       "ServiceAppointment.BundlePolicyId -> ApptBundlePolicy",
