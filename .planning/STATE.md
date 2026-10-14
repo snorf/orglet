@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 09-06-PLAN.md (settle-conflicts decision recorded)
-last_updated: "2026-10-14T07:02:39.521Z"
+stopped_at: Completed 09-07-PLAN.md
+last_updated: "2026-10-14T07:24:08.487Z"
 last_activity: 2026-10-14
 progress:
   total_phases: 16
   completed_phases: 1
   total_plans: 19
-  completed_plans: 16
+  completed_plans: 17
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 09 (baseline-generator-parity-ownerid-narrowing) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 Status: Ready to execute
 Last activity: 2026-10-14
 
@@ -106,6 +106,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 09 P04 | 14min | 3 tasks | 44 files |
 | Phase 09 P05 | 10min | 2 tasks | 9 files |
 | Phase 09 P06 | 17min | 1 tasks | 6 files |
+| Phase 09 P07 | 17min | 3 tasks | 51 files |
 
 ## Accumulated Context
 
@@ -184,6 +185,11 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-06: Checkbox is exempt from the forced-nullable rule (engine defaults an absent Checkbox to false before the required check; v1.0 writes nillable:false on 65/80 Checkboxes)
 - [Phase 09]: 09-06: system names excluded case-insensitively and emitted case collisions abort (columnName lower-cases); length conflicts on new fields settled by the larger value via 12 overrides
 - [Phase 09]: 09-06 checkpoint: settle-conflicts, name rule for target-less lookups (13 fields via overrides set referenceTo in 09-07); accepted skip ratio 10.1% documented (83/818), 12.1% raw (99/818)
+- [Phase 09]: 09-07: a sf-skills field_reference label ending a sentence or over 80 chars is prose; the generator emits the humanised name as guessed (87 Profile Permissions* labels)
+- [Phase 09]: 09-07: pinned v1.0 names are always in the generator inventory, so a field both sources dropped aborts in full mode too
+- [Phase 09]: 09-07: SKIP_RATIO_MAX 0.103 (84/818 documented; Product2.RecordTypeId is field_reference-only so Johan's 83 was off by one; raw 99/818 matches) - Johan to confirm
+- [Phase 09]: 09-07: Postgres test leg runs vitest maxWorkers 3; a v2 org schema (~500 relations, ~190 FKs) in one migrate() transaction exhausted the default lock table with 10 parallel files
+- [Phase 09]: 09-07: BASE2-02 and BASE2-03 ticked under amended wording (D-10); BASE2-01 left for 09-08 (ownerTargets overrides)
 
 ### Pending Todos
 
@@ -207,6 +213,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T07:02:39.517Z
-Stopped at: Completed 09-06-PLAN.md (settle-conflicts decision recorded)
+Last session: 2026-10-14T07:24:08.484Z
+Stopped at: Completed 09-07-PLAN.md
 Resume file: None

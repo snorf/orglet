@@ -44,12 +44,12 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   and hand facts (key prefix, precision/scale, compound fields, standard value sets, owner targets)
   live in a committed `overrides.json` with a reason per entry; the output contains no documentation
   prose; CI fails when regeneration differs from the committed files.
-- [ ] **BASE2-02**: Regenerating the existing 35 baseline objects first reproduces their current
+- [x] **BASE2-02**: Regenerating the existing 35 baseline objects first reproduces their current
   shape (no-op diff), then adds every documented API field with its type, length, nillable,
   createable, updateable and defaulted-on-create flags, so `orglet check` on a retrieve that uses
   those fields reports zero `UNSUPPORTED:standard-field` for them, except documented fields the
   generator reports as not modellable (unsupported type, or reference target outside the baseline).
-- [ ] **BASE2-03**: Feature-gated fields (available only when an org feature is enabled) are included
+- [x] **BASE2-03**: Feature-gated fields (available only when an org feature is enabled) are included
   as nullable fields tagged `featureGated` in the baseline JSON and described as nullable fields (the
   tag itself is not a describe key), replacing the v1.0 rule of skipping them.
   *Deviation note 2026-10-14: wording aligned with Phase 9 delivered scope (D-10, locked decision 4).*
@@ -224,8 +224,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MIGR-03 | Phase 9 | Complete |
 | MIGR-04 | Phase 8 | Complete |
 | BASE2-01 | Phase 9 | Pending |
-| BASE2-02 | Phase 9 | Pending |
-| BASE2-03 | Phase 9 | Pending |
+| BASE2-02 | Phase 9 | Complete |
+| BASE2-03 | Phase 9 | Complete |
 | BASE2-04 | Phase 9 | Pending |
 | BASE2-05 | Phase 8 | Complete |
 | BASE2-06 | Phase 10 | Pending |
