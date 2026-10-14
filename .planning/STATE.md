@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-10-14T10:02:19.915Z"
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-10-14T10:03:05.319Z"
 last_activity: 2026-10-14
 progress:
   total_phases: 16
   completed_phases: 2
   total_plans: 25
-  completed_plans: 20
+  completed_plans: 21
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 10 (business-standard-objects) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-10-14
 
@@ -110,6 +110,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 09 P08 | 14min | 2 tasks | 21 files |
 | Phase 09 P09 | 6min | 1 tasks | 4 files |
 | Phase 10 P02 | 15min | 2 tasks | 6 files |
+| Phase 10 P01 | 25min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -199,6 +200,7 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-09: D-14 scenario lives in upgrade-owner.test.ts with its own schema so upgrade.test.ts EXPECTED_WARNINGS stays []; the Group-owned Account warns exactly once and the FK lands silently after correction
 - [Phase 09]: 09-09: BASE2-04 wording amended to the 35 modelled objects (8 User-only incl. Event by D-12 override, 8 polymorphic incl. Group by override, 19 without OwnerId, Phase 10 forward clause) and ticked; conformance 8/8 PASS locally, poly-check 4/4 both legs
 - [Phase 10]: 10-02: unreferenced unmodelled standard objects go to BuildResult.info and one quiet-gated info: line in check; warnings/diagnostics stay 1:1; --strict ignores it
+- [Phase 10]: 10-01: de-describe key prefix source accepted with a ref (intentional reversal of the Phase 9 D-07 guard per D-01); rule 4 forced-nullable limited to objects with v1 pins (D-18)
 
 ### Pending Todos
 
@@ -221,6 +223,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T10:02:19.911Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-10-14T10:03:05.316Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None

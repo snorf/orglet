@@ -70,14 +70,14 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [x] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
   independent public sources or stored as `null` with a source label; an object with a null prefix
   still loads, describes and is reference-checked, and the generator never invents a prefix.
-- [ ] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
+- [x] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
   objects with documented key prefix (or null per BASE2-05), name field, system fields, documented
   API fields and explicit create/update/delete/undelete flags: Quote, QuoteLineItem, Order,
   OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember,
   OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone,
   EmailMessage, ContentDocument, ContentVersion, FeedItem, Location, Address. Blob fields
   (`ContentVersion.VersionData`) are omitted and listed in the generator report.
-- [ ] **BASE2-07**: DML against each of the 18 objects respects its documented flags (OrderItem no
+- [x] **BASE2-07**: DML against each of the 18 objects respects its documented flags (OrderItem no
   undelete; CaseMilestone no create or delete; ContentDocument no create; ContentVersion no delete)
   and violations return `INVALID_TYPE_FOR_OPERATION` as in v1.0; lookups to any of them with an
   invalid Id are rejected with `INVALID_CROSS_REFERENCE_KEY`.
@@ -235,8 +235,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE2-03 | Phase 9 | Complete |
 | BASE2-04 | Phase 9 | Complete |
 | BASE2-05 | Phase 8 | Complete |
-| BASE2-06 | Phase 10 | Pending |
-| BASE2-07 | Phase 10 | Pending |
+| BASE2-06 | Phase 10 | Complete |
+| BASE2-07 | Phase 10 | Complete |
 | BASE2-08 | Phase 10 | Complete |
 | CMDT-01 | Phase 11 | Pending |
 | CMDT-02 | Phase 11 | Pending |
