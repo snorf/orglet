@@ -93,7 +93,14 @@ Plans:
   2. DML that the documentation forbids is refused with `INVALID_TYPE_FOR_OPERATION` (OrderItem undelete; CaseMilestone create and delete; ContentDocument create; ContentVersion delete), and a lookup to any of the 18 with a malformed or wrong-type Id is rejected with `INVALID_CROSS_REFERENCE_KEY`.
   3. `orglet check` keeps `UNSUPPORTED:reference-target` for a standard object that a lookup, roll-up, formula or validation rule references but orglet does not model, and lists an unreferenced, unmodelled standard object in an informational category that never makes `--strict` exit 1.
   4. The conformance run (`conformance/run-all.sh`) is green after the new objects land, and the plan records the expected warning-count shifts.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 10-01-PLAN.md — generator capability: Supported Calls extraction, object facts for objects without pins, de-describe source, rule 4 limited to v1.0 objects (D-18), new type tokens (BASE2-06, BASE2-07)
+- [ ] 10-02-PLAN.md — `orglet check` informational category: referenced vs unreferenced unmodelled standard objects, `info:` line outside --strict (BASE2-08)
+- [ ] 10-03-PLAN.md — checkpoint: key-prefix verification list (OpportunitySplit 049 mandatory), labels, name fields, AutoNumber format, length conflicts (BASE2-06)
+- [ ] 10-04-PLAN.md — the 18 objects as generated data with pinned inputs, overrides (D-19 lookups), loader and upgrade tests (BASE2-06, BASE2-07)
+- [ ] 10-05-PLAN.md — engine/SOQL/REST behaviour of the 18 (flags, required fields, lookup codes, case twins), describe-check 14 -> 32 (BASE2-06, BASE2-07)
+- [ ] 10-06-PLAN.md — conformance and both test backends, SC4 warning-count shifts, D-20 wording table, docs, DE retrieve check (BASE2-06..08)
 **Research flag**: none (verification list for single-list key prefixes lives in the plans).
 
 ### Phase 11: Custom Metadata, Custom Settings & Labels
