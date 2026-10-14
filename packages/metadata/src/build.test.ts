@@ -30,6 +30,34 @@ const THIN: Record<
   UserLicense: { keyPrefix: "100", hasOwner: false, createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, nameField: "Name", extra: ["Name", "MasterLabel"] },
 };
 
+/**
+ * The 18 Phase 10 business objects. Every prefix was confirmed from the author's own Developer Edition describe at the D-04
+ * checkpoint (keyPrefixSource de-describe); flags come from the Object Reference Supported Calls. extra lookups are the load-bearing ones.
+ */
+const BUSINESS: Record<
+  string,
+  { keyPrefix: string; owner: boolean; flags: string; nameField: string | null; lookups: [string, string][] }
+> = {
+  Quote: { keyPrefix: "0Q0", owner: false, flags: "CUDXS", nameField: "Name", lookups: [["OpportunityId", "Opportunity"], ["AccountId", "Account"]] },
+  QuoteLineItem: { keyPrefix: "0QL", owner: false, flags: "CUDXS", nameField: "LineNumber", lookups: [["QuoteId", "Quote"], ["Product2Id", "Product2"], ["PricebookEntryId", "PricebookEntry"]] },
+  Order: { keyPrefix: "801", owner: true, flags: "CUDXS", nameField: "OrderNumber", lookups: [["AccountId", "Account"], ["OpportunityId", "Opportunity"]] },
+  OrderItem: { keyPrefix: "802", owner: false, flags: "CUD--", nameField: "OrderItemNumber", lookups: [["OrderId", "Order"]] },
+  AccountContactRelation: { keyPrefix: "07k", owner: false, flags: "CUD--", nameField: null, lookups: [["AccountId", "Account"], ["ContactId", "Contact"]] },
+  AccountTeamMember: { keyPrefix: "01M", owner: false, flags: "CUD--", nameField: null, lookups: [["AccountId", "Account"], ["UserId", "User"]] },
+  OpportunityTeamMember: { keyPrefix: "00q", owner: false, flags: "CUD--", nameField: "Name", lookups: [["OpportunityId", "Opportunity"], ["UserId", "User"]] },
+  OpportunityContactRole: { keyPrefix: "00K", owner: false, flags: "CUD--", nameField: null, lookups: [["OpportunityId", "Opportunity"], ["ContactId", "Contact"]] },
+  OpportunitySplit: { keyPrefix: "049", owner: false, flags: "CUD--", nameField: "Split", lookups: [["OpportunityId", "Opportunity"]] },
+  ContractLineItem: { keyPrefix: "811", owner: false, flags: "CUDXS", nameField: "LineItemNumber", lookups: [["ServiceContractId", "ServiceContract"]] },
+  CaseContactRole: { keyPrefix: "03j", owner: false, flags: "CUD--", nameField: null, lookups: [["CasesId", "Case"], ["ContactId", "Contact"]] },
+  CaseMilestone: { keyPrefix: "555", owner: false, flags: "-U---", nameField: null, lookups: [["CaseId", "Case"]] },
+  EmailMessage: { keyPrefix: "02s", owner: false, flags: "CUDXS", nameField: "Name", lookups: [["ParentId", "Case"]] },
+  ContentDocument: { keyPrefix: "069", owner: true, flags: "-UDXS", nameField: "Title", lookups: [] },
+  ContentVersion: { keyPrefix: "068", owner: true, flags: "CU--S", nameField: "Title", lookups: [["ContentDocumentId", "ContentDocument"]] },
+  FeedItem: { keyPrefix: "0D5", owner: false, flags: "CUD-S", nameField: null, lookups: [] },
+  Location: { keyPrefix: "131", owner: true, flags: "CUDXS", nameField: "Name", lookups: [] },
+  Address: { keyPrefix: "130", owner: false, flags: "CUDXS", nameField: "Name", lookups: [["ParentId", "Location"]] },
+};
+
 describe("standard baseline alone", () => {
   let result: BuildResult;
   beforeAll(async () => {
@@ -104,6 +132,54 @@ describe("standard baseline alone", () => {
       const now = new Set(result.schema.getObject(name)?.fields.map((x) => x.name));
       for (const n of v1Names) expect(now.has(n), `${name}.${n}`).toBe(true);
     }
+  });
+
+  it("business: each of the 18 loads with its prefix, prefix source, owner and DML flags (BASE2-06)", () => {
+    expect(Object.keys(BUSINESS)).toHaveLength(18);
+    for (const [name, f] of Object.entries(BUSINESS)) {
+      const flag = (i: number, letter: string): boolean => f.flags[i] === letter;
+      expect(result.schema.getObject(name), name).toMatchObject({
+        name,
+        custom: false,
+        queryable: true,
+        keyPrefix: f.keyPrefix,
+        keyPrefixSource: "de-describe",
+        hasOwner: f.owner,
+        createable: flag(0, "C"),
+        updateable: flag(1, "U"),
+        deletable: flag(2, "D"),
+        undeletable: flag(3, "X"),
+        searchable: flag(4, "S"),
+      });
+    }
+    expect(result.schema.getObject("ContentDocument")?.fields.find((x) => x.name === "OwnerId")?.referenceTo).toEqual(["User"]);
+    expect(result.schema.getObject("ContentVersion")?.fields.find((x) => x.name === "OwnerId")?.referenceTo).toEqual(["User"]);
+  });
+
+  it("business: each of the 18 has its name field, or none", () => {
+    for (const [name, f] of Object.entries(BUSINESS)) {
+      expect(result.schema.getObject(name)?.fields.filter((x) => x.nameField).map((x) => x.name), name).toEqual(f.nameField === null ? [] : [f.nameField]);
+    }
+  });
+
+  it("business: load-bearing lookups point at their documented targets (research Pitfall 1)", () => {
+    for (const [name, f] of Object.entries(BUSINESS)) {
+      for (const [field, target] of f.lookups) expect(result.schema.getField(name, field)?.referenceTo, `${name}.${field}`).toEqual([target]);
+    }
+    expect(result.schema.getField("FeedItem", "ParentId")?.referenceTo).toEqual(expect.arrayContaining(["Account", "Case"]));
+  });
+
+  it("business: blob, junction and geolocation fields are not in the schema", () => {
+    for (const [object, field] of [["ContentVersion", "VersionData"], ["FeedItem", "ContentData"], ["EmailMessage", "BccIds"], ["EmailMessage", "CcIds"], ["EmailMessage", "ContentDocumentIds"], ["EmailMessage", "ToIds"], ["Location", "Location"]] as const) {
+      expect(result.schema.getField(object, field), `${object}.${field}`).toBeUndefined();
+    }
+  });
+
+  it("business: case-twin key prefixes stay distinct", () => {
+    const prefix = (o: string): string | null | undefined => result.schema.getObject(o)?.keyPrefix;
+    expect([prefix("AccountTeamMember"), prefix("BusinessHours")]).toEqual(["01M", "01m"]);
+    expect([prefix("OpportunityTeamMember"), prefix("Lead")]).toEqual(["00q", "00Q"]);
+    expect([prefix("OpportunityContactRole"), prefix("OpportunityLineItem")]).toEqual(["00K", "00k"]);
   });
 
   it("thin: field details follow the Object Reference", () => {
