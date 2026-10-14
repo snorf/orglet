@@ -74,6 +74,9 @@ async function check(c: Common, strict: boolean): Promise<number> {
   const result = await loadOrgSchema(c.project ? { projectDir: c.project } : {});
   const objects = result.schema.list();
   log(c, `${objects.length} objects (${objects.filter((o) => o.custom).length} custom), ${objects.reduce((n, o) => n + o.fields.length, 0)} fields`);
+  // D-10: the featureGated tag is visible here and in the baseline JSON, never as a describe key.
+  const gated = objects.reduce((n, o) => n + o.fields.filter((f) => f.featureGated === true).length, 0);
+  if (gated > 0) log(c, `${gated} feature-gated standard fields included (nullable; present in an org only when the feature is enabled)`);
   // Without a database the prefixes are only the name-order scheme; `orglet up` persists the real ones.
   const custom = objects.filter((o) => o.custom);
   for (const o of custom) log(c, `  ${o.name}  ${o.keyPrefix}  (provisional)`);
