@@ -81,7 +81,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   undelete; CaseMilestone no create or delete; ContentDocument no create; ContentVersion no delete)
   and violations return `INVALID_TYPE_FOR_OPERATION` as in v1.0; lookups to any of them with an
   invalid Id are rejected with `INVALID_CROSS_REFERENCE_KEY`.
-- [ ] **BASE2-08**: `orglet check` distinguishes a standard object that is referenced (by a lookup,
+- [x] **BASE2-08**: `orglet check` distinguishes a standard object that is referenced (by a lookup,
   roll-up, formula or validation rule in the retrieve or baseline) from one that is not: a
   referenced-but-unmodelled object stays an `UNSUPPORTED:reference-target` warning; an unreferenced,
   unmodelled standard object is reported in an informational category that never fails `--strict`.
@@ -237,7 +237,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE2-05 | Phase 8 | Complete |
 | BASE2-06 | Phase 10 | Pending |
 | BASE2-07 | Phase 10 | Pending |
-| BASE2-08 | Phase 10 | Pending |
+| BASE2-08 | Phase 10 | Complete |
 | CMDT-01 | Phase 11 | Pending |
 | CMDT-02 | Phase 11 | Pending |
 | CMDT-03 | Phase 11 | Pending |

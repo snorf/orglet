@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: planning
-stopped_at: Phase 10 context gathered
-last_updated: "2026-10-14T08:30:48.022Z"
-last_activity: 2026-10-14 — Phase 9 complete (9 plans, verified 5/5; SKIP_RATIO_MAX 0.103 approved)
+status: executing
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-10-14T10:02:19.915Z"
+last_activity: 2026-10-14
 progress:
   total_phases: 16
   completed_phases: 2
-  total_plans: 19
-  completed_plans: 19
+  total_plans: 25
+  completed_plans: 20
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 10 — Business Standard Objects (v1.1 real-org fidelity)
+**Current focus:** Phase 10 — business-standard-objects
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 10 of 14 (Business Standard Objects) — not started
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-14 — Phase 9 complete (9 plans, verified 5/5; SKIP_RATIO_MAX 0.103 approved)
+Phase: 10 (business-standard-objects) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-10-14
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -109,6 +109,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 09 P07 | 17min | 3 tasks | 51 files |
 | Phase 09 P08 | 14min | 2 tasks | 21 files |
 | Phase 09 P09 | 6min | 1 tasks | 4 files |
+| Phase 10 P02 | 15min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -197,6 +198,7 @@ Recent decisions affecting current work:
 - [Phase 09]: 09-08: BASE2-01 ticked (owner targets now in overrides.json); BASE2-04 left pending for 09-09 (wording names unmodelled objects and Calendar on Event; poly-check re-run)
 - [Phase 09]: 09-09: D-14 scenario lives in upgrade-owner.test.ts with its own schema so upgrade.test.ts EXPECTED_WARNINGS stays []; the Group-owned Account warns exactly once and the FK lands silently after correction
 - [Phase 09]: 09-09: BASE2-04 wording amended to the 35 modelled objects (8 User-only incl. Event by D-12 override, 8 polymorphic incl. Group by override, 19 without OwnerId, Phase 10 forward clause) and ticked; conformance 8/8 PASS locally, poly-check 4/4 both legs
+- [Phase 10]: 10-02: unreferenced unmodelled standard objects go to BuildResult.info and one quiet-gated info: line in check; warnings/diagnostics stay 1:1; --strict ignores it
 
 ### Pending Todos
 
@@ -219,6 +221,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T08:30:48.017Z
-Stopped at: Phase 10 context gathered
-Resume file: .planning/phases/10-business-standard-objects/10-CONTEXT.md
+Last session: 2026-10-14T10:02:19.911Z
+Stopped at: Completed 10-02-PLAN.md
+Resume file: None
