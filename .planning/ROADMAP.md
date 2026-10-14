@@ -68,7 +68,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Running the generator twice yields byte-identical JSON, CI fails when regeneration differs from the committed files, and the committed output contains no documentation prose.
   2. Regenerating only the existing 35 objects first produces a no-op diff against v1.0; the v1-vs-v2 diff gate then fails if a v1.0 field disappears or narrows without an allowlisted reason, and the generator refuses a new MasterDetail column on an object that existed in v1.0.
-  3. `orglet check` on a retrieve using documented fields of those 35 objects reports zero `UNSUPPORTED:standard-field`, and feature-gated fields appear in describe as nullable fields tagged `featureGated`.
+  3. `orglet check` on a retrieve using documented fields of those 35 objects reports zero `UNSUPPORTED:standard-field` for every documented field the baseline models; documented fields it cannot model (unsupported type, or a reference to an object outside the baseline) are skipped and listed in `PROVENANCE.json`. Feature-gated fields are nullable in describe and tagged `featureGated` in the baseline JSON and in `orglet check` (not a describe key, D-10).
   4. `Owner.Name` in a formula and in SOQL compiles on Account, Contact, Opportunity, Contract, Asset and Campaign, while Case, Lead and Task owner queries still return User and Group owners as in v1.0 (`conformance/poly-check` stays green).
   5. The Phase 8 populated-database upgrade test still passes with the v2 baseline, with only the expected, allowlisted warnings.
 **Plans**: 9 plans
@@ -82,6 +82,7 @@ Plans:
 - [ ] 09-08-PLAN.md — per-object ownerTargets and SC4 tests (BASE2-04)
 - [ ] 09-09-PLAN.md — D-14 upgrade case, Group-owned audit, conformance, todo (BASE2-04)
 **Research flag**: design spike (not a full research phase) on type mapping, string-length rules and single-source flags.
+*Wording of SC3 aligned with delivered scope on 2026-10-14 (09-07; CONTEXT D-10, phase 9 locked decision 4).*
 
 ### Phase 10: Business Standard Objects
 **Goal**: The 18 business objects a typical sales/service org references exist as faithful baseline objects, and `orglet check` separates objects a retrieve references from objects nothing references.

@@ -47,10 +47,12 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [ ] **BASE2-02**: Regenerating the existing 35 baseline objects first reproduces their current
   shape (no-op diff), then adds every documented API field with its type, length, nillable,
   createable, updateable and defaulted-on-create flags, so `orglet check` on a retrieve that uses
-  those fields reports zero `UNSUPPORTED:standard-field` for them.
+  those fields reports zero `UNSUPPORTED:standard-field` for them, except documented fields the
+  generator reports as not modellable (unsupported type, or reference target outside the baseline).
 - [ ] **BASE2-03**: Feature-gated fields (available only when an org feature is enabled) are included
-  as nullable fields tagged `featureGated` in the baseline JSON and visible in describe, replacing
-  the v1.0 rule of skipping them.
+  as nullable fields tagged `featureGated` in the baseline JSON and described as nullable fields (the
+  tag itself is not a describe key), replacing the v1.0 rule of skipping them.
+  *Deviation note 2026-10-14: wording aligned with Phase 9 delivered scope (D-10, locked decision 4).*
 - [ ] **BASE2-04**: `OwnerId.referenceTo` is defined per object from the Object Reference (User-only
   on Account, Contact, Opportunity, Contract, Asset, Campaign, Individual, Solution, ContentVersion;
   User and Group on Case, Lead, Task, SocialPost, Order, Location, ContactRequest, WorkOrder,
