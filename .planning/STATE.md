@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 10-03-PLAN.md (checkpoint answered)
-last_updated: "2026-10-14T11:45:42.550Z"
+stopped_at: Completed 10-04-PLAN.md
+last_updated: "2026-10-14T11:56:08.730Z"
 last_activity: 2026-10-14
 progress:
   total_phases: 17
   completed_phases: 2
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 10 (business-standard-objects) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-10-14
 
@@ -111,6 +111,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 09 P09 | 6min | 1 tasks | 4 files |
 | Phase 10 P02 | 15min | 2 tasks | 6 files |
 | Phase 10 P01 | 25min | 2 tasks | 9 files |
+| Phase 10 P04 | 35min | 3 tasks | 100 files |
 
 ## Accumulated Context
 
@@ -202,6 +203,8 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-02: unreferenced unmodelled standard objects go to BuildResult.info and one quiet-gated info: line in check; warnings/diagnostics stay 1:1; --strict ignores it
 - [Phase 10]: 10-01: de-describe key prefix source accepted with a ref (intentional reversal of the Phase 9 D-07 guard per D-01); rule 4 forced-nullable limited to objects with v1 pins (D-18)
 - [Phase 10]: 10-03: OpportunitySplit 049 and all 18 prefixes confirmed from the author's own DE describe (no D-02); four labelPlural and the OpportunitySplit name field corrected from DE; ContentVersion.ContentDocumentId nullable override accepted as a stopgap, full file upload tracked as backlog 999.10
+- [Phase 10]: 10-04: duplicate-spelling skips go on the field_reference-only spelling; Entitlement lookup on documented LocationID, OrderItem on RelatedOrderItemID
+- [Phase 10]: 10-04: OpportunitySplit.Split generated as AutoNumber name field; merge added to known Supported Calls
 
 ### Pending Todos
 
@@ -224,6 +227,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T10:03:05.316Z
-Stopped at: Completed 10-03-PLAN.md (checkpoint answered)
+Last session: 2026-10-14T11:56:08.726Z
+Stopped at: Completed 10-04-PLAN.md
 Resume file: None
