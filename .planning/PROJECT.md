@@ -28,7 +28,14 @@ define the next milestone.
 **v1.1 progress:** Phase 8 complete 2026-10-13 — upgrade safety net (populated v1.0 upgrade test on
 pglite and Postgres 16, `UNSUPPORTED:schema-fk`, idempotent second `up`), nullable key prefixes end to
 end, structured diagnostic records beside the unchanged warning strings, and the two upstream sigha
-branches pushed to snorf/sigha (PRs not yet opened).
+branches pushed to snorf/sigha (PRs not yet opened). Phase 9 complete 2026-10-14 — the standard-object
+baseline is now generator output (`scripts/gen-baseline`, offline, from a pinned sf-skills snapshot and a
+facts-only Object Reference extraction, with `overrides.json` hand facts and a CI drift gate): the 35
+objects grew from 659 to 2 536 fields with v1.0 fields byte-identical, 135 fields tagged `featureGated`,
+skips listed in `PROVENANCE.json` (accepted documented skip ratio 0.103), a v1-vs-v2 diff gate plus
+MasterDetail refusal (MIGR-03), and per-object `ownerTargets` (eight User-only objects; Owner.X now
+compiles in formulas and SOQL on Account, Contact, Opportunity, Contract, Asset, Campaign). 575 tests,
+conformance 8/8 legs green locally.
 
 ## Current Milestone: v1.1 real-org fidelity
 
@@ -307,4 +314,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-13 after Phase 8 (upgrade safety net & nullable key prefixes)*
+*Last updated: 2026-10-14 after Phase 9 (baseline generator, parity & OwnerId narrowing)*
