@@ -5,6 +5,9 @@
   "keyPrefix": "001",
   "keyPrefixSource": "sdk-fixture",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "AccountNumber",

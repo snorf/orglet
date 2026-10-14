@@ -5,6 +5,9 @@
   "keyPrefix": "02i",
   "keyPrefixSource": "unverified",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "AccountId",

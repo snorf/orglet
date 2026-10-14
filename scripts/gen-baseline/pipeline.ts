@@ -222,6 +222,39 @@ export function deriveFromSources(inputs: GeneratorInputs, object: string): Map<
 
 const KEY_PREFIX_SOURCES: readonly string[] = ["doc", "sdk-fixture", "unverified"];
 const hasReason = (v: { reason?: unknown } | undefined): boolean => typeof v?.reason === "string" && v.reason.trim() !== "";
+type OwnerTarget = "User" | "Group";
+/** The loader's default for `OwnerId.referenceTo` (code-unit sorted); `ownerTargets` is written only when narrower (D-11). */
+const OWNER_TARGET_NAMES: readonly OwnerTarget[] = ["Group", "User"];
+const isOwnerTarget = (t: string): t is OwnerTarget => (OWNER_TARGET_NAMES as readonly string[]).includes(t);
+
+/**
+ * OwnerId targets of one owned object (BASE2-04, D-11): what both sources state for `OwnerId` Refers To, restricted to
+ * User and Group. An override always wins and is reported as override-resolved whenever the sources alone would not
+ * have produced its value: no Refers To stated (ServiceContract), a target outside User/Group (Event's Calendar, Group's
+ * Organization; D-12 says such a target is a hand decision, never dropped silently) or a different list. Without an
+ * override, a source disagreement is a conflict like any field fact, and a missing or unmodelled target aborts.
+ */
+function ownerTargetsFor(object: string, derived: DerivedField | undefined, override: ObjectOverride["ownerTargets"], report: GeneratorReport): { value: OwnerTarget[]; provenance: FactProvenance } | undefined {
+  const where = `${object}.OwnerId`;
+  const sf = derived?.source.sf?.refersTo;
+  const doc = derived?.source.doc?.refersTo;
+  const conflict = sf !== undefined && doc !== undefined && !sameList(sf, doc);
+  const stated = conflict ? undefined : (sf ?? doc);
+  const modelled = stated?.filter(isOwnerTarget).sort(codeUnit);
+  const unmodelled = (stated ?? []).filter((t) => !isOwnerTarget(t));
+  if (override) {
+    if (modelled === undefined || unmodelled.length > 0 || !sameList(modelled, [...override.value].sort(codeUnit))) report.overrideResolved.push(`${where}.ownerTargets`);
+    return { value: [...override.value].sort(codeUnit), provenance: "override" };
+  }
+  if (conflict) {
+    report.conflicts.unresolved.push(`${where}.ownerTargets: sf-skills=${show(sf)} object-reference=${show(doc)}`);
+    report.conflicts.byFact.ownerTargets = (report.conflicts.byFact.ownerTargets ?? 0) + 1;
+    return undefined;
+  }
+  if (modelled === undefined || modelled.length === 0) throw new GeneratorError(`${where}: no source names a User or Group owner target; add an overrides.json ownerTargets entry with a reason`);
+  if (unmodelled.length > 0) throw new GeneratorError(`${where}: the sources name owner target(s) ${unmodelled.join(", ")} outside User/Group; decide in an overrides.json ownerTargets entry with a reason (D-12)`);
+  return { value: modelled, provenance: sf !== undefined && doc !== undefined ? "verified" : sf !== undefined ? "sdk-only" : "doc-only" };
+}
 
 /** overrides.json must carry a reason on every hand fact (BASE2-01); key prefixes cite a public source or say unverified (D-07). */
 export function validateOverrides(overrides: Overrides): void {
@@ -232,7 +265,13 @@ export function validateOverrides(overrides: Overrides): void {
     if (!KEY_PREFIX_SOURCES.includes(prefix.source as string)) throw new GeneratorError(`${where}: keyPrefix.source must be one of ${KEY_PREFIX_SOURCES.join("|")}`);
     if (prefix.source !== "unverified" && !prefix.ref) throw new GeneratorError(`${where}: keyPrefix.ref is required when source is ${prefix.source}`);
     if (entry.keepObject && !hasReason(entry.keepObject)) throw new GeneratorError(`${where}: keepObject needs a reason`);
-    if (entry.ownerTargets && !hasReason(entry.ownerTargets)) throw new GeneratorError(`${where}: ownerTargets needs a reason`);
+    if (entry.ownerTargets) {
+      if (!hasReason(entry.ownerTargets)) throw new GeneratorError(`${where}: ownerTargets needs a reason`);
+      const value: unknown = entry.ownerTargets.value;
+      if (!Array.isArray(value) || value.length === 0 || value.some((t) => typeof t !== "string" || !isOwnerTarget(t)) || new Set(value).size !== value.length) {
+        throw new GeneratorError(`${where}: ownerTargets.value must be a non-empty list of distinct entries from ${OWNER_TARGET_NAMES.join("|")}`);
+      }
+    }
     for (const [field, override] of Object.entries(entry.fields ?? {})) {
       if (!hasReason(override)) throw new GeneratorError(`${where}.${field}: every field override needs a non-empty reason`);
       if (override.set) orderKeys(`${where}.${field}.set`, override.set, FIELD_KEY_ORDER);
@@ -315,7 +354,7 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
   const objects = options.v1Only ? inputs.objects.filter((o) => pins?.[o]) : inputs.objects;
   const knownObjects = new Set(inputs.objects);
   const provenanceCounts: Record<string, ProvenanceCounts> = {};
-  const provenanceObjects: Record<string, { keyPrefix: string; fields: Record<string, Record<string, FactProvenance>> }> = {};
+  const provenanceObjects: Record<string, { keyPrefix: string; ownerTargets?: FactProvenance; fields: Record<string, Record<string, FactProvenance>> }> = {};
 
   for (const object of objects) {
     const override: ObjectOverride | undefined = inputs.overrides.objects[object];
@@ -331,6 +370,15 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
     }
     const objectJson: StandardObjectJson = { ...objectFacts, name: object, label: objectFacts.label, labelPlural: objectFacts.labelPlural, keyPrefix: override.keyPrefix.value, hasOwner: objectFacts.hasOwner, fields: [] };
     if (!options.v1Only) objectJson.keyPrefixSource = override.keyPrefix.source;
+    // BASE2-04: narrow OwnerId per object from the sources (full mode only; v1.0 scope keeps the polymorphic default).
+    let ownerProvenance: FactProvenance | undefined;
+    if (!options.v1Only && objectFacts.hasOwner) {
+      const owner = ownerTargetsFor(object, [...derived.values()].find((d) => d.source.name.toLowerCase() === "ownerid"), override.ownerTargets, report);
+      if (owner) {
+        ownerProvenance = owner.provenance;
+        if (!sameList(owner.value, OWNER_TARGET_NAMES)) objectJson.ownerTargets = owner.value;
+      }
+    }
     const counts: ProvenanceCounts = { fields: 0, verified: 0, sdkOnly: 0, docOnly: 0, guessed: 0, v1: 0, override: 0, featureGated: 0, skippedFieldType: 0, skippedReferenceTarget: 0 };
     const fieldProvenance: Record<string, Record<string, FactProvenance>> = {};
     const skip = (kind: keyof SkipCounts, d: DerivedField, entry: string): void => {
@@ -479,7 +527,7 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
     files.set(`objects/${object}.json`, serialise(orderObjectJson(objectJson)));
     report.skipped.perObject[object] = { fieldType: counts.skippedFieldType, referenceTarget: counts.skippedReferenceTarget };
     provenanceCounts[object] = counts;
-    provenanceObjects[object] = { keyPrefix: override.keyPrefix.source, fields: fieldProvenance };
+    provenanceObjects[object] = { keyPrefix: override.keyPrefix.source, ...(ownerProvenance ? { ownerTargets: ownerProvenance } : {}), fields: fieldProvenance };
   }
 
   if (report.conflicts.unresolved.length > 0 && !options.collectConflicts) {

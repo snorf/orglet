@@ -27,7 +27,9 @@ Rules:
   with `compoundFieldName` set.
 - Fields that exist only when an org feature is enabled carry `featureGated: true` and are always
   nullable; describe does not show the tag.
-- `ownerTargets` (object level) narrows `OwnerId.referenceTo`; absent means User and Group.
+- `ownerTargets` (object level) narrows `OwnerId.referenceTo`; absent means User and Group. The
+  generator writes it only when the sources name a narrower target set; an owner target outside
+  User/Group or no stated target is a hand decision in `overrides.json` (Event, Group, ServiceContract).
 - Documented fields of an unsupported type or with a reference target outside the object list are
   skipped; `PROVENANCE.json` lists them.
 - Fields known only from the sf-skills `field_reference` table are emitted read-only

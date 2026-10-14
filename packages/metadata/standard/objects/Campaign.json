@@ -5,6 +5,9 @@
   "keyPrefix": "701",
   "keyPrefixSource": "unverified",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "ActualCost",

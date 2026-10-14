@@ -5,6 +5,9 @@
   "keyPrefix": "800",
   "keyPrefixSource": "unverified",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "AccountId",

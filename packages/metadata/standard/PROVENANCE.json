@@ -1343,7 +1343,8 @@
           "length": "sdk-only"
         }
       },
-      "keyPrefix": "sdk-fixture"
+      "keyPrefix": "sdk-fixture",
+      "ownerTargets": "verified"
     },
     "Asset": {
       "fields": {
@@ -1621,7 +1622,8 @@
           "length": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "BusinessHours": {
       "fields": {
@@ -2027,7 +2029,8 @@
           "scale": "guessed"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "CampaignMember": {
       "fields": {
@@ -2358,7 +2361,8 @@
           "standardValueSet": "v1.0"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "Contact": {
       "fields": {
@@ -2680,7 +2684,8 @@
           "label": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "Contract": {
       "fields": {
@@ -2895,7 +2900,8 @@
           "scale": "guessed"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "DandBCompany": {
       "fields": {
@@ -3577,7 +3583,8 @@
           "label": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "override"
     },
     "ExternalDataSource": {
       "fields": {
@@ -3658,7 +3665,8 @@
           "picklistValues": "v1.0"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "override"
     },
     "IdeaTheme": {
       "fields": {
@@ -3790,7 +3798,8 @@
           "length": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "Lead": {
       "fields": {
@@ -4080,7 +4089,8 @@
           "label": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "OperatingHours": {
       "fields": {
@@ -4115,7 +4125,8 @@
           "label": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "Opportunity": {
       "fields": {
@@ -4303,7 +4314,8 @@
           "standardValueSet": "v1.0"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "OpportunityHistory": {
       "fields": {
@@ -11624,7 +11636,8 @@
           "updateable": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "ServiceContract": {
       "fields": {
@@ -11810,7 +11823,8 @@
           "label": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "override"
     },
     "SocialPost": {
       "fields": {
@@ -12036,7 +12050,8 @@
           "label": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "Task": {
       "fields": {
@@ -12202,7 +12217,8 @@
           "label": "sdk-only"
         }
       },
-      "keyPrefix": "unverified"
+      "keyPrefix": "unverified",
+      "ownerTargets": "verified"
     },
     "User": {
       "fields": {

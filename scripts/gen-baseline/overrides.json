@@ -232,6 +232,13 @@
         "value": "00U",
         "source": "unverified"
       },
+      "ownerTargets": {
+        "value": [
+          "User"
+        ],
+        "reason": "Object Reference: Calendar, User; Calendar not modelled; widen when a Calendar object lands",
+        "ref": "Object Reference: Event.OwnerId"
+      },
       "fields": {
         "Attendees": {
           "keep": true,
@@ -267,6 +274,14 @@
       "keyPrefix": {
         "value": "00G",
         "source": "unverified"
+      },
+      "ownerTargets": {
+        "value": [
+          "User",
+          "Group"
+        ],
+        "reason": "Object Reference: Organization, User; Organization not modelled and narrowing would add an FK on group.ownerid; default kept",
+        "ref": "Object Reference: Group.OwnerId"
       }
     },
     "IdeaTheme": {
@@ -421,6 +436,14 @@
       "keyPrefix": {
         "value": "810",
         "source": "unverified"
+      },
+      "ownerTargets": {
+        "value": [
+          "User",
+          "Group"
+        ],
+        "reason": "BASE2-04 lists User and Group; the Object Reference shows no Refers To for ServiceContract.OwnerId",
+        "ref": "BASE2-04"
       },
       "fields": {
         "AccountId": {

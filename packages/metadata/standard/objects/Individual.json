@@ -10,6 +10,9 @@
   "undeletable": true,
   "searchable": true,
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "BirthDate",

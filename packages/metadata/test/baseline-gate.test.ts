@@ -123,7 +123,8 @@ function syntheticAccountInputs(relationshipType: "lookup" | "master-detail"): G
   const v1Names = new Set(Object.keys(clone.pins.Account!.fields));
   const sf = clone.sfSkills.get("Account")!;
   const doc = clone.objectReference.get("Account")!;
-  for (const map of [sf.fields, sf.fieldReference, doc.fields]) for (const name of [...map.keys()]) if (!v1Names.has(name)) map.delete(name);
+  // OwnerId is a system field (never pinned) but the generator reads its Refers To for ownerTargets (BASE2-04), so it stays.
+  for (const map of [sf.fields, sf.fieldReference, doc.fields]) for (const name of [...map.keys()]) if (!v1Names.has(name) && name !== "OwnerId") map.delete(name);
   // The target is Account itself: the pruned object list holds only Account, and 09-06 skips a new Lookup whose target is
   // outside objects.json before it could reach the field loop's emit step (the MasterDetail refusal still runs first).
   sf.fields.set("SyntheticParentId", { type: "reference", properties: SYNTHETIC_PROPERTIES, refersTo: ["Account"], relationshipName: "SyntheticParent" });
