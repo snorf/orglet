@@ -222,6 +222,28 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
     }
   });
 
+  it("ownerTargets is written only when narrower than the default", () => {
+    // BASE2-04 / D-11: absent means User and Group, so an object whose owner stays polymorphic is byte-identical to 09-07.
+    const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "Contract", "Event", "Individual", "Opportunity"];
+    for (const object of objects.values()) {
+      if (object.ownerTargets !== undefined) expect([...object.ownerTargets].sort(codeUnit), object.name).not.toEqual(["Group", "User"]);
+      if (USER_ONLY.includes(object.name)) expect(object.ownerTargets, object.name).toEqual(["User"]);
+      else expect(object.ownerTargets, object.name).toBeUndefined();
+    }
+    expect([...objects.values()].filter((o) => o.ownerTargets !== undefined).map((o) => o.name).sort(codeUnit)).toEqual(USER_ONLY);
+  });
+
+  it("ServiceContract's owner targets come from a reasoned override", () => {
+    // Neither source states Refers To for ServiceContract.OwnerId; BASE2-04 lists it as User and Group (locked decision 3).
+    expect(full.report.overrideResolved.some((e) => e.startsWith("ServiceContract.OwnerId"))).toBe(true);
+    expect(inputs.overrides.objects["ServiceContract"]?.ownerTargets).toMatchObject({ value: ["User", "Group"], reason: expect.stringContaining("shows no Refers To") as string });
+    for (const object of ["Event", "Group", "ServiceContract"]) expect(inputs.overrides.objects[object]?.ownerTargets?.reason, object).toBeTruthy();
+  });
+
+  it("the v1.0-scope run emits no ownerTargets", () => {
+    for (const [path, text] of v1.files) expect((JSON.parse(text) as StandardObjectJson).ownerTargets, path).toBeUndefined();
+  });
+
   it("no new MasterDetail on a v1.0 object is generated", () => {
     for (const object of objects.values()) {
       const pins = inputs.pins![object.name];

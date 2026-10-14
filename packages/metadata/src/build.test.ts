@@ -673,6 +673,18 @@ describe("owner targets and feature-gated fields in the baseline (D-09, D-11)", 
     expect(buildOrgSchema(real).schema.getField("Case", "OwnerId")?.referenceTo).toEqual(["User", "Group"]);
   });
 
+  it("each owned standard object's OwnerId targets follow its Object Reference entry (D-11)", () => {
+    // BASE2-04: User-only where the Object Reference states only User (Event: Calendar is not modelled, D-12); User and Group
+    // where it states both (ServiceContract and Group by override, locked decisions 3 and 4).
+    const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "Contract", "Event", "Individual", "Opportunity"];
+    const USER_AND_GROUP = ["Case", "Group", "Lead", "OperatingHours", "ServiceAppointment", "ServiceContract", "SocialPost", "Task"];
+    const schema = buildOrgSchema(real).schema;
+    for (const o of USER_ONLY) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User"]);
+    for (const o of USER_AND_GROUP) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User", "Group"]);
+    const owned = real.objects.filter((o) => o.hasOwner).map((o) => o.name).sort();
+    expect(owned).toEqual([...USER_ONLY, ...USER_AND_GROUP].sort());
+  });
+
   it("ownerTargets narrows OwnerId.referenceTo and nothing else", () => {
     const owner = buildOrgSchema(withObjects(narrow())).schema.getField("NarrowOwned", "OwnerId");
     expect(owner).toMatchObject({ referenceTo: ["User"], relationshipName: "Owner", nillable: false, defaultedOnCreate: true });
