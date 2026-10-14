@@ -65,6 +65,16 @@ describe("check", () => {
     expect(warns).toEqual([]);
   });
 
+  it("check reports how many feature-gated standard fields the baseline includes", async () => {
+    expect(await main(["check"])).toBe(0);
+    const line = logs.find((l) => /^\d+ feature-gated standard fields included \(nullable; present in an org only when the feature is enabled\)$/.test(l));
+    expect(line, logs.join("\n")).toBeDefined();
+    expect(Number.parseInt(line!, 10)).toBeGreaterThan(0);
+    logs = [];
+    expect(await main(["check", "--quiet"])).toBe(0);
+    expect(logs).toEqual([]);
+  });
+
   it("prints nothing with --quiet", async () => {
     expect(await main(["check", "--project", ACME, "--quiet"])).toBe(0);
     expect(logs).toEqual([]);

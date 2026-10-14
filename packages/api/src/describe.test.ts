@@ -5,7 +5,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { buildOrgSchema, loadBaseline, type OrgSchema } from "@orglet/metadata";
-import { globalDescribe, objectDescribe } from "./describe.js";
+import { describeField, globalDescribe, objectDescribe } from "./describe.js";
 
 const NULL_PREFIX = fileURLToPath(new URL("../../metadata/test/fixtures/null-prefix/", import.meta.url));
 let schema: OrgSchema;
@@ -29,5 +29,20 @@ describe("describe", () => {
     const account = schema.getObject("Account");
     if (!account) throw new Error("Account missing from schema");
     expect(objectDescribe(schema, account, "59.0", new Map())).toMatchObject({ keyPrefix: "001" });
+  });
+
+  it("a feature-gated field is described as a plain nullable field with the usual key set (D-10)", () => {
+    const contact = schema.getObject("Contact");
+    const gated = schema.getField("Contact", "JigsawContactId");
+    const plain = schema.getField("Contact", "Jigsaw");
+    if (!contact || !gated || !plain) throw new Error("Contact.JigsawContactId or Contact.Jigsaw missing from schema");
+    expect(gated).toMatchObject({ featureGated: true, type: "Text", length: 20 });
+    expect(plain.type).toBe("Text");
+    expect("featureGated" in plain).toBe(false);
+    const gatedDescribe = describeField(schema, contact, gated) as Record<string, unknown>;
+    const plainDescribe = describeField(schema, contact, plain) as Record<string, unknown>;
+    expect(Object.keys(gatedDescribe).sort()).toEqual(Object.keys(plainDescribe).sort());
+    expect(gatedDescribe["nillable"]).toBe(true);
+    expect("featureGated" in gatedDescribe).toBe(false);
   });
 });
