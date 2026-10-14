@@ -3,9 +3,23 @@
   "label": "Group",
   "labelPlural": "Groups",
   "keyPrefix": "00G",
+  "keyPrefixSource": "unverified",
   "deletable": true,
   "hasOwner": true,
   "fields": [
+    {
+      "name": "DefaultDivision",
+      "label": "Default Division",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 1332
+    },
     {
       "name": "DeveloperName",
       "label": "API Name",

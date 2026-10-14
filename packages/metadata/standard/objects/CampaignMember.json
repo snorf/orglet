@@ -3,8 +3,20 @@
   "label": "Campaign Member",
   "labelPlural": "Campaign Members",
   "keyPrefix": "00v",
+  "keyPrefixSource": "unverified",
   "hasOwner": false,
   "fields": [
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Related Record ID",
+      "featureGated": true
+    },
     {
       "name": "CampaignId",
       "label": "Campaign ID",
@@ -48,6 +60,20 @@
       "label": "Country",
       "type": "Text",
       "length": 80,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 32000,
       "createable": false,
       "updateable": false
     },
@@ -137,6 +163,18 @@
         "Lead"
       ],
       "relationshipName": "Lead"
+    },
+    {
+      "name": "LeadOrContactOwnerId",
+      "label": "Related Record Owner ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Group",
+        "User"
+      ],
+      "relationshipName": "LeadOrContactOwner"
     },
     {
       "name": "LeadSource",

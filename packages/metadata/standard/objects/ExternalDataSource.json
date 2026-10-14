@@ -3,6 +3,7 @@
   "label": "External Data Source",
   "labelPlural": "External Data Sources",
   "keyPrefix": "0XC",
+  "keyPrefixSource": "unverified",
   "createable": false,
   "updateable": false,
   "deletable": false,
@@ -10,6 +11,14 @@
   "searchable": false,
   "hasOwner": false,
   "fields": [
+    {
+      "name": "CustomConfiguration",
+      "label": "Custom Configuration",
+      "type": "LongTextArea",
+      "length": 4000,
+      "createable": false,
+      "updateable": false
+    },
     {
       "name": "DeveloperName",
       "label": "Name",
@@ -19,6 +28,80 @@
       "createable": false,
       "updateable": false,
       "nameField": true
+    },
+    {
+      "name": "Endpoint",
+      "label": "URL",
+      "type": "LongTextArea",
+      "length": 1000,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Language",
+      "label": "Master Language",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MasterLabel",
+      "label": "External Data Source",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "NamespacePrefix",
+      "label": "Namespace Prefix",
+      "type": "Text",
+      "length": 15,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PrincipalType",
+      "label": "Identity Type",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Protocol",
+      "label": "Authentication Protocol",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Repository",
+      "label": "Default External Repository",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Type",
+      "label": "Class ID",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "isWritable",
+      "label": "is Writable",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     }
   ]
 }

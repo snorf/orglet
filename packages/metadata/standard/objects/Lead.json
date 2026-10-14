@@ -3,8 +3,25 @@
   "label": "Lead",
   "labelPlural": "Leads",
   "keyPrefix": "00Q",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
+    {
+      "name": "ActionCadenceState",
+      "label": "Cadence State",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ActiveTrackerCount",
+      "label": "Total Cadences",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
     {
       "name": "Address",
       "label": "Address",
@@ -137,6 +154,17 @@
       "compoundFieldName": "Address"
     },
     {
+      "name": "CountryCode",
+      "label": "Country Code",
+      "type": "Picklist"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Lead Currency",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
       "name": "DandbCompanyId",
       "label": "D&B Company ID",
       "type": "Lookup",
@@ -150,6 +178,13 @@
       "label": "Description",
       "type": "LongTextArea",
       "length": 32000
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Picklist",
+      "defaultedOnCreate": true,
+      "featureGated": true
     },
     {
       "name": "DoNotCall",
@@ -179,9 +214,31 @@
       "createable": false
     },
     {
+      "name": "ExportStatus",
+      "label": "Export Status",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Fax",
       "label": "Fax",
       "type": "Phone"
+    },
+    {
+      "name": "FirstCallDateTime",
+      "label": "First Call Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FirstEmailDateTime",
+      "label": "First Email Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "FirstName",
@@ -333,6 +390,15 @@
       "length": 20
     },
     {
+      "name": "JigsawContactId",
+      "label": "Jigsaw Contact ID",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
       "name": "LastActivityDate",
       "label": "Last Activity",
       "type": "Date",
@@ -402,6 +468,12 @@
       "relationshipName": "MasterRecord"
     },
     {
+      "name": "MiddleName",
+      "label": "Middle Name",
+      "type": "Text",
+      "length": 40
+    },
+    {
       "name": "MobilePhone",
       "label": "Mobile Phone",
       "type": "Phone"
@@ -421,6 +493,17 @@
       "type": "Number",
       "precision": 8,
       "scale": 0
+    },
+    {
+      "name": "PartnerAccountId",
+      "label": "Partner Account ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "featureGated": true
     },
     {
       "name": "Phone",
@@ -497,6 +580,14 @@
       "relationshipName": "RecordType"
     },
     {
+      "name": "ReferralCode",
+      "label": "Referral Code",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Salutation",
       "label": "Salutation",
       "type": "Picklist",
@@ -504,11 +595,23 @@
       "compoundFieldName": "Name"
     },
     {
+      "name": "ScheduledResumeDateTime",
+      "label": "Cadence Resume Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "State",
       "label": "State/Province",
       "type": "Text",
       "length": 80,
       "compoundFieldName": "Address"
+    },
+    {
+      "name": "StateCode",
+      "label": "State Code",
+      "type": "Picklist"
     },
     {
       "name": "Status",
@@ -524,6 +627,12 @@
       "type": "TextArea",
       "length": 255,
       "compoundFieldName": "Address"
+    },
+    {
+      "name": "Suffix",
+      "label": "Suffix",
+      "type": "Text",
+      "length": 40
     },
     {
       "name": "Title",

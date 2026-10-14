@@ -19,7 +19,7 @@ import type { Session } from "./hooks.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const V1_BASELINE = fileURLToPath(new URL("../../metadata/test/fixtures/baseline-v1.0/", import.meta.url));
-/** Warnings the current code is expected to print when upgrading the v1.0 fixture org. Phase 8: none (no baseline change yet). */
+/** Warnings the current code is expected to print when upgrading the v1.0 fixture org. Phase 9 v2 baseline: none (every change is an ADD COLUMN or an FK the fixture rows satisfy). */
 const EXPECTED_WARNINGS: string[] = [];
 const TABLES = ["account", "contact", "case", "group"] as const;
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
@@ -116,6 +116,8 @@ describe("upgrading a populated v1.0 database with the current code (MIGR-01)", 
     expect(migration.warnings).toEqual(EXPECTED_WARNINGS);
     const FORBIDDEN = /^(CREATE TABLE|DROP TABLE|ALTER TABLE \S+ DROP COLUMN|ALTER TABLE \S+ ALTER COLUMN \S+ TYPE)/;
     expect(migration.statements.filter((s) => FORBIDDEN.test(s))).toEqual([]);
+    // SC5 with the v2 baseline: the upgrade is additive, so new columns must actually be added (not a no-op by accident).
+    expect(migration.statements.some((s) => /^ALTER TABLE \S+ ADD COLUMN /.test(s))).toBe(true);
     expect(await snapshot()).toEqual(before);
   });
 

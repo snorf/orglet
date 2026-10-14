@@ -3,8 +3,36 @@
   "label": "Opportunity Product",
   "labelPlural": "Opportunity Products",
   "keyPrefix": "00k",
+  "keyPrefixSource": "unverified",
   "hasOwner": false,
   "fields": [
+    {
+      "name": "CanUseQuantitySchedule",
+      "label": "Quantity Scheduling Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CanUseRevenueSchedule",
+      "label": "Revenue Scheduling Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
     {
       "name": "Description",
       "label": "Line Description",
@@ -17,6 +45,33 @@
       "type": "Percent",
       "precision": 3,
       "scale": 2
+    },
+    {
+      "name": "HasQuantitySchedule",
+      "label": "Has Quantity Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasRevenueSchedule",
+      "label": "Has Revenue Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasSchedule",
+      "label": "Has Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "LastReferencedDate",
@@ -94,12 +149,31 @@
       "updateable": false
     },
     {
+      "name": "ProductId",
+      "label": "Product ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2"
+    },
+    {
       "name": "Quantity",
       "label": "Quantity",
       "type": "Number",
       "precision": 12,
       "scale": 2,
       "nillable": false
+    },
+    {
+      "name": "RecalculateTotalPrice",
+      "label": "Recalculate Total Price",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "ServiceDate",

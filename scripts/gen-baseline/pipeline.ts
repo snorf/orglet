@@ -25,12 +25,12 @@ export const OBJECT_KEY_ORDER = ["name", "label", "labelPlural", "keyPrefix", "k
 export const FIELD_KEY_ORDER = ["name", "label", "type", "length", "precision", "scale", "nillable", "createable", "updateable", "defaultedOnCreate", "unique", "externalId", "caseSensitive", "idLookup", "nameField", "referenceTo", "relationshipName", "childRelationshipName", "deleteConstraint", "standardValueSet", "picklistValues", "restrictedPicklist", "formula", "defaultValue", "displayFormat", "compoundFieldName", "filterable", "sortable", "groupable", "featureGated"] as const;
 
 export interface GenerateOptions {
-  /** Emit only the objects and fields v1-pins.json lists, in the exact v1.0 key set (SC2 step 1). 09-07 sets false. */
+  /** Emit only the objects and fields v1-pins.json lists, in the exact v1.0 key set (SC2 step 1). The CLI runs full mode since 09-07. */
   v1Only: boolean;
   /** Return unresolved source conflicts in `report.conflicts` instead of aborting (`--report` and the step-B tests). */
   collectConflicts?: boolean;
 }
-export const CLI_OPTIONS: GenerateOptions = { v1Only: true };
+export const CLI_OPTIONS: GenerateOptions = { v1Only: false };
 
 /** A fact the two sources state differently. Values are JSON for the message. */
 export interface Conflict {
@@ -95,6 +95,8 @@ const COMPARED_FLAGS = ["createable", "updateable", "nillable", "defaultedOnCrea
 const FLAG_DEFAULTS: Readonly<Record<(typeof COMPARED_FLAGS)[number], boolean>> = { createable: true, updateable: true, nillable: true, defaultedOnCreate: false };
 const byName = (a: { name: string }, b: { name: string }): number => codeUnit(a.name, b.name);
 const show = (v: unknown): string => JSON.stringify(v) ?? "undefined";
+/** A string that ends a sentence or runs past 80 characters is documentation prose, not a field label (Research Pitfall 4); "Asst. Phone" is a label. */
+const looksLikeProse = (label: string): boolean => /[.!?]$/.test(label) || label.length > 80;
 const sameList = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((x, i) => x === b[i]);
 
 /** `JSON.stringify(v, null, 2) + "\n"`: the one serialiser shared by the CLI and the tests (D-19). */
@@ -155,10 +157,12 @@ export function deriveField(field: SourceField, addressFields: ReadonlySet<strin
   if ("skip" in mapped) return { source: field, json: { name: field.name }, conflicts, provenance, skip: { reason: mapped.skip, sourceType: mapped.sourceType } };
 
   const json: DerivedField["json"] = { name: field.name, label: "", type: mapped.type };
-  if (field.sf?.label) {
+  if (field.sf?.label && !looksLikeProse(field.sf.label)) {
     json.label = field.sf.label;
     provenance.label = "sdk-only";
   } else {
+    // No committed file may carry documentation prose (SC1): sf-skills field_reference labels of 87 Profile Permissions*
+    // fields are full sentences, so the name is humanised instead and the label is reported as guessed.
     json.label = humanise(field.name);
     provenance.label = "guessed";
   }
@@ -338,8 +342,10 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
 
     const fieldOverrides: Record<string, FieldOverride> = override.fields ?? {};
     const names = new Set<string>();
-    if (options.v1Only) for (const name of Object.keys(objectPins?.fields ?? {})) names.add(name);
-    else {
+    // v1.0 fields are always in the inventory, in both modes: one that both sources dropped aborts below until it gets a keep
+    // entry (or leaves through the diff-gate allowlist); it never vanishes silently.
+    for (const name of Object.keys(objectPins?.fields ?? {})) names.add(name);
+    if (!options.v1Only) {
       for (const [name, d] of derived) {
         if (isSystemName(name) || d.skip?.reason === "system") report.excludedSystem.push(`${object}.${name}`);
         else names.add(name);

@@ -3,11 +3,97 @@
   "label": "Opportunity History",
   "labelPlural": "Opportunity History",
   "keyPrefix": "008",
+  "keyPrefixSource": "unverified",
   "createable": false,
   "updateable": false,
   "deletable": false,
   "undeletable": false,
   "searchable": false,
   "hasOwner": false,
-  "fields": []
+  "fields": [
+    {
+      "name": "Amount",
+      "label": "Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CloseDate",
+      "label": "Close Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ExpectedRevenue",
+      "label": "Expected Revenue",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ForecastCategory",
+      "label": "To Forecast Category",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OpportunityId",
+      "label": "Opportunity ID",
+      "type": "Lookup",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity"
+    },
+    {
+      "name": "PrevAmount",
+      "label": "Previous Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PrevCloseDate",
+      "label": "Previous Close Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Probability",
+      "label": "Probability",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StageName",
+      "label": "Stage Name",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    }
+  ]
 }

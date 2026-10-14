@@ -3,6 +3,7 @@
   "label": "Call Center",
   "labelPlural": "Call Centers",
   "keyPrefix": "04v",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": false,
   "deletable": false,
@@ -10,6 +11,27 @@
   "searchable": false,
   "hasOwner": false,
   "fields": [
+    {
+      "name": "AdapterUrl",
+      "label": "CTI Adapter URL",
+      "type": "Text",
+      "length": 2000,
+      "updateable": false
+    },
+    {
+      "name": "CustomSettings",
+      "label": "Custom Settings",
+      "type": "Text",
+      "length": 3000,
+      "updateable": false
+    },
+    {
+      "name": "InternalName",
+      "label": "Internal Name",
+      "type": "Text",
+      "length": 240,
+      "updateable": false
+    },
     {
       "name": "Name",
       "label": "Call Center Name",
@@ -19,6 +41,14 @@
       "updateable": false,
       "idLookup": true,
       "nameField": true
+    },
+    {
+      "name": "Version",
+      "label": "Version",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "updateable": false
     }
   ]
 }

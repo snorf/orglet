@@ -3,6 +3,7 @@
   "label": "Record Type",
   "labelPlural": "Record Types",
   "keyPrefix": "012",
+  "keyPrefixSource": "unverified",
   "deletable": false,
   "undeletable": false,
   "hasOwner": false,

@@ -3,6 +3,7 @@
   "label": "Event",
   "labelPlural": "Events",
   "keyPrefix": "00U",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
     {
@@ -34,10 +35,33 @@
       "length": 255
     },
     {
+      "name": "ClientGuid",
+      "label": "Client Guid",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency Iso Code",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
       "name": "Description",
       "label": "Description",
       "type": "LongTextArea",
       "length": 32000
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "DurationInMinutes",
@@ -92,6 +116,15 @@
       "restrictedPicklist": true
     },
     {
+      "name": "GroupEventType",
+      "label": "Group Event Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
       "name": "IsAllDayEvent",
       "label": "All-Day Event",
       "type": "Checkbox",
@@ -108,6 +141,33 @@
       "updateable": false,
       "defaultedOnCreate": true,
       "defaultValue": "false"
+    },
+    {
+      "name": "IsChild",
+      "label": "Is Child",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsClientManaged",
+      "label": "Is Client Managed",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsGroupEvent",
+      "label": "Is Group Event",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "IsPrivate",
@@ -137,6 +197,24 @@
       "defaultValue": "false"
     },
     {
+      "name": "IsRecurrence2Exception",
+      "label": "Is Exception",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsRecurrence2Exclusion",
+      "label": "Historical Event, Not Following Recurrence",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "IsReminderSet",
       "label": "Reminder Set",
       "type": "Checkbox",
@@ -162,6 +240,35 @@
       "name": "Phone",
       "label": "Phone",
       "type": "Phone",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Recurrence2PatternStartDate",
+      "label": "Recurrence Pattern Start Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Recurrence2PatternText",
+      "label": "Recurrence Pattern",
+      "type": "LongTextArea",
+      "length": 512,
+      "updateable": false
+    },
+    {
+      "name": "Recurrence2PatternTimeZone",
+      "label": "Recurrence Pattern Time Zone Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Recurrence2PatternVersion",
+      "label": "Pattern Version",
+      "type": "Picklist",
       "createable": false,
       "updateable": false
     },
@@ -440,6 +547,15 @@
       "standardValueSet": "EventType"
     },
     {
+      "name": "WhatCount",
+      "label": "What Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "WhatId",
       "label": "Related To ID",
       "type": "Lookup",
@@ -453,6 +569,15 @@
         "Contract"
       ],
       "relationshipName": "What"
+    },
+    {
+      "name": "WhoCount",
+      "label": "Who Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "WhoId",

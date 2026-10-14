@@ -3,6 +3,7 @@
   "label": "Case",
   "labelPlural": "Cases",
   "keyPrefix": "500",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
     {
@@ -98,6 +99,40 @@
       "updateable": false
     },
     {
+      "name": "CreatorFullPhotoUrl",
+      "label": "Creator Full Photo Url",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "CreatorName",
+      "label": "Creator Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "CreatorSmallPhotoUrl",
+      "label": "Creator Small Photo Url",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Case Currency",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Description",
       "label": "Description",
       "type": "LongTextArea",
@@ -121,6 +156,15 @@
       "updateable": false,
       "defaultedOnCreate": true,
       "defaultValue": "false"
+    },
+    {
+      "name": "HasSelfServiceComments",
+      "label": "Has Self Service Comments",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "IsClosed",
@@ -151,12 +195,35 @@
       "defaultValue": "false"
     },
     {
+      "name": "IsSelfServiceClosed",
+      "label": "Is Self Service Closed",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "IsStopped",
       "label": "Stopped",
       "type": "Checkbox",
       "nillable": false,
       "defaultedOnCreate": true,
       "defaultValue": "false"
+    },
+    {
+      "name": "IsVisibleInSelfService",
+      "label": "Is Visible In Self Service",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Language",
+      "label": "Language",
+      "type": "Picklist"
     },
     {
       "name": "LastReferencedDate",

@@ -20,7 +20,8 @@ let v1: Baseline;
 let v2: Baseline;
 
 function regenerate(from: GeneratorInputs, options: GenerateOptions = CLI_OPTIONS): StandardObjectJson[] {
-  return [...generate(from, options).files.values()].map((text) => JSON.parse(text) as StandardObjectJson);
+  // Full mode also emits PROVENANCE.json; the gate compares objects only.
+  return [...generate(from, options).files].filter(([path]) => path.startsWith("objects/")).map(([, text]) => JSON.parse(text) as StandardObjectJson);
 }
 
 /** A deep copy of the regenerated v2 baseline with one synthetic edit applied. */

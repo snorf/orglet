@@ -3,6 +3,7 @@
   "label": "Opportunity",
   "labelPlural": "Opportunities",
   "keyPrefix": "006",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
     {
@@ -14,6 +15,15 @@
       ],
       "relationshipName": "Account",
       "childRelationshipName": "Opportunities"
+    },
+    {
+      "name": "AgeInDays",
+      "label": "Age",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "Amount",
@@ -59,6 +69,12 @@
       "childRelationshipName": "Opportunities"
     },
     {
+      "name": "CurrencyIsoCode",
+      "label": "Opportunity Currency",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
       "name": "Description",
       "label": "Description",
       "type": "LongTextArea",
@@ -70,6 +86,14 @@
       "type": "Currency",
       "precision": 18,
       "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ExportStatus",
+      "label": "Export Status",
+      "type": "Picklist",
+      "nillable": false,
       "createable": false,
       "updateable": false
     },
@@ -209,6 +233,13 @@
       "defaultValue": "false"
     },
     {
+      "name": "IsExcludedFromTerritory2Filter",
+      "label": "Exclude from the territory assignment filter logic",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "IsPriorityRecord",
       "label": "Important",
       "type": "Checkbox",
@@ -227,6 +258,15 @@
       "defaultValue": "false"
     },
     {
+      "name": "IsSplit",
+      "label": "Is Split",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "IsWon",
       "label": "Won",
       "type": "Checkbox",
@@ -240,6 +280,15 @@
       "name": "LastActivityDate",
       "label": "Last Activity",
       "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastActivityInDays",
+      "label": "Recent Activity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
       "createable": false,
       "updateable": false
     },
@@ -280,6 +329,15 @@
       "updateable": false
     },
     {
+      "name": "LastStageChangeInDays",
+      "label": "Days In Stage",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "LastViewedDate",
       "label": "Last Viewed Date",
       "type": "DateTime",
@@ -306,6 +364,17 @@
       "label": "Next Step",
       "type": "Text",
       "length": 255
+    },
+    {
+      "name": "PartnerAccountId",
+      "label": "Partner Account ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "featureGated": true
     },
     {
       "name": "Pricebook2Id",
@@ -343,6 +412,14 @@
         "RecordType"
       ],
       "relationshipName": "RecordType"
+    },
+    {
+      "name": "ReferralCode",
+      "label": "Referral Code",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "StageName",

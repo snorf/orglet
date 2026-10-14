@@ -3,6 +3,7 @@
   "label": "User",
   "labelPlural": "Users",
   "keyPrefix": "005",
+  "keyPrefixSource": "unverified",
   "deletable": false,
   "undeletable": false,
   "hasOwner": false,
@@ -38,6 +39,22 @@
       "type": "Text",
       "length": 8,
       "nillable": false
+    },
+    {
+      "name": "BadgeText",
+      "label": "User Photo badge text overlay",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BannerPhotoUrl",
+      "label": "URL for banner photo",
+      "type": "Url",
+      "length": 1024,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "CallCenterId",
@@ -85,6 +102,38 @@
       "type": "Text",
       "length": 80,
       "compoundFieldName": "Address"
+    },
+    {
+      "name": "CountryCode",
+      "label": "Country Code",
+      "type": "Picklist"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrentStatus",
+      "label": "Current Status",
+      "type": "TextArea",
+      "length": 255,
+      "featureGated": true
+    },
+    {
+      "name": "DefaultCurrencyIsoCode",
+      "label": "Default Currency ISO Code",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "DefaultDivision",
+      "label": "Default Division",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "DefaultGroupNotificationFrequency",
@@ -186,6 +235,26 @@
       "restrictedPicklist": true
     },
     {
+      "name": "EmailPreferencesAutoBcc",
+      "label": "AutoBcc",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "EmailPreferencesAutoBccStayInTouch",
+      "label": "AutoBccStayInTouch",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "EmailPreferencesStayInTouchReminder",
+      "label": "StayInTouchReminder",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "EmployeeNumber",
       "label": "Employee Number",
       "type": "Text",
@@ -241,6 +310,29 @@
       "updateable": false
     },
     {
+      "name": "GeocodeAccuracy",
+      "label": "Geocode Accuracy",
+      "type": "Picklist"
+    },
+    {
+      "name": "HasUserVerifiedEmail",
+      "label": "User Verified Email",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasUserVerifiedPhone",
+      "label": "User Verified Mobile Number",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "IndividualId",
       "label": "Individual ID",
       "type": "Lookup",
@@ -256,6 +348,54 @@
       "nillable": false,
       "defaultedOnCreate": true,
       "defaultValue": "true"
+    },
+    {
+      "name": "IsExtIndicatorVisible",
+      "label": "Show external indicator",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsPartner",
+      "label": "Is Partner",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsPortalEnabled",
+      "label": "Is Portal Enabled",
+      "type": "Checkbox",
+      "createable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
+      "name": "IsPortalSelfRegistered",
+      "label": "Is Portal Self Registered",
+      "type": "Checkbox",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsPrmSuperUser",
+      "label": "Is Prm Super User",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsProfilePhotoActive",
+      "label": "Has Profile Photo",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "IsSystemControlled",
@@ -315,6 +455,27 @@
       "compoundFieldName": "Name"
     },
     {
+      "name": "LastPasswordChangeDate",
+      "label": "Last Password Change or Reset",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Latitude",
       "label": "Latitude",
       "type": "Number",
@@ -360,6 +521,11 @@
       "compoundFieldName": "Address"
     },
     {
+      "name": "Manager",
+      "label": "Manager",
+      "type": "Picklist"
+    },
+    {
       "name": "ManagerId",
       "label": "Manager ID",
       "type": "Lookup",
@@ -368,6 +534,28 @@
       ],
       "relationshipName": "Manager",
       "childRelationshipName": "ManagedUsers"
+    },
+    {
+      "name": "MediumBannerPhotoUrl",
+      "label": "URL for Android banner photo",
+      "type": "Url",
+      "length": 1024,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MediumPhotoUrl",
+      "label": "URL for medium profile photo",
+      "type": "Url",
+      "length": 1024,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MiddleName",
+      "label": "Middle Name",
+      "type": "Text",
+      "length": 40
     },
     {
       "name": "MobilePhone",
@@ -385,10 +573,54 @@
       "nameField": true
     },
     {
+      "name": "NumberOfFailedLogins",
+      "label": "Failed Login Attempts",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OfflinePdaTrialExpirationDate",
+      "label": "Sales Anywhere Trial Expiration Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OfflineTrialExpirationDate",
+      "label": "Offline Edition Trial Expiration Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OutOfOfficeMessage",
+      "label": "Out of office message",
+      "type": "Text",
+      "length": 40,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PasswordExpirationDate",
+      "label": "Password Expiration Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Phone",
       "label": "Phone",
       "type": "Phone",
       "length": 40
+    },
+    {
+      "name": "PortalRole",
+      "label": "Portal Role Level",
+      "type": "Picklist",
+      "featureGated": true
     },
     {
       "name": "PostalCode",
@@ -443,6 +675,14 @@
       "length": 1333
     },
     {
+      "name": "SmallBannerPhotoUrl",
+      "label": "URL for IOS banner photo",
+      "type": "Url",
+      "length": 1024,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "SmallPhotoUrl",
       "label": "Photo URL",
       "type": "Url",
@@ -463,6 +703,11 @@
       "type": "Text",
       "length": 80,
       "compoundFieldName": "Address"
+    },
+    {
+      "name": "StateCode",
+      "label": "State Code",
+      "type": "Picklist"
     },
     {
       "name": "StayInTouchNote",
@@ -488,6 +733,19 @@
       "type": "TextArea",
       "length": 255,
       "compoundFieldName": "Address"
+    },
+    {
+      "name": "SuAccessExpirationDate",
+      "label": "SU Access Expiration Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Suffix",
+      "label": "Suffix",
+      "type": "Text",
+      "length": 40
     },
     {
       "name": "TimeZoneSidKey",
@@ -553,6 +811,49 @@
       "length": 80
     },
     {
+      "name": "UserPermissionsAvantgoUser",
+      "label": "AvantGo User",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPermissionsCallCenterAutoLogin",
+      "label": "Auto-login To Call Center",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPermissionsChatterAnswersUser",
+      "label": "User Permissions Chatter Answers User",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPermissionsInteractionUser",
+      "label": "Flow User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPermissionsJigsawProspectingUser",
+      "label": "Data.com User",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPermissionsKnowledgeUser",
+      "label": "Knowledge User",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPermissionsLiveAgentUser",
+      "label": "Chat User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
       "name": "UserPermissionsMarketingUser",
       "label": "Marketing User",
       "type": "Checkbox",
@@ -569,12 +870,769 @@
       "defaultValue": "false"
     },
     {
+      "name": "UserPermissionsSFContentUser",
+      "label": "Salesforce CRM Content User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPermissionsSiteforceContributorUser",
+      "label": "Site.com Contributor User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPermissionsSiteforcePublisherUser",
+      "label": "Site.com Publisher User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPermissionsSupportUser",
+      "label": "Service Cloud User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPermissionsWirelessUser",
+      "label": "User Permissions Wireless User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPermissionsWorkDotComUserFeature",
+      "label": "WDC User",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesActionLauncherEinsteinGptConsent",
+      "label": "ActionLauncherEinsteinGptConsent",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "UserPreferencesActivityRemindersPopup",
       "label": "ActivityRemindersPopup",
       "type": "Checkbox",
       "nillable": false,
       "defaultedOnCreate": true,
       "defaultValue": "false"
+    },
+    {
+      "name": "UserPreferencesAgentGdprConsent",
+      "label": "AgentGdprConsent",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesAllowConversationReminders",
+      "label": "AllowConversationReminders",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesApexPagesDeveloperMode",
+      "label": "ApexPagesDeveloperMode",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesAssistiveActionsEnabledInActionLauncher",
+      "label": "AssistiveActionsEnabledInActionLauncher",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesAutoForwardCall",
+      "label": "AutoForwardCall",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesAutoLogCallAsTask",
+      "label": "AutoLogCallAsTask",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesBRELookupTableWelcomeMat",
+      "label": "BRELookupTableWelcomeMat",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesCacheDiagnostics",
+      "label": "CacheDiagnostics",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesContentEmailAsAndWhen",
+      "label": "ContentEmailAsAndWhen",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesContentNoEmail",
+      "label": "ContentNoEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesCreateLEXAppsWTShown",
+      "label": "CreateLEXAppsWTShown",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesDisCommentAfterLikeEmail",
+      "label": "DisCommentAfterLikeEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisMentionsCommentEmail",
+      "label": "DisMentionsCommentEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisProfPostCommentEmail",
+      "label": "DisProfPostCommentEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableAllFeedsEmail",
+      "label": "DisableAllFeedsEmail",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesDisableAutoSubForFeeds",
+      "label": "User Preferences Disable Auto Sub For Feeds",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableBookmarkEmail",
+      "label": "DisableBookmarkEmail",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesDisableChangeCommentEmail",
+      "label": "DisableChangeCommentEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableEndorsementEmail",
+      "label": "DisableEndorsementEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableFeedbackEmail",
+      "label": "DisableFeedbackEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableFileShareNotificationsForApi",
+      "label": "DisableFileShareNotificationsForApi",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableFollowersEmail",
+      "label": "DisableFollowersEmail",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesDisableLaterCommentEmail",
+      "label": "DisableLaterCommentEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableLikeEmail",
+      "label": "DisableLikeEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableMentionsPostEmail",
+      "label": "DisableMentionsPostEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableMessageEmail",
+      "label": "DisableMessageEmail",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesDisableProfilePostEmail",
+      "label": "DisableProfilePostEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableRewardEmail",
+      "label": "User Preferences Disable Reward Email",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableSharePostEmail",
+      "label": "DisableSharePostEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDisableWorkEmail",
+      "label": "DisableWorkEmail",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesDismissPersonalSpaceLegalMessage",
+      "label": "DismissPersonalSpaceLegalMessage",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesDismissRecordChannelsSuggestedObjects",
+      "label": "DismissRecordChannelsSuggestedObjects",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesDismissReuseUpdateReminderModal",
+      "label": "DismissReuseUpdateReminderModal",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesEmailSummarizationGptConsent",
+      "label": "EmailSummarizationGptConsent",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesEnableAutoSubForFeeds",
+      "label": "EnableAutoSubForFeeds",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesEnableLwrLexPilot",
+      "label": "EnableLwrLexPilot",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesEnableVoiceCallRecording",
+      "label": "EnableVoiceCallRecording",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesEnableVoiceLocalPresence",
+      "label": "User Preferences Enable Voice Local Presence",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesEventRemindersCheckboxDefault",
+      "label": "EventRemindersCheckboxDefault",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesExcludeMailAppAttachments",
+      "label": "ExcludeMailAppAttachments",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesFavoritesShowTopFavorites",
+      "label": "FavoritesShowTopFavorites",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesFavoritesWTShown",
+      "label": "FavoritesWTShown",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesGenAISummarizationUserConsent",
+      "label": "GenAISummarizationUserConsent",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesGlobalNavBarWTShown",
+      "label": "GlobalNavBarWTShown",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesGlobalNavGridMenuWTShown",
+      "label": "GlobalNavGridMenuWTShown",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHasCelebrationBadge",
+      "label": "HasCelebrationBadge",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHasSentWarningEmail",
+      "label": "HasSentWarningEmail",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHasSentWarningEmail238",
+      "label": "HasSentWarningEmail238",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHasSentWarningEmail240",
+      "label": "HasSentWarningEmail240",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHideBiggerPhotoCallout",
+      "label": "HideBiggerPhotoCallout",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesHideBrowseProductRedirectConfirmation",
+      "label": "HideBrowseProductRedirectConfirmation",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHideCSNDesktopTask",
+      "label": "HideCSNDesktopTask",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesHideCSNGetChatterMobileTask",
+      "label": "HideCSNGetChatterMobileTask",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesHideChatterOnboardingSplash",
+      "label": "HideChatterOnboardingSplash",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesHideEndUserOnboardingAssistantModal",
+      "label": "HideEndUserOnboardingAssistantModal",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesHideLightningMigrationModal",
+      "label": "HideLightningMigrationModal",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesHideManagedEcaMobilePubModal",
+      "label": "HideManagedEcaMobilePubModal",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHideOnlineSalesAppTabVisibilityRequirementsModal",
+      "label": "HideOnlineSalesAppTabVisibilityRequirementsModal",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHideOnlineSalesAppWelcomeMat",
+      "label": "HideOnlineSalesAppWelcomeMat",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesHideS1BrowserUI",
+      "label": "HideS1BrowserUI",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesHideSecondChatterOnboardingSplash",
+      "label": "HideSecondChatterOnboardingSplash",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesHideSfxWelcomeMat",
+      "label": "HideSfxWelcomeMat",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesJigsawListUser",
+      "label": "JigsawListUser",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "UserPreferencesLightningExperiencePreferred",
+      "label": "LightningExperiencePreferred",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesLiveAgentMiawSetupDeflection",
+      "label": "LiveAgentMiawSetupDeflection",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesNativeEmailClient",
+      "label": "NativeEmailClient",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesNewLightningReportRunPageEnabled",
+      "label": "NewLightningReportRunPageEnabled",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesOptOutOfTouch",
+      "label": "User Preferences Opt Out Of Touch",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesOutboundBridge",
+      "label": "OutboundBridge",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesPathAssistantCollapsed",
+      "label": "PathAssistantCollapsed",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesPreviewCustomTheme",
+      "label": "PreviewCustomTheme",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesPreviewLightning",
+      "label": "PreviewLightning",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesProcessAssistantCollapsed",
+      "label": "User Preferences Process Assistant Collapsed",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesReceiveNoNotificationsAsApprover",
+      "label": "ReceiveNoNotificationsAsApprover",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesReceiveNotificationsAsDelegatedApprover",
+      "label": "ReceiveNotificationsAsDelegatedApprover",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesRecordHomeReservedWTShown",
+      "label": "RecordHomeReservedWTShown",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesRecordHomeSectionCollapseWTShown",
+      "label": "RecordHomeSectionCollapseWTShown",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesReminderSoundOff",
+      "label": "ReminderSoundOff",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesReverseOpenActivitiesView",
+      "label": "ReverseOpenActivitiesView",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesSRHOverrideActivities",
+      "label": "SRHOverrideActivities",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesSendListEmailThroughExternalService",
+      "label": "SendListEmailThroughExternalService",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesShowCityToExternalUsers",
+      "label": "ShowCityToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowCityToGuestUsers",
+      "label": "ShowCityToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowCountryToExternalUsers",
+      "label": "ShowCountryToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowCountryToGuestUsers",
+      "label": "ShowCountryToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowEmailToExternalUsers",
+      "label": "ShowEmailToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowEmailToGuestUsers",
+      "label": "ShowEmailToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowFaxToExternalUsers",
+      "label": "ShowFaxToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowFaxToGuestUsers",
+      "label": "ShowFaxToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowForecastingChangeSignals",
+      "label": "ShowForecastingChangeSignals",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesShowForecastingRoundedAmounts",
+      "label": "ShowForecastingRoundedAmounts",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesShowManagerToExternalUsers",
+      "label": "ShowManagerToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowManagerToGuestUsers",
+      "label": "ShowManagerToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowMobilePhoneToExternalUsers",
+      "label": "ShowMobilePhoneToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowMobilePhoneToGuestUsers",
+      "label": "ShowMobilePhoneToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowPostalCodeToExternalUsers",
+      "label": "ShowPostalCodeToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowPostalCodeToGuestUsers",
+      "label": "ShowPostalCodeToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowProfilePicToGuestUsers",
+      "label": "ShowProfilePicToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowStateToExternalUsers",
+      "label": "ShowStateToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowStateToGuestUsers",
+      "label": "ShowStateToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowStreetAddressToExternalUsers",
+      "label": "ShowStreetAddressToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowStreetAddressToGuestUsers",
+      "label": "ShowStreetAddressToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowTerritoryTimeZoneShifts",
+      "label": "ShowTerritoryTimeZoneShifts",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesShowTitleToExternalUsers",
+      "label": "ShowTitleToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowTitleToGuestUsers",
+      "label": "ShowTitleToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowWorkPhoneToExternalUsers",
+      "label": "ShowWorkPhoneToExternalUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesShowWorkPhoneToGuestUsers",
+      "label": "ShowWorkPhoneToGuestUsers",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesSortFeedByComment",
+      "label": "SortFeedByComment",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesSuppressEventSFXReminders",
+      "label": "SuppressEventSFXReminders",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesSuppressTaskSFXReminders",
+      "label": "SuppressTaskSFXReminders",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesTaskRemindersCheckboxDefault",
+      "label": "TaskRemindersCheckboxDefault",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "UserPreferencesUseSalesforceMailerForLexEmail",
+      "label": "UseSalesforceMailerForLexEmail",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UserPreferencesUserDebugModePref",
+      "label": "UserDebugModePref",
+      "type": "Checkbox",
+      "nillable": false
     },
     {
       "name": "UserRoleId",
@@ -628,6 +1686,13 @@
       "nillable": false,
       "unique": true,
       "idLookup": true
+    },
+    {
+      "name": "WirelessEmail",
+      "label": "Wireless Email",
+      "type": "Email",
+      "length": 255,
+      "featureGated": true
     },
     {
       "name": "WorkspaceId",

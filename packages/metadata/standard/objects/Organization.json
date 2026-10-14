@@ -3,6 +3,7 @@
   "label": "Organization",
   "labelPlural": "Organizations",
   "keyPrefix": "00D",
+  "keyPrefixSource": "unverified",
   "createable": false,
   "deletable": false,
   "undeletable": false,
@@ -14,6 +15,14 @@
       "type": "Address",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "AllowsSelfServiceLogin",
+      "label": "Allows Self Service Login",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "City",
@@ -41,6 +50,47 @@
       "compoundFieldName": "Address"
     },
     {
+      "name": "CountryCode",
+      "label": "Country Code",
+      "type": "Picklist"
+    },
+    {
+      "name": "DailyWebToCaseCount",
+      "label": "Daily Web To Case Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DailyWebToCaseLimit",
+      "label": "Daily Web To Case Limit",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DailyWebToLeadCount",
+      "label": "Daily Web To Lead Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DailyWebToLeadLimit",
+      "label": "Daily Web To Lead Limit",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "DefaultAccountAccess",
       "label": "Default Account Access",
       "type": "Picklist",
@@ -65,6 +115,13 @@
         }
       ],
       "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultAccountAndContactAccess",
+      "label": "Default Account And Contact Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "DefaultCalendarAccess",
@@ -96,6 +153,13 @@
         }
       ],
       "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultCampaignAccess",
+      "label": "Default Campaign Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "DefaultCaseAccess",
@@ -258,6 +322,35 @@
       "restrictedPicklist": true
     },
     {
+      "name": "DefaultTerritoryCaseAccess",
+      "label": "Default Territory Case Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultTerritoryContactAccess",
+      "label": "Default Territory Contact Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultTerritoryOppAccess",
+      "label": "Default Territory Opp Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DelegatedAuthenticationServiceUrl",
+      "label": "Single Sign-On Gateway URL",
+      "type": "Url",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Division",
       "label": "Division",
       "type": "Text",
@@ -281,10 +374,31 @@
       "updateable": false
     },
     {
+      "name": "GeocodeAccuracy",
+      "label": "Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HomepageHtml",
+      "label": "Homepage Html",
+      "type": "TextArea",
+      "length": 255,
+      "createable": false
+    },
+    {
       "name": "InstanceName",
       "label": "Instance Name",
       "type": "Text",
       "length": 5,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsReadOnly",
+      "label": "Is Read Only",
+      "type": "Checkbox",
       "createable": false,
       "updateable": false
     },
@@ -325,6 +439,20 @@
       "restrictedPicklist": true
     },
     {
+      "name": "LastWebToCaseDate",
+      "label": "Last Web To Case Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastWebToLeadDate",
+      "label": "Last Web To Lead Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Latitude",
       "label": "Latitude",
       "type": "Number",
@@ -341,6 +469,24 @@
       "scale": 15,
       "createable": false,
       "compoundFieldName": "Address"
+    },
+    {
+      "name": "MaxActionsPerRule",
+      "label": "Max Actions Per Rule",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MaxRulesPerEntity",
+      "label": "Max Rules Per Entity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "MonthlyPageViewsEntitlement",
@@ -378,6 +524,15 @@
       "createable": false,
       "updateable": false,
       "idLookup": true
+    },
+    {
+      "name": "NumKnowledgeService",
+      "label": "Knowledge Licenses",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "OrganizationType",
@@ -429,6 +584,48 @@
       "compoundFieldName": "Address"
     },
     {
+      "name": "PreferencesAutoSelectIndividualOnMerge",
+      "label": "AutoSelectIndividualOnMerge",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesConsentManagementEnabled",
+      "label": "ConsentManagementEnabled",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesEventScheduler",
+      "label": "Preferences Event Scheduler",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PreferencesLightningLoginEnabled",
+      "label": "LightningLoginEnabled",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesOnlyLLPermUserAllowed",
+      "label": "OnlyLLPermUserAllowed",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesPublicSectorTaxRevEnabled",
+      "label": "Preferences Public Sector Tax Rev Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
       "name": "PreferencesRequireOpportunityProducts",
       "label": "RequireOpportunityProducts",
       "type": "Checkbox",
@@ -436,6 +633,27 @@
       "createable": false,
       "defaultedOnCreate": true,
       "defaultValue": "false"
+    },
+    {
+      "name": "PreferencesS1BrowserEnabled",
+      "label": "Preferences S1 Browser Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PreferencesTerminateOldestSession",
+      "label": "Preferences Terminate Oldest Session",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PreferencesTransactionSecurityPolicy",
+      "label": "TransactionSecurityPolicy",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
     },
     {
       "name": "PrimaryContact",
@@ -463,6 +681,144 @@
       "defaultValue": "false"
     },
     {
+      "name": "SelfServicDefaultCaseOrigin",
+      "label": "Self Servic Default Case Origin",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceCasePlural",
+      "label": "Self Service Case Plural",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceCaseSingle",
+      "label": "Self Service Case Single",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceEmailSenderAddress",
+      "label": "Self Service Email Sender Address",
+      "type": "Email",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceEmailSenderName",
+      "label": "Self Service Email Sender Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceEnabledForResponseRules",
+      "label": "Self Service Enabled For Response Rules",
+      "type": "Checkbox",
+      "createable": false
+    },
+    {
+      "name": "SelfServiceFeatureConfig",
+      "label": "Self Service Feature Config",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceLogoutUrl",
+      "label": "Self Service Logout Url",
+      "type": "Url",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceMaxNumSuggestions",
+      "label": "Self Service Max Num Suggestions",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceNewCommentCheckedByDefault",
+      "label": "Self Service New Comment Checked By Default",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "SelfServicePageHeight",
+      "label": "Self Service Page Height",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServicePageWidth",
+      "label": "Self Service Page Width",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceSelfClosedCaseStatus",
+      "label": "Self Service Self Closed Case Status",
+      "type": "Picklist",
+      "createable": false
+    },
+    {
+      "name": "SelfServiceSolutionCategoryAvailable",
+      "label": "Self Service Solution Category Available",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "SelfServiceSolutionPlural",
+      "label": "Self Service Solution Plural",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceSolutionSingle",
+      "label": "Self Service Solution Single",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceStyleSheetUrl",
+      "label": "Self Service Style Sheet Url",
+      "type": "Url",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceWelcomePageConfig",
+      "label": "Self Service Welcome Page Config",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceWelcomeText",
+      "label": "Self Service Welcome Text",
+      "type": "Text",
+      "length": 32000,
+      "createable": false
+    },
+    {
       "name": "SignupCountryIsoCode",
       "label": "Signup Country",
       "type": "Text",
@@ -477,6 +833,11 @@
       "length": 80,
       "createable": false,
       "compoundFieldName": "Address"
+    },
+    {
+      "name": "StateCode",
+      "label": "State Code",
+      "type": "Picklist"
     },
     {
       "name": "Street",
@@ -602,6 +963,18 @@
       "updateable": false,
       "defaultedOnCreate": true,
       "defaultValue": "false"
+    },
+    {
+      "name": "UsesWebToCase",
+      "label": "Uses Web To Case",
+      "type": "Checkbox",
+      "createable": false
+    },
+    {
+      "name": "UsesWebToLead",
+      "label": "Uses Web To Lead",
+      "type": "Checkbox",
+      "createable": false
     },
     {
       "name": "WebToCaseDefaultOrigin",

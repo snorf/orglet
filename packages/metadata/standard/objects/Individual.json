@@ -3,6 +3,7 @@
   "label": "Individual",
   "labelPlural": "Individuals",
   "keyPrefix": "0PK",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": true,
   "deletable": true,
@@ -11,11 +12,116 @@
   "hasOwner": true,
   "fields": [
     {
+      "name": "BirthDate",
+      "label": "Birth Date",
+      "type": "Date"
+    },
+    {
+      "name": "CanStorePiiElsewhere",
+      "label": "OK to Store PII Data Elsewhere",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ChildrenCount",
+      "label": "Number of Children",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "ConsumerCreditScore",
+      "label": "Consumer Credit Score",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "ConsumerCreditScoreProviderName",
+      "label": "Consumer Credit Score Provider Name",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "ConvictionsCount",
+      "label": "Conviction Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "DeathDate",
+      "label": "Death Date",
+      "type": "Date"
+    },
+    {
       "name": "FirstName",
       "label": "First Name",
       "type": "Text",
       "length": 40,
       "compoundFieldName": "Name"
+    },
+    {
+      "name": "HasOptedOutGeoTracking",
+      "label": "Block Geolocation Tracking",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasOptedOutProcessing",
+      "label": "Don't Process",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasOptedOutProfiling",
+      "label": "Don't Profile",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasOptedOutSolicit",
+      "label": "Don't Market",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasOptedOutTracking",
+      "label": "Don't Track",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasPrivacyHold",
+      "label": "Has Privacy Hold",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IndividualsAge",
+      "label": "Individual's Age",
+      "type": "Picklist"
+    },
+    {
+      "name": "InfluencerRating",
+      "label": "Influencer Rating",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "IsHomeOwner",
+      "label": "Is Homeowner",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "LastName",
@@ -26,6 +132,29 @@
       "compoundFieldName": "Name"
     },
     {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MasterRecordId",
+      "label": "Master Record ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Individual"
+      ],
+      "relationshipName": "MasterRecord"
+    },
+    {
+      "name": "MilitaryService",
+      "label": "Military Service",
+      "type": "Picklist"
+    },
+    {
       "name": "Name",
       "label": "Name",
       "type": "Name",
@@ -33,6 +162,37 @@
       "createable": false,
       "updateable": false,
       "nameField": true
+    },
+    {
+      "name": "Occupation",
+      "label": "Occupation",
+      "type": "Text",
+      "length": 150
+    },
+    {
+      "name": "Salutation",
+      "label": "Salutation",
+      "type": "Picklist"
+    },
+    {
+      "name": "SendIndividualData",
+      "label": "Export Individual's Data",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ShouldForget",
+      "label": "Forget this Individual",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Website",
+      "label": "Website",
+      "type": "Url",
+      "length": 255
     }
   ]
 }

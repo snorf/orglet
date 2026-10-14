@@ -3,6 +3,7 @@
   "label": "Role",
   "labelPlural": "Roles",
   "keyPrefix": "00E",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "deletable": true,
   "hasOwner": false,
@@ -63,6 +64,15 @@
         "User"
       ],
       "relationshipName": "ForecastUser"
+    },
+    {
+      "name": "IsPartner",
+      "label": "Is Partner",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "MayForecastManagerShare",
@@ -132,6 +142,13 @@
         "User"
       ],
       "relationshipName": "PortalAccountOwner"
+    },
+    {
+      "name": "PortalRole",
+      "label": "Portal Role",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "PortalType",

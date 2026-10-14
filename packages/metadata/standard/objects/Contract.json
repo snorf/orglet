@@ -3,6 +3,7 @@
   "label": "Contract",
   "labelPlural": "Contracts",
   "keyPrefix": "800",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
     {
@@ -35,6 +36,11 @@
       "updateable": false
     },
     {
+      "name": "AggregationStrategy",
+      "label": "Aggregation Strategy",
+      "type": "Picklist"
+    },
+    {
       "name": "BillingAddress",
       "label": "Billing Address",
       "type": "Address",
@@ -53,6 +59,12 @@
       "label": "Billing Country",
       "type": "Text",
       "length": 80,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingCountryCode",
+      "label": "Billing Country Code",
+      "type": "Picklist",
       "compoundFieldName": "BillingAddress"
     },
     {
@@ -139,6 +151,12 @@
       "compoundFieldName": "BillingAddress"
     },
     {
+      "name": "BillingStateCode",
+      "label": "Billing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
       "name": "BillingStreet",
       "label": "Billing Street",
       "type": "TextArea",
@@ -178,6 +196,13 @@
       "scale": 0
     },
     {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "CustomerSignedDate",
       "label": "Customer Signed Date",
       "type": "Date"
@@ -209,6 +234,22 @@
       "type": "Date",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "HasContractCotermination",
+      "label": "Has Contract Cotermination",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsPricingContract",
+      "label": "Is Pricing Contract",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "LastActivityDate",
@@ -287,6 +328,11 @@
       "childRelationshipName": "Contracts"
     },
     {
+      "name": "PricingSource",
+      "label": "Pricing Source",
+      "type": "Picklist"
+    },
+    {
       "name": "RecordTypeId",
       "label": "Record Type ID",
       "type": "Lookup",
@@ -294,6 +340,18 @@
         "RecordType"
       ],
       "relationshipName": "RecordType"
+    },
+    {
+      "name": "RenewalTerm2",
+      "label": "Renewal Term",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "RenewalTermUnit",
+      "label": "Renewal Term Unit",
+      "type": "Picklist"
     },
     {
       "name": "ShippingAddress",
@@ -314,6 +372,12 @@
       "label": "Shipping Country",
       "type": "Text",
       "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingCountryCode",
+      "label": "Shipping Country Code",
+      "type": "Picklist",
       "compoundFieldName": "ShippingAddress"
     },
     {
@@ -400,6 +464,12 @@
       "compoundFieldName": "ShippingAddress"
     },
     {
+      "name": "ShippingStateCode",
+      "label": "Shipping State Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
       "name": "ShippingStreet",
       "label": "Shipping Street",
       "type": "TextArea",
@@ -455,6 +525,13 @@
         }
       ],
       "restrictedPicklist": true
+    },
+    {
+      "name": "UnitPriceUplift",
+      "label": "Unit Price Uplift",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
     }
   ]
 }

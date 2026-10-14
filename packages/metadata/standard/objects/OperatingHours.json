@@ -3,6 +3,7 @@
   "label": "Operating Hours",
   "labelPlural": "Operating Hours",
   "keyPrefix": "0OH",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": true,
   "deletable": true,
@@ -11,6 +12,33 @@
   "hasOwner": true,
   "fields": [
     {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Name",
       "label": "Name",
       "type": "Text",
@@ -18,6 +46,18 @@
       "nillable": false,
       "idLookup": true,
       "nameField": true
+    },
+    {
+      "name": "OperatingHoursRowType",
+      "label": "Operating Hours Row Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeZone",
+      "label": "Time Zone",
+      "type": "Picklist"
     }
   ]
 }

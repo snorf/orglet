@@ -3,6 +3,7 @@
   "label": "Task",
   "labelPlural": "Tasks",
   "keyPrefix": "00T",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
     {
@@ -65,6 +66,13 @@
       "name": "CompletedDateTime",
       "label": "Completed Date/Time",
       "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
       "createable": false,
       "updateable": false
     },
@@ -448,6 +456,15 @@
       "standardValueSet": "TaskType"
     },
     {
+      "name": "WhatCount",
+      "label": "What Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "WhatId",
       "label": "Related To ID",
       "type": "Lookup",
@@ -461,6 +478,15 @@
         "Contract"
       ],
       "relationshipName": "What"
+    },
+    {
+      "name": "WhoCount",
+      "label": "Who Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "WhoId",

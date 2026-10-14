@@ -3,6 +3,7 @@
   "label": "Business Process",
   "labelPlural": "Business Processes",
   "keyPrefix": "019",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": true,
   "deletable": false,
@@ -11,6 +12,20 @@
   "hasOwner": false,
   "fields": [
     {
+      "name": "Description",
+      "label": "Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "IsActive",
+      "label": "Is Active",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "Name",
       "label": "Name",
       "type": "Text",
@@ -18,6 +33,20 @@
       "nillable": false,
       "idLookup": true,
       "nameField": true
+    },
+    {
+      "name": "NamespacePrefix",
+      "label": "Namespace Prefix",
+      "type": "Text",
+      "length": 15,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TableEnumOrId",
+      "label": "Table Enum Or ID",
+      "type": "Picklist",
+      "updateable": false
     }
   ]
 }

@@ -3,8 +3,16 @@
   "label": "Price Book",
   "labelPlural": "Price Books",
   "keyPrefix": "01s",
+  "keyPrefixSource": "unverified",
   "hasOwner": false,
   "fields": [
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
     {
       "name": "Description",
       "label": "Description",
@@ -52,6 +60,16 @@
       "nillable": false,
       "idLookup": true,
       "nameField": true
+    },
+    {
+      "name": "ValidFrom",
+      "label": "Valid From",
+      "type": "DateTime"
+    },
+    {
+      "name": "ValidTo",
+      "label": "Valid To",
+      "type": "DateTime"
     }
   ]
 }

@@ -3,6 +3,7 @@
   "label": "Campaign",
   "labelPlural": "Campaigns",
   "keyPrefix": "701",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
     {
@@ -45,6 +46,19 @@
         "RecordType"
       ],
       "relationshipName": "CampaignMemberRecordType"
+    },
+    {
+      "name": "CampaignStage",
+      "label": "Campaign Stage",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "defaultedOnCreate": true
     },
     {
       "name": "Description",
@@ -180,6 +194,86 @@
       "updateable": false
     },
     {
+      "name": "HierarchyTotalEmailsDelivered",
+      "label": "Hierarchy Total Emails Delivered",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HierarchyTotalFormSubmissions",
+      "label": "Hierarchy Total Form Submissions",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HierarchyTotalFormViews",
+      "label": "Hierarchy Total Form Views",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HierarchyTotalLandingPageFormSubmissions",
+      "label": "Hierarchy Total Landing Page Form Submissions",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HierarchyTotalLandingPageViews",
+      "label": "Hierarchy Total Landing Page Views",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HierarchyUniqueEmailOpens",
+      "label": "Hierarchy Unique Email Opens",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HierarchyUniqueEmailTrackedLinkClicks",
+      "label": "Hierarchy Unique Email Tracked Link Clicks",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HierarchyUniqueMarketingLinkClicks",
+      "label": "Hierarchy Unique Marketing Link Clicks",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "IsActive",
       "label": "Active",
       "type": "Checkbox",
@@ -310,11 +404,151 @@
       "standardValueSet": "CampaignStatus"
     },
     {
+      "name": "TotalAmountAllOpportunities",
+      "label": "Total Amount All Opportunities",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAmountAllWonOpportunities",
+      "label": "Total Amount All Won Opportunities",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalEmailsDelivered",
+      "label": "Total Emails Delivered",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalFormSubmissions",
+      "label": "Total Form Submissions",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalFormViews",
+      "label": "Total Form Views",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalLandingPageFormSubmissions",
+      "label": "Total Landing Page Form Submissions",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalLandingPageViews",
+      "label": "Total Landing Page Views",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalNumberofLeads",
+      "label": "Total Numberof Leads",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalNumberofOpportunities",
+      "label": "Total Numberof Opportunities",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalNumberofResponses",
+      "label": "Total Numberof Responses",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalNumberofWonOpportunities",
+      "label": "Total Numberof Won Opportunities",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Type",
       "label": "Type",
       "type": "Picklist",
       "defaultedOnCreate": true,
       "standardValueSet": "CampaignType"
+    },
+    {
+      "name": "UniqueEmailOpens",
+      "label": "Unique Email Opens",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UniqueEmailTrackedLinkClicks",
+      "label": "Unique Email Tracked Link Clicks",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UniqueMarketingLinkClicks",
+      "label": "Unique Marketing Link Clicks",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
     }
   ]
 }

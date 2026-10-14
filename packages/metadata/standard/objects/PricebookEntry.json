@@ -3,8 +3,26 @@
   "label": "Price Book Entry",
   "labelPlural": "Price Book Entries",
   "keyPrefix": "01u",
+  "keyPrefixSource": "unverified",
   "hasOwner": false,
   "fields": [
+    {
+      "name": "ActivePriceAdjustmentQuantity",
+      "label": "Active Price Adjustments",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
     {
       "name": "IsActive",
       "label": "Active",
@@ -13,6 +31,13 @@
     {
       "name": "IsArchived",
       "label": "Archived",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsDerived",
+      "label": "Is Derived",
       "type": "Checkbox",
       "createable": false,
       "updateable": false

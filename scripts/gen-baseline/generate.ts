@@ -56,7 +56,7 @@ function writeOrCheck(inputs: GeneratorInputs, check: boolean): number {
     console.error(check ? "baseline drift: run `pnpm baseline:gen` and commit the result" : "stray files under packages/metadata/standard/objects: remove them or add the object to objects.json");
     return 1;
   }
-  console.log(`${check ? "checked" : "wrote"} ${files.size} object files`);
+  console.log(`${check ? "checked" : "wrote"} ${files.size} files`);
   return 0;
 }
 

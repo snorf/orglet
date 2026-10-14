@@ -3,6 +3,7 @@
   "label": "Contact",
   "labelPlural": "Contacts",
   "keyPrefix": "003",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
   "fields": [
     {
@@ -14,6 +15,22 @@
       ],
       "relationshipName": "Account",
       "childRelationshipName": "Contacts"
+    },
+    {
+      "name": "ActionCadenceState",
+      "label": "Cadence State",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ActiveTrackerCount",
+      "label": "Total Cadences",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "AssistantName",
@@ -74,6 +91,13 @@
       "restrictedPicklist": true
     },
     {
+      "name": "CanAllowPortalSelfReg",
+      "label": "Can Allow Portal Self Reg",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
       "name": "CleanStatus",
       "label": "Clean Status",
       "type": "Picklist",
@@ -114,6 +138,30 @@
       "restrictedPicklist": true
     },
     {
+      "name": "CommerceCustomerReference",
+      "label": "Commerce Customer Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CommerceGroupReference",
+      "label": "Commerce Group Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CommerceOrganizationReference",
+      "label": "Commerce Organization Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "ContactSource",
       "label": "Creation Source",
       "type": "Picklist",
@@ -126,10 +174,22 @@
       "restrictedPicklist": true
     },
     {
+      "name": "CurrencyIsoCode",
+      "label": "Contact Currency",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Department",
       "label": "Department",
       "type": "Text",
       "length": 80
+    },
+    {
+      "name": "DepartmentGroup",
+      "label": "Department Group",
+      "type": "Picklist"
     },
     {
       "name": "Description",
@@ -172,6 +232,20 @@
       "label": "Business Fax",
       "type": "Phone",
       "length": 40
+    },
+    {
+      "name": "FirstCallDateTime",
+      "label": "First Call Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FirstEmailDateTime",
+      "label": "First Email Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "FirstName",
@@ -229,6 +303,15 @@
       "defaultValue": "false"
     },
     {
+      "name": "IsPersonAccount",
+      "label": "Is Person Account",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
       "name": "IsPriorityRecord",
       "label": "Important",
       "type": "Checkbox",
@@ -243,6 +326,15 @@
       "label": "Data.com Key",
       "type": "Text",
       "length": 20
+    },
+    {
+      "name": "JigsawContactId",
+      "label": "Jigsaw Contact ID",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
     },
     {
       "name": "LastActivityDate",
@@ -315,6 +407,12 @@
       "compoundFieldName": "MailingAddress"
     },
     {
+      "name": "MailingCountryCode",
+      "label": "Mailing Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "MailingAddress"
+    },
+    {
       "name": "MailingGeocodeAccuracy",
       "label": "Mailing Geocode Accuracy",
       "type": "Picklist",
@@ -353,6 +451,12 @@
       "compoundFieldName": "MailingAddress"
     },
     {
+      "name": "MailingStateCode",
+      "label": "Mailing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "MailingAddress"
+    },
+    {
       "name": "MailingStreet",
       "label": "Mailing Street",
       "type": "TextArea",
@@ -369,6 +473,12 @@
         "Contact"
       ],
       "relationshipName": "MasterRecord"
+    },
+    {
+      "name": "MiddleName",
+      "label": "Middle Name",
+      "type": "Text",
+      "length": 40
     },
     {
       "name": "MobilePhone",
@@ -404,6 +514,12 @@
       "label": "Other Country",
       "type": "Text",
       "length": 80,
+      "compoundFieldName": "OtherAddress"
+    },
+    {
+      "name": "OtherCountryCode",
+      "label": "Other Country Code",
+      "type": "Picklist",
       "compoundFieldName": "OtherAddress"
     },
     {
@@ -448,6 +564,12 @@
       "label": "Other State/Province",
       "type": "Text",
       "length": 80,
+      "compoundFieldName": "OtherAddress"
+    },
+    {
+      "name": "OtherStateCode",
+      "label": "Other State Code",
+      "type": "Picklist",
       "compoundFieldName": "OtherAddress"
     },
     {
@@ -504,10 +626,28 @@
       "compoundFieldName": "Name"
     },
     {
+      "name": "ScheduledResumeDateTime",
+      "label": "Cadence Resume Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Suffix",
+      "label": "Suffix",
+      "type": "Text",
+      "length": 40
+    },
+    {
       "name": "Title",
       "label": "Title",
       "type": "Text",
       "length": 128
+    },
+    {
+      "name": "TitleType",
+      "label": "Seniority Level",
+      "type": "Picklist"
     }
   ]
 }

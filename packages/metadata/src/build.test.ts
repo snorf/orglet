@@ -4,6 +4,7 @@ import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Ba
 import { formatDiagnostic } from "./diagnostics.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+const V1_BASELINE = fileURLToPath(new URL("../test/fixtures/baseline-v1.0/", import.meta.url));
 
 const SYSTEM_FIELDS = ["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"];
 /** Objects the Object Reference gives no name-equivalent field (D-02); adding one must be a conscious act. */
@@ -94,10 +95,14 @@ describe("standard baseline alone", () => {
     }
   });
 
-  it("thin: each of the 14 objects carries only Id, the system fields, OwnerId when owned and its name, seed or compound fields", () => {
+  it("thin: each of the 14 objects keeps its v1.0 fields and only gains documented ones (BASE2-02 supersedes the phase-3 'only' rule)", async () => {
+    const v1 = await loadBaseline(V1_BASELINE);
     for (const [name, f] of Object.entries(THIN)) {
-      const obj = result.schema.getObject(name);
-      expect(obj?.fields.map((x) => x.name).sort(), name).toEqual([...SYSTEM_FIELDS, ...(f.hasOwner ? ["OwnerId"] : []), ...f.extra].sort());
+      const v1Names = [...SYSTEM_FIELDS, ...(f.hasOwner ? ["OwnerId"] : []), ...(v1.objects.find((o) => o.name === name)?.fields.map((x) => x.name) ?? [])];
+      // The frozen v1.0 fixture is exactly the phase-3 thin shape; the live baseline must be a superset of it.
+      expect([...v1Names].sort(), name).toEqual([...SYSTEM_FIELDS, ...(f.hasOwner ? ["OwnerId"] : []), ...f.extra].sort());
+      const now = new Set(result.schema.getObject(name)?.fields.map((x) => x.name));
+      for (const n of v1Names) expect(now.has(n), `${name}.${n}`).toBe(true);
     }
   });
 

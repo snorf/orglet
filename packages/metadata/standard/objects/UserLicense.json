@@ -3,6 +3,7 @@
   "label": "User License",
   "labelPlural": "User Licenses",
   "keyPrefix": "100",
+  "keyPrefixSource": "unverified",
   "createable": false,
   "updateable": false,
   "deletable": false,
@@ -11,11 +12,38 @@
   "hasOwner": false,
   "fields": [
     {
+      "name": "LicenseDefinitionKey",
+      "label": "License Def. ID",
+      "type": "Text",
+      "length": 40,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
       "name": "MasterLabel",
       "label": "Master Label",
       "type": "Text",
       "length": 80,
       "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MonthlyLoginsEntitlement",
+      "label": "Monthly Logins Entitlement",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MonthlyLoginsUsed",
+      "label": "Monthly Logins Used",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
       "createable": false,
       "updateable": false
     },
@@ -29,6 +57,42 @@
       "updateable": false,
       "idLookup": true,
       "nameField": true
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalLicenses",
+      "label": "Total Licenses",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UsedLicenses",
+      "label": "Used Licenses",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UsedLicensesLastUpdated",
+      "label": "Used Licenses Last Updated",
+      "type": "DateTime",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
     }
   ]
 }

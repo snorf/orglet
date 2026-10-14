@@ -3,6 +3,7 @@
   "label": "Service Appointment",
   "labelPlural": "Service Appointments",
   "keyPrefix": "08p",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": true,
   "deletable": true,
@@ -10,6 +11,57 @@
   "searchable": true,
   "hasOwner": true,
   "fields": [
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Account"
+    },
+    {
+      "name": "ActualDuration",
+      "label": "Actual Duration (Minutes)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "ActualEndTime",
+      "label": "Actual End",
+      "type": "DateTime"
+    },
+    {
+      "name": "ActualStartTime",
+      "label": "Actual Start",
+      "type": "DateTime"
+    },
+    {
+      "name": "AdditionalInformation",
+      "label": "Additional Information",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Address",
+      "label": "Address",
+      "type": "Address",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AppointmentMode",
+      "label": "Appointment Mode",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
     {
       "name": "AppointmentNumber",
       "label": "Appointment Number",
@@ -20,6 +72,340 @@
       "idLookup": true,
       "nameField": true,
       "displayFormat": "{00000000}"
+    },
+    {
+      "name": "AppointmentType",
+      "label": "Appointment Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ApptBookingInfoUrl",
+      "label": "Appointment Booking URL",
+      "type": "LongTextArea",
+      "length": 4000,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ArrivalWindowEndTime",
+      "label": "Arrival Window End",
+      "type": "DateTime"
+    },
+    {
+      "name": "ArrivalWindowStartTime",
+      "label": "Arrival Window Start",
+      "type": "DateTime"
+    },
+    {
+      "name": "AttendeeCount",
+      "label": "Attendee Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AttendeeLimit",
+      "label": "Attendee Limit",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CancellationReason",
+      "label": "Cancellation Reason",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CheckedInTime",
+      "label": "Checked In Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "City",
+      "label": "City",
+      "type": "Text",
+      "length": 40
+    },
+    {
+      "name": "Comments",
+      "label": "Comment",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact"
+    },
+    {
+      "name": "Country",
+      "label": "Country",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "DueDate",
+      "label": "Due Date",
+      "type": "DateTime"
+    },
+    {
+      "name": "Duration",
+      "label": "Duration",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "DurationInMinutes",
+      "label": "Duration in Minutes",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DurationType",
+      "label": "Duration Type",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "EarliestStartTime",
+      "label": "Earliest Start Permitted",
+      "type": "DateTime"
+    },
+    {
+      "name": "Email",
+      "label": "Email",
+      "type": "Email",
+      "length": 80,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "GeocodeAccuracy",
+      "label": "Geocode Accuracy",
+      "type": "Picklist"
+    },
+    {
+      "name": "GroupAppointmentAccessType",
+      "label": "Group Appointment Access Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsAnonymousBooking",
+      "label": "Anonymous Booking",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsBundle",
+      "label": "Bundle",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsBundleMember",
+      "label": "Bundle Member",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsManuallyBundled",
+      "label": "Manually Bundled",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsOffsiteAppointment",
+      "label": "Offsite Appointment",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Latitude",
+      "label": "Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "Longitude",
+      "label": "Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "ParentRecordStatusCategory",
+      "label": "Parent Record Status Category",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ParentRecordType",
+      "label": "Parent Record Type",
+      "type": "Text",
+      "length": 50,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Phone",
+      "label": "Phone",
+      "type": "Phone",
+      "length": 40,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PostalCode",
+      "label": "Zip/Postal Code",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "RelatedBundleId",
+      "label": "Related Bundle ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "ServiceAppointment"
+      ],
+      "relationshipName": "RelatedBundle"
+    },
+    {
+      "name": "SchedEndTime",
+      "label": "Scheduled End",
+      "type": "DateTime",
+      "featureGated": true
+    },
+    {
+      "name": "SchedStartTime",
+      "label": "Scheduled Start",
+      "type": "DateTime",
+      "featureGated": true
+    },
+    {
+      "name": "ServiceDocumentTemplate",
+      "label": "Service Document Template",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "ServiceNote",
+      "label": "Service Note",
+      "type": "LongTextArea",
+      "length": 32000,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "State",
+      "label": "State/Province",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "StatusCategory",
+      "label": "Status Category",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Street",
+      "label": "Street",
+      "type": "TextArea",
+      "length": 255
+    },
+    {
+      "name": "Subject",
+      "label": "Subject",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "TimeZone",
+      "label": "Time Zone",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Transaction",
+      "label": "Transaction",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "TravelTimeBuffer",
+      "label": "Travel Time Buffer (in minutes)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     }
   ]
 }

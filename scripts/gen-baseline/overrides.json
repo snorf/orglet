@@ -11,6 +11,22 @@
           "skip": true,
           "reason": "sf-skills field_reference spelling of the documented PersonBirthDate; both would map to one lower-cased Postgres column"
         },
+        "PersonContactId": {
+          "set": {
+            "referenceTo": [
+              "Contact"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Contact; neither source states Refers To"
+        },
+        "PersonIndividualId": {
+          "set": {
+            "referenceTo": [
+              "Individual"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Individual; neither source states Refers To"
+        },
         "Tier": {
           "keep": true,
           "reason": "present in v1.0, absent from sources"
@@ -27,6 +43,16 @@
       "keyPrefix": {
         "value": "01m",
         "source": "unverified"
+      },
+      "fields": {
+        "BusinessHoursId": {
+          "set": {
+            "referenceTo": [
+              "BusinessHours"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object BusinessHours; neither source states Refers To"
+        }
       }
     },
     "BusinessProcess": {
@@ -165,6 +191,40 @@
       "keyPrefix": {
         "value": "550",
         "source": "unverified"
+      },
+      "fields": {
+        "AccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+        },
+        "AssetId": {
+          "set": {
+            "referenceTo": [
+              "Asset"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Asset; neither source states Refers To"
+        },
+        "BusinessHoursId": {
+          "set": {
+            "referenceTo": [
+              "BusinessHours"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object BusinessHours; neither source states Refers To"
+        },
+        "ServiceContractId": {
+          "set": {
+            "referenceTo": [
+              "ServiceContract"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object ServiceContract; neither source states Refers To"
+        }
       }
     },
     "Event": {
@@ -242,6 +302,14 @@
         "LastTransferDate": {
           "keep": true,
           "reason": "present in v1.0, absent from sources"
+        },
+        "PartnerAccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
         }
       }
     },
@@ -255,6 +323,16 @@
       "keyPrefix": {
         "value": "006",
         "source": "unverified"
+      },
+      "fields": {
+        "PartnerAccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+        }
       }
     },
     "OpportunityHistory": {
@@ -293,6 +371,14 @@
         "source": "unverified"
       },
       "fields": {
+        "RecordTypeId": {
+          "set": {
+            "referenceTo": [
+              "RecordType"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object RecordType; neither source states Refers To"
+        },
         "SellerId": {
           "keep": true,
           "reason": "present in v1.0, absent from sources"
@@ -337,6 +423,14 @@
         "source": "unverified"
       },
       "fields": {
+        "AccountId": {
+          "set": {
+            "referenceTo": [
+              "Account"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+        },
         "BillingCountry": {
           "set": {
             "length": 80
@@ -348,6 +442,22 @@
             "length": 80
           },
           "reason": "sources disagree on length: sf-skills field_reference 80, Object Reference maximum 20; the larger value is taken so no documented value is rejected"
+        },
+        "ContactId": {
+          "set": {
+            "referenceTo": [
+              "Contact"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Contact; neither source states Refers To"
+        },
+        "Pricebook2Id": {
+          "set": {
+            "referenceTo": [
+              "Pricebook2"
+            ]
+          },
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Pricebook2; neither source states Refers To"
         }
       }
     },

@@ -44,10 +44,10 @@ describe("baseline generator (BASE2-01, BASE2-02 step A)", () => {
     }
   });
 
-  it("the committed standard objects are exactly the CLI regeneration", () => {
+  it("the committed standard objects and PROVENANCE.json are exactly the CLI regeneration", () => {
     const cli = generate(inputs, CLI_OPTIONS);
     for (const [path, text] of cli.files) expect(readFileSync(`${STANDARD_DIR}${path}`, "utf8"), path).toBe(text);
-    const committed = readdirSync(`${STANDARD_DIR}objects/`).filter((f) => f.endsWith(".json")).map((f) => `objects/${f}`).sort(codeUnit);
+    const committed = [...readdirSync(`${STANDARD_DIR}objects/`).filter((f) => f.endsWith(".json")).map((f) => `objects/${f}`), "PROVENANCE.json"].sort(codeUnit);
     expect(committed).toEqual([...cli.files.keys()].sort(codeUnit));
   });
 
@@ -68,7 +68,8 @@ describe("baseline generator (BASE2-01, BASE2-02 step A)", () => {
     const PROSE = /\b[a-z]{3,}[.!?] [A-Z][a-z]+ [a-z]{2,}/;
     const scan = (where: string, value: unknown): void => {
       if (typeof value === "string") {
-        expect(value.length, `${where}: ${value}`).toBeLessThanOrEqual(100);
+        // Object files hold labels and values (short); PROVENANCE.json also holds `Obj.Field -> A, B, ...` target lists.
+        if (!where.startsWith("PROVENANCE.json")) expect(value.length, `${where}: ${value}`).toBeLessThanOrEqual(100);
         expect(value, where).not.toMatch(PROSE);
       } else if (Array.isArray(value)) {
         value.forEach((v, i) => scan(`${where}[${i}]`, v));
