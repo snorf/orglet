@@ -36,3 +36,11 @@ Rules:
   (`createable: false`, `updateable: false`).
 - Provenance per fact is in `PROVENANCE.json`; `verified` means the two sources agree, not that a
   live org was compared.
+- Objects without v1.0 pins (the 18 Phase 10 business objects) take their DML flags from the Object Reference
+  'Supported Calls' line; labels, name fields and AutoNumber display formats are hand facts in overrides.json,
+  because neither source states them.
+- Some objects exist in a real org only when a feature is on (Location: Field Service or inventory; AccountTeamMember:
+  account teams; OpportunitySplit: opportunity splits; EmailMessage: Email-to-Case or Enhanced Email). orglet always
+  models them; there is no object-level featureGated tag (D-13).
+- Known gap: no child relationship names are stated for the 18 (e.g. Order -> OrderItems), so child subqueries
+  over them do not resolve and describe childRelationships carry no relationshipName for them.

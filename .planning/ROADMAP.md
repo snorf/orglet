@@ -90,8 +90,8 @@ Plans:
 **Requirements**: BASE2-06, BASE2-07, BASE2-08
 **Success Criteria** (what must be TRUE):
   1. A jsforce or simple-salesforce client can describe and query Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument, ContentVersion, FeedItem, Location and Address, with no blob fields exposed and the omissions listed in the generator report.
-  2. DML that the documentation forbids is refused with `INVALID_TYPE_FOR_OPERATION` (OrderItem undelete; CaseMilestone create and delete; ContentDocument create; ContentVersion delete), and a lookup to any of the 18 with a malformed or wrong-type Id is rejected with `INVALID_CROSS_REFERENCE_KEY`.
-  3. `orglet check` keeps `UNSUPPORTED:reference-target` for a standard object that a lookup, roll-up, formula or validation rule references but orglet does not model, and lists an unreferenced, unmodelled standard object in an informational category that never makes `--strict` exit 1.
+  2. DML that the documentation forbids is refused with `INVALID_TYPE_FOR_OPERATION` (OrderItem undelete; CaseMilestone create and delete; ContentDocument create; ContentVersion delete), and a lookup to any of the 18 with an unparsable Id is rejected with `MALFORMED_ID`, and with a well-formed Id of the wrong type or with no matching row with `INVALID_CROSS_REFERENCE_KEY` (wording adjusted 2026-10-14, D-20).
+  3. `orglet check` treats a standard object that a lookup, roll-up, formula or validation rule references but orglet does not model as referenced: it keeps its warnings (`UNSUPPORTED:reference-target` for a lookup target, the existing roll-up and formula warnings otherwise, with no extra reference-target warning, D-09), and lists an unreferenced, unmodelled standard object in an informational category that never makes `--strict` exit 1 (wording adjusted 2026-10-14, D-09).
   4. The conformance run (`conformance/run-all.sh`) is green after the new objects land, and the plan records the expected warning-count shifts.
 **Plans**: 6 plans
 Plans:

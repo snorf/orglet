@@ -47,9 +47,10 @@ in a quiet informational category, not as warnings.
 **Target features:**
 - Standard-object baseline v2 generated from the public Object Reference: field parity for the
   existing 35 objects (incl. the thin phase-3 ones) and the business objects a typical sales/service org
-  references (Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember,
-  OpportunityTeamMember, OpportunityContactRole, ContractLineItem, EmailMessage,
-  ContentDocument/ContentVersion, FeedItem, Location/Address).
+  references (Quote, QuoteLineItem, Order,
+  OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole,
+  OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument/ContentVersion,
+  FeedItem, Location/Address).
 - Formula coverage: `$UserRole`, `$Api`, `$Setup`, `$Label`, `$CustomMetadata` globals; OwnerId
   `referenceTo` narrowed per object so plain `Owner.X` compiles; `Relationship:Object.Field` colon
   syntax and the `!` operator fixed upstream in sigha and resynced. `$Permission` stays an explicit

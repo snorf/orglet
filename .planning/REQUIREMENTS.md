@@ -70,17 +70,19 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [x] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
   independent public sources or stored as `null` with a source label; an object with a null prefix
   still loads, describes and is reference-checked, and the generator never invents a prefix.
-- [ ] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
+- [x] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
   objects with documented key prefix (or null per BASE2-05), name field, system fields, documented
   API fields and explicit create/update/delete/undelete flags: Quote, QuoteLineItem, Order,
   OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember,
   OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone,
   EmailMessage, ContentDocument, ContentVersion, FeedItem, Location, Address. Blob fields
   (`ContentVersion.VersionData`) are omitted and listed in the generator report.
-- [ ] **BASE2-07**: DML against each of the 18 objects respects its documented flags (OrderItem no
+- [x] **BASE2-07**: DML against each of the 18 objects respects its documented flags (OrderItem no
   undelete; CaseMilestone no create or delete; ContentDocument no create; ContentVersion no delete)
-  and violations return `INVALID_TYPE_FOR_OPERATION` as in v1.0; lookups to any of them with an
-  invalid Id are rejected with `INVALID_CROSS_REFERENCE_KEY`.
+  and violations return `INVALID_TYPE_FOR_OPERATION` as in v1.0; a lookup to any of them
+  with an unparsable Id is rejected with `MALFORMED_ID`, and with a well-formed Id of the wrong object
+  type or with no matching row with `INVALID_CROSS_REFERENCE_KEY`, as in v1.0.
+  *Deviation note 2026-10-14: lookup error codes split by case (Phase 10 D-15/D-20): `MALFORMED_ID` for an unparsable Id is documented; wrong type and missing row keep v1.0's `INVALID_CROSS_REFERENCE_KEY`. One official REST example returns `MALFORMED_ID` for a wrong-type `Document.FolderId`; deferred as a separate decision.*
 - [x] **BASE2-08**: `orglet check` distinguishes a standard object that is referenced (by a lookup,
   roll-up, formula or validation rule in the retrieve or baseline) from one that is not: a
   referenced-but-unmodelled object stays an `UNSUPPORTED:reference-target` warning; an unreferenced,
@@ -235,8 +237,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE2-03 | Phase 9 | Complete |
 | BASE2-04 | Phase 9 | Complete |
 | BASE2-05 | Phase 8 | Complete |
-| BASE2-06 | Phase 10 | Pending |
-| BASE2-07 | Phase 10 | Pending |
+| BASE2-06 | Phase 10 | Complete |
+| BASE2-07 | Phase 10 | Complete |
 | BASE2-08 | Phase 10 | Complete |
 | CMDT-01 | Phase 11 | Pending |
 | CMDT-02 | Phase 11 | Pending |
