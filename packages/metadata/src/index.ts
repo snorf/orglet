@@ -5,7 +5,7 @@ export type { SourceProject, SourceObject, SourceField, SourceFilterItem } from 
 export { loadBaseline, buildOrgSchema, validateBaseline } from "./build.js";
 export type { Baseline, BuildResult } from "./build.js";
 export { formatDiagnostic, pushDiagnostic } from "./diagnostics.js";
-export type { Diagnostic, SkippedItem, FormulaFailure, DiagnosticSink } from "./diagnostics.js";
+export type { Diagnostic, SkippedItem, FormulaFailure, DiagnosticSink, InfoDiagnostic } from "./diagnostics.js";
 export { OrgSchemaImpl } from "./schema.js";
 
 import { readSourceProject } from "./sfdx.js";

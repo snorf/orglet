@@ -2,7 +2,7 @@
  * Merges the standard-object baseline with an SFDX source project into an OrgSchema.
  */
 import { readdir, readFile } from "node:fs/promises";
-import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
+import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type InfoDiagnostic, type SkippedItem } from "./diagnostics.js";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import type {
@@ -19,13 +19,15 @@ import type {
 } from "./types.js";
 import type { SourceField, SourceObject, SourceProject } from "./sfdx.js";
 import { OrgSchemaImpl } from "./schema.js";
-import { resolveRollups, type PendingRollup, type RollupColumn } from "./rollup.js";
+import { resolveRollups, splitRollupRef, type PendingRollup, type RollupColumn } from "./rollup.js";
 
 const STANDARD_DIR = fileURLToPath(new URL("../standard/", import.meta.url));
 
 export interface Baseline {
   objects: StandardObjectJson[];
   standardValueSets: Map<string, StandardValueSetDef>;
+  /** Distinct lookup targets the generator skipped (PROVENANCE.json skipped.referenceTarget); absent for fixture baselines. */
+  skippedReferenceTargets?: string[];
 }
 
 export interface BuildResult {
@@ -34,6 +36,8 @@ export interface BuildResult {
   warnings: string[];
   /** Structured form of `warnings`, same order (D-15). */
   diagnostics: Diagnostic[];
+  /** Unmodelled standard objects nothing references (D-06/D-07), sorted by object; never in warnings. */
+  info: InfoDiagnostic[];
 }
 
 export async function loadBaseline(dir: string = STANDARD_DIR): Promise<Baseline> {
@@ -51,7 +55,35 @@ export async function loadBaseline(dir: string = STANDARD_DIR): Promise<Baseline
   for (const [name, v] of Object.entries(raw)) {
     standardValueSets.set(name, { name, sorted: v.sorted ?? false, values: v.values });
   }
-  return { objects, standardValueSets };
+  const skippedReferenceTargets = await readSkippedReferenceTargets(dir);
+  return { objects, standardValueSets, ...(skippedReferenceTargets !== undefined ? { skippedReferenceTargets } : {}) };
+}
+
+/**
+ * PROVENANCE.json ships with the package (files: dist, standard); test fixture baselines have none.
+ * Entries look like `Account.ActivityMetricId -> ActivityMetric`, `... -> (none stated)` or `... -> A, B, C`.
+ */
+async function readSkippedReferenceTargets(dir: string): Promise<string[] | undefined> {
+  let raw: string;
+  try {
+    raw = await readFile(join(dir, "PROVENANCE.json"), "utf8");
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw e;
+  }
+  const entries = (JSON.parse(raw) as { skipped?: { referenceTarget?: unknown } }).skipped?.referenceTarget;
+  if (!Array.isArray(entries)) return undefined;
+  const names = new Set<string>();
+  for (const entry of entries) {
+    if (typeof entry !== "string") continue;
+    const at = entry.indexOf(" -> ");
+    if (at < 0) continue;
+    for (const part of entry.slice(at + 4).split(", ")) {
+      const name = part.trim();
+      if (name !== "" && name !== "(none stated)") names.add(name);
+    }
+  }
+  return [...names].sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -480,6 +512,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
   // Summary fields need every object registered first; they are resolved after both merge loops.
   const pending: PendingRollup[] = [];
 
+  const unmodelledStandard = new Set<Diagnostic>();
   const sourceObjects = project?.objects ?? [];
   const customObjects = sourceObjects.filter((o) => isCustomObjectName(o.name)).sort((a, b) => a.name.localeCompare(b.name));
   customObjects.forEach((o, i) => {
@@ -492,7 +525,9 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     const target = objects.get(o.name.toLowerCase());
     if (!target) {
       const area = /__(e|mdt|x|b|share|history|feed)$/i.test(o.name) ? "object-kind" : "standard-object";
-      pushDiagnostic(sink, { area, kind: "object", object: o.name, message: `${o.name} skipped` } satisfies SkippedItem);
+      const skipped = { area, kind: "object", object: o.name, message: `${o.name} skipped` } satisfies SkippedItem;
+      pushDiagnostic(sink, skipped);
+      if (area === "standard-object") unmodelledStandard.add(skipped);
       continue;
     }
     if (o.label !== undefined) target.label = o.label;
@@ -525,15 +560,47 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
   resolveRollups(objects, pending, sink, rollupField);
 
   // Dangling references are allowed (e.g. Campaign not in phase 0) but reported once per target.
+  // "Referenced" (D-05, D-09) = named in referenceTo of a lookup, master-detail or owner field, or as a roll-up child.
+  // Formula and validation-rule paths to another object go through such a field, so no separate scan is needed.
   const missing = new Set<string>();
+  const referenced = new Set<string>();
   for (const obj of objects.values()) {
     for (const f of obj.fields) {
       for (const ref of f.referenceTo ?? []) {
+        referenced.add(ref.toLowerCase());
         if (!objects.has(ref.toLowerCase())) missing.add(ref);
       }
     }
   }
+  for (const p of pending) {
+    const child = splitRollupRef(p.field.summaryForeignKey ?? "")?.object;
+    if (child !== undefined) referenced.add(child.toLowerCase());
+  }
   for (const m of [...missing].sort()) pushDiagnostic(sink, { area: "reference-target", object: m, message: `${m} is referenced but not defined; lookups to it are unchecked` });
 
-  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings: sink.warnings, diagnostics: sink.diagnostics };
+  // D-07: an unmodelled standard object nothing references moves from the warnings to the informational list.
+  const info: InfoDiagnostic[] = [];
+  for (let i = sink.diagnostics.length - 1; i >= 0; i--) {
+    const d = sink.diagnostics[i];
+    if (d === undefined || !unmodelledStandard.has(d) || d.object === undefined || referenced.has(d.object.toLowerCase())) continue;
+    sink.diagnostics.splice(i, 1);
+    sink.warnings.splice(i, 1);
+    info.push({ severity: "info", area: "standard-object-unmodelled", object: d.object, message: `${d.object} is not modelled and nothing references it; its metadata was skipped` });
+  }
+  // D-06: documented lookup targets the generator skipped, when neither modelled nor referenced.
+  for (const name of baseline.skippedReferenceTargets ?? []) {
+    const key = name.toLowerCase();
+    if (objects.has(key) || referenced.has(key)) continue;
+    info.push({ severity: "info", area: "reference-target-skipped", object: name, message: `${name} is a documented lookup target the baseline does not model; nothing references it` });
+  }
+  const seenInfo = new Set<string>();
+  const uniqueInfo = info.filter((d) => {
+    const key = d.object!.toLowerCase();
+    if (seenInfo.has(key)) return false;
+    seenInfo.add(key);
+    return true;
+  });
+  uniqueInfo.sort((a, b) => (a.object! < b.object! ? -1 : a.object! > b.object! ? 1 : 0));
+
+  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings: sink.warnings, diagnostics: sink.diagnostics, info: uniqueInfo };
 }

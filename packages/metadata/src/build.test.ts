@@ -713,3 +713,77 @@ describe("owner targets and feature-gated fields in the baseline (D-09, D-11)", 
     expect("featureGated" in schema.getField("NarrowOwned", "Name")!).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// BASE2-08: referenced versus unreferenced unmodelled standard objects.
+
+describe("referenced versus unreferenced unmodelled standard objects (BASE2-08)", () => {
+  let baseline: Baseline;
+  beforeAll(async () => {
+    baseline = await loadBaseline();
+  });
+  const build = (objects: SourceObject[], b: Baseline = baseline): BuildResult =>
+    buildOrgSchema(b, { rootDir: "", packageDirectories: [], objects, globalValueSets: [], standardValueSets: [], warnings: [] });
+  const woFoo = (name = "WorkOrder"): SourceObject => sourceObject(name, [sourceField("Foo__c", "Text", { length: 10 })]);
+  const barWithLookup = (extra: SourceField[] = []): SourceObject =>
+    sourceObject("Bar__c", [sourceField("Wo__c", "Lookup", { referenceTo: "WorkOrder", relationshipName: "Wo" }), ...extra]);
+  const mentions = (r: BuildResult, name: string): boolean => r.info.some((d) => d.object === name);
+
+  it("an unmodelled standard object nothing references is informational, not a warning (D-07)", () => {
+    const r = build([woFoo()]);
+    expect(r.warnings.filter((w) => w.includes("WorkOrder"))).toEqual([]);
+    expect(r.info).toContainEqual({
+      severity: "info",
+      area: "standard-object-unmodelled",
+      object: "WorkOrder",
+      message: "WorkOrder is not modelled and nothing references it; its metadata was skipped",
+    });
+    expect(r.schema.getObject("WorkOrder")).toBeUndefined();
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+  });
+
+  it("an unmodelled standard object a lookup references keeps both warnings (D-05)", () => {
+    const r = build([woFoo(), barWithLookup()]);
+    expect(r.warnings.filter((w) => w.includes("WorkOrder"))).toEqual([
+      "UNSUPPORTED:standard-object WorkOrder skipped",
+      "UNSUPPORTED:reference-target WorkOrder is referenced but not defined; lookups to it are unchecked",
+    ]);
+    expect(mentions(r, "WorkOrder")).toBe(false);
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+  });
+
+  it("a roll-up child reference counts as referenced without adding a reference-target warning (D-09)", () => {
+    const r = build([
+      woFoo("Solution"),
+      sourceObject("Parent__c", [summary("Cnt__c", "count", "Solution.Parent__c")]),
+    ]);
+    expect(r.warnings).toContain("UNSUPPORTED:standard-object Solution skipped");
+    expect(r.warnings.some((w) => w.startsWith("UNSUPPORTED:rollup-target") && w.includes("Cnt__c"))).toBe(true);
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:reference-target") && w.includes("Solution"))).toEqual([]);
+    expect(mentions(r, "Solution")).toBe(false);
+  });
+
+  it("a formula or validation rule reaches another object only through a lookup, so the lookup classifies it", () => {
+    const plain = build([woFoo(), barWithLookup()]);
+    const withFormula = build([woFoo(), barWithLookup([sourceField("Wo_Subject__c", "Text", { length: 80, formula: "Wo__r.Subject" })])]);
+    expect(withFormula.warnings.filter((w) => w.includes("WorkOrder"))).toEqual(plain.warnings.filter((w) => w.includes("WorkOrder")));
+    expect(mentions(withFormula, "WorkOrder")).toBe(false);
+  });
+
+  it("generator-skipped lookup targets that nothing references are informational (D-06)", () => {
+    expect(baseline.skippedReferenceTargets).toContain("ActivityMetric");
+    expect(baseline.skippedReferenceTargets).not.toContain("(none stated)");
+    const r = buildOrgSchema(baseline);
+    expect(r.info).toContainEqual(expect.objectContaining({ severity: "info", area: "reference-target-skipped", object: "ActivityMetric" }));
+    for (const d of r.info) expect(r.schema.getObject(d.object!)).toBeUndefined();
+    const names = r.info.map((d) => d.object!);
+    expect(names).toEqual([...names].sort());
+    expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(names.length);
+  });
+
+  it("a baseline directory without PROVENANCE.json loads with no skipped targets", async () => {
+    const v1 = await loadBaseline(V1_BASELINE);
+    expect(v1.skippedReferenceTargets).toBeUndefined();
+    expect(buildOrgSchema(v1).info.filter((d) => d.area === "reference-target-skipped")).toEqual([]);
+  });
+});
