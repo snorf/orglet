@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 10-04-PLAN.md
-last_updated: "2026-10-14T11:56:08.730Z"
+stopped_at: Completed 10-05-PLAN.md
+last_updated: "2026-10-14T14:32:59.705Z"
 last_activity: 2026-10-14
 progress:
   total_phases: 17
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 10 (business-standard-objects) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-10-14
 
@@ -112,6 +112,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 10 P02 | 15min | 2 tasks | 6 files |
 | Phase 10 P01 | 25min | 2 tasks | 9 files |
 | Phase 10 P04 | 35min | 3 tasks | 100 files |
+| Phase 10 P05 | 25min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -206,6 +207,7 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-04: duplicate-spelling skips go on the field_reference-only spelling; Entitlement lookup on documented LocationID, OrderItem on RelatedOrderItemID
 - [Phase 10]: 10-04: OpportunitySplit.Split generated as AutoNumber name field; merge added to known Supported Calls
 - [Phase 10]: 10-04 fix: field names take the SDK (field_reference/describe) spelling where the Object Reference differs only by case; renameFrom override for PDF spellings without a twin (Quote.RecordTypeId, AccountTeamMember.PhotoUrl); DE describe 2026-10-14 is the evidence
+- [Phase 10]: 10-05: OrderItem.QuoteLineItemId and RelatedOrderItemId overridden nillable:true (sf-skills required flag contradicts its own descriptions; OrderItem was uninsertable); engine/REST behaviour of the 18 proven without production code change
 
 ### Pending Todos
 
@@ -228,6 +230,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T11:56:08.726Z
-Stopped at: Completed 10-04-PLAN.md
+Last session: 2026-10-14T14:32:59.702Z
+Stopped at: Completed 10-05-PLAN.md
 Resume file: None

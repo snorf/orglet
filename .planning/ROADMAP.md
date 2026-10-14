@@ -99,7 +99,7 @@ Plans:
 - [x] 10-02-PLAN.md — `orglet check` informational category: referenced vs unreferenced unmodelled standard objects, `info:` line outside --strict (BASE2-08)
 - [x] 10-03-PLAN.md — checkpoint: key-prefix verification list (OpportunitySplit 049 mandatory), labels, name fields, AutoNumber format, length conflicts (BASE2-06)
 - [x] 10-04-PLAN.md — the 18 objects as generated data with pinned inputs, overrides (D-19 lookups), loader and upgrade tests (BASE2-06, BASE2-07)
-- [ ] 10-05-PLAN.md — engine/SOQL/REST behaviour of the 18 (flags, required fields, lookup codes, case twins), describe-check 14 -> 32 (BASE2-06, BASE2-07)
+- [x] 10-05-PLAN.md — engine/SOQL/REST behaviour of the 18 (flags, required fields, lookup codes, case twins), describe-check 14 -> 32 (BASE2-06, BASE2-07)
 - [ ] 10-06-PLAN.md — conformance and both test backends, SC4 warning-count shifts, D-20 wording table, docs, DE retrieve check (BASE2-06..08)
 **Research flag**: none (verification list for single-list key prefixes lives in the plans).
 
@@ -166,7 +166,7 @@ Plans:
 | 7. Conformance Re-Run & Milestone Acceptance | v1.0 | 6/6 | Complete | 2026-10-12 |
 | 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 10/10 | Complete | 2026-10-13 |
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
-| 10. Business Standard Objects | v1.1 | 4/6 | In Progress|  |
+| 10. Business Standard Objects | v1.1 | 5/6 | In Progress|  |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 0/TBD | Not started | - |
 | 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
