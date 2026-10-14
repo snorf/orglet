@@ -33,7 +33,7 @@ Options:
                   none persisted yet (for example your own org's keyPrefix values); never overrides a
                   persisted assignment
   --drop-prefixes With reset: also forget the org's persisted custom-object key prefixes
-  --strict      With check: exit 1 if any warning was printed (default: always exit 0)
+  --strict      With check: exit 1 if any warning was printed (default: always exit 0); info lines never count
   --quiet       Only print errors
 `;
 
@@ -83,6 +83,10 @@ async function check(c: Common, strict: boolean): Promise<number> {
   if (custom.length > 0) log(c, "custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter");
   const warnings = [...result.warnings, ...new FormulaRegistry(result.schema).warnings];
   for (const w of warnings) console.warn(`warning: ${w}`);
+  // BASE2-08 (D-08): unmodelled standard objects nothing references are informational: one sorted stdout line after the
+  // warnings, quiet-gated like every log line, never prefixed "warning:" and never counted by --strict.
+  const unreferenced = [...new Set(result.info.map((d) => d.object).filter((n): n is string => n !== undefined))].sort();
+  if (unreferenced.length > 0) log(c, `info: ${unreferenced.length} standard objects not modelled and unreferenced: ${unreferenced.join(", ")}`);
   // --strict turns any warning (UNSUPPORTED:* or otherwise) into a failing exit code, for acceptance runs and CI.
   return strict && warnings.length > 0 ? 1 : 0;
 }
