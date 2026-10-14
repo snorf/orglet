@@ -1035,18 +1035,20 @@
             "referenceTo": [
               "QuoteLineItem"
             ],
-            "relationshipName": "QuoteLineItem"
+            "relationshipName": "QuoteLineItem",
+            "nillable": true
           },
-          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object QuoteLineItem; neither source states Refers To; relationshipName guessed from the field name"
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object QuoteLineItem; neither source states Refers To; relationshipName guessed from the field name; nillable: true because sf-skills marks it required, but its own description reads \"If this field is specified\", so it is optional on insert (Order Product without a quote) (found in 10-05 when an OrderItem insert demanded both)"
         },
         "RelatedOrderItemId": {
           "set": {
             "referenceTo": [
               "OrderItem"
             ],
-            "relationshipName": "RelatedOrderItem"
+            "relationshipName": "RelatedOrderItem",
+            "nillable": true
           },
-          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object OrderItem; neither source states Refers To; relationshipName guessed from the field name"
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object OrderItem; neither source states Refers To; relationshipName guessed from the field name; nillable: true because sf-skills marks it required, but its own description reads \"Required for change orders\" (Order Management only), so it is optional on a plain order product (found in 10-05 when an OrderItem insert demanded both)"
         }
       }
     },

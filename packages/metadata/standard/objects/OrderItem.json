@@ -392,7 +392,6 @@
       "name": "QuoteLineItemId",
       "label": "Quote Line Item ID",
       "type": "Lookup",
-      "nillable": false,
       "referenceTo": [
         "QuoteLineItem"
       ],
@@ -425,7 +424,6 @@
       "name": "RelatedOrderItemId",
       "label": "Order Product ID",
       "type": "Lookup",
-      "nillable": false,
       "updateable": false,
       "referenceTo": [
         "OrderItem"

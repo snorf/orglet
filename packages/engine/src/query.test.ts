@@ -55,6 +55,15 @@ afterAll(async () => {
 });
 
 describe("runQuery", () => {
+  it("Order is a reserved word in SQL but a plain sObject in SOQL", async () => {
+    const empty = await q("SELECT Id, OrderNumber FROM Order ORDER BY OrderNumber");
+    expect(empty).toMatchObject({ done: true });
+    expect(typeof empty.totalSize).toBe("number");
+    const orderId = await insert("Order", { AccountId: ids["acme"], EffectiveDate: "2026-10-14", Status: "Draft" });
+    const page = await q("SELECT Id, OrderNumber FROM Order ORDER BY OrderNumber");
+    expect(page.records.find((r) => r["Id"] === orderId)).toMatchObject({ attributes: { type: "Order" } });
+  });
+
   it("returns records with attributes in canonical field casing", async () => {
     const page = await q("select id, name, industry from account where name = 'ACME'");
     expect(page).toMatchObject({ totalSize: 1, done: true });
