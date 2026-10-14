@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { dropKeyPrefixes, generateId, migrate, quote, reconcileKeyPrefixes, type Pool } from "@orglet/schema";
+import { dropKeyPrefixes, generateId, migrate, quote, reconcileKeyPrefixes, toCaseSafeId, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { createApiServer } from "./server.js";
@@ -53,6 +53,28 @@ const THIN: Record<string, Thin> = {
   ServiceContract:    { keyPrefix: "810", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: true,  nameField: "Name", children: [["Case", "ServiceContractId"]] },
   SocialPost:         { keyPrefix: "0ST", createable: true,  updateable: true,  deletable: true,  undeletable: true,  searchable: true,  hasOwner: true,  nameField: "Name", children: [["Case", "SourceId"]] },
   UserLicense:        { keyPrefix: "100", createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: "Name", children: [["Profile", "UserLicenseId"]] },
+};
+type Business = { keyPrefix: string | null; createable: boolean; updateable: boolean; deletable: boolean; undeletable: boolean; searchable: boolean; hasOwner: boolean; nameField: string | null };
+/** The 18 business objects of phase 10; same prefixes, flags, owners and name fields as the BUSINESS table in packages/metadata/src/build.test.ts. */
+const BUSINESS: Record<string, Business> = {
+  Quote: { keyPrefix: "0Q0", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "Name" },
+  QuoteLineItem: { keyPrefix: "0QL", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "LineNumber" },
+  Order: { keyPrefix: "801", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: true, nameField: "OrderNumber" },
+  OrderItem: { keyPrefix: "802", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: "OrderItemNumber" },
+  AccountContactRelation: { keyPrefix: "07k", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: null },
+  AccountTeamMember: { keyPrefix: "01M", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: null },
+  OpportunityTeamMember: { keyPrefix: "00q", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: "Name" },
+  OpportunityContactRole: { keyPrefix: "00K", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: null },
+  OpportunitySplit: { keyPrefix: "049", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: "Split" },
+  ContractLineItem: { keyPrefix: "811", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "LineItemNumber" },
+  CaseContactRole: { keyPrefix: "03j", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: null },
+  CaseMilestone: { keyPrefix: "555", createable: false, updateable: true, deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: null },
+  EmailMessage: { keyPrefix: "02s", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "Name" },
+  ContentDocument: { keyPrefix: "069", createable: false, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: true, nameField: "Title" },
+  ContentVersion: { keyPrefix: "068", createable: true, updateable: true, deletable: false, undeletable: false, searchable: true, hasOwner: true, nameField: "Title" },
+  FeedItem: { keyPrefix: "0D5", createable: true, updateable: true, deletable: true, undeletable: false, searchable: true, hasOwner: false, nameField: null },
+  Location: { keyPrefix: "131", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: true, nameField: "Name" },
+  Address: { keyPrefix: "130", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "Name" },
 };
 const missingKeys = (obj: Json, keys: string[]) => keys.filter((k) => !(k in obj));
 
@@ -357,9 +379,9 @@ describe("composite", () => {
 });
 
 describe("thin objects", () => {
-  it("thin objects: objects.txt lists exactly the 14 thin objects", () => {
-    expect([...listedObjects].sort()).toEqual(Object.keys(THIN).sort());
-    expect(listedObjects).toHaveLength(14);
+  it("describe-check: objects.txt lists the 14 thin and the 18 business objects", () => {
+    expect([...listedObjects].sort()).toEqual([...Object.keys(THIN), ...Object.keys(BUSINESS)].sort());
+    expect(listedObjects).toHaveLength(32);
   });
 
   it("thin objects: global describe lists each with every DescribeGlobalSObjectResult key and the documented flags", async () => {
@@ -402,6 +424,43 @@ describe("thin objects", () => {
   });
 });
 
+describe("business objects", () => {
+  it("business objects: global describe lists each with every DescribeGlobalSObjectResult key and the documented flags (SC1)", async () => {
+    const sobjects = json(await get(`${V}/sobjects`))["sobjects"] as Json[];
+    for (const [name, t] of Object.entries(BUSINESS)) {
+      const entry = sobjects.find((s) => s["name"] === name);
+      expect(entry, name).toBeDefined();
+      expect(missingKeys(entry as Json, contract.globalSObjectKeys), name).toEqual([]);
+      expect(entry).toMatchObject({
+        name, keyPrefix: t.keyPrefix, custom: false, queryable: true, idEnabled: true,
+        createable: t.createable, updateable: t.updateable, deletable: t.deletable, undeletable: t.undeletable, searchable: t.searchable,
+        urls: { sobject: `${V}/sobjects/${name}`, describe: `${V}/sobjects/${name}/describe`, rowTemplate: `${V}/sobjects/${name}/{ID}` },
+      });
+      expect(json(await get(`${V}/sobjects/${name}`))["objectDescribe"]).toMatchObject({ name, keyPrefix: t.keyPrefix });
+    }
+  });
+
+  it("business objects: per-object describe carries the SDK key sets, system fields, owner and one or no name field (SC1)", async () => {
+    for (const [name, t] of Object.entries(BUSINESS)) {
+      const d = json(await get(`${V}/sobjects/${name}/describe`));
+      expect(missingKeys(d, [...contract.globalSObjectKeys, ...contract.sobjectDescribeKeys]), name).toEqual([]);
+      expect(missingKeys(d["urls"] as Json, contract.urlKeys), name).toEqual([]);
+      const fields = d["fields"] as Json[];
+      expect(fields.flatMap((f) => missingKeys(f, contract.fieldKeys).map((k) => `${String(f["name"])}.${k}`)), name).toEqual([]);
+      for (const s of contract.systemFields) expect(fields.filter((f) => f["name"] === s), `${name}.${s}`).toHaveLength(1);
+      expect(fields.filter((f) => f["name"] === "OwnerId"), `${name}.OwnerId`).toHaveLength(t.hasOwner ? 1 : 0);
+      expect(fields.filter((f) => f["nameField"] === true).map((f) => f["name"]), name).toEqual(t.nameField === null ? [] : [t.nameField]);
+      expect(d).toMatchObject({ name, keyPrefix: t.keyPrefix, createable: t.createable, updateable: t.updateable, deletable: t.deletable, undeletable: t.undeletable });
+    }
+  });
+
+  it("query: SELECT over a business object through REST", async () => {
+    const res = await get(`${V}/query?q=${encodeURIComponent("SELECT Id, OrderNumber FROM Order")}`);
+    expect(res.statusCode).toBe(200);
+    expect(json(res)).toMatchObject({ done: true });
+  });
+});
+
 describe("write protection", () => {
   it("write protection: REST refuses what a thin object's flags forbid with 400 INVALID_TYPE_FOR_OPERATION", async () => {
     const refused = (res: { statusCode: number; body: string }, name: string, op: string) => {
@@ -419,6 +478,22 @@ describe("write protection", () => {
     const allowed = await post(`${V}/sobjects/Entitlement`, { Name: "Gold Support" });
     expect(allowed.statusCode).toBe(201);
     expect(String(json(allowed)["id"])).toMatch(/^550[0-9A-Za-z]{15}$/);
+  });
+
+  it("write protection: REST refuses what a business object's flags forbid with 400 INVALID_TYPE_FOR_OPERATION (SC2)", async () => {
+    const refused = (res: { statusCode: number; body: string }, name: string, op: string) => {
+      expect(res.statusCode, `${name} ${op}`).toBe(400);
+      expect(arr(res)).toEqual([{ message: `entity type ${name} does not support ${op}`, errorCode: "INVALID_TYPE_FOR_OPERATION" }]);
+    };
+    const idFor = (name: string) => toCaseSafeId(`${schema.getObject(name)?.keyPrefix ?? "000"}000000000099`);
+    refused(await post(`${V}/sobjects/ContentDocument`, { Title: "x" }), "ContentDocument", "insert");
+    refused(await post(`${V}/sobjects/CaseMilestone`, {}), "CaseMilestone", "insert");
+    refused(await del(`${V}/sobjects/CaseMilestone/${idFor("CaseMilestone")}`), "CaseMilestone", "delete");
+    refused(await del(`${V}/sobjects/ContentVersion/${idFor("ContentVersion")}`), "ContentVersion", "delete");
+    const account = await post(`${V}/sobjects/Account`, { Name: "REST Order Account" });
+    const allowed = await post(`${V}/sobjects/Order`, { AccountId: json(account)["id"], EffectiveDate: "2026-10-14", Status: "Draft" });
+    expect(allowed.statusCode, allowed.body).toBe(201);
+    expect(String(json(allowed)["id"])).toMatch(/^801[0-9A-Za-z]{15}$/);
   });
 });
 
