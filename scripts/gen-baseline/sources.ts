@@ -9,6 +9,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { KeyPrefixProvenance, StandardFieldJson, StandardObjectJson } from "@orglet/metadata";
+import { KNOWN_SUPPORTED_CALLS } from "./calls.js";
 import { GeneratorError } from "./errors.js";
 import { KNOWN_PROPERTY_TOKENS } from "./snapshot-lists.js";
 
@@ -63,6 +64,8 @@ export interface SfSkillsObject {
 
 export interface ObjectReferenceObject {
   object: string;
+  /** Object-level Supported Calls tokens, sorted (Phase 10 D-10); absent in extractions taken before Phase 10. */
+  supportedCalls?: string[];
   fields: Map<string, DocFacts>;
 }
 
@@ -245,6 +248,10 @@ export function parseObjectReference(object: string, raw: unknown): ObjectRefere
   if (!isRecord(raw) || raw.object !== object || !isRecord(raw.fields)) {
     throw new GeneratorError(`object-reference ${object}: expected { object: "${object}", fields: {...} }`);
   }
+  const calls = optStringList(`object-reference ${object}`, raw.supportedCalls, "supportedCalls");
+  for (const token of calls ?? []) {
+    if (!KNOWN_SUPPORTED_CALLS.includes(token)) throw new GeneratorError(`object-reference ${object}: unknown Supported Call ${JSON.stringify(token)}`);
+  }
   const fields = new Map<string, DocFacts>();
   for (const [name, entry] of Object.entries(raw.fields)) {
     const where = `object-reference ${object}.${name}`;
@@ -269,7 +276,7 @@ export function parseObjectReference(object: string, raw: unknown): ObjectRefere
     if (gating) facts.gating = gating;
     fields.set(name, facts);
   }
-  return { object, fields };
+  return { object, ...(calls ? { supportedCalls: [...new Set(calls)].sort(codeUnit) } : {}), fields };
 }
 
 /** Every field either source knows for `object`, merged and sorted by code-unit name. */

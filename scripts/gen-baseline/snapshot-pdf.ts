@@ -15,8 +15,9 @@ import { copyFileSync, createReadStream, existsSync, mkdirSync, mkdtempSync, rea
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseSupportedCalls } from "./calls.js";
 import { matchGating } from "./gating.js";
-import { DOC_ONLY_REVIEWED, KNOWN_GAPS, KNOWN_PROPERTY_TOKENS, NOT_IN_PDF } from "./snapshot-lists.js";
+import { DOC_ONLY_REVIEWED, KNOWN_GAPS, KNOWN_PROPERTY_TOKENS, NO_SUPPORTED_CALLS, NOT_IN_PDF } from "./snapshot-lists.js";
 
 const PDF_URL = "https://resources.docs.salesforce.com/latest/latest/en-us/sfdc/pdf/object_reference.pdf";
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -420,6 +421,7 @@ async function main(): Promise<void> {
   const warnings: string[] = [];
   const unknownProperties = new Map<string, string[]>();
   const results = new Map<string, Map<string, FieldFacts>>();
+  const callsByObject = new Map<string, string[]>();
   const rows: string[][] = [["object", "sf-skills", "extracted", "missing(gap)", "docOnly(gated/reviewed)", "master-detail"]];
 
   for (const object of OBJECTS) {
@@ -431,6 +433,15 @@ async function main(): Promise<void> {
     }
     if (hits.length > 1) warnings.push(`${object}: ${hits.length} TOC entries, using the first`);
     const lines = sectionLines(pages, printedToIndex, toc, hits[0] as number);
+    try {
+      const calls = parseSupportedCalls(lines);
+      if (calls) callsByObject.set(object, calls);
+      else if (!(object in NO_SUPPORTED_CALLS)) {
+        errors.push(`${object}: no "Supported Calls" line in its section (add to NO_SUPPORTED_CALLS with a reason if the PDF really has none)`);
+      }
+    } catch (err) {
+      errors.push(`${object}: ${err instanceof Error ? err.message : String(err)}`);
+    }
     const parsed = parseSection(object, lines);
     warnings.push(...parsed.warnings);
     for (const [t, where] of parsed.unknownProperties) unknownProperties.set(t, [...(unknownProperties.get(t) ?? []), ...where]);
@@ -461,6 +472,10 @@ async function main(): Promise<void> {
     if (!OBJECTS.includes(object)) errors.push(`NOT_IN_PDF lists ${object}, which is not in objects.json`);
     else if (toc.some((e) => e.name === object)) errors.push(`NOT_IN_PDF lists ${object}, but the TOC has it`);
   }
+  for (const object of Object.keys(NO_SUPPORTED_CALLS)) {
+    if (!OBJECTS.includes(object)) errors.push(`NO_SUPPORTED_CALLS lists ${object}, which is not in objects.json`);
+    else if (callsByObject.has(object)) errors.push(`${object}: stale NO_SUPPORTED_CALLS entry (the section has a Supported Calls line)`);
+  }
   for (const [t, where] of [...unknownProperties].sort()) errors.push(`unknown Properties token "${t}" (review, then add to KNOWN_PROPERTY_TOKENS) on ${where.join(", ")}`);
 
   const widths = rows[0]!.map((_, c) => Math.max(...rows.map((r) => (r[c] ?? "").length)));
@@ -474,7 +489,10 @@ async function main(): Promise<void> {
   }
 
   mkdirSync(OUT_DIR, { recursive: true });
-  for (const [object, fields] of results) writeFileSync(join(OUT_DIR, `${object}.json`), serialise({ object, fields: sortedFacts(fields) }));
+  for (const [object, fields] of results) {
+    const calls = callsByObject.get(object);
+    writeFileSync(join(OUT_DIR, `${object}.json`), serialise({ object, ...(calls ? { supportedCalls: calls } : {}), fields: sortedFacts(fields) }));
+  }
   const notInPdf = Object.keys(NOT_IN_PDF).sort();
   writeFileSync(
     join(OUT_DIR, "VENDOR.md"),
@@ -488,8 +506,8 @@ async function main(): Promise<void> {
       `Extractor: scripts/gen-baseline/snapshot-pdf.ts with pdftotext ${version} -layout`,
       `Not in PDF: ${notInPdf.length > 0 ? notInPdf.join(" ") : "none"}`,
       "",
-      "Only facts are kept: field names, type and property tokens, numeric maxima, Refers To names, relationship names and",
-      "types, and gating keyword ids. No documentation text is stored. Re-run `pnpm baseline:snapshot` to re-pin (deliberate PR).",
+      "Only facts are kept: field names, type and property tokens, numeric maxima, Refers To names, relationship names and types,",
+      "gating keyword ids, and the object-level Supported Calls tokens. No documentation text is stored. Re-run `pnpm baseline:snapshot` to re-pin (deliberate PR).",
       "",
     ].join("\n"),
   );

@@ -7,6 +7,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { KNOWN_SUPPORTED_CALLS } from "../../../scripts/gen-baseline/calls.js";
 import { DOC_ONLY_REVIEWED, KNOWN_GAPS, KNOWN_PROPERTY_TOKENS, NOT_IN_PDF } from "../../../scripts/gen-baseline/snapshot-lists.js";
 
 const ROOT = fileURLToPath(new URL("../../../scripts/gen-baseline/", import.meta.url));
@@ -25,6 +26,7 @@ interface Facts {
 }
 interface Extraction {
   object: string;
+  supportedCalls?: string[];
   fields: Record<string, Facts>;
 }
 interface SfSkills {
@@ -83,6 +85,8 @@ describe("Object Reference extraction (committed facts)", () => {
     const sentence = /\b[a-z]{3,}[.!?] [A-Z][a-z]+ [a-z]{2,}/;
     const problems: string[] = [];
     for (const [object, e] of extracted) {
+      const topExtra = Object.keys(e).filter((k) => !["object", "supportedCalls", "fields"].includes(k));
+      if (topExtra.length > 0) problems.push(`${object} has unexpected top-level keys ${topExtra.join(",")}`);
       for (const [f, facts] of Object.entries(e.fields)) {
         const extra = Object.keys(facts).filter((k) => !FIELD_KEYS.includes(k));
         if (extra.length > 0) problems.push(`${object}.${f} has unexpected keys ${extra.join(",")}`);
@@ -93,6 +97,17 @@ describe("Object Reference extraction (committed facts)", () => {
         }
         if (facts.maxLength !== undefined && !(Number.isInteger(facts.maxLength) && facts.maxLength > 0)) problems.push(`${object}.${f} maxLength ${facts.maxLength}`);
       }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it("supportedCalls, when present, are sorted, unique and from KNOWN_SUPPORTED_CALLS", () => {
+    const problems: string[] = [];
+    for (const [object, e] of extracted) {
+      if (e.supportedCalls === undefined) continue;
+      const sorted = [...new Set(e.supportedCalls)].sort();
+      if (JSON.stringify(sorted) !== JSON.stringify(e.supportedCalls)) problems.push(`${object} supportedCalls not sorted and unique`);
+      for (const c of e.supportedCalls) if (!KNOWN_SUPPORTED_CALLS.includes(c)) problems.push(`${object} supportedCalls ${c}`);
     }
     expect(problems).toEqual([]);
   });

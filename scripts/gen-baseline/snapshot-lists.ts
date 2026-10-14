@@ -57,3 +57,6 @@ export const DOC_ONLY_REVIEWED: Readonly<Record<string, Readonly<Record<string, 
 
 /** object -> reason: objects.json names the Object Reference has no section for. */
 export const NOT_IN_PDF: Readonly<Record<string, string>> = {};
+
+/** object -> reason: objects whose Object Reference section has no Supported Calls line (reviewed by hand). */
+export const NO_SUPPORTED_CALLS: Readonly<Record<string, string>> = {};

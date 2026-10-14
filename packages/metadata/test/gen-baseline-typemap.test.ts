@@ -4,6 +4,7 @@
  * covered by baseline-generator.test.ts.
  */
 import { describe, expect, it } from "vitest";
+import { parseSupportedCalls } from "../../../scripts/gen-baseline/calls.js";
 import { GeneratorError } from "../../../scripts/gen-baseline/errors.js";
 import { parseObjectReference, parseSfSkills, sourceFieldsOf, type SourceField } from "../../../scripts/gen-baseline/sources.js";
 import { compoundParent, flagsFrom, humanise, lengthFor, mapType } from "../../../scripts/gen-baseline/typemap.js";
@@ -175,5 +176,44 @@ describe("gen-baseline sources: sf-skills and Object Reference normalisation", (
     expect(() => parseSfSkills("Account", { fields: { X: { type: "string", properties: "Create, Teleport" } } })).toThrow(/Account\.X.*Teleport/);
     expect(() => parseSfSkills("Account", { fields: [] })).toThrow(GeneratorError);
     expect(() => parseObjectReference("Account", { object: "Contact", fields: {} })).toThrow(GeneratorError);
+  });
+});
+
+describe("gen-baseline Supported Calls (D-10)", () => {
+  it("a wrapped Supported Calls line is read up to the first blank line", () => {
+    const lines = [
+      "      Supported Calls",
+      "      create(), delete(), describeLayout(), describeSObjects(), getDeleted(), getUpdated(), query(),",
+      "      retrieve(), search(), undelete(), update(), upsert()",
+      "",
+      "      Field Name   Details",
+    ];
+    expect(parseSupportedCalls(lines)).toEqual([
+      "create", "delete", "describeLayout", "describeSObjects", "getDeleted", "getUpdated", "query", "retrieve", "search", "undelete", "update", "upsert",
+    ]);
+  });
+
+  it("a missing comma between two calls still yields both tokens", () => {
+    const lines = ["Supported Calls", "      delete(), describeLayout()describeSObjects(), query(), retrieve(), search(), undelete(), update()"];
+    expect(parseSupportedCalls(lines)).toEqual(["delete", "describeLayout", "describeSObjects", "query", "retrieve", "search", "undelete", "update"]);
+  });
+
+  it("calls printed out of order come back sorted", () => {
+    expect(parseSupportedCalls(["Supported Calls", "describeSObjects(), describeLayout(), create()"])).toEqual(["create", "describeLayout", "describeSObjects"]);
+  });
+
+  it("a section without a Supported Calls label yields undefined", () => {
+    expect(parseSupportedCalls(["      Field Name   Details", "      Name   Type"])).toBeUndefined();
+  });
+
+  it("an unknown call aborts naming it", () => {
+    expect(() => parseSupportedCalls(["Supported Calls", "frobnicate()"])).toThrow(/unknown Supported Call\(s\) frobnicate/);
+  });
+
+  it("parseObjectReference keeps supportedCalls and rejects a token outside the vocabulary", () => {
+    expect(parseObjectReference("X", { object: "X", supportedCalls: ["update", "create"], fields: {} }).supportedCalls).toEqual(["create", "update"]);
+    expect(() => parseObjectReference("X", { object: "X", supportedCalls: ["frobnicate"], fields: {} })).toThrow(GeneratorError);
+    expect(() => parseObjectReference("X", { object: "X", supportedCalls: ["frobnicate"], fields: {} })).toThrow(/object-reference X: unknown Supported Call "frobnicate"/);
+    expect(parseObjectReference("X", { object: "X", fields: {} }).supportedCalls).toBeUndefined();
   });
 });
