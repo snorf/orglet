@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: verifying
-stopped_at: Completed 09-09-PLAN.md (phase 09 complete)
-last_updated: "2026-10-14T07:51:31.918Z"
+status: planning
+stopped_at: Phase 9 complete and verified; next /gsd:plan-phase 10
+last_updated: "2026-10-14T07:59:20.233Z"
 last_activity: 2026-10-14
 progress:
   total_phases: 16
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 09 — baseline-generator-parity-ownerid-narrowing
+**Current focus:** Phase 10 — Business Standard Objects (v1.1 real-org fidelity)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 09 (baseline-generator-parity-ownerid-narrowing) — EXECUTING
-Plan: 9 of 9
-Status: Phase complete — ready for verification
-Last activity: 2026-10-14
+Phase: 10 of 14 (Business Standard Objects) — not started
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-14 — Phase 9 complete (9 plans, verified 5/5; SKIP_RATIO_MAX 0.103 approved)
 
 Progress: [█░░░░░░░░░] 14%
 
