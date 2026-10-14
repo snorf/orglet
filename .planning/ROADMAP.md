@@ -97,7 +97,7 @@ Plans:
 Plans:
 - [x] 10-01-PLAN.md — generator capability: Supported Calls extraction, object facts for objects without pins, de-describe source, rule 4 limited to v1.0 objects (D-18), new type tokens (BASE2-06, BASE2-07)
 - [x] 10-02-PLAN.md — `orglet check` informational category: referenced vs unreferenced unmodelled standard objects, `info:` line outside --strict (BASE2-08)
-- [ ] 10-03-PLAN.md — checkpoint: key-prefix verification list (OpportunitySplit 049 mandatory), labels, name fields, AutoNumber format, length conflicts (BASE2-06)
+- [x] 10-03-PLAN.md — checkpoint: key-prefix verification list (OpportunitySplit 049 mandatory), labels, name fields, AutoNumber format, length conflicts (BASE2-06)
 - [ ] 10-04-PLAN.md — the 18 objects as generated data with pinned inputs, overrides (D-19 lookups), loader and upgrade tests (BASE2-06, BASE2-07)
 - [ ] 10-05-PLAN.md — engine/SOQL/REST behaviour of the 18 (flags, required fields, lookup codes, case twins), describe-check 14 -> 32 (BASE2-06, BASE2-07)
 - [ ] 10-06-PLAN.md — conformance and both test backends, SC4 warning-count shifts, D-20 wording table, docs, DE retrieve check (BASE2-06..08)
@@ -166,7 +166,7 @@ Plans:
 | 7. Conformance Re-Run & Milestone Acceptance | v1.0 | 6/6 | Complete | 2026-10-12 |
 | 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 10/10 | Complete | 2026-10-13 |
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
-| 10. Business Standard Objects | v1.1 | 2/6 | In Progress|  |
+| 10. Business Standard Objects | v1.1 | 3/6 | In Progress|  |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 0/TBD | Not started | - |
 | 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
@@ -180,7 +180,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 2/6 plans executed
+**Plans:** 0 plans
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
@@ -251,6 +251,15 @@ Plans:
 ### Phase 999.9: Heimdall end-to-end backup run against orglet (BACKLOG)
 
 **Goal:** Run the Java Salesforce backup tool (Bulk 2.0 query-only client) against an orglet org as a conformance target: needs client_credentials grant on /services/oauth2/token, /limits, the backup-config custom object through the tooling-API schema check, and ContentVersion VersionData download (baseline v2). Deferred since phase 6.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.10: ContentVersion file upload done properly (BACKLOG)
+
+**Goal:** Make file upload work as in a real org instead of through the Phase 10 ContentDocumentId nullable override: create the ContentDocument automatically on ContentVersion insert when ContentDocumentId is omitted (then drop the override so describe reports nillable: false as the DE does), store VersionData as a blob field (base64 over REST, bytea in Postgres) with the GET /sobjects/ContentVersion/{id}/VersionData download endpoint, and model ContentDocumentLink so a file can be attached to a record. Raised at the Phase 10 D-04 checkpoint (2026-10-14): file upload is a central capability and the override is a stopgap. Unblocks the ContentVersion half of 999.9.
 **Requirements:** TBD
 **Plans:** 0 plans
 
