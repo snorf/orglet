@@ -104,6 +104,8 @@ export interface ObjectOverride {
   /** Wins over Supported Calls; a value that differs is reported override-resolved (D-10, D-12). */
   flags?: ObjectFlagsOverride;
   keepObject?: { reason: string };
+  /** The object is owned although neither the Object Reference nor sf-skills `fields` lists OwnerId (D-21 stays as is). */
+  hasOwner?: { value: true; reason: string; ref: string };
   ownerTargets?: { value: ("User" | "Group")[]; reason: string; ref?: string };
   fields?: Record<string, FieldOverride>;
 }

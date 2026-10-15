@@ -57,7 +57,7 @@ const THIN: Record<string, Thin> = {
 type Business = { keyPrefix: string | null; createable: boolean; updateable: boolean; deletable: boolean; undeletable: boolean; searchable: boolean; hasOwner: boolean; nameField: string | null };
 /** The 18 business objects of phase 10; same prefixes, flags, owners and name fields as the BUSINESS table in packages/metadata/src/build.test.ts. */
 const BUSINESS: Record<string, Business> = {
-  Quote: { keyPrefix: "0Q0", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "Name" },
+  Quote: { keyPrefix: "0Q0", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: true, nameField: "Name" },
   QuoteLineItem: { keyPrefix: "0QL", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "LineNumber" },
   Order: { keyPrefix: "801", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: true, nameField: "OrderNumber" },
   OrderItem: { keyPrefix: "802", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: "OrderItemNumber" },

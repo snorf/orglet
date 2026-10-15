@@ -4,7 +4,7 @@
   "labelPlural": "Quotes",
   "keyPrefix": "0Q0",
   "keyPrefixSource": "de-describe",
-  "hasOwner": false,
+  "hasOwner": true,
   "fields": [
     {
       "name": "AccountId",

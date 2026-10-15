@@ -1111,6 +1111,19 @@
       }
     },
     "Quote": {
+      "hasOwner": {
+        "value": true,
+        "reason": "Quote is an owned object, but OwnerId appears only in the sf-skills field_reference SDK list and not in the Object Reference, so D-21 derives no owner; author's own DE describe shows OwnerId on Quote",
+        "ref": "author's own DE describe, 2026-10-15"
+      },
+      "ownerTargets": {
+        "value": [
+          "User",
+          "Group"
+        ],
+        "reason": "neither source states Refers To for Quote.OwnerId; the polymorphic default is kept rather than narrowing on an unconfirmed target (as ServiceContract)",
+        "ref": "BASE2-04"
+      },
       "keyPrefix": {
         "value": "0Q0",
         "source": "de-describe",

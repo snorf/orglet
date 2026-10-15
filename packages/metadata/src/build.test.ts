@@ -38,7 +38,7 @@ const BUSINESS: Record<
   string,
   { keyPrefix: string; owner: boolean; flags: string; nameField: string | null; lookups: [string, string][] }
 > = {
-  Quote: { keyPrefix: "0Q0", owner: false, flags: "CUDXS", nameField: "Name", lookups: [["OpportunityId", "Opportunity"], ["AccountId", "Account"]] },
+  Quote: { keyPrefix: "0Q0", owner: true, flags: "CUDXS", nameField: "Name", lookups: [["OpportunityId", "Opportunity"], ["AccountId", "Account"]] },
   QuoteLineItem: { keyPrefix: "0QL", owner: false, flags: "CUDXS", nameField: "LineNumber", lookups: [["QuoteId", "Quote"], ["Product2Id", "Product2"], ["PricebookEntryId", "PricebookEntry"]] },
   Order: { keyPrefix: "801", owner: true, flags: "CUDXS", nameField: "OrderNumber", lookups: [["AccountId", "Account"], ["OpportunityId", "Opportunity"]] },
   OrderItem: { keyPrefix: "802", owner: false, flags: "CUD--", nameField: "OrderItemNumber", lookups: [["OrderId", "Order"]] },
@@ -154,6 +154,8 @@ describe("standard baseline alone", () => {
     }
     expect(result.schema.getObject("ContentDocument")?.fields.find((x) => x.name === "OwnerId")?.referenceTo).toEqual(["User"]);
     expect(result.schema.getObject("ContentVersion")?.fields.find((x) => x.name === "OwnerId")?.referenceTo).toEqual(["User"]);
+    // Quote lists OwnerId only in the sf-skills field_reference, so its owner comes from a hasOwner override (Task 3 finding); its targets stay polymorphic.
+    expect(result.schema.getObject("Quote")?.fields.some((x) => x.name === "OwnerId")).toBe(true);
   });
 
   it("business: each of the 18 has its name field, or none", () => {
@@ -786,7 +788,7 @@ describe("owner targets and feature-gated fields in the baseline (D-09, D-11)", 
     // BASE2-04: User-only where the Object Reference states only User (Event: Calendar is not modelled, D-12); User and Group
     // where it states both (ServiceContract and Group by override, locked decisions 3 and 4).
     const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "ContentDocument", "ContentVersion", "Contract", "Event", "Individual", "Opportunity"];
-    const USER_AND_GROUP = ["Case", "Group", "Lead", "Location", "OperatingHours", "Order", "ServiceAppointment", "ServiceContract", "SocialPost", "Task"];
+    const USER_AND_GROUP = ["Case", "Group", "Lead", "Location", "OperatingHours", "Order", "Quote", "ServiceAppointment", "ServiceContract", "SocialPost", "Task"];
     const schema = buildOrgSchema(real).schema;
     for (const o of USER_ONLY) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User"]);
     for (const o of USER_AND_GROUP) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User", "Group"]);

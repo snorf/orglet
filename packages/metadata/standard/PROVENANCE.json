@@ -14151,7 +14151,8 @@
       },
       "flags": "doc-only",
       "keyPrefix": "de-describe",
-      "labels": "override"
+      "labels": "override",
+      "ownerTargets": "override"
     },
     "QuoteLineItem": {
       "fields": {

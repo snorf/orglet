@@ -292,7 +292,9 @@ function objectFactsFor(object: string, inputs: GeneratorInputs, override: Objec
     if (stated !== undefined && (derived[flag] ?? true) !== stated) report.overrideResolved.push(`${object}.flags.${flag}`);
     if (!value) flags[flag] = false;
   }
-  const hasOwner = inputs.sfSkills.get(object)?.fields.has("OwnerId") === true || inputs.objectReference.get(object)?.fields.has("OwnerId") === true;
+  const statedBySources = inputs.sfSkills.get(object)?.fields.has("OwnerId") === true || inputs.objectReference.get(object)?.fields.has("OwnerId") === true;
+  if (override.hasOwner && !statedBySources) report.overrideResolved.push(`${object}.hasOwner`);
+  const hasOwner = statedBySources || override.hasOwner?.value === true;
   return { label: override.labels.label, labelPlural: override.labels.labelPlural, hasOwner, ...flags };
 }
 
@@ -317,6 +319,10 @@ export function validateOverrides(overrides: Overrides): void {
       if (!hasReason(entry.flags) || keys.length === 0 || keys.some((k) => !(OBJECT_FLAGS as readonly string[]).includes(k) || typeof f[k] !== "boolean")) {
         throw new GeneratorError(`${where}: flags needs a reason and at least one of ${OBJECT_FLAGS.join("|")} as a boolean`);
       }
+    }
+    if (entry.hasOwner) {
+      const h = entry.hasOwner as Partial<NonNullable<ObjectOverride["hasOwner"]>>;
+      if (!hasReason(h) || h.value !== true || typeof h.ref !== "string" || h.ref === "") throw new GeneratorError(`${where}: hasOwner needs value true, a reason and a ref`);
     }
     if (entry.ownerTargets) {
       if (!hasReason(entry.ownerTargets)) throw new GeneratorError(`${where}: ownerTargets needs a reason`);
@@ -419,8 +425,8 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
     if (!inputs.sfSkills.has(object) && !inputs.objectReference.has(object) && !override.keepObject) {
       throw new GeneratorError(`${object} is in neither source; add an overrides.json keepObject entry`);
     }
-    if (objectPins && (override.labels || override.flags)) {
-      throw new GeneratorError(`${object}: labels and flags overrides are for objects without v1 pins; v1.0 objects keep their pins`);
+    if (objectPins && (override.labels || override.flags || override.hasOwner)) {
+      throw new GeneratorError(`${object}: labels, flags and hasOwner overrides are for objects without v1 pins; v1.0 objects keep their pins`);
     }
     const objectFacts = objectPins ? objectPins.object : objectFactsFor(object, inputs, override, report);
     if (typeof objectFacts.label !== "string" || typeof objectFacts.labelPlural !== "string" || typeof objectFacts.hasOwner !== "boolean") {

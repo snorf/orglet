@@ -259,6 +259,20 @@ describe("objects without v1 pins (Phase 10 D-10, D-11, D-18)", () => {
     expect(generate(same, CLI_OPTIONS).report.overrideResolved).not.toContain("BusinessHours.flags.updateable");
   });
 
+  it("a hasOwner override makes an object owned when neither source lists OwnerId, and is reported (D-21 unchanged)", () => {
+    expect(businessHours(unpinned())).toMatchObject({ hasOwner: false });
+    const owned = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.hasOwner = { value: true, reason: "test", ref: "test describe" };
+      c.overrides.objects.BusinessHours!.ownerTargets = { value: ["User", "Group"], reason: "test" };
+    });
+    expect(businessHours(owned).hasOwner).toBe(true);
+    expect(generate(owned, CLI_OPTIONS).report.overrideResolved).toContain("BusinessHours.hasOwner");
+    const noRef = unpinned((c) => {
+      c.overrides.objects.BusinessHours!.hasOwner = { value: true, reason: "test", ref: "" };
+    });
+    expectGeneratorError(() => generate(noRef, CLI_OPTIONS), /^overrides\.json BusinessHours: hasOwner needs value true, a reason and a ref/);
+  });
+
   it("without Supported Calls or a flags override an object without pins aborts", () => {
     const none = unpinned((c) => {
       delete c.objectReference.get("BusinessHours")!.supportedCalls;
