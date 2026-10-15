@@ -496,21 +496,34 @@ describe("roll-up summary resolution", () => {
     expect(r.schema.getField("Parent__c", "B__c")?.rollup?.operation).toBe("SUM");
   });
 
-  it("roll-ups on standard objects resolve over the three whitelisted lookups", () => {
+  it("roll-ups on standard objects resolve over the four whitelisted lookups", () => {
     const r = build([
       sourceObject("Account", [summary("Opp_Total__c", "sum", "Opportunity.AccountId", "Opportunity.Amount")]),
-      sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")]),
+      sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice"), summary("Quote_Count__c", "count", "Quote.OpportunityId")]),
       sourceObject("Campaign", [summary("Member_Count__c", "count", "CampaignMember.CampaignId")]),
     ]);
     expect(r.schema.getField("Account", "Opp_Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, custom: true, rollup: { childObject: "Opportunity", foreignKey: "AccountId" } });
     expect(r.schema.getField("Opportunity", "Items_Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, rollup: { childObject: "OpportunityLineItem", foreignKey: "OpportunityId" } });
     expect(r.schema.getField("Campaign", "Member_Count__c")).toMatchObject({ type: "Number", precision: 18, scale: 0, rollup: { childObject: "CampaignMember", foreignKey: "CampaignId" } });
+    expect(r.schema.getField("Opportunity", "Quote_Count__c")).toMatchObject({ type: "Number", precision: 18, scale: 0, rollup: { childObject: "Quote", foreignKey: "OpportunityId" } });
     expect(rollupWarnings(r)).toEqual([]);
   });
 
-  it("a roll-up over a plain lookup fails metadata load naming the field and the rule", () => {
-    expect(() => build([sourceObject("Account", [summary("Contact_Count__c", "count", "Contact.AccountId")])])).toThrowError(/Account\.Contact_Count__c.*Contact\.AccountId.*master-detail/);
-    expect(() => build(parentChild([summary("Ref_Count__c", "count", "Child__c.Ref__c")]))).toThrowError(/Parent__c\.Ref_Count__c.*Child__c\.Ref__c/);
+  it("a roll-up over a lookup that is not whitelisted is skipped with rollup-relationship and the load continues", () => {
+    const r = build([sourceObject("Account", [summary("Contact_Count__c", "count", "Contact.AccountId")])]);
+    expect(r.schema.getField("Account", "Contact_Count__c")).toBeUndefined();
+    expect(r.schema.getObject("Account")).toBeDefined();
+    expect(rollupWarnings(r)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-relationship Account\.Contact_Count__c: .*master-detail.*Contact\.AccountId.*Quote\.OpportunityId.*; field skipped$/)]);
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+    expect(r.diagnostics.filter((d) => d.area === "rollup-relationship")).toEqual([
+      { area: "rollup-relationship", kind: "rollup", object: "Account", field: "Contact_Count__c", message: expect.stringMatching(/^Account\.Contact_Count__c: .*; field skipped$/) as string },
+    ]);
+
+    const custom = build(parentChild([summary("Ref_Count__c", "count", "Child__c.Ref__c")]));
+    expect(custom.schema.getField("Parent__c", "Ref_Count__c")).toBeUndefined();
+    expect(custom.schema.getObject("Parent__c")).toBeDefined();
+    expect(rollupWarnings(custom)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-relationship Parent__c\.Ref_Count__c: .*Child__c\.Ref__c/)]);
+    expect(custom.warnings).toEqual(custom.diagnostics.map(formatDiagnostic));
   });
 
   it("a whitelisted child missing from the baseline degrades to rollup-target instead of failing", () => {
