@@ -120,3 +120,13 @@ Tests (`packages/metadata/src/build.test.ts`): "roll-ups on standard objects res
 
 Verification (Node 22): `pnpm lint` clean, `pnpm typecheck` clean, `pnpm test` 38 files passed, 629 passed / 3 skipped, `pnpm build` clean (packages/cli/dist current). No living doc outside .planning lists the rollup-* areas, so none was updated. Task 3 (Johan's DE retrieve check) is still pending.
 
+
+## Deviation fix (Task 3 finding): Quote.hasOwner
+
+**Root cause:** `objectFactsFor` (scripts/gen-baseline/pipeline.ts) derives `hasOwner` only from OwnerId in the sf-skills `fields` or the Object Reference `fields` (D-21). For Quote, OwnerId appears only in the sf-skills `field_reference` SDK list, so the generated baseline had `hasOwner: false` and no OwnerId column.
+
+**Evidence:** the author's own Developer Edition describe (2026-10-15) shows OwnerId on Quote and confirms the other 17 Phase 10 objects already match (Order, ContentDocument, ContentVersion and Location owned; the rest not).
+
+**What changed:** a per-object `hasOwner` override in overrides.json (`value: true`, `reason`, `ref`), validated like the other overrides (rejected without value true, reason and ref, and on objects with v1 pins) and reported as `Quote.hasOwner` in `overrideResolved` when the sources alone would not state it. D-21 itself is untouched. Quote also got an `ownerTargets` override keeping the polymorphic User/Group default (neither source states Refers To for Quote.OwnerId; the describe evidence recorded here covers only the field's existence, so the target list was not narrowed). Regenerated: Quote.json (`hasOwner: true`) and PROVENANCE.json (Quote ownerTargets: override). Tests: generator test on synthetic input in baseline-gate.test.ts, Quote OwnerId loader assertion and owner-set update in build.test.ts, Quote owner flag in api.test.ts.
+
+**Verification (Node 22):** `pnpm baseline:gen`, `baseline:check`, `lint`, `typecheck`, `typecheck:scripts`, `build` clean; `pnpm test` 38 files, 630 passed / 3 skipped (includes upgrade.test.ts).

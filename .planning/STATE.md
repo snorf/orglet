@@ -209,6 +209,7 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-04 fix: field names take the SDK (field_reference/describe) spelling where the Object Reference differs only by case; renameFrom override for PDF spellings without a twin (Quote.RecordTypeId, AccountTeamMember.PhotoUrl); DE describe 2026-10-14 is the evidence
 - [Phase 10]: 10-05: OrderItem.QuoteLineItemId and RelatedOrderItemId overridden nillable:true (sf-skills required flag contradicts its own descriptions; OrderItem was uninsertable); engine/REST behaviour of the 18 proven without production code change
 - [Phase 10]: 10-06 fix: Quote.OpportunityId joins the roll-up lookup allowlist (documented Create/Filter-only, same signature as OpportunityLineItem.OpportunityId); Phase 5 D-08 reversed, a roll-up over an unlisted lookup now degrades with UNSUPPORTED:rollup-relationship instead of failing the load
+- [Phase 10]: 10-06 fix: Quote hasOwner set by override with the author's DE describe as ref; D-21 unchanged (field_reference alone still does not imply an owner)
 
 ### Pending Todos
 
