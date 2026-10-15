@@ -108,3 +108,15 @@ None.
 ## Pending (Task 3)
 
 Johan runs `node packages/cli/dist/index.js check --strict --project <his DE retrieve>` and reports exit code, number of `warning:` lines, the summary line and the info count. The continuation agent then adds the row to the DE retrieve table and the Overview DE row in conformance/README.md, fills the DE cell above, states whether the result confirms the BASE2-06/07 ticks, marks the plan complete, and finalises STATE.md/ROADMAP.md (check `git diff .planning/ROADMAP.md` for the Phase 999.1 "Plans:" line quirk after `roadmap update-plan-progress`).
+
+## Deviation fix (Task 3 finding): roll-up over Quote.OpportunityId and D-08 degrade
+
+Found at the Task 3 checkpoint: a real-org retrieve carries a roll-up summary over Quote.OpportunityId, which metadata load rejected (Phase 5 D-08 threw for any roll-up over a lookup outside the allowlist). Johan approved two changes on 2026-10-15 ("1+2"); commit 1bfe9e4.
+
+1. [Rule 1 - Bug] `quote.opportunityid` added to `LOOKUP_WHITELIST` in `packages/metadata/src/rollup.ts`. The Object Reference documents Quote.OpportunityId as `Create, Filter` only (required, not updateable, not nillable), the same relationship signature as OpportunityLineItem.OpportunityId, and a real-org retrieve carries a roll-up over it, so the platform allows it. The allowlist is now four lookups.
+2. Phase 5 D-08 reversed: a roll-up over a lookup that is neither master-detail nor allowlisted no longer throws. It is skipped with a new `UNSUPPORTED:rollup-relationship` diagnostic (via `drop`, `DropArea`, `pushDiagnostic`), the detail being the old message updated to list the four lookups. Warnings and diagnostics stay 1:1. The throw for a roll-up on an unregistered object stays (internal invariant).
+
+Tests (`packages/metadata/src/build.test.ts`): "roll-ups on standard objects resolve over the four whitelisted lookups" (adds Opportunity roll-up over Quote.OpportunityId); the old throw test is rewritten to "a roll-up over a lookup that is not whitelisted is skipped with rollup-relationship and the load continues" (parent object still loads, warnings == diagnostics.map(formatDiagnostic)).
+
+Verification (Node 22): `pnpm lint` clean, `pnpm typecheck` clean, `pnpm test` 38 files passed, 629 passed / 3 skipped, `pnpm build` clean (packages/cli/dist current). No living doc outside .planning lists the rollup-* areas, so none was updated. Task 3 (Johan's DE retrieve check) is still pending.
+

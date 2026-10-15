@@ -208,6 +208,7 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-04: OpportunitySplit.Split generated as AutoNumber name field; merge added to known Supported Calls
 - [Phase 10]: 10-04 fix: field names take the SDK (field_reference/describe) spelling where the Object Reference differs only by case; renameFrom override for PDF spellings without a twin (Quote.RecordTypeId, AccountTeamMember.PhotoUrl); DE describe 2026-10-14 is the evidence
 - [Phase 10]: 10-05: OrderItem.QuoteLineItemId and RelatedOrderItemId overridden nillable:true (sf-skills required flag contradicts its own descriptions; OrderItem was uninsertable); engine/REST behaviour of the 18 proven without production code change
+- [Phase 10]: 10-06 fix: Quote.OpportunityId joins the roll-up lookup allowlist (documented Create/Filter-only, same signature as OpportunityLineItem.OpportunityId); Phase 5 D-08 reversed, a roll-up over an unlisted lookup now degrades with UNSUPPORTED:rollup-relationship instead of failing the load
 
 ### Pending Todos
 
