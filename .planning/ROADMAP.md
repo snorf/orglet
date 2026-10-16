@@ -29,7 +29,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 
 - [x] **Phase 8: Upgrade Safety Net & Nullable Key Prefixes** - A populated v1.0 database upgrades without data loss; FK violations downgrade to warnings; objects may have no key prefix (completed 2026-10-13)
 - [x] **Phase 9: Baseline Generator, Parity & OwnerId Narrowing** - A deterministic generator reproduces the 35 existing objects, then adds every documented field and per-object OwnerId targets (completed 2026-10-14)
-- [ ] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart
+- [x] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart (completed 2026-10-16)
 - [ ] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load
 - [ ] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas
 - [ ] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields
@@ -166,7 +166,7 @@ Plans:
 | 7. Conformance Re-Run & Milestone Acceptance | v1.0 | 6/6 | Complete | 2026-10-12 |
 | 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 10/10 | Complete | 2026-10-13 |
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
-| 10. Business Standard Objects | v1.1 | 6/6 | In Progress|  |
+| 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 0/TBD | Not started | - |
 | 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
