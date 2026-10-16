@@ -2,7 +2,7 @@
 phase: 10-business-standard-objects
 plan: 06
 subsystem: conformance, docs
-status: in-progress (Task 3, the human DE retrieve check, is pending)
+status: complete
 tags: [base2-06, base2-07, base2-08, conformance, sc4, wording]
 requires: ["10-05"]
 key-files:
@@ -12,12 +12,12 @@ key-files:
     - .planning/ROADMAP.md
     - .planning/PROJECT.md
     - packages/metadata/standard/README.md
-requirements-completed: []
+requirements-completed: [BASE2-06, BASE2-07, BASE2-08]
 ---
 
-# Phase 10 Plan 06: Conformance, SC4 shifts and wording Summary (DRAFT, Task 3 pending)
+# Phase 10 Plan 06: Conformance, SC4 shifts and wording Summary
 
-Tasks 1 and 2 are done and committed. Task 3 (Johan's DE retrieve check) is not. The BASE2-06/07 ticks in Task 2 were made before the human DE-retrieve leg, on the strength of the automated evidence; whether Task 3 confirms them must be stated here by the continuation agent (any DE warning is a finding that may reopen a tick). BASE2-08 was already ticked.
+All three tasks are done. Task 3 (the DE retrieve check, run 2026-10-16 on the author's own Developer Edition retrieve after the three deviation fixes below) returned exit 0, 0 warnings, 55 objects (2 custom), 3647 fields and an info line of 39 unreferenced unmodelled standard objects, exactly the research expectation. It confirms the BASE2-06/07 ticks made in Task 2; BASE2-08 was already ticked.
 
 ## Commits
 
@@ -62,7 +62,7 @@ node packages/cli/dist/index.js reset --org-schema conformance_p10 --drop-prefix
 
 | Measure | Before | After |
 |---|---|---|
-| `orglet check --strict` on Johan's DE retrieve | exit 0, 0 warnings, 37 objects (2 custom), 983 fields | PENDING Task 3 [expected exit 0, 0 warnings, 55 objects (2 custom)] |
+| `orglet check --strict` on Johan's DE retrieve | exit 0, 0 warnings, 37 objects (2 custom), 983 fields | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced (2026-10-16) |
 | `orglet check` on examples/acme | 0 warnings | 0 `warning:` lines, exit 0, plus one `info:` line naming 39 objects |
 | `UNSUPPORTED:standard-object` for an unreferenced retrieve object | 1 warning each | 0, listed on the info line |
 | `UNSUPPORTED:reference-target` for referenced objects | 0 | 0 (asserted by documented-fields.test.ts) |
@@ -74,7 +74,7 @@ node packages/cli/dist/index.js reset --org-schema conformance_p10 --drop-prefix
 
 SC4 is judged by "no standard-object or reference-target warning remains for a referenced object", not raw totals. The plan's expected [~150], [~39], [~126/1410 = 0.0894] differ from measured 140, 37, 121/1410 = 0.0858; all in the favourable direction and within the bound. Note: the 10-04 summary's ratio of 122/1410 is also superseded by 121/1410.
 
-Not a measurement of the DE retrieve: the 55-object figure is the research expectation only.
+The DE row is measured (2026-10-16) and matches the research expectation of 55 objects (2 custom).
 
 ## Wording changes (before/after)
 
@@ -105,9 +105,11 @@ None in behaviour. Notes:
 
 None.
 
-## Pending (Task 3)
+## Task 3 result (DE retrieve check)
 
-Johan runs `node packages/cli/dist/index.js check --strict --project <his DE retrieve>` and reports exit code, number of `warning:` lines, the summary line and the info count. The continuation agent then adds the row to the DE retrieve table and the Overview DE row in conformance/README.md, fills the DE cell above, states whether the result confirms the BASE2-06/07 ticks, marks the plan complete, and finalises STATE.md/ROADMAP.md (check `git diff .planning/ROADMAP.md` for the Phase 999.1 "Plans:" line quirk after `roadmap update-plan-progress`).
+Run 2026-10-16 from the repo root with Node 22 against the author's own DE retrieve, after the deviation fixes below: `exit 0`, 0 `warning:` lines, `55 objects (2 custom), 3647 fields`, `info: 39 standard objects not modelled and unreferenced`. Recorded in conformance/README.md (Overview DE row and the DE retrieve table). Confirms the BASE2-06/07 ticks.
+
+A second, informal run against a large real-org retrieve (not recorded in conformance/README.md; counts only, no names) found the roll-up crash and the Quote owner gap fixed below, and showed SC4's criterion holding there too: no `UNSUPPORTED:standard-object` and no `UNSUPPORTED:reference-target` warnings, 250 objects on the info line. The remaining `UNSUPPORTED:standard-field` warnings on the 18 (standard fields neither source documents, e.g. Order.AccountNumber, OrderItem.ProductCode, CaseMilestone.MilestoneId, ContentDocument.ParentId, OpportunitySplit.SplitTypeId) and the undocumented Opportunity.SyncedQuoteId / OpportunityLineItem.QuoteLineItemId are captured in the todo `2026-10-16-standard-field-gaps-on-the-18-business-objects`.
 
 ## Deviation fix (Task 3 finding): roll-up over Quote.OpportunityId and D-08 degrade
 
