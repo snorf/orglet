@@ -22,3 +22,7 @@ current behaviour.
 Decide per object which owners can be queues (Case, Lead, custom objects, ...) and narrow the
 rest to `["User"]`. Update the describe test and the phase 3 fact tables. Run `orglet check` on
 Johan's DE retrieve to find formulas that use `Owner.` on User-only objects.
+
+## Resolution
+
+Resolved by Phase 9 (09-02, 09-08): per-object ownerTargets.

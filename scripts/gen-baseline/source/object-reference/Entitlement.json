@@ -1,0 +1,235 @@
+{
+  "object": "Entitlement",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "AccountId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "AssetId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AssetWarrantyID": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "field-service"
+      ]
+    },
+    "BusinessHoursId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CasesPerEntitlement": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContractLineItemId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "EndDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "IsPerIncident": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LocationID": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "RemainingCases": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "RemainingWorkOrders": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ServiceContractId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "SlaProcessId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "StartDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "SvcApptBookingWindows": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "field-service"
+      ]
+    },
+    "SvcApptBookingWindowsId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase",
+        "field-service"
+      ]
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "WorkOrdersPerEntitlement": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

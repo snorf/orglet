@@ -3,86 +3,41 @@
   "label": "Opportunity Product",
   "labelPlural": "Opportunity Products",
   "keyPrefix": "00k",
+  "keyPrefixSource": "unverified",
   "hasOwner": false,
   "fields": [
     {
-      "name": "Name",
-      "label": "Opportunity Product Name",
-      "type": "Text",
-      "length": 255,
-      "nameField": true,
-      "createable": false,
-      "updateable": false
-    },
-    {
-      "name": "OpportunityId",
-      "label": "Opportunity ID",
-      "type": "Lookup",
-      "referenceTo": ["Opportunity"],
-      "relationshipName": "Opportunity",
-      "childRelationshipName": "OpportunityLineItems",
+      "name": "CanUseQuantitySchedule",
+      "label": "Quantity Scheduling Enabled",
+      "type": "Checkbox",
       "nillable": false,
-      "updateable": false
-    },
-    {
-      "name": "PricebookEntryId",
-      "label": "Price Book Entry ID",
-      "type": "Lookup",
-      "referenceTo": ["PricebookEntry"],
-      "relationshipName": "PricebookEntry",
-      "childRelationshipName": "OpportunityLineItems",
-      "nillable": false,
-      "updateable": false
-    },
-    {
-      "name": "Product2Id",
-      "label": "Product ID",
-      "type": "Lookup",
-      "referenceTo": ["Product2"],
-      "relationshipName": "Product2",
-      "childRelationshipName": "OpportunityLineItems",
-      "updateable": false
-    },
-    {
-      "name": "ProductCode",
-      "label": "Product Code",
-      "type": "Text",
-      "length": 255,
       "createable": false,
-      "updateable": false
-    },
-    {
-      "name": "Quantity",
-      "label": "Quantity",
-      "type": "Number",
-      "precision": 12,
-      "scale": 2,
-      "nillable": false
-    },
-    {
-      "name": "UnitPrice",
-      "label": "Sales Price",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2,
+      "updateable": false,
       "defaultedOnCreate": true
     },
     {
-      "name": "TotalPrice",
-      "label": "Total Price",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2,
+      "name": "CanUseRevenueSchedule",
+      "label": "Revenue Scheduling Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
       "defaultedOnCreate": true
     },
     {
-      "name": "ListPrice",
-      "label": "List Price",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2,
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "nillable": false,
       "createable": false,
-      "updateable": false
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Description",
+      "label": "Line Description",
+      "type": "Text",
+      "length": 255
     },
     {
       "name": "Discount",
@@ -92,31 +47,31 @@
       "scale": 2
     },
     {
-      "name": "Subtotal",
-      "label": "Subtotal",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2,
+      "name": "HasQuantitySchedule",
+      "label": "Has Quantity Schedule",
+      "type": "Checkbox",
+      "nillable": false,
       "createable": false,
-      "updateable": false
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
-      "name": "ServiceDate",
-      "label": "Date",
-      "type": "Date"
+      "name": "HasRevenueSchedule",
+      "label": "Has Revenue Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
-      "name": "Description",
-      "label": "Line Description",
-      "type": "Text",
-      "length": 255
-    },
-    {
-      "name": "SortOrder",
-      "label": "Sort Order",
-      "type": "Number",
-      "precision": 3,
-      "scale": 0
+      "name": "HasSchedule",
+      "label": "Has Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "LastReferencedDate",
@@ -131,6 +86,131 @@
       "type": "DateTime",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "ListPrice",
+      "label": "List Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Opportunity Product Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "nameField": true
+    },
+    {
+      "name": "OpportunityId",
+      "label": "Opportunity ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity",
+      "childRelationshipName": "OpportunityLineItems"
+    },
+    {
+      "name": "PricebookEntryId",
+      "label": "Price Book Entry ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "PricebookEntry"
+      ],
+      "relationshipName": "PricebookEntry",
+      "childRelationshipName": "OpportunityLineItems"
+    },
+    {
+      "name": "Product2Id",
+      "label": "Product ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2",
+      "childRelationshipName": "OpportunityLineItems"
+    },
+    {
+      "name": "ProductCode",
+      "label": "Product Code",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ProductId",
+      "label": "Product ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2"
+    },
+    {
+      "name": "Quantity",
+      "label": "Quantity",
+      "type": "Number",
+      "precision": 12,
+      "scale": 2,
+      "nillable": false
+    },
+    {
+      "name": "RecalculateTotalPrice",
+      "label": "Recalculate Total Price",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ServiceDate",
+      "label": "Date",
+      "type": "Date"
+    },
+    {
+      "name": "SortOrder",
+      "label": "Sort Order",
+      "type": "Number",
+      "precision": 3,
+      "scale": 0
+    },
+    {
+      "name": "Subtotal",
+      "label": "Subtotal",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalPrice",
+      "label": "Total Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "UnitPrice",
+      "label": "Sales Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "defaultedOnCreate": true
     }
   ]
 }

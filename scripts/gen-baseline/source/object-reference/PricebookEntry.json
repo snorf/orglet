@@ -1,0 +1,140 @@
+{
+  "object": "PricebookEntry",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "ActivePriceAdjustmentQuantity": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "IsActive": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsArchived": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Pricebook2Id": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Pricebook2"
+      ],
+      "relationshipName": "Pricebook2",
+      "relationshipType": "lookup"
+    },
+    "Product2Id": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2",
+      "relationshipType": "lookup"
+    },
+    "ProductCode": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ProductSellingModelId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ],
+      "refersTo": [
+        "ProductSellingModel"
+      ],
+      "relationshipName": "ProductSellingModel",
+      "relationshipType": "lookup"
+    },
+    "UnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Sort",
+        "Update"
+      ]
+    },
+    "UseStandardPrice": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

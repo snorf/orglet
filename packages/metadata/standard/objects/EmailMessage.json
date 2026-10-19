@@ -1,0 +1,286 @@
+{
+  "name": "EmailMessage",
+  "label": "Email Message",
+  "labelPlural": "Email Messages",
+  "keyPrefix": "02s",
+  "keyPrefixSource": "de-describe",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "AttachmentIds",
+      "label": "Attachment Ids",
+      "type": "Text",
+      "length": 32768
+    },
+    {
+      "name": "AutomationType",
+      "label": "Automation Type",
+      "type": "Picklist",
+      "updateable": false
+    },
+    {
+      "name": "BccAddress",
+      "label": "BCC Address",
+      "type": "Text",
+      "length": 4000
+    },
+    {
+      "name": "CcAddress",
+      "label": "CC Address",
+      "type": "Text",
+      "length": 4000
+    },
+    {
+      "name": "ClientThreadIdentifier",
+      "label": "Client Thread ID",
+      "type": "Text",
+      "length": 765
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "FirstLinkClickedDate",
+      "label": "First Link Click Date",
+      "type": "DateTime"
+    },
+    {
+      "name": "FirstOpenedDate",
+      "label": "First Opened",
+      "type": "DateTime"
+    },
+    {
+      "name": "FromAddress",
+      "label": "From Address",
+      "type": "Email",
+      "length": 1000
+    },
+    {
+      "name": "FromName",
+      "label": "From Name",
+      "type": "Text",
+      "length": 1000
+    },
+    {
+      "name": "HasAttachment",
+      "label": "Has Attachment",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasReply",
+      "label": "Has Reply",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Headers",
+      "label": "Headers",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "HtmlBody",
+      "label": "HTML Body",
+      "type": "LongTextArea",
+      "length": 131072
+    },
+    {
+      "name": "Incoming",
+      "label": "Is Incoming",
+      "type": "Checkbox",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsBounced",
+      "label": "Is Bounced",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsClientManaged",
+      "label": "Is Client Managed",
+      "type": "Checkbox",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsExternallyVisible",
+      "label": "Is Externally Visible",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsLinkClicked",
+      "label": "Is Link Clicked",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsLinkTracked",
+      "label": "Is Link Tracked",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsOpened",
+      "label": "Is Opened",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsPrivateDraft",
+      "label": "Is Private Draft",
+      "type": "Checkbox",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsTracked",
+      "label": "Is Tracked",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "LastLinkClickedDate",
+      "label": "Last Link Click Date",
+      "type": "DateTime"
+    },
+    {
+      "name": "LastOpenedDate",
+      "label": "Last Opened",
+      "type": "DateTime"
+    },
+    {
+      "name": "MessageDate",
+      "label": "Message Date",
+      "type": "DateTime"
+    },
+    {
+      "name": "MessageIdentifier",
+      "label": "Message ID",
+      "type": "Text",
+      "length": 765,
+      "idLookup": true
+    },
+    {
+      "name": "Name",
+      "label": "Email Message Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "ParentId",
+      "label": "Case ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "Case"
+      ],
+      "relationshipName": "Parent"
+    },
+    {
+      "name": "RelatedToId",
+      "label": "Related To ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Account",
+        "Asset",
+        "Campaign",
+        "Case",
+        "Contract",
+        "Location",
+        "Opportunity",
+        "Order",
+        "Product2",
+        "ServiceAppointment"
+      ],
+      "relationshipName": "RelatedTo"
+    },
+    {
+      "name": "ReplyToEmailMessageId",
+      "label": "Email Message ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "EmailMessage"
+      ],
+      "relationshipName": "ReplyToEmailMessage"
+    },
+    {
+      "name": "Source",
+      "label": "Email Source",
+      "type": "Picklist",
+      "updateable": false
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "nillable": false
+    },
+    {
+      "name": "Subject",
+      "label": "Subject",
+      "type": "Text",
+      "length": 3000
+    },
+    {
+      "name": "TextBody",
+      "label": "Text Body",
+      "type": "LongTextArea",
+      "length": 131072
+    },
+    {
+      "name": "ThreadIdentifier",
+      "label": "Thread ID",
+      "type": "Text",
+      "length": 765,
+      "idLookup": true
+    },
+    {
+      "name": "ToAddress",
+      "label": "To Address",
+      "type": "Text",
+      "length": 4000
+    },
+    {
+      "name": "ValidatedFromAddress",
+      "label": "From",
+      "type": "Picklist"
+    }
+  ]
+}

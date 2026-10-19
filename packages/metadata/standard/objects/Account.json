@@ -3,7 +3,11 @@
   "label": "Account",
   "labelPlural": "Accounts",
   "keyPrefix": "001",
+  "keyPrefixSource": "sdk-fixture",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "AccountNumber",
@@ -46,11 +50,17 @@
       "compoundFieldName": "BillingAddress"
     },
     {
+      "name": "BillingCountryCode",
+      "label": "Billing Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
       "name": "BillingGeocodeAccuracy",
       "label": "Billing Geocode Accuracy",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [],
+      "restrictedPicklist": true,
       "compoundFieldName": "BillingAddress"
     },
     {
@@ -84,6 +94,12 @@
       "compoundFieldName": "BillingAddress"
     },
     {
+      "name": "BillingStateCode",
+      "label": "Billing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
       "name": "BillingStreet",
       "label": "Billing Street",
       "type": "TextArea",
@@ -107,10 +123,96 @@
       "updateable": false
     },
     {
+      "name": "CleanStatus",
+      "label": "Clean Status",
+      "type": "Picklist",
+      "picklistValues": [
+        {
+          "value": "Matched",
+          "label": "Matched"
+        },
+        {
+          "value": "Different",
+          "label": "Different"
+        },
+        {
+          "value": "Acknowledged",
+          "label": "Acknowledged"
+        },
+        {
+          "value": "NotFound",
+          "label": "NotFound"
+        },
+        {
+          "value": "Inactive",
+          "label": "Inactive"
+        },
+        {
+          "value": "Pending",
+          "label": "Pending"
+        },
+        {
+          "value": "SelectMatch",
+          "label": "SelectMatch"
+        },
+        {
+          "value": "Skipped",
+          "label": "Skipped"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "CommerceCustomerReference",
+      "label": "Commerce Customer Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CommerceGroupReference",
+      "label": "Commerce Group Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CommerceOrganizationReference",
+      "label": "Commerce Organization Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Account Currency",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DandbCompanyId",
+      "label": "D&B Company ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "DandBCompany"
+      ],
+      "relationshipName": "DandbCompany"
+    },
+    {
       "name": "Description",
       "label": "Account Description",
       "type": "LongTextArea",
       "length": 32000
+    },
+    {
+      "name": "DunsNumber",
+      "label": "D-U-N-S Number",
+      "type": "Text",
+      "length": 9
     },
     {
       "name": "Fax",
@@ -119,10 +221,33 @@
       "length": 40
     },
     {
+      "name": "FirstName",
+      "label": "First Name",
+      "type": "Text",
+      "length": 40,
+      "featureGated": true
+    },
+    {
       "name": "Industry",
       "label": "Industry",
       "type": "Picklist",
       "standardValueSet": "Industry"
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsBuyer",
+      "label": "Buyer Account",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
     },
     {
       "name": "IsCustomerPortal",
@@ -143,6 +268,15 @@
       "defaultValue": "false"
     },
     {
+      "name": "IsPersonAccount",
+      "label": "Is Person Account",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
       "name": "IsPriorityRecord",
       "label": "Important",
       "type": "Checkbox",
@@ -153,11 +287,33 @@
       "defaultValue": "false"
     },
     {
+      "name": "Jigsaw",
+      "label": "Data.com Key",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "JigsawCompanyId",
+      "label": "Jigsaw Company ID",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
       "name": "LastActivityDate",
       "label": "Last Activity",
       "type": "Date",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "LastName",
+      "label": "Last Name",
+      "type": "Text",
+      "length": 80,
+      "featureGated": true
     },
     {
       "name": "LastReferencedDate",
@@ -177,12 +333,31 @@
       "name": "MasterRecordId",
       "label": "Master Record ID",
       "type": "Lookup",
+      "createable": false,
+      "updateable": false,
       "referenceTo": [
         "Account"
       ],
-      "relationshipName": "MasterRecord",
-      "createable": false,
-      "updateable": false
+      "relationshipName": "MasterRecord"
+    },
+    {
+      "name": "MiddleName",
+      "label": "Middle Name",
+      "type": "Text",
+      "length": 40,
+      "featureGated": true
+    },
+    {
+      "name": "NaicsCode",
+      "label": "NAICS Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "NaicsDesc",
+      "label": "NAICS Description",
+      "type": "Text",
+      "length": 120
     },
     {
       "name": "Name",
@@ -200,6 +375,15 @@
       "scale": 0
     },
     {
+      "name": "OperatingHoursId",
+      "label": "Operating Hour ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "OperatingHours"
+      ],
+      "relationshipName": "OperatingHours"
+    },
+    {
       "name": "Ownership",
       "label": "Ownership",
       "type": "Picklist",
@@ -214,6 +398,372 @@
       ],
       "relationshipName": "Parent",
       "childRelationshipName": "ChildAccounts"
+    },
+    {
+      "name": "PersonActionCadenceAssigneeId",
+      "label": "Cadence Assignee ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Group",
+        "User"
+      ],
+      "relationshipName": "PersonActionCadenceAssignee"
+    },
+    {
+      "name": "PersonActionCadenceState",
+      "label": "Cadence State",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonActiveTrackerCount",
+      "label": "Total Cadences",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonAssistantName",
+      "label": "Assistant",
+      "type": "Text",
+      "length": 40,
+      "featureGated": true
+    },
+    {
+      "name": "PersonAssistantPhone",
+      "label": "Asst. Phone",
+      "type": "Phone",
+      "length": 40,
+      "featureGated": true
+    },
+    {
+      "name": "PersonBirthdate",
+      "label": "Birthdate",
+      "type": "Date",
+      "featureGated": true
+    },
+    {
+      "name": "PersonContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "createable": false,
+      "referenceTo": [
+        "Contact"
+      ],
+      "featureGated": true
+    },
+    {
+      "name": "PersonDepartment",
+      "label": "Department",
+      "type": "Text",
+      "length": 80,
+      "featureGated": true
+    },
+    {
+      "name": "PersonEmail",
+      "label": "Email",
+      "type": "Email",
+      "length": 80,
+      "featureGated": true
+    },
+    {
+      "name": "PersonEmailBouncedDate",
+      "label": "Email Bounced Date",
+      "type": "DateTime",
+      "featureGated": true
+    },
+    {
+      "name": "PersonEmailBouncedReason",
+      "label": "Email Bounced Reason",
+      "type": "Text",
+      "length": 255,
+      "featureGated": true
+    },
+    {
+      "name": "PersonGender",
+      "label": "Gender",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonGenderIdentity",
+      "label": "Gender Identity",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "PersonHasOptedOutOfEmail",
+      "label": "Email Opt Out",
+      "type": "Checkbox",
+      "featureGated": true
+    },
+    {
+      "name": "PersonHasOptedOutOfFax",
+      "label": "Fax Opt Out",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonHomePhone",
+      "label": "Home Phone",
+      "type": "Phone",
+      "length": 40,
+      "featureGated": true
+    },
+    {
+      "name": "PersonIndividualId",
+      "label": "Individual ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Individual"
+      ]
+    },
+    {
+      "name": "PersonLastCURequestDate",
+      "label": "Last Stay-in-Touch Request Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonLastCUUpdateDate",
+      "label": "Last Stay-in-Touch Save Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonLeadSource",
+      "label": "Lead Source",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingAddress",
+      "label": "Mailing Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingCity",
+      "label": "Mailing City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingCountry",
+      "label": "Mailing Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingCountryCode",
+      "label": "Person Mailing Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingGeocodeAccuracy",
+      "label": "Mailing Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingLatitude",
+      "label": "Mailing Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingLongitude",
+      "label": "Mailing Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingPostalCode",
+      "label": "Mailing Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingState",
+      "label": "Mailing State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingStateCode",
+      "label": "Person Mailing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMailingStreet",
+      "label": "Mailing Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "PersonMailingAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonMobilePhone",
+      "label": "Mobile",
+      "type": "Phone",
+      "length": 40,
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherAddress",
+      "label": "Other Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonOtherCity",
+      "label": "Other City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherCountry",
+      "label": "Other Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherCountryCode",
+      "label": "Person Other Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherGeocodeAccuracy",
+      "label": "Other Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "PersonOtherAddress"
+    },
+    {
+      "name": "PersonOtherLatitude",
+      "label": "Other Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherLongitude",
+      "label": "Other Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherPhone",
+      "label": "Other Phone",
+      "type": "Phone",
+      "length": 40,
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherPostalCode",
+      "label": "Other Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherState",
+      "label": "Other State/Province",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherStateCode",
+      "label": "Person Other State Code",
+      "type": "Picklist",
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonOtherStreet",
+      "label": "Other Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "PersonOtherAddress",
+      "featureGated": true
+    },
+    {
+      "name": "PersonPronouns",
+      "label": "Pronouns",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "PersonReportsToId",
+      "label": "Person Reports To ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "PersonReportsTo",
+      "featureGated": true
+    },
+    {
+      "name": "PersonScheduledResumeDateTime",
+      "label": "Cadence Resume Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PersonTitle",
+      "label": "Title",
+      "type": "Text",
+      "length": 80,
+      "featureGated": true
     },
     {
       "name": "Phone",
@@ -245,6 +795,12 @@
       "relationshipName": "RecordType"
     },
     {
+      "name": "Salutation",
+      "label": "Salutation",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
       "name": "ShippingAddress",
       "label": "Shipping Address",
       "type": "Address",
@@ -266,11 +822,17 @@
       "compoundFieldName": "ShippingAddress"
     },
     {
+      "name": "ShippingCountryCode",
+      "label": "Shipping Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
       "name": "ShippingGeocodeAccuracy",
       "label": "Shipping Geocode Accuracy",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [],
+      "restrictedPicklist": true,
       "compoundFieldName": "ShippingAddress"
     },
     {
@@ -304,6 +866,12 @@
       "compoundFieldName": "ShippingAddress"
     },
     {
+      "name": "ShippingStateCode",
+      "label": "Shipping State Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
       "name": "ShippingStreet",
       "label": "Shipping Street",
       "type": "TextArea",
@@ -329,10 +897,38 @@
       "length": 80
     },
     {
+      "name": "SourceSystemIdentifier",
+      "label": "Source System ID",
+      "type": "Text",
+      "length": 85,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Suffix",
+      "label": "Suffix",
+      "type": "Text",
+      "length": 40,
+      "featureGated": true
+    },
+    {
       "name": "TickerSymbol",
       "label": "Ticker Symbol",
       "type": "Text",
       "length": 20
+    },
+    {
+      "name": "Tier",
+      "label": "Tier",
+      "type": "Picklist",
+      "picklistValues": [],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "Tradestyle",
+      "label": "Tradestyle",
+      "type": "Text",
+      "length": 255
     },
     {
       "name": "Type",
@@ -344,77 +940,6 @@
       "name": "Website",
       "label": "Website",
       "type": "Url",
-      "length": 255
-    },
-    {
-      "name": "CleanStatus",
-      "label": "Clean Status",
-      "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": [
-        { "value": "Matched", "label": "Matched" },
-        { "value": "Different", "label": "Different" },
-        { "value": "Acknowledged", "label": "Acknowledged" },
-        { "value": "NotFound", "label": "NotFound" },
-        { "value": "Inactive", "label": "Inactive" },
-        { "value": "Pending", "label": "Pending" },
-        { "value": "SelectMatch", "label": "SelectMatch" },
-        { "value": "Skipped", "label": "Skipped" }
-      ]
-    },
-    {
-      "name": "DandbCompanyId",
-      "label": "D&B Company ID",
-      "type": "Lookup",
-      "referenceTo": [
-        "DandBCompany"
-      ],
-      "relationshipName": "DandbCompany"
-    },
-    {
-      "name": "DunsNumber",
-      "label": "D-U-N-S Number",
-      "type": "Text",
-      "length": 9
-    },
-    {
-      "name": "Jigsaw",
-      "label": "Data.com Key",
-      "type": "Text",
-      "length": 20
-    },
-    {
-      "name": "NaicsCode",
-      "label": "NAICS Code",
-      "type": "Text",
-      "length": 8
-    },
-    {
-      "name": "NaicsDesc",
-      "label": "NAICS Description",
-      "type": "Text",
-      "length": 120
-    },
-    {
-      "name": "OperatingHoursId",
-      "label": "Operating Hour ID",
-      "type": "Lookup",
-      "referenceTo": [
-        "OperatingHours"
-      ],
-      "relationshipName": "OperatingHours"
-    },
-    {
-      "name": "Tier",
-      "label": "Tier",
-      "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": []
-    },
-    {
-      "name": "Tradestyle",
-      "label": "Tradestyle",
-      "type": "Text",
       "length": 255
     },
     {

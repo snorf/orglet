@@ -1,0 +1,108 @@
+{
+  "object": "IdeaTheme",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update"
+  ],
+  "fields": {
+    "Categories": {
+      "type": "multipicklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "CommunityId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "EndDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Title": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Namefield",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    }
+  }
+}

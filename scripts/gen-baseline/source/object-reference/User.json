@@ -1,0 +1,1704 @@
+{
+  "object": "User",
+  "supportedCalls": [
+    "create",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "AboutMe": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "AccountId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "Account"
+      ],
+      "relationshipName": "Account",
+      "relationshipType": "lookup"
+    },
+    "Address": {
+      "type": "address",
+      "properties": [
+        "Filter",
+        "Nillable"
+      ]
+    },
+    "Alias": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "BadgeText": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "BannerPhotoUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CallCenterId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "City": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CommunityNickname": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CompanyName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ContactId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact",
+      "relationshipType": "lookup"
+    },
+    "Country": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CountryCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CurrentStatus": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DefaultCurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DefaultDivision": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DefaultGroupNotificationFrequency": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "DelegatedApproverId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Department": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DigestFrequency": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "Division": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Email": {
+      "type": "email",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "EmailEncodingKey": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EmailPreferencesAutoBcc": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "EmployeeNumber": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EndDay": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Extension": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Fax": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "FederationIdentifier": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "FirstName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ForecastEnabled": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "FullPhotoUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "GeocodeAccuracy": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "HasUserVerifiedEmail": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HasUserVerifiedPhone": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IndividualId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ],
+      "refersTo": [
+        "Individual"
+      ],
+      "relationshipName": "Individual",
+      "relationshipType": "lookup"
+    },
+    "IsActive": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsPartner": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "IsPortalEnabled": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "IsPortalSelfRegistered": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsPrmSuperUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsProfilePhotoActive": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "JigsawImportLimitOverride": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "data-com"
+      ]
+    },
+    "LanguageLocaleKey": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastLoginDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Latitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LocaleSidKey": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Longitude": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Manager": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Restricted picklist",
+        "Update"
+      ]
+    },
+    "ManagerId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "Manager",
+      "relationshipType": "lookup"
+    },
+    "MediumBannerPhotoUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "MiddleName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    },
+    "MobilePhone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NumberOfFailedLogins": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "OfflineTrialExpirationDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "PasswordExpirationDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Phone": {
+      "type": "phone",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PortalRole": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "PostalCode": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ProfileId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Profile"
+      ],
+      "relationshipName": "Profile",
+      "relationshipType": "lookup"
+    },
+    "ReceivesAdminInfoEmails": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ReceivesInfoEmails": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SenderEmail": {
+      "type": "email",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SenderName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Signature": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SmallBannerPhotoUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "SmallPhotoUrl": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "StartDay": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "State": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StateCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Street": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SuAccessExpirationDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Suffix": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 40
+    },
+    "TimeZoneSidKey": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Title": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "UserPermissionsCallCenterAutoLogin": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsChatterAnswersUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPermissionsInteractionUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsJigsawProspectingUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "data-com"
+      ]
+    },
+    "UserPermissionsKnowledgeUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "knowledge"
+      ]
+    },
+    "UserPermissionsLiveAgentUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsMarketingUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsOfflineUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsSFContentUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsSiteforceContributorUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsSiteforcePublisherUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsSupportUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsWirelessUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPermissionsWorkDotComUserFeature": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesActivityRemindersPopup": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesAgentGdprConsent": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesAllowConversationReminders": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesApexPagesDeveloperMode": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesAutoForwardCall": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesContentEmailAsAndWhen": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesContentNoEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisCommentAfterLikeEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisMentionsCommentEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisProfPostCommentEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableAllFeedsEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesDisableAutoSubForFeeds": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableBookmarkEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesDisableChangeCommentEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableEndorsementEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableFeedbackEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableFileShareNotificationsForApi": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableFollowersEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesDisableLaterCommentEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableLikeEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableMentionsPostEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableMessageEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesDisableProfilePostEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableRewardEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableSharePostEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesDisableWorkEmail": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesEnableAutoSubForFeeds": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesEnableVoiceCallRecording": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesEnableVoiceLocalPresence": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesEventRemindersCheckboxDefault": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesHideBiggerPhotoCallout": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesHideCSNDesktopTask": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesHideCSNGetChatterMobileTask": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesHideChatterOnboardingSplash": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesHideEndUserOnboardingAssistantModal": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesHideLightningMigrationModal": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesHideS1BrowserUI": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesHideSecondChatterOnboardingSplash": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "UserPreferencesHideSfxWelcomeMat": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesJigsawListUser": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ],
+      "gating": [
+        "data-com"
+      ]
+    },
+    "UserPreferencesLightningExperiencePreferred": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesLiveAgentMiawSetupDeflection": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesNativeEmailClient": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesOptOutOfTouch": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesOutboundBridge": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesPathAssistantCollapsed": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesProcessAssistantCollapsed": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesReceiveNoNotificationsAsApprover": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesReceiveNotificationsAsDelegatedApprover": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesReminderSoundOff": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowCityToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowCityToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowCountryToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowCountryToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowEmailToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowEmailToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowFaxToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowFaxToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowManagerToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowManagerToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowMobilePhoneToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowMobilePhoneToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowPostalCodeToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowPostalCodeToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowProfilePicToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowStateToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowStateToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowStreetAddressToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowStreetAddressToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowTitleToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowTitleToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowWorkPhoneToExternalUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesShowWorkPhoneToGuestUsers": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesSortFeedByComment": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesSuppressEventSFXReminders": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesSuppressTaskSFXReminders": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesTaskRemindersCheckboxDefault": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserPreferencesUserDebugModePref": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserRoleId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "UserRole"
+      ],
+      "relationshipName": "UserRole",
+      "relationshipType": "lookup"
+    },
+    "UserType": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "Username": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "WirelessEmail": {
+      "type": "email",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    }
+  }
+}

@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { buildOrgSchema, formatDiagnostic, loadBaseline, loadOrgSchema, OrgSchemaImpl, type FieldDef, type FieldType, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
 import type { Pool } from "./db.js";
 import { openTestDb, type TestDb } from "../../../test/db.js";
-import { migrate } from "./migrate.js";
+import { isWidening, migrate } from "./migrate.js";
 import { quote } from "./columns.js";
 import { generateId } from "./ids.js";
 
@@ -72,7 +72,8 @@ describe("migrate", () => {
     const names = fks.rows.map((r) => r.conname);
     expect(names).toContain("fk_project__c_account__c");
     expect(names).toContain("fk_contact_accountid");
-    expect(names).not.toContain("fk_account_ownerid"); // polymorphic User/Group: no FK
+    expect(names).toContain("fk_account_ownerid"); // Account owner is User-only (BASE2-04)
+    expect(names).not.toContain("fk_case_ownerid"); // polymorphic User/Group: no FK
 
     const idx = await pool.query<{ indexname: string; indexdef: string }>(`SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = $1`, [orgSchema]);
     const byName = new Map(idx.rows.map((r) => [r.indexname, r.indexdef]));
@@ -306,5 +307,16 @@ describe("roll-up backfill", () => {
     const again = await migrate(pool, full3, { orgSchema: rollupSchema });
     expect(again.warnings).toEqual([]);
     expect(again.statements.filter((s) => s.startsWith("UPDATE"))).toEqual([]);
+  });
+});
+
+describe("isWidening", () => {
+  it("admits only widening changes, shared with the baseline diff gate (MIGR-03)", () => {
+    expect(isWidening("varchar(40)", "varchar(80)")).toBe(true);
+    expect(isWidening("varchar(80)", "varchar(40)")).toBe(false);
+    expect(isWidening("varchar(255)", "text")).toBe(true);
+    expect(isWidening("numeric(18,2)", "numeric(18,0)")).toBe(false);
+    expect(isWidening("numeric(8,0)", "numeric(18,2)")).toBe(true);
+    expect(isWidening("date", "timestamptz")).toBe(false);
   });
 });

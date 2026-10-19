@@ -1,0 +1,788 @@
+{
+  "object": "OrderItem",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "AdjustedLineAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AdjustedLineAmtWithTax": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AggregatedQuantity": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "AvailableQuantity": {
+      "type": "double",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "BatchIdentifier": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "BillingFrequency2": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DeliveryEstimationReference": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DeliveryEstimationTimeZone": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DoesAutomaticallyRenew": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EarliestEstimatedDeliveryDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EarliestEstimatedDeliveryTime": {
+      "type": "timeonly",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EndDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EndDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EndTime": {
+      "type": "timeonly",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "GrossUnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsOrderItemLocked": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "LastEstimatedDeliveryDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastEstimatedDeliveryTime": {
+      "type": "timeonly",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LineNumber": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ListPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ListPriceTotal": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "NetUnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "OrderActionId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "OrderAction"
+      ],
+      "relationshipName": "OrderAction",
+      "relationshipType": "lookup"
+    },
+    "OrderDeliveryGroupId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "OrderDeliveryGroup"
+      ],
+      "relationshipName": "OrderDeliveryGroup",
+      "relationshipType": "lookup"
+    },
+    "OrderId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Order"
+      ],
+      "relationshipName": "Order",
+      "relationshipType": "lookup"
+    },
+    "OrderItemNumber": {
+      "type": "string",
+      "properties": [
+        "Autonumber",
+        "Defaulted on create",
+        "Filter",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "OriginalOrderItemId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "OrderItem"
+      ],
+      "relationshipName": "OriginalOrderItem",
+      "relationshipType": "lookup"
+    },
+    "PeriodBoundary": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PeriodBoundaryDay": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PeriodBoundaryStartMonth": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PriceRevisionPolicyId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "relationshipName": "PriceRevisionPolicy"
+    },
+    "PricebookEntryId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "PricebookEntry"
+      ],
+      "relationshipName": "PricebookEntry",
+      "relationshipType": "lookup"
+    },
+    "PricingTermCount": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PricingTransactionType": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "ProFormaBillingPeriodAmount": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Product2Id": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2",
+      "relationshipType": "lookup"
+    },
+    "ProductSellingModelId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ProductSellingModel"
+      ],
+      "relationshipName": "ProductSellingModel",
+      "relationshipType": "lookup"
+    },
+    "ProrationPolicyId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ProrationPolicy"
+      ],
+      "relationshipName": "ProrationPolicy",
+      "relationshipType": "lookup"
+    },
+    "Quantity": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Sort",
+        "Update"
+      ]
+    },
+    "QuoteLineItemId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ReferencePrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "RelatedChangeIdentifier": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "RelatedOrderItemID": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "RoundedLineAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "RoundedLineAmtWithTax": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "SegmentType": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ServiceDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ServiceDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ServiceEndTimeZone": {
+      "type": "timeonly",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ServiceTime": {
+      "type": "timeonly",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartingPriceTotal": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartingUnitPriceSource": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SupplementalChangeType": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "TaxTreatmentId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "TaxTreatment"
+      ],
+      "relationshipName": "TaxTreatment",
+      "relationshipType": "lookup"
+    },
+    "TotalAdjustedLineTaxAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalAdjustmentAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalAdjustmentAmtWithTax": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalAdjustmentDistAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalAdjustmentDistAmtWithTax": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalAdjustmentDistTaxAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalAdjustmentTaxAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalAmtWithTax": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalLineAdjustmentAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalLineAdjustmentAmtWithTax": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalLineAdjustmentTaxAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalLineAmount": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "TotalLineTaxAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "TotalPrice": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "TotalTaxAmount": {
+      "type": "currency",
+      "properties": [
+        "Filter",
+        "Sort"
+      ]
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "TypeCode": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "UnitPrice": {
+      "type": "currency",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "UnitPriceUplift": {
+      "type": "percent",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

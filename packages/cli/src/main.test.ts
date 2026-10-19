@@ -65,6 +65,16 @@ describe("check", () => {
     expect(warns).toEqual([]);
   });
 
+  it("check reports how many feature-gated standard fields the baseline includes", async () => {
+    expect(await main(["check"])).toBe(0);
+    const line = logs.find((l) => /^\d+ feature-gated standard fields included \(nullable; present in an org only when the feature is enabled\)$/.test(l));
+    expect(line, logs.join("\n")).toBeDefined();
+    expect(Number.parseInt(line!, 10)).toBeGreaterThan(0);
+    logs = [];
+    expect(await main(["check", "--quiet"])).toBe(0);
+    expect(logs).toEqual([]);
+  });
+
   it("prints nothing with --quiet", async () => {
     expect(await main(["check", "--project", ACME, "--quiet"])).toBe(0);
     expect(logs).toEqual([]);
@@ -104,6 +114,61 @@ describe("check", () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
+  });
+
+  const INFO_LINE = /^info: (\d+) standard objects not modelled and unreferenced: (.*)$/;
+  const workOrder = { "objects/WorkOrder/fields/Foo__c.field-meta.xml": field("<fullName>Foo__c</fullName><type>Text</type><length>10</length>") };
+  const barLookup = {
+    "objects/Bar__c/fields/Wo__c.field-meta.xml": field("<fullName>Wo__c</fullName><type>Lookup</type><referenceTo>WorkOrder</referenceTo><relationshipName>Wo</relationshipName>"),
+  };
+
+  it("an unreferenced unmodelled standard object is listed on one info line after the warnings, not as a warning (BASE2-08)", async () => {
+    const root = await project(workOrder);
+    try {
+      expect(await main(["check", "--project", root])).toBe(0);
+      expect(warns.filter((w) => w.includes("WorkOrder"))).toEqual([]);
+      const lines = logs.filter((l) => INFO_LINE.test(l));
+      expect(lines).toHaveLength(1);
+      expect(logs[logs.length - 1]).toBe(lines[0]);
+      const m = INFO_LINE.exec(lines[0]!)!;
+      const names = m[2]!.split(", ");
+      expect(names).toContain("WorkOrder");
+      expect(names).toContain("ActivityMetric");
+      expect(names).toEqual([...names].sort());
+      expect(Number(m[1])).toBe(names.length);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("--strict exits 0 when only informational items exist", async () => {
+    const root = await project(workOrder);
+    try {
+      expect(await main(["check", "--strict", "--project", root])).toBe(0);
+      expect(warns).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("a referenced unmodelled standard object keeps its warnings and fails --strict", async () => {
+    const root = await project({ ...workOrder, ...barLookup });
+    try {
+      expect(await main(["check", "--strict", "--project", root])).toBe(1);
+      expect(warns).toContain("warning: UNSUPPORTED:standard-object WorkOrder skipped");
+      expect(warns).toContain("warning: UNSUPPORTED:reference-target WorkOrder is referenced but not defined; lookups to it are unchecked");
+      const info = logs.find((l) => INFO_LINE.test(l))!;
+      expect(INFO_LINE.exec(info)![2]!.split(", ")).not.toContain("WorkOrder");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("acme prints the info line and still no warning", async () => {
+    expect(await main(["check", "--project", ACME])).toBe(0);
+    expect(warns).toEqual([]);
+    expect(logs.some((l) => INFO_LINE.test(l))).toBe(true);
+    expect(logs[0]).toMatch(/^\d+ objects \(4 custom\), \d+ fields$/);
   });
 });
 

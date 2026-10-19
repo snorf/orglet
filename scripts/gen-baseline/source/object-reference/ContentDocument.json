@@ -1,0 +1,246 @@
+{
+  "object": "ContentDocument",
+  "supportedCalls": [
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update"
+  ],
+  "fields": {
+    "ArchivedById": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ArchivedDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentAssetId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "ContentAsset"
+      ],
+      "relationshipName": "ContentAsset",
+      "relationshipType": "lookup"
+    },
+    "ContentModifiedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentSize": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentSizeLong": {
+      "type": "long",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Division": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on Create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "FileExtension": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "FileType": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "IsArchived": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsInternalOnly": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LatestPublishedVersionId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "ContentVersion"
+      ],
+      "relationshipName": "LatestPublishedVersion",
+      "relationshipType": "lookup"
+    },
+    "MalwareScanDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "MalwareScanStatus": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "OwnerId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "Owner",
+      "relationshipType": "lookup"
+    },
+    "ParentId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "PublishStatus": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "SharingOption": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "SharingPrivacy": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Title": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    }
+  }
+}

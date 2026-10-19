@@ -3,6 +3,7 @@
   "label": "D&B Company",
   "labelPlural": "D&B Companies",
   "keyPrefix": "06E",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": true,
   "deletable": true,
@@ -10,6 +11,690 @@
   "searchable": true,
   "hasOwner": false,
   "fields": [
-    { "name": "Name", "label": "Company Name", "type": "Text", "length": 255, "nillable": false, "nameField": true }
+    {
+      "name": "Address",
+      "label": "Primary Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "City",
+      "label": "City",
+      "type": "Text",
+      "length": 40
+    },
+    {
+      "name": "CompanyCurrencyIsoCode",
+      "label": "Local Currency ISO Code",
+      "type": "Picklist"
+    },
+    {
+      "name": "Country",
+      "label": "Country",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "CountryAccessCode",
+      "label": "International Dialing Code",
+      "type": "Text",
+      "length": 4
+    },
+    {
+      "name": "CurrencyCode",
+      "label": "Local Currency Code",
+      "type": "Picklist"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Company Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "DomesticUltimateBusinessName",
+      "label": "Domestic Ultimate Business Name",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "DomesticUltimateDunsNumber",
+      "label": "Domestic Ultimate D-U-N-S Number",
+      "type": "Text",
+      "length": 9
+    },
+    {
+      "name": "DunsNumber",
+      "label": "D-U-N-S Number",
+      "type": "Text",
+      "length": 9
+    },
+    {
+      "name": "EmployeeQuantityGrowthRate",
+      "label": "Employee Growth",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "EmployeesHere",
+      "label": "Number of Employees - Location",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "EmployeesHereReliability",
+      "label": "Number of Employees - Location Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "EmployeesTotal",
+      "label": "Number of Employees - Total",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "EmployeesTotalReliability",
+      "label": "Number of Employees - Total Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "FamilyMembers",
+      "label": "Number of Business Family Members",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "Fax",
+      "label": "Facsimile Number",
+      "type": "Phone",
+      "length": 40
+    },
+    {
+      "name": "FifthNaics",
+      "label": "Fifth NAICS Code",
+      "type": "Text",
+      "length": 6
+    },
+    {
+      "name": "FifthNaicsDesc",
+      "label": "Fifth NAICS Description",
+      "type": "Text",
+      "length": 120
+    },
+    {
+      "name": "FifthSic",
+      "label": "Fifth SIC Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "FifthSic8",
+      "label": "Fifth SIC8 Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "FifthSic8Desc",
+      "label": "Fifth SIC8 Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "FifthSicDesc",
+      "label": "Fifth SIC Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "FipsMsaCode",
+      "label": "FIPS MSA Code",
+      "type": "Text",
+      "length": 5
+    },
+    {
+      "name": "FipsMsaDesc",
+      "label": "FIPS MSA Code Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "FortuneRank",
+      "label": "Fortune 1000 Rank",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "FourthNaics",
+      "label": "Fourth NAICS Code",
+      "type": "Text",
+      "length": 6
+    },
+    {
+      "name": "FourthNaicsDesc",
+      "label": "Fourth NAICS Description",
+      "type": "Text",
+      "length": 120
+    },
+    {
+      "name": "FourthSic",
+      "label": "Fourth SIC Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "FourthSic8",
+      "label": "Fourth SIC8 Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "FourthSic8Desc",
+      "label": "Fourth SIC8 Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "FourthSicDesc",
+      "label": "Fourth SIC Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "GeoCodeAccuracy",
+      "label": "Geocode Accuracy",
+      "type": "Picklist"
+    },
+    {
+      "name": "GeocodeAccuracyStandard",
+      "label": "Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "GlobalUltimateBusinessName",
+      "label": "Global Ultimate Business Name",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "GlobalUltimateDunsNumber",
+      "label": "Global Ultimate D-U-N-S Number",
+      "type": "Text",
+      "length": 9
+    },
+    {
+      "name": "GlobalUltimateTotalEmployees",
+      "label": "Number of Employees - Global",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "ImportExportAgent",
+      "label": "Import/Export",
+      "type": "Picklist"
+    },
+    {
+      "name": "IncludedInSnP500",
+      "label": "S&P 500",
+      "type": "Text",
+      "length": 10
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Latitude",
+      "label": "Latitude",
+      "type": "Text",
+      "length": 11
+    },
+    {
+      "name": "LegalStatus",
+      "label": "Legal Structure",
+      "type": "Picklist"
+    },
+    {
+      "name": "LocationStatus",
+      "label": "Location Type",
+      "type": "Picklist"
+    },
+    {
+      "name": "Longitude",
+      "label": "Longitude",
+      "type": "Text",
+      "length": 11
+    },
+    {
+      "name": "MailingAddress",
+      "label": "Mailing Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MailingCity",
+      "label": "Mailing City",
+      "type": "Text",
+      "length": 40,
+      "compoundFieldName": "MailingAddress"
+    },
+    {
+      "name": "MailingCountry",
+      "label": "Mailing Country",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "MailingAddress"
+    },
+    {
+      "name": "MailingGeocodeAccuracy",
+      "label": "Mailing Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "MailingAddress"
+    },
+    {
+      "name": "MailingPostalCode",
+      "label": "Mailing Postal Code",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "MailingAddress"
+    },
+    {
+      "name": "MailingState",
+      "label": "Mailing State",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "MailingAddress"
+    },
+    {
+      "name": "MailingStreet",
+      "label": "Mailing Street Address",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "MailingAddress"
+    },
+    {
+      "name": "MarketingPreScreen",
+      "label": "Delinquency Risk",
+      "type": "Picklist"
+    },
+    {
+      "name": "MarketingSegmentationCluster",
+      "label": "Marketing Segmentation Cluster",
+      "type": "Picklist"
+    },
+    {
+      "name": "MinorityOwned",
+      "label": "Minority-Owned Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "Name",
+      "label": "Company Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "nameField": true
+    },
+    {
+      "name": "NationalId",
+      "label": "National Identification Number",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "NationalIdType",
+      "label": "National Identification System",
+      "type": "Picklist"
+    },
+    {
+      "name": "OutOfBusiness",
+      "label": "Out Of Business Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "OwnOrRent",
+      "label": "Location Ownership Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "ParentOrHqBusinessName",
+      "label": "Parent Company Business Name",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "ParentOrHqDunsNumber",
+      "label": "Parent Company D-U-N-S Number",
+      "type": "Text",
+      "length": 9
+    },
+    {
+      "name": "Phone",
+      "label": "Telephone Number",
+      "type": "Phone",
+      "length": 40
+    },
+    {
+      "name": "PostalCode",
+      "label": "Postal Code",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "PremisesMeasure",
+      "label": "Location Size",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "PremisesMeasureReliability",
+      "label": "Location Size Accuracy",
+      "type": "Text",
+      "length": 64
+    },
+    {
+      "name": "PremisesMeasureUnit",
+      "label": "Location Size Unit of Measure",
+      "type": "Text",
+      "length": 64
+    },
+    {
+      "name": "PrimaryNaics",
+      "label": "Primary NAICS Code",
+      "type": "Text",
+      "length": 6
+    },
+    {
+      "name": "PrimaryNaicsDesc",
+      "label": "Primary NAICS Description",
+      "type": "Text",
+      "length": 120
+    },
+    {
+      "name": "PrimarySic",
+      "label": "Primary SIC Code",
+      "type": "Text",
+      "length": 4
+    },
+    {
+      "name": "PrimarySic8",
+      "label": "Primary SIC8 Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "PrimarySic8Desc",
+      "label": "Primary SIC8 Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "PrimarySicDesc",
+      "label": "Primary SIC Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "PriorYearEmployees",
+      "label": "Prior Year Number of Employees - Total",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "PriorYearRevenue",
+      "label": "Prior Year Revenue",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "PublicIndicator",
+      "label": "Ownership Type Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "SalesTurnoverGrowthRate",
+      "label": "Annual Revenue Growth",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "SalesVolume",
+      "label": "Annual Sales Volume",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "SalesVolumeReliability",
+      "label": "Annual Sales Volume Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "SecondNaics",
+      "label": "Second NAICS Code",
+      "type": "Text",
+      "length": 6
+    },
+    {
+      "name": "SecondNaicsDesc",
+      "label": "Second NAICS Description",
+      "type": "Text",
+      "length": 120
+    },
+    {
+      "name": "SecondSic",
+      "label": "Second SIC Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "SecondSic8",
+      "label": "Second SIC8 Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "SecondSic8Desc",
+      "label": "Second SIC8 Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "SecondSicDesc",
+      "label": "Second SIC Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "SixthNaics",
+      "label": "Sixth NAICS Code",
+      "type": "Text",
+      "length": 6
+    },
+    {
+      "name": "SixthNaicsDesc",
+      "label": "Sixth NAICS Description",
+      "type": "Text",
+      "length": 120
+    },
+    {
+      "name": "SixthSic",
+      "label": "Sixth SIC Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "SixthSic8",
+      "label": "Sixth SIC8 Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "SixthSic8Desc",
+      "label": "Sixth SIC8 Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "SixthSicDesc",
+      "label": "Sixth SIC Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "SmallBusiness",
+      "label": "Small Business Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "State",
+      "label": "State",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "StockExchange",
+      "label": "Stock Exchange",
+      "type": "Text",
+      "length": 16
+    },
+    {
+      "name": "StockSymbol",
+      "label": "Ticker Symbol",
+      "type": "Text",
+      "length": 6
+    },
+    {
+      "name": "Street",
+      "label": "Street Address",
+      "type": "TextArea",
+      "length": 255
+    },
+    {
+      "name": "Subsidiary",
+      "label": "Subsidiary Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "ThirdNaics",
+      "label": "Third NAICS Code",
+      "type": "Text",
+      "length": 6
+    },
+    {
+      "name": "ThirdNaicsDesc",
+      "label": "Third NAICS Description",
+      "type": "Text",
+      "length": 120
+    },
+    {
+      "name": "ThirdSic",
+      "label": "Third SIC Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "ThirdSic8",
+      "label": "Third SIC8 Code",
+      "type": "Text",
+      "length": 8
+    },
+    {
+      "name": "ThirdSic8Desc",
+      "label": "Third SIC8 Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "ThirdSicDesc",
+      "label": "Third SIC Description",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "TradeStyle1",
+      "label": "Primary Tradestyle",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "TradeStyle2",
+      "label": "Second Tradestyle",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "TradeStyle3",
+      "label": "Third Tradestyle",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "TradeStyle4",
+      "label": "Fourth Tradestyle",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "TradeStyle5",
+      "label": "Fifth Tradestyle",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "URL",
+      "label": "URL",
+      "type": "Url",
+      "length": 255
+    },
+    {
+      "name": "UsTaxId",
+      "label": "US Tax ID Number",
+      "type": "Text",
+      "length": 9
+    },
+    {
+      "name": "WomenOwned",
+      "label": "Woman-Owned Indicator",
+      "type": "Picklist"
+    },
+    {
+      "name": "YearStarted",
+      "label": "Year Started",
+      "type": "Text",
+      "length": 4
+    }
   ]
 }

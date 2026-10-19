@@ -3,22 +3,64 @@
   "label": "Product",
   "labelPlural": "Products",
   "keyPrefix": "01t",
+  "keyPrefixSource": "unverified",
   "hasOwner": false,
   "fields": [
     {
-      "name": "Name",
-      "label": "Product Name",
-      "type": "Text",
-      "length": 255,
-      "nillable": false,
-      "idLookup": true,
-      "nameField": true
+      "name": "AvailabilityDate",
+      "label": "Availability Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
     },
     {
-      "name": "ProductCode",
-      "label": "Product Code",
+      "name": "CanRamp",
+      "label": "Ramp",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CanUseQuantitySchedule",
+      "label": "Quantity Scheduling Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CanUseRevenueSchedule",
+      "label": "Revenue Scheduling Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ConfigureDuringSale",
+      "label": "Configure During Sale",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CustomDecompositionScope",
+      "label": "Custom Decomposition Scope",
       "type": "Text",
-      "length": 255
+      "length": 80,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DecompositionScope",
+      "label": "Decomposition Scope",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "Description",
@@ -27,23 +69,11 @@
       "length": 4000
     },
     {
-      "name": "IsActive",
-      "label": "Active",
-      "type": "Checkbox"
-    },
-    {
-      "name": "Family",
-      "label": "Product Family",
-      "type": "Picklist",
-      "picklistValues": []
-    },
-    {
-      "name": "QuantityUnitOfMeasure",
-      "label": "Unit of Measure",
-      "type": "Picklist",
-      "picklistValues": [
-        { "value": "Each", "label": "Each", "default": true }
-      ]
+      "name": "DiscontinuedDate",
+      "label": "Discontinued Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "DisplayUrl",
@@ -52,10 +82,52 @@
       "length": 255
     },
     {
-      "name": "StockKeepingUnit",
-      "label": "Stock Keeping Unit",
+      "name": "EndOfLifeDate",
+      "label": "End Of Life Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ExternalDataSourceId",
+      "label": "External Data Source ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "ExternalDataSource"
+      ],
+      "relationshipName": "ExternalDataSource"
+    },
+    {
+      "name": "ExternalId",
+      "label": "External ID",
       "type": "Text",
-      "length": 180
+      "length": 255
+    },
+    {
+      "name": "Family",
+      "label": "Product Family",
+      "type": "Picklist",
+      "picklistValues": []
+    },
+    {
+      "name": "FulfillmentQtyCalcMethod",
+      "label": "Fulfillment Quantity Calculation Method",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HelpText",
+      "label": "Help Text",
+      "type": "LongTextArea",
+      "length": 32768,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox"
     },
     {
       "name": "IsArchived",
@@ -63,6 +135,35 @@
       "type": "Checkbox",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "IsAssetizable",
+      "label": "Is Assetizable",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsCommodity",
+      "label": "Commodity Product",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsSerialized",
+      "label": "Serialized",
+      "type": "Checkbox",
+      "nillable": false
+    },
+    {
+      "name": "IsSoldOnlyWithOtherProds",
+      "label": "Sell only with other products",
+      "type": "Checkbox",
+      "defaultedOnCreate": true,
+      "featureGated": true
     },
     {
       "name": "LastReferencedDate",
@@ -79,15 +180,27 @@
       "updateable": false
     },
     {
-      "name": "Type",
-      "label": "Product Type",
-      "type": "Picklist",
-      "updateable": false,
-      "restrictedPicklist": true,
-      "picklistValues": [
-        { "value": "Base", "label": "Base" },
-        { "value": "Null", "label": "Null" }
-      ]
+      "name": "Name",
+      "label": "Product Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "NumberOfQuantityInstallments",
+      "label": "Number Of Quantity Installments",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "NumberOfRevenueInstallments",
+      "label": "Number Of Revenue Installments",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
     },
     {
       "name": "ProductClass",
@@ -96,41 +209,166 @@
       "createable": false,
       "updateable": false,
       "defaultedOnCreate": true,
-      "restrictedPicklist": true,
       "picklistValues": [
-        { "value": "Bundle", "label": "Bundle" },
-        { "value": "Set", "label": "Set" },
-        { "value": "Simple", "label": "Simple" },
-        { "value": "VariationParent", "label": "Variation Parent" },
-        { "value": "Variation", "label": "Variation" }
-      ]
+        {
+          "value": "Bundle",
+          "label": "Bundle"
+        },
+        {
+          "value": "Set",
+          "label": "Set"
+        },
+        {
+          "value": "Simple",
+          "label": "Simple"
+        },
+        {
+          "value": "VariationParent",
+          "label": "Variation Parent"
+        },
+        {
+          "value": "Variation",
+          "label": "Variation"
+        }
+      ],
+      "restrictedPicklist": true
     },
     {
-      "name": "ExternalDataSourceId",
-      "label": "External Data Source ID",
-      "type": "Lookup",
-      "referenceTo": ["ExternalDataSource"],
-      "relationshipName": "ExternalDataSource"
-    },
-    {
-      "name": "ExternalId",
-      "label": "External ID",
+      "name": "ProductCode",
+      "label": "Product Code",
       "type": "Text",
       "length": 255
     },
     {
-      "name": "SourceProductId",
-      "label": "Source Product ID",
+      "name": "ProductPurpose",
+      "label": "Product Purpose",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "QuantityInstallmentPeriod",
+      "label": "Quantity Installment Period",
+      "type": "Picklist"
+    },
+    {
+      "name": "QuantityScheduleType",
+      "label": "Quantity Schedule Type",
+      "type": "Picklist"
+    },
+    {
+      "name": "QuantityUnitOfMeasure",
+      "label": "Unit of Measure",
+      "type": "Picklist",
+      "picklistValues": [
+        {
+          "value": "Each",
+          "label": "Each",
+          "default": true
+        }
+      ]
+    },
+    {
+      "name": "RecalculateTotalPrice",
+      "label": "Recalculate Total Price",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "RecordTypeId",
+      "label": "Record Type ID",
       "type": "Lookup",
-      "referenceTo": ["Product2"],
-      "relationshipName": "SourceProduct"
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "RecordType"
+      ]
+    },
+    {
+      "name": "RevenueInstallmentPeriod",
+      "label": "Revenue Installment Period",
+      "type": "Picklist"
+    },
+    {
+      "name": "RevenueScheduleType",
+      "label": "Revenue Schedule Type",
+      "type": "Picklist"
     },
     {
       "name": "SellerId",
       "label": "Seller ID",
       "type": "Lookup",
-      "referenceTo": ["Account"],
+      "referenceTo": [
+        "Account"
+      ],
       "relationshipName": "Seller"
+    },
+    {
+      "name": "SourceProductId",
+      "label": "Source Product ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "SourceProduct"
+    },
+    {
+      "name": "SpecificationType",
+      "label": "Specification Type",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StockCheckMethod",
+      "label": "Stock Check Method",
+      "type": "Picklist"
+    },
+    {
+      "name": "StockKeepingUnit",
+      "label": "Stock Keeping Unit",
+      "type": "Text",
+      "length": 180
+    },
+    {
+      "name": "TransferRecordMode",
+      "label": "Transfer Record Mode",
+      "type": "Picklist"
+    },
+    {
+      "name": "Type",
+      "label": "Product Type",
+      "type": "Picklist",
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "Base",
+          "label": "Base"
+        },
+        {
+          "value": "Null",
+          "label": "Null"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "UsageModelType",
+      "label": "Usage Model Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UsedFor",
+      "label": "Used for",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
     }
   ]
 }

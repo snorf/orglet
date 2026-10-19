@@ -1,7 +1,7 @@
 # describe-check
 
 Runs the sObject describe calls through the real SDKs (jsforce and simple-salesforce) against a
-running orglet, for a list of objects (default: the 14 thin standard objects of phase 3), and
+running orglet, for a list of objects (default: the 14 thin objects of phase 3 and the 18 business objects of phase 10, 32 in all), and
 checks that every property the SDKs declare is present. It complements the CI test in
 `packages/api/src/api.test.ts`, which reads the same `contract.json`.
 
@@ -36,7 +36,7 @@ Expected output: one line per object, then a total, and exit code 0.
 ```
 PASS UserLicense keyPrefix=100 nameField=Name fields=... childRelationships=...
 ...
-jsforce: 14/14 passed
+jsforce: 32/32 passed
 ```
 
 A failing object prints `FAIL <Object> <missing properties or the SDK error>` and the script exits 1.

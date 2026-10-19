@@ -1,0 +1,685 @@
+{
+  "object": "Event",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "undelete",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "AcceptedEventInviteeIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ]
+    },
+    "AccountId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "Account"
+      ],
+      "relationshipName": "Account",
+      "relationshipType": "lookup"
+    },
+    "ActivityDate": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ActivityDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ClientGuid": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CurrencyIsoCode": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "DeclinedEventInviteeIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ]
+    },
+    "Description": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Update"
+      ],
+      "maxLength": 32000
+    },
+    "Division": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "DurationInMinutes": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EndDate": {
+      "type": "date",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "EndDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "EventSubtype": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "EventWhoIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "GroupEventType": {
+      "type": "picklist",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "person-accounts"
+      ]
+    },
+    "IsAllDayEvent": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsArchived": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsChild": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsClientManaged": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsGroupEvent": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsPrivate": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsRecurrence": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsRecurrence2": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsRecurrence2Exception": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsRecurrence2Exclusion": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsReminderSet": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsVisibleInSelfService": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "Location": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "OwnerId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Calendar",
+        "User"
+      ],
+      "relationshipName": "Owner",
+      "relationshipType": "lookup"
+    },
+    "Recurrence2PatternStartDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Recurrence2PatternText": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable"
+      ]
+    },
+    "Recurrence2PatternTimeZone": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Recurrence2PatternVersion": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "RecurrenceActivityId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "RecurrenceDayOfMonth": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceDayOfWeekMask": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceEndDateOnly": {
+      "type": "date",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceInstance": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceInterval": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceMonthOfYear": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceStartDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceTimeZoneSidKey": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "RecurrenceType": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ReminderDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "ShowAs": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "StartDateTime": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Subject": {
+      "type": "combobox",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "maxLength": 255
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "UndecidedEventInviteeIds": {
+      "type": "junctionidlist",
+      "properties": [
+        "Create",
+        "Update"
+      ]
+    },
+    "WhatCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "WhatId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Account",
+        "Accreditation",
+        "AssessmentIndicatorDefinition",
+        "AssessmentTask",
+        "AssessmentTaskContentDocument",
+        "AssessmentTaskDefinition",
+        "AssessmentTaskOrder",
+        "Asset",
+        "AssetRelationship",
+        "AssignedResource",
+        "Award",
+        "BoardCertification",
+        "BusinessLicense",
+        "BusinessMilestone",
+        "BusinessProfile",
+        "Campaign",
+        "CareBarrier",
+        "CareBarrierDeterminant",
+        "CareBarrierType",
+        "CareDeterminant",
+        "CareDeterminantType",
+        "CareDiagnosis",
+        "CareInterventionType",
+        "CareMetricTarget",
+        "CareObservation",
+        "CareObservationComponent",
+        "CarePgmProvHealthcareProvider",
+        "CarePreauth",
+        "CarePreauthItem",
+        "CareProgram",
+        "CareProgramCampaign",
+        "CareProgramEligibilityRule",
+        "CareProgramEnrollee",
+        "CareProgramEnrolleeProduct",
+        "CareProgramEnrollmentCard",
+        "CareProgramGoal",
+        "CareProgramProduct",
+        "CareProgramProvider",
+        "CareProgramTeamMember",
+        "CareProviderAdverseAction",
+        "CareProviderFacilitySpecialty",
+        "CareProviderSearchableField",
+        "CareRegisteredDevice",
+        "CareRequest",
+        "CareRequestDrug",
+        "CareRequestExtension",
+        "CareRequestItem",
+        "CareSpecialty",
+        "CareSpecialtyTaxonomy",
+        "CareTaxonomy",
+        "Case",
+        "CommSubscriptionConsent",
+        "ContactEncounter",
+        "ContactEncounterParticipant",
+        "ContactRequest",
+        "Contract",
+        "CoverageBenefit",
+        "CoverageBenefitItem",
+        "CreditMemo",
+        "DelegatedAccount",
+        "DocumentChecklistItem",
+        "EnrollmentEligibilityCriteria",
+        "HealthcareFacility",
+        "HealthcareFacilityNetwork",
+        "HealthcarePayerNetwork",
+        "HealthcarePractitionerFacility",
+        "HealthcareProvider",
+        "HealthcareProviderNpi",
+        "HealthcareProviderSpecialty",
+        "HealthcareProviderTaxonomy",
+        "IdentityDocument",
+        "Image",
+        "IndividualApplication",
+        "Invoice",
+        "ListEmail",
+        "Location",
+        "MemberPlan",
+        "Opportunity",
+        "Order",
+        "OtherComponentTask",
+        "PartyConsent",
+        "PersonLifeEvent",
+        "PlanBenefit",
+        "PlanBenefitItem",
+        "ProcessException",
+        "Product2",
+        "ProductItem",
+        "ProductRequest",
+        "ProductRequestLineItem",
+        "ProductTransfer",
+        "PurchaserPlan",
+        "ReceivedDocument",
+        "ResourceAbsence",
+        "ReturnOrder",
+        "ReturnOrderLineItem",
+        "ServiceAppointment",
+        "ServiceResource",
+        "Shift",
+        "Shipment",
+        "ShipmentItem",
+        "Solution",
+        "Visit",
+        "VisitedParty",
+        "VolunteerProject",
+        "WorkOrder",
+        "WorkOrderLineItem"
+      ],
+      "relationshipName": "What",
+      "relationshipType": "lookup"
+    },
+    "WhoCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "WhoId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ],
+      "refersTo": [
+        "Contact",
+        "Lead"
+      ],
+      "relationshipName": "Who",
+      "relationshipType": "lookup"
+    }
+  }
+}

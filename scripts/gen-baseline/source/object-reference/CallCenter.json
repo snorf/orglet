@@ -1,0 +1,67 @@
+{
+  "object": "CallCenter",
+  "supportedCalls": [
+    "create",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve"
+  ],
+  "fields": {
+    "AdapterUrl": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "CustomSettings": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Id": {
+      "type": "id",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "InternalName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "idLookup"
+      ]
+    },
+    "Version": {
+      "type": "double",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    }
+  }
+}

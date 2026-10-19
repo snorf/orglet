@@ -2,8 +2,9 @@
  * Roll-up summary resolution. Metadata writes roll-up references as dotted `Child.Field` strings
  * and filter values as comma lists with optional double quotes; `resolveRollups` checks those
  * against the registered objects and turns each `Summary` SourceField into a stored, read-only
- * FieldDef of the aggregate's type (ROLL-01). Only a roll-up over a plain lookup fails metadata
- * load (D-08); every other problem degrades with an UNSUPPORTED:rollup-* warning (D-06, D-07).
+ * FieldDef of the aggregate's type (ROLL-01). Every problem, including a roll-up over a lookup that
+ * is neither master-detail nor allowed, degrades with an UNSUPPORTED:rollup-* warning (D-06, D-07;
+ * D-08 was reversed in Phase 10 plan 06).
  */
 import type { FieldDef, FieldType, RollupDef, RollupFilterDef, RollupFilterOperation, RollupOperation, SObjectDef } from "./types.js";
 import { pushDiagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
@@ -56,8 +57,13 @@ export interface RollupColumn {
   scale?: number;
 }
 
-/** Roll-ups Salesforce allows over these lookups without master-detail (D-05). Lower-cased `Child.Field`. */
-const LOOKUP_WHITELIST = new Set(["opportunity.accountid", "opportunitylineitem.opportunityid", "campaignmember.campaignid"]);
+/**
+ * Roll-ups Salesforce allows over these lookups without master-detail (D-05). Lower-cased `Child.Field`.
+ * Quote.OpportunityId joined in Phase 10: the Object Reference documents it as `Create, Filter` only (required,
+ * not updateable, not nillable), the same relationship signature as OpportunityLineItem.OpportunityId, and a
+ * real-org retrieve carries a roll-up summary over it, so the platform allows it.
+ */
+const LOOKUP_WHITELIST = new Set(["opportunity.accountid", "opportunitylineitem.opportunityid", "campaignmember.campaignid", "quote.opportunityid"]);
 
 const OPERATIONS = new Set<string>(["COUNT", "SUM", "MIN", "MAX"]);
 const NUMERIC: ReadonlySet<FieldType> = new Set<FieldType>(["Number", "Currency", "Percent"]);
@@ -67,7 +73,7 @@ const FILTER_OPERATIONS = new Set<string>(["equals", "notEqual", "lessThan", "gr
 const RANGE = new Set<RollupFilterOperation>(["lessThan", "greaterThan", "lessOrEqual", "greaterOrEqual"]);
 const TEXT_MATCH = new Set<RollupFilterOperation>(["contains", "notContain", "startsWith"]);
 
-type DropArea = "rollup-target" | "rollup-type" | "rollup-filter";
+type DropArea = "rollup-target" | "rollup-type" | "rollup-filter" | "rollup-relationship";
 type Outcome = { kind: "ok"; column: RollupColumn; rollup: RollupDef } | { kind: "drop"; area: DropArea; detail: string } | { kind: "wait" };
 
 const drop = (area: DropArea, detail: string): Outcome => ({ kind: "drop", area, detail });
@@ -77,7 +83,7 @@ const findField = (obj: SObjectDef, name: string): FieldDef | undefined => obj.f
 /**
  * Resolve Summary fields in place: each resolvable one is pushed onto its object's `fields` via `makeField`,
  * so a later roll-up can summarise it (ROLL-06 chains). Degrades with UNSUPPORTED:rollup-target/-type/
- * -filter/-cycle diagnostics (and their warning strings); throws only for a roll-up over a plain lookup (D-08).
+ * -filter/-relationship/-cycle diagnostics (and their warning strings); throws only for an unregistered parent object.
  */
 export function resolveRollups(
   objects: Map<string, SObjectDef>,
@@ -147,10 +153,11 @@ function tryResolve(objects: Map<string, SObjectDef>, parent: SObjectDef, sf: So
     filterFields.push({ item, field });
   }
 
-  // 2. Relationship rule (D-05, D-08): the one hard failure.
+  // 2. Relationship rule (D-05): degrades like every other roll-up problem (D-08 reversed in Phase 10 plan 06).
   if (fk.type !== "MasterDetail" && !LOOKUP_WHITELIST.has(`${child.name}.${fk.name}`.toLowerCase())) {
-    throw new Error(
-      `${parent.name}.${sf.fullName}: a roll-up summary needs a master-detail relationship, but ${child.name}.${fk.name} is a lookup (only Opportunity.AccountId, OpportunityLineItem.OpportunityId and CampaignMember.CampaignId are allowed without master-detail)`,
+    return drop(
+      "rollup-relationship",
+      `a roll-up summary needs a master-detail relationship, but ${child.name}.${fk.name} is a lookup (only Opportunity.AccountId, OpportunityLineItem.OpportunityId, CampaignMember.CampaignId and Quote.OpportunityId are allowed without master-detail)`,
     );
   }
 

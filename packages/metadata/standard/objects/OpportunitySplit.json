@@ -1,0 +1,85 @@
+{
+  "name": "OpportunitySplit",
+  "label": "Opportunity Split",
+  "labelPlural": "Opportunity Splits",
+  "keyPrefix": "049",
+  "keyPrefixSource": "de-describe",
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "ArchivedTerritoryName",
+      "label": "Archived Territory Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HasOpportunityLineItemSplit",
+      "label": "Has Opportunity Line Item Split",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "OpportunityId",
+      "label": "Opportunity ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity"
+    },
+    {
+      "name": "Split",
+      "label": "Split",
+      "type": "AutoNumber",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
+    },
+    {
+      "name": "SplitAmount",
+      "label": "Split Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SplitNote",
+      "label": "Split Note",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "SplitOwnerId",
+      "label": "Split Owner ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "SplitOwner"
+    },
+    {
+      "name": "SplitPercentage",
+      "label": "Split Percentage",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "nillable": false
+    }
+  ]
+}

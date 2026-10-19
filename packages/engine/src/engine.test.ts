@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { generateId, migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
+import { generateId, matchTargetByPrefix, migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
@@ -68,6 +68,15 @@ const THIN_FLAGS: Record<string, [boolean, boolean, boolean, boolean]> = {
   IdeaTheme: [true, true, true, true], Individual: [true, true, true, true], OperatingHours: [true, true, true, true],
   OpportunityHistory: [false, false, false, false], ServiceAppointment: [true, true, true, true], ServiceContract: [true, true, true, true],
   SocialPost: [true, true, true, true], UserLicense: [false, false, false, false],
+};
+/** Supported Calls flags (createable, updateable, deletable, undeletable) for the 18 business objects of phase 10. */
+const BUSINESS_FLAGS: Record<string, [boolean, boolean, boolean, boolean]> = {
+  Quote: [true, true, true, true], QuoteLineItem: [true, true, true, true], Order: [true, true, true, true],
+  OrderItem: [true, true, true, false], AccountContactRelation: [true, true, true, false], AccountTeamMember: [true, true, true, false],
+  OpportunityTeamMember: [true, true, true, false], OpportunityContactRole: [true, true, true, false], OpportunitySplit: [true, true, true, false],
+  ContractLineItem: [true, true, true, true], CaseContactRole: [true, true, true, false], CaseMilestone: [false, true, false, false],
+  EmailMessage: [true, true, true, true], ContentDocument: [false, true, true, true], ContentVersion: [true, true, false, false],
+  FeedItem: [true, true, true, false], Location: [true, true, true, true], Address: [true, true, true, true],
 };
 const unknownId = (name: string) => toCaseSafeId(`${schema.getObject(name)?.keyPrefix ?? "000"}000000000099`);
 const codes = (r: { errors: { statusCode: string }[] } | undefined) => (r?.errors ?? []).map((e) => e.statusCode);
@@ -299,6 +308,97 @@ describe("thin object references", () => {
   });
 });
 
+describe("business object flags (BASE2-07)", () => {
+  it("object flags: insert, update, delete and undelete forbidden by a business object's flags fail with INVALID_TYPE_FOR_OPERATION, allowed ones never do", async () => {
+    for (const [name, [c, u, d, ud]] of Object.entries(BUSINESS_FLAGS)) {
+      for (const [op, allowed] of [["insert", c], ["update", u], ["delete", d], ["undelete", ud]] as const) {
+        const result =
+          op === "insert"
+            ? await engine.insert(session, name, [{}])
+            : op === "update"
+              ? await engine.update(session, name, [{ Id: unknownId(name) }])
+              : op === "delete"
+                ? await engine.delete(session, name, [unknownId(name)])
+                : await engine.undelete(session, name, [unknownId(name)]);
+        if (allowed) {
+          expect(codes(result[0]), `${name} ${op}`).not.toContain("INVALID_TYPE_FOR_OPERATION");
+        } else {
+          expect(result[0]?.errors, `${name} ${op}`).toEqual([{ statusCode: "INVALID_TYPE_FOR_OPERATION", message: `entity type ${name} does not support ${op}`, fields: [] }]);
+        }
+      }
+    }
+  });
+
+  it("the five documented refusals are exact (SC2)", async () => {
+    const refusal = (name: string, op: string) => [{ statusCode: "INVALID_TYPE_FOR_OPERATION", message: `entity type ${name} does not support ${op}`, fields: [] }];
+    expect((await engine.undelete(session, "OrderItem", [unknownId("OrderItem")]))[0]?.errors).toEqual(refusal("OrderItem", "undelete"));
+    expect((await engine.insert(session, "CaseMilestone", [{}]))[0]?.errors).toEqual(refusal("CaseMilestone", "insert"));
+    expect((await engine.delete(session, "CaseMilestone", [unknownId("CaseMilestone")]))[0]?.errors).toEqual(refusal("CaseMilestone", "delete"));
+    expect((await engine.insert(session, "ContentDocument", [{}]))[0]?.errors).toEqual(refusal("ContentDocument", "insert"));
+    expect((await engine.delete(session, "ContentVersion", [unknownId("ContentVersion")]))[0]?.errors).toEqual(refusal("ContentVersion", "delete"));
+  });
+
+  it("D-18: an insert without a documented-required field of the 18 fails with REQUIRED_FIELD_MISSING", async () => {
+    const [order] = await engine.insert(session, "Order", [{}]);
+    expect(order?.errors[0]?.statusCode).toBe("REQUIRED_FIELD_MISSING");
+    expect(order?.errors[0]?.fields).toContain("EffectiveDate");
+    const [item] = await engine.insert(session, "OrderItem", [{}]);
+    expect(item?.errors[0]?.statusCode).toBe("REQUIRED_FIELD_MISSING");
+    expect(item?.errors[0]?.fields).toContain("OrderId");
+  });
+
+  it("D-18: an Order with its documented-required fields inserts and gets an 801 Id and an OrderNumber", async () => {
+    const accountId = await one("Account", { Name: "Order Account" });
+    const id = await one("Order", { AccountId: accountId, EffectiveDate: "2026-10-14", Status: "Draft" });
+    expect(id).toMatch(/^801[0-9A-Za-z]{15}$/);
+    const row = (await engine.retrieve(session, "Order", [id])).get(id);
+    expect(typeof row?.["OrderNumber"]).toBe("string");
+    expect(row?.["OrderNumber"]).not.toBe("");
+  });
+});
+
+describe("business object references (D-20)", () => {
+  it("D-20: a lookup to one of the 18 with an unparsable Id is MALFORMED_ID, with a wrong-type or missing Id INVALID_CROSS_REFERENCE_KEY", async () => {
+    const accountId = await one("Account", { Name: "D-20 Account" });
+    const orderBase = { AccountId: accountId, EffectiveDate: "2026-10-14", Status: "Draft" };
+    const cases: { object: string; field: string; target: string; base: Record<string, unknown> }[] = [
+      { object: "Case", field: "FeedItemId", target: "FeedItem", base: { Subject: "x" } },
+      { object: "Asset", field: "LocationId", target: "Location", base: { Name: "Asset", AccountId: accountId } },
+      { object: "Order", field: "QuoteId", target: "Quote", base: orderBase },
+      { object: "OrderItem", field: "OrderId", target: "Order", base: { Quantity: 1 } },
+    ];
+    for (const { object, field, target, base } of cases) {
+      const [malformed, missing, wrongType] = await engine.insert(session, object, [
+        { ...base, [field]: "abc" },
+        { ...base, [field]: unknownId(target) },
+        { ...base, [field]: accountId },
+      ]);
+      expect(malformed?.errors[0], `${object}.${field} unparsable`).toMatchObject({ statusCode: "MALFORMED_ID", fields: [field] });
+      expect(missing?.errors[0], `${object}.${field} missing`).toMatchObject({ statusCode: "INVALID_CROSS_REFERENCE_KEY", fields: [field] });
+      expect(wrongType?.errors[0], `${object}.${field} wrong type`).toMatchObject({ statusCode: "INVALID_CROSS_REFERENCE_KEY", fields: [field] });
+    }
+  });
+
+  it("D-20: a lookup to an existing FeedItem row is accepted", async () => {
+    const accountId = await one("Account", { Name: "Feed Account" });
+    const feedItemId = await one("FeedItem", { ParentId: accountId, Body: "hello" });
+    const caseId = await one("Case", { Subject: "with feed item", FeedItemId: feedItemId });
+    expect((await engine.retrieve(session, "Case", [caseId])).get(caseId)?.["FeedItemId"]).toBe(feedItemId);
+  });
+});
+
+describe("key-prefix case twins", () => {
+  it("prefix routing is exact-case: 01M/01m, 00q/00Q and 00K/00k resolve to different objects", () => {
+    const route = (prefix: string) => matchTargetByPrefix([...schema.objects.values()], toCaseSafeId(`${prefix}000000000001`))?.name;
+    expect(route("01M")).toBe("AccountTeamMember");
+    expect(route("01m")).toBe("BusinessHours");
+    expect(route("00q")).toBe("OpportunityTeamMember");
+    expect(route("00Q")).toBe("Lead");
+    expect(route("00K")).toBe("OpportunityContactRole");
+    expect(route("00k")).toBe("OpportunityLineItem");
+  });
+});
+
 describe("import mode", () => {
   it("keeps supplied ids and audit fields, loads children before parents, and bypasses rules and hooks", async () => {
     const importer = new DmlEngine(pool, schema, { orgSchema, importMode: true, executors: [{ run: () => Promise.reject(new Error("hooks must not run")) }] });
@@ -361,5 +461,16 @@ describe("polymorphic parents", () => {
     expect(records[0]?.["Owner"]).toMatchObject({ Id: groupId, Name: "Support Queue" });
     expect(records[1]?.["Owner"]).toMatchObject({ Id: session.userId, Alias: "admin" });
     expect(records[2]?.["Owner"]).toBeNull();
+  });
+
+  it("a Group Id on Account.OwnerId is rejected like Salesforce does", async () => {
+    // BASE2-04 / D-15: Account.OwnerId is User-only, so a queue Id is INVALID_CROSS_REFERENCE_KEY; Case stays queue-owned.
+    const groupId = await one("Group", { Name: "Account Queue", DeveloperName: "Account_Queue", Type: "Queue" });
+    const [account] = await engine.insert(session, "Account", [{ Name: "Queue owned", OwnerId: groupId }]);
+    expect(account).toMatchObject({ success: false });
+    expect(account?.errors[0]).toMatchObject({ statusCode: "INVALID_CROSS_REFERENCE_KEY", fields: ["OwnerId"] });
+    const [kase] = await engine.insert(session, "Case", [{ Subject: "Queue owned", OwnerId: groupId }]);
+    expect(kase).toMatchObject({ success: true });
+    expect((await engine.retrieve(session, "Case", [kase!.id!])).get(kase!.id!)).toMatchObject({ OwnerId: groupId });
   });
 });

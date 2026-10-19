@@ -28,8 +28,8 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 **Milestone goal:** A large, real enterprise-org retrieve loads with zero warnings for everything it itself references. Standard objects nothing references are reported as information, not warnings.
 
 - [x] **Phase 8: Upgrade Safety Net & Nullable Key Prefixes** - A populated v1.0 database upgrades without data loss; FK violations downgrade to warnings; objects may have no key prefix (completed 2026-10-13)
-- [ ] **Phase 9: Baseline Generator, Parity & OwnerId Narrowing** - A deterministic generator reproduces the 35 existing objects, then adds every documented field and per-object OwnerId targets
-- [ ] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart
+- [x] **Phase 9: Baseline Generator, Parity & OwnerId Narrowing** - A deterministic generator reproduces the 35 existing objects, then adds every documented field and per-object OwnerId targets (completed 2026-10-14)
+- [x] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart (completed 2026-10-16)
 - [ ] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load
 - [ ] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas
 - [ ] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields
@@ -68,11 +68,21 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Running the generator twice yields byte-identical JSON, CI fails when regeneration differs from the committed files, and the committed output contains no documentation prose.
   2. Regenerating only the existing 35 objects first produces a no-op diff against v1.0; the v1-vs-v2 diff gate then fails if a v1.0 field disappears or narrows without an allowlisted reason, and the generator refuses a new MasterDetail column on an object that existed in v1.0.
-  3. `orglet check` on a retrieve using documented fields of those 35 objects reports zero `UNSUPPORTED:standard-field`, and feature-gated fields appear in describe as nullable fields tagged `featureGated`.
+  3. `orglet check` on a retrieve using documented fields of those 35 objects reports zero `UNSUPPORTED:standard-field` for every documented field the baseline models; documented fields it cannot model (unsupported type, or a reference to an object outside the baseline) are skipped and listed in `PROVENANCE.json`. Feature-gated fields are nullable in describe and tagged `featureGated` in the baseline JSON and in `orglet check` (not a describe key, D-10).
   4. `Owner.Name` in a formula and in SOQL compiles on Account, Contact, Opportunity, Contract, Asset and Campaign, while Case, Lead and Task owner queries still return User and Group owners as in v1.0 (`conformance/poly-check` stays green).
   5. The Phase 8 populated-database upgrade test still passes with the v2 baseline, with only the expected, allowlisted warnings.
-**Plans**: TBD
+**Plans**: 9 plans
+- [x] 09-01-PLAN.md — scaffolding, sf-skills vendoring at a pinned SHA with offline sha256 manifest, scripts typecheck in CI, key-prefix sources (BASE2-01)
+- [x] 09-02-PLAN.md — loader contract: ownerTargets/featureGated; upgrade test admits additive growth (BASE2-03, BASE2-04, SC5)
+- [x] 09-03-PLAN.md — facts-only Object Reference PDF extraction + gating keyword list (BASE2-01, BASE2-03, MIGR-03)
+- [x] 09-04-PLAN.md — step A: deterministic generator + v1.0 pins reproduce the 35 objects; CI drift gate (BASE2-01, BASE2-02)
+- [x] 09-05-PLAN.md — v1-vs-v2 diff gate with allowlist, MasterDetail refusal, failure modes, prose scan (MIGR-03)
+- [x] 09-06-PLAN.md — step B rules in memory + decision checkpoint on the report (BASE2-02, BASE2-03)
+- [x] 09-07-PLAN.md — step B landing: regenerate v2, SC3 proof, requirement wording aligned (BASE2-02, BASE2-03)
+- [x] 09-08-PLAN.md — per-object ownerTargets and SC4 tests (BASE2-04)
+- [x] 09-09-PLAN.md — D-14 upgrade case, Group-owned audit, conformance, todo (BASE2-04)
 **Research flag**: design spike (not a full research phase) on type mapping, string-length rules and single-source flags.
+*Wording of SC3 aligned with delivered scope on 2026-10-14 (09-07; CONTEXT D-10, phase 9 locked decision 4).*
 
 ### Phase 10: Business Standard Objects
 **Goal**: The 18 business objects a typical sales/service org references exist as faithful baseline objects, and `orglet check` separates objects a retrieve references from objects nothing references.
@@ -80,10 +90,17 @@ Plans:
 **Requirements**: BASE2-06, BASE2-07, BASE2-08
 **Success Criteria** (what must be TRUE):
   1. A jsforce or simple-salesforce client can describe and query Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument, ContentVersion, FeedItem, Location and Address, with no blob fields exposed and the omissions listed in the generator report.
-  2. DML that the documentation forbids is refused with `INVALID_TYPE_FOR_OPERATION` (OrderItem undelete; CaseMilestone create and delete; ContentDocument create; ContentVersion delete), and a lookup to any of the 18 with a malformed or wrong-type Id is rejected with `INVALID_CROSS_REFERENCE_KEY`.
-  3. `orglet check` keeps `UNSUPPORTED:reference-target` for a standard object that a lookup, roll-up, formula or validation rule references but orglet does not model, and lists an unreferenced, unmodelled standard object in an informational category that never makes `--strict` exit 1.
+  2. DML that the documentation forbids is refused with `INVALID_TYPE_FOR_OPERATION` (OrderItem undelete; CaseMilestone create and delete; ContentDocument create; ContentVersion delete), and a lookup to any of the 18 with an unparsable Id is rejected with `MALFORMED_ID`, and with a well-formed Id of the wrong type or with no matching row with `INVALID_CROSS_REFERENCE_KEY` (wording adjusted 2026-10-14, D-20).
+  3. `orglet check` treats a standard object that a lookup, roll-up, formula or validation rule references but orglet does not model as referenced: it keeps its warnings (`UNSUPPORTED:reference-target` for a lookup target, the existing roll-up and formula warnings otherwise, with no extra reference-target warning, D-09), and lists an unreferenced, unmodelled standard object in an informational category that never makes `--strict` exit 1 (wording adjusted 2026-10-14, D-09).
   4. The conformance run (`conformance/run-all.sh`) is green after the new objects land, and the plan records the expected warning-count shifts.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [x] 10-01-PLAN.md — generator capability: Supported Calls extraction, object facts for objects without pins, de-describe source, rule 4 limited to v1.0 objects (D-18), new type tokens (BASE2-06, BASE2-07)
+- [x] 10-02-PLAN.md — `orglet check` informational category: referenced vs unreferenced unmodelled standard objects, `info:` line outside --strict (BASE2-08)
+- [x] 10-03-PLAN.md — checkpoint: key-prefix verification list (OpportunitySplit 049 mandatory), labels, name fields, AutoNumber format, length conflicts (BASE2-06)
+- [x] 10-04-PLAN.md — the 18 objects as generated data with pinned inputs, overrides (D-19 lookups), loader and upgrade tests (BASE2-06, BASE2-07)
+- [x] 10-05-PLAN.md — engine/SOQL/REST behaviour of the 18 (flags, required fields, lookup codes, case twins), describe-check 14 -> 32 (BASE2-06, BASE2-07)
+- [x] 10-06-PLAN.md — conformance and both test backends, SC4 warning-count shifts, D-20 wording table, docs, DE retrieve check (BASE2-06..08)
 **Research flag**: none (verification list for single-list key prefixes lives in the plans).
 
 ### Phase 11: Custom Metadata, Custom Settings & Labels
@@ -148,8 +165,8 @@ Plans:
 | 6. Bulk API 2.0 Persistence | v1.0 | 6/6 | Complete | 2026-10-10 |
 | 7. Conformance Re-Run & Milestone Acceptance | v1.0 | 6/6 | Complete | 2026-10-12 |
 | 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 10/10 | Complete | 2026-10-13 |
-| 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 0/TBD | Not started | - |
-| 10. Business Standard Objects | v1.1 | 0/TBD | Not started | - |
+| 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
+| 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 0/TBD | Not started | - |
 | 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
@@ -234,6 +251,15 @@ Plans:
 ### Phase 999.9: Heimdall end-to-end backup run against orglet (BACKLOG)
 
 **Goal:** Run the Java Salesforce backup tool (Bulk 2.0 query-only client) against an orglet org as a conformance target: needs client_credentials grant on /services/oauth2/token, /limits, the backup-config custom object through the tooling-API schema check, and ContentVersion VersionData download (baseline v2). Deferred since phase 6.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.10: ContentVersion file upload done properly (BACKLOG)
+
+**Goal:** Make file upload work as in a real org instead of through the Phase 10 ContentDocumentId nullable override: create the ContentDocument automatically on ContentVersion insert when ContentDocumentId is omitted (then drop the override so describe reports nillable: false as the DE does), store VersionData as a blob field (base64 over REST, bytea in Postgres) with the GET /sobjects/ContentVersion/{id}/VersionData download endpoint, and model ContentDocumentLink so a file can be attached to a record. Raised at the Phase 10 D-04 checkpoint (2026-10-14): file upload is a central capability and the override is a stopgap. Unblocks the ContentVersion half of 999.9.
 **Requirements:** TBD
 **Plans:** 0 plans
 

@@ -1,0 +1,100 @@
+{
+  "object": "Profile",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "Description": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "IsSsoEnabled": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastReferencedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastViewedDate": {
+      "type": "datetime",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update",
+        "idLookup"
+      ]
+    },
+    "PermissionsPermissionName": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Filter",
+        "Update"
+      ]
+    },
+    "UserLicenseId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "UserLicense"
+      ],
+      "relationshipName": "UserLicense",
+      "relationshipType": "lookup"
+    },
+    "UserType": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    }
+  }
+}

@@ -3,7 +3,11 @@
   "label": "Contact",
   "labelPlural": "Contacts",
   "keyPrefix": "003",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "AccountId",
@@ -14,6 +18,22 @@
       ],
       "relationshipName": "Account",
       "childRelationshipName": "Contacts"
+    },
+    {
+      "name": "ActionCadenceState",
+      "label": "Cadence State",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ActiveTrackerCount",
+      "label": "Total Cadences",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "AssistantName",
@@ -33,10 +53,146 @@
       "type": "Date"
     },
     {
+      "name": "BuyerAttributes",
+      "label": "Buyer Attributes",
+      "type": "MultiselectPicklist",
+      "length": 4099,
+      "picklistValues": [
+        {
+          "value": "BusinessUser",
+          "label": "BusinessUser"
+        },
+        {
+          "value": "Buyer",
+          "label": "Buyer"
+        },
+        {
+          "value": "Champion",
+          "label": "Champion"
+        },
+        {
+          "value": "DecisionMaker",
+          "label": "DecisionMaker"
+        },
+        {
+          "value": "Detractor",
+          "label": "Detractor"
+        },
+        {
+          "value": "Evaluator",
+          "label": "Evaluator"
+        },
+        {
+          "value": "ExecutiveSponsor",
+          "label": "ExecutiveSponsor"
+        },
+        {
+          "value": "TechnicalExpert",
+          "label": "TechnicalExpert"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "CanAllowPortalSelfReg",
+      "label": "Can Allow Portal Self Reg",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CleanStatus",
+      "label": "Clean Status",
+      "type": "Picklist",
+      "picklistValues": [
+        {
+          "value": "Matched",
+          "label": "Matched"
+        },
+        {
+          "value": "Different",
+          "label": "Different"
+        },
+        {
+          "value": "Acknowledged",
+          "label": "Acknowledged"
+        },
+        {
+          "value": "NotFound",
+          "label": "NotFound"
+        },
+        {
+          "value": "Inactive",
+          "label": "Inactive"
+        },
+        {
+          "value": "Pending",
+          "label": "Pending"
+        },
+        {
+          "value": "SelectMatch",
+          "label": "SelectMatch"
+        },
+        {
+          "value": "Skipped",
+          "label": "Skipped"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "CommerceCustomerReference",
+      "label": "Commerce Customer Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CommerceGroupReference",
+      "label": "Commerce Group Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "CommerceOrganizationReference",
+      "label": "Commerce Organization Reference",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContactSource",
+      "label": "Creation Source",
+      "type": "Picklist",
+      "picklistValues": [
+        {
+          "value": "Auto Create",
+          "label": "Auto Create"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Contact Currency",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Department",
       "label": "Department",
       "type": "Text",
       "length": 80
+    },
+    {
+      "name": "DepartmentGroup",
+      "label": "Department Group",
+      "type": "Picklist"
     },
     {
       "name": "Description",
@@ -81,6 +237,20 @@
       "length": 40
     },
     {
+      "name": "FirstCallDateTime",
+      "label": "First Call Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FirstEmailDateTime",
+      "label": "First Email Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "FirstName",
       "label": "First Name",
       "type": "Text",
@@ -91,8 +261,8 @@
       "name": "GenderIdentity",
       "label": "Gender Identity",
       "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": []
+      "picklistValues": [],
+      "restrictedPicklist": true
     },
     {
       "name": "HasOptedOutOfEmail",
@@ -117,6 +287,15 @@
       "length": 40
     },
     {
+      "name": "IndividualId",
+      "label": "Individual ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Individual"
+      ],
+      "relationshipName": "Individual"
+    },
+    {
       "name": "IsEmailBounced",
       "label": "Is Email Bounced",
       "type": "Checkbox",
@@ -125,6 +304,15 @@
       "updateable": false,
       "defaultedOnCreate": true,
       "defaultValue": "false"
+    },
+    {
+      "name": "IsPersonAccount",
+      "label": "Is Person Account",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
     },
     {
       "name": "IsPriorityRecord",
@@ -137,9 +325,38 @@
       "defaultValue": "false"
     },
     {
+      "name": "Jigsaw",
+      "label": "Data.com Key",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "JigsawContactId",
+      "label": "Jigsaw Contact ID",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
       "name": "LastActivityDate",
       "label": "Last Activity",
       "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastCURequestDate",
+      "label": "Last Stay-in-Touch Request Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastCUUpdateDate",
+      "label": "Last Stay-in-Touch Save Date",
+      "type": "DateTime",
       "createable": false,
       "updateable": false
     },
@@ -193,11 +410,17 @@
       "compoundFieldName": "MailingAddress"
     },
     {
+      "name": "MailingCountryCode",
+      "label": "Mailing Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "MailingAddress"
+    },
+    {
       "name": "MailingGeocodeAccuracy",
       "label": "Mailing Geocode Accuracy",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [],
+      "restrictedPicklist": true,
       "compoundFieldName": "MailingAddress"
     },
     {
@@ -231,6 +454,12 @@
       "compoundFieldName": "MailingAddress"
     },
     {
+      "name": "MailingStateCode",
+      "label": "Mailing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "MailingAddress"
+    },
+    {
       "name": "MailingStreet",
       "label": "Mailing Street",
       "type": "TextArea",
@@ -241,12 +470,18 @@
       "name": "MasterRecordId",
       "label": "Master Record ID",
       "type": "Lookup",
+      "createable": false,
+      "updateable": false,
       "referenceTo": [
         "Contact"
       ],
-      "relationshipName": "MasterRecord",
-      "createable": false,
-      "updateable": false
+      "relationshipName": "MasterRecord"
+    },
+    {
+      "name": "MiddleName",
+      "label": "Middle Name",
+      "type": "Text",
+      "length": 40
     },
     {
       "name": "MobilePhone",
@@ -285,11 +520,17 @@
       "compoundFieldName": "OtherAddress"
     },
     {
+      "name": "OtherCountryCode",
+      "label": "Other Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "OtherAddress"
+    },
+    {
       "name": "OtherGeocodeAccuracy",
       "label": "Other Geocode Accuracy",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [],
+      "restrictedPicklist": true,
       "compoundFieldName": "OtherAddress"
     },
     {
@@ -329,6 +570,12 @@
       "compoundFieldName": "OtherAddress"
     },
     {
+      "name": "OtherStateCode",
+      "label": "Other State Code",
+      "type": "Picklist",
+      "compoundFieldName": "OtherAddress"
+    },
+    {
       "name": "OtherStreet",
       "label": "Other Street",
       "type": "TextArea",
@@ -353,8 +600,8 @@
       "name": "Pronouns",
       "label": "Pronouns",
       "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": []
+      "picklistValues": [],
+      "restrictedPicklist": true
     },
     {
       "name": "RecordTypeId",
@@ -382,81 +629,28 @@
       "compoundFieldName": "Name"
     },
     {
+      "name": "ScheduledResumeDateTime",
+      "label": "Cadence Resume Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Suffix",
+      "label": "Suffix",
+      "type": "Text",
+      "length": 40
+    },
+    {
       "name": "Title",
       "label": "Title",
       "type": "Text",
       "length": 128
     },
     {
-      "name": "BuyerAttributes",
-      "label": "Buyer Attributes",
-      "type": "MultiselectPicklist",
-      "length": 4099,
-      "restrictedPicklist": true,
-      "picklistValues": [
-        { "value": "BusinessUser", "label": "BusinessUser" },
-        { "value": "Buyer", "label": "Buyer" },
-        { "value": "Champion", "label": "Champion" },
-        { "value": "DecisionMaker", "label": "DecisionMaker" },
-        { "value": "Detractor", "label": "Detractor" },
-        { "value": "Evaluator", "label": "Evaluator" },
-        { "value": "ExecutiveSponsor", "label": "ExecutiveSponsor" },
-        { "value": "TechnicalExpert", "label": "TechnicalExpert" }
-      ]
-    },
-    {
-      "name": "CleanStatus",
-      "label": "Clean Status",
-      "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": [
-        { "value": "Matched", "label": "Matched" },
-        { "value": "Different", "label": "Different" },
-        { "value": "Acknowledged", "label": "Acknowledged" },
-        { "value": "NotFound", "label": "NotFound" },
-        { "value": "Inactive", "label": "Inactive" },
-        { "value": "Pending", "label": "Pending" },
-        { "value": "SelectMatch", "label": "SelectMatch" },
-        { "value": "Skipped", "label": "Skipped" }
-      ]
-    },
-    {
-      "name": "ContactSource",
-      "label": "Creation Source",
-      "type": "Picklist",
-      "restrictedPicklist": true,
-      "picklistValues": [
-        { "value": "Auto Create", "label": "Auto Create" }
-      ]
-    },
-    {
-      "name": "IndividualId",
-      "label": "Individual ID",
-      "type": "Lookup",
-      "referenceTo": [
-        "Individual"
-      ],
-      "relationshipName": "Individual"
-    },
-    {
-      "name": "Jigsaw",
-      "label": "Data.com Key",
-      "type": "Text",
-      "length": 20
-    },
-    {
-      "name": "LastCURequestDate",
-      "label": "Last Stay-in-Touch Request Date",
-      "type": "DateTime",
-      "createable": false,
-      "updateable": false
-    },
-    {
-      "name": "LastCUUpdateDate",
-      "label": "Last Stay-in-Touch Save Date",
-      "type": "DateTime",
-      "createable": false,
-      "updateable": false
+      "name": "TitleType",
+      "label": "Seniority Level",
+      "type": "Picklist"
     }
   ]
 }

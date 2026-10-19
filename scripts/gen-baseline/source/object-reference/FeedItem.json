@@ -1,0 +1,479 @@
+{
+  "object": "FeedItem",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "search",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "BestCommentId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "FeedComment"
+      ],
+      "relationshipName": "BestComment",
+      "relationshipType": "lookup"
+    },
+    "Body": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "CommentCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "ConnectionId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "enabled-phrase"
+      ]
+    },
+    "ContentData": {
+      "type": "base64",
+      "properties": [
+        "Create",
+        "Nillable"
+      ]
+    },
+    "ContentDescription": {
+      "type": "textarea",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentFileName": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentSize": {
+      "type": "int",
+      "properties": [
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "ContentType": {
+      "type": "string",
+      "properties": [
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "FeedPostId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "HasContent": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HasFeedEntity": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HasLink": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "HasVerifiedComment": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "InsertedById": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "User"
+      ],
+      "relationshipName": "InsertedBy",
+      "relationshipType": "lookup"
+    },
+    "IsClosed": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsDeleted": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "IsRichText": {
+      "type": "boolean",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort",
+        "Update"
+      ]
+    },
+    "LastEditById": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LastEditDate": {
+      "type": "datetime",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "LikeCount": {
+      "type": "int",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "LinkUrl": {
+      "type": "url",
+      "properties": [
+        "Create",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "NetworkScope": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "ParentId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Sort"
+      ],
+      "refersTo": [
+        "Account",
+        "Accreditation",
+        "ActivationTarget",
+        "ActivationTrgtIntOrgAccess",
+        "ApiAnomalyEventStore",
+        "AssessmentIndicatorDefinition",
+        "AssessmentTask",
+        "AssessmentTaskContentDocument",
+        "AssessmentTaskDefinition",
+        "AssessmentTaskIndDefinition",
+        "AssessmentTaskOrder",
+        "Asset",
+        "AssetRelationship",
+        "AssignedResource",
+        "Award",
+        "BoardCertification",
+        "BusinessLicense",
+        "BusinessMilestone",
+        "BusinessProfile",
+        "Campaign",
+        "CareBarrier",
+        "CareBarrierDeterminant",
+        "CareBarrierType",
+        "CareDeterminant",
+        "CareDeterminantType",
+        "CareDiagnosis",
+        "CareInterventionType",
+        "CareMetricTarget",
+        "CareObservation",
+        "CareObservationComponent",
+        "CarePgmProvHealthcareProvider",
+        "CarePreauth",
+        "CarePreauthItem",
+        "CareProgram",
+        "CareProgramCampaign",
+        "CareProgramEligibilityRule",
+        "CareProgramEnrollee",
+        "CareProgramEnrolleeProduct",
+        "CareProgramEnrollmentCard",
+        "CareProgramGoal",
+        "CareProgramProduct",
+        "CareProgramProvider",
+        "CareProgramTeamMember",
+        "CareProviderAdverseAction",
+        "CareProviderFacilitySpecialty",
+        "CareProviderSearchableField",
+        "CareRegisteredDevice",
+        "CareRequest",
+        "CareRequestDrug",
+        "CareRequestExtension",
+        "CareRequestItem",
+        "CareSpecialty",
+        "CareSpecialtyTaxonomy",
+        "CareTaxonomy",
+        "Case",
+        "CodeSet",
+        "CollaborationGroup",
+        "CommSubscription",
+        "CommSubscriptionChannelType",
+        "CommSubscriptionConsent",
+        "CommSubscriptionTiming",
+        "ConsumptionSchedule",
+        "Contact",
+        "ContactEncounter",
+        "ContactEncounterParticipant",
+        "ContentDocument",
+        "Contract",
+        "CoverageBenefit",
+        "CoverageBenefitItem",
+        "CredentialStuffingEventStore",
+        "CreditMemo",
+        "CreditMemoLine",
+        "Dashboard",
+        "DashboardComponent",
+        "DataStream",
+        "DelegatedAccount",
+        "DocumentChecklistItem",
+        "EngagementChannelType",
+        "EnhancedLetterhead",
+        "EnrollmentEligibilityCriteria",
+        "Event",
+        "HealthcareFacility",
+        "HealthcareFacilityNetwork",
+        "HealthcarePayerNetwork",
+        "HealthcarePractitionerFacility",
+        "HealthcareProvider",
+        "HealthcareProviderNpi",
+        "HealthcareProviderSpecialty",
+        "HealthcareProviderTaxonomy",
+        "Identifier",
+        "Image",
+        "IndividualApplication",
+        "Invoice",
+        "InvoiceLine",
+        "Lead",
+        "Location",
+        "MarketSegment",
+        "MarketSegmentActivation",
+        "MemberPlan",
+        "MessagingSession",
+        "MktCalculatedInsight",
+        "OperatingHours",
+        "Opportunity",
+        "Order",
+        "OrderItem",
+        "OtherComponentTask",
+        "PartyConsent",
+        "PersonEducation",
+        "PersonLanguage",
+        "PersonLifeEvent",
+        "PersonName",
+        "PlanBenefit",
+        "PlanBenefitItem",
+        "Product2",
+        "ProductFulfillmentLocation",
+        "ProductItem",
+        "ProductItemTransaction",
+        "ProductRequest",
+        "ProductRequestLineItem",
+        "ProductRequired",
+        "ProductTransfer",
+        "ProfileSkill",
+        "ProfileSkillEndorsement",
+        "ProfileSkillUser",
+        "ProviderSearchSyncLog",
+        "PurchaserPlan",
+        "PurchaserPlanAssn",
+        "ReceivedDocument",
+        "Report",
+        "ReportAnomalyEventStore",
+        "ResourceAbsence",
+        "ResourcePreference",
+        "ReturnOrder",
+        "ReturnOrderLineItem",
+        "ServiceAppointment",
+        "ServiceResource",
+        "ServiceResourceSkill",
+        "ServiceTerritory",
+        "ServiceTerritoryMember",
+        "ServiceTerritoryWorkType",
+        "SessionHijackingEventStore",
+        "Shift",
+        "Shipment",
+        "ShipmentItem",
+        "Site",
+        "SkillRequirement",
+        "SocialPost",
+        "Solution",
+        "Task",
+        "ThreatDetectionFeedback",
+        "Topic",
+        "User",
+        "Visit",
+        "VisitedParty",
+        "Visitor",
+        "VoiceCall",
+        "VolunteerProject",
+        "WorkBadgeDefinition",
+        "WorkOrder",
+        "WorkOrderLineItem",
+        "WorkType",
+        "WorkTypeGroup",
+        "WorkTypeGroupMember"
+      ],
+      "relationshipName": "Parent",
+      "relationshipType": "lookup"
+    },
+    "RelatedRecordId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Revision": {
+      "type": "int",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Status": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Defaulted on create",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Title": {
+      "type": "string",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort",
+        "Update"
+      ]
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort"
+      ],
+      "gating": [
+        "chatter",
+        "social"
+      ]
+    },
+    "Visibility": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Group",
+        "Nillable",
+        "Restricted picklist",
+        "Sort",
+        "Update"
+      ]
+    }
+  }
+}

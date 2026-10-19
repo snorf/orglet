@@ -1,0 +1,130 @@
+{
+  "object": "ExternalDataSource",
+  "supportedCalls": [
+    "describeSObjects",
+    "query",
+    "retrieve"
+  ],
+  "fields": {
+    "AuthProviderId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "AuthProvider"
+      ],
+      "relationshipName": "AuthProvider",
+      "relationshipType": "lookup"
+    },
+    "CustomConfiguration": {
+      "type": "textarea",
+      "properties": [
+        "Nillable"
+      ]
+    },
+    "DeveloperName": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "Endpoint": {
+      "type": "textarea",
+      "properties": [
+        "Nillable"
+      ]
+    },
+    "Language": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "MasterLabel": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    },
+    "NamedCredentialId": {
+      "type": "reference",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "refersTo": [
+        "NamedCredential"
+      ],
+      "relationshipName": "NamedCredential",
+      "relationshipType": "lookup"
+    },
+    "NamespacePrefix": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "maxLength": 15
+    },
+    "PrincipalType": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "Protocol": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "Repository": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "Type": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Group",
+        "Restricted picklist",
+        "Sort"
+      ]
+    },
+    "isWritable": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter",
+        "Group",
+        "Sort"
+      ]
+    }
+  }
+}

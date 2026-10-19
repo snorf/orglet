@@ -3,120 +3,28 @@
   "label": "Asset",
   "labelPlural": "Assets",
   "keyPrefix": "02i",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
-    {
-      "name": "Name",
-      "label": "Asset Name",
-      "type": "Text",
-      "length": 255,
-      "nillable": false,
-      "idLookup": true,
-      "nameField": true
-    },
     {
       "name": "AccountId",
       "label": "Account ID",
       "type": "Lookup",
-      "referenceTo": ["Account"],
+      "referenceTo": [
+        "Account"
+      ],
       "relationshipName": "Account",
       "childRelationshipName": "Assets"
     },
     {
-      "name": "ContactId",
-      "label": "Contact ID",
-      "type": "Lookup",
-      "referenceTo": ["Contact"],
-      "relationshipName": "Contact",
-      "childRelationshipName": "Assets"
-    },
-    {
-      "name": "Product2Id",
-      "label": "Product",
-      "type": "Lookup",
-      "referenceTo": ["Product2"],
-      "relationshipName": "Product2",
-      "childRelationshipName": "Assets"
-    },
-    {
-      "name": "ParentId",
-      "label": "Parent Asset",
-      "type": "Lookup",
-      "referenceTo": ["Asset"],
-      "relationshipName": "Parent",
-      "childRelationshipName": "ChildAssets"
-    },
-    {
-      "name": "RootAssetId",
-      "label": "Root Asset",
-      "type": "Lookup",
-      "referenceTo": ["Asset"],
-      "relationshipName": "RootAsset",
+      "name": "Address",
+      "label": "Address",
+      "type": "Address",
       "createable": false,
       "updateable": false
-    },
-    {
-      "name": "SerialNumber",
-      "label": "Serial Number",
-      "type": "Text",
-      "length": 80
-    },
-    {
-      "name": "InstallDate",
-      "label": "Install Date",
-      "type": "Date"
-    },
-    {
-      "name": "PurchaseDate",
-      "label": "Purchase Date",
-      "type": "Date"
-    },
-    {
-      "name": "UsageEndDate",
-      "label": "Usage End Date",
-      "type": "Date"
-    },
-    {
-      "name": "Status",
-      "label": "Status",
-      "type": "Picklist",
-      "picklistValues": [
-        { "value": "Purchased", "label": "Purchased" },
-        { "value": "Shipped", "label": "Shipped" },
-        { "value": "Installed", "label": "Installed" },
-        { "value": "Registered", "label": "Registered" },
-        { "value": "Obsolete", "label": "Obsolete" }
-      ]
-    },
-    {
-      "name": "Price",
-      "label": "Price",
-      "type": "Currency",
-      "precision": 18,
-      "scale": 2
-    },
-    {
-      "name": "Quantity",
-      "label": "Quantity",
-      "type": "Number",
-      "precision": 12,
-      "scale": 2
-    },
-    {
-      "name": "Description",
-      "label": "Asset Description",
-      "type": "LongTextArea",
-      "length": 32000
-    },
-    {
-      "name": "IsCompetitorProduct",
-      "label": "Competitor Asset",
-      "type": "Checkbox"
-    },
-    {
-      "name": "IsInternal",
-      "label": "Internal Asset",
-      "type": "Checkbox"
     },
     {
       "name": "AssetLevel",
@@ -131,29 +39,304 @@
       "name": "AssetProvidedById",
       "label": "Asset Provided By ID",
       "type": "Lookup",
-      "referenceTo": ["Account"],
+      "referenceTo": [
+        "Account"
+      ],
       "relationshipName": "AssetProvidedBy"
     },
     {
       "name": "AssetServicedById",
       "label": "Asset Serviced By ID",
       "type": "Lookup",
-      "referenceTo": ["Account"],
+      "referenceTo": [
+        "Account"
+      ],
       "relationshipName": "AssetServicedBy"
+    },
+    {
+      "name": "Availability",
+      "label": "Availability",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AverageUptimePerDay",
+      "label": "Average Uptime Per Day",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "AveragetimeBetweenFailure",
+      "label": "Averagetime Between Failure",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "AveragetimetoRepair",
+      "label": "Averagetimeto Repair",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "City",
+      "label": "City",
+      "type": "Text",
+      "length": 40
+    },
+    {
+      "name": "ConsequenceOfFailure",
+      "label": "Consequence Of Failure",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "ContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact",
+      "childRelationshipName": "Assets"
+    },
+    {
+      "name": "Country",
+      "label": "Country",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
+      "name": "CurrentAmount",
+      "label": "Current Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "CurrentLifecycleEndDate",
+      "label": "Current Lifecycle End Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "CurrentMrr",
+      "label": "Current Monthly Recurring Revenue",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "CurrentQuantity",
+      "label": "Current Quantity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "Description",
+      "label": "Asset Description",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "DigitalAssetStatus",
+      "label": "Digital Asset Status",
+      "type": "Picklist"
+    },
+    {
+      "name": "DoesAutomaticallyRenew",
+      "label": "Automatically Renew",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ExternalIdentifier",
+      "label": "External Id",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "GeocodeAccuracy",
+      "label": "Geocode Accuracy",
+      "type": "Picklist"
+    },
+    {
+      "name": "HasLifecycleManagement",
+      "label": "Lifecycle-managed asset",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
+      "name": "InstallDate",
+      "label": "Install Date",
+      "type": "Date"
+    },
+    {
+      "name": "IsCompetitorProduct",
+      "label": "Competitor Asset",
+      "type": "Checkbox"
+    },
+    {
+      "name": "IsInternal",
+      "label": "Internal Asset",
+      "type": "Checkbox"
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Latitude",
+      "label": "Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "LifecycleEndDate",
+      "label": "Lifecycle End Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "LifecycleStartDate",
+      "label": "Lifecycle Start Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "LocationId",
+      "label": "Location ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Location"
+      ],
+      "relationshipName": "Location"
+    },
+    {
+      "name": "Longitude",
+      "label": "Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "ManufactureDate",
+      "label": "Manufacture Date",
+      "type": "Date"
+    },
+    {
+      "name": "MeanTimeBetweenFailures",
+      "label": "Average Time Between Failures",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MeanTimeToRepair",
+      "label": "Average Time to Repair",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Asset Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "ParentId",
+      "label": "Parent Asset",
+      "type": "Lookup",
+      "referenceTo": [
+        "Asset"
+      ],
+      "relationshipName": "Parent",
+      "childRelationshipName": "ChildAssets"
+    },
+    {
+      "name": "PostalCode",
+      "label": "Postal Code",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "Price",
+      "label": "Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2
+    },
+    {
+      "name": "PricingSource",
+      "label": "Pricing Source",
+      "type": "Picklist"
+    },
+    {
+      "name": "Product2Id",
+      "label": "Product",
+      "type": "Lookup",
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2",
+      "childRelationshipName": "Assets"
     },
     {
       "name": "ProductCode",
       "label": "Product Code",
       "type": "Text",
       "length": 255,
-      "createable": false,
-      "updateable": false
-    },
-    {
-      "name": "StockKeepingUnit",
-      "label": "Stock Keeping Unit",
-      "type": "Text",
-      "length": 180,
       "createable": false,
       "updateable": false
     },
@@ -169,30 +352,192 @@
       "name": "ProductFamily",
       "label": "Product Family",
       "type": "Picklist",
-      "picklistValues": [],
       "createable": false,
-      "updateable": false
+      "updateable": false,
+      "picklistValues": []
+    },
+    {
+      "name": "PurchaseDate",
+      "label": "Purchase Date",
+      "type": "Date"
+    },
+    {
+      "name": "Quantity",
+      "label": "Quantity",
+      "type": "Number",
+      "precision": 12,
+      "scale": 2
+    },
+    {
+      "name": "QuantityIncreasePricingType",
+      "label": "Quantity Increase Pricing Type",
+      "type": "Picklist",
+      "featureGated": true
     },
     {
       "name": "RecordTypeId",
       "label": "Record Type ID",
       "type": "Lookup",
-      "referenceTo": ["RecordType"],
+      "referenceTo": [
+        "RecordType"
+      ],
       "relationshipName": "RecordType"
     },
     {
-      "name": "LastReferencedDate",
-      "label": "Last Referenced Date",
-      "type": "DateTime",
+      "name": "Reliability",
+      "label": "Reliability",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
       "createable": false,
       "updateable": false
     },
     {
-      "name": "LastViewedDate",
-      "label": "Last Viewed Date",
-      "type": "DateTime",
+      "name": "RenewalPricingType",
+      "label": "Renewal Pricing Type",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "RenewalTerm",
+      "label": "Renewal Term",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "featureGated": true
+    },
+    {
+      "name": "RenewalTermUnit",
+      "label": "Renewal Term Unit",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "RootAssetId",
+      "label": "Root Asset",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Asset"
+      ],
+      "relationshipName": "RootAsset"
+    },
+    {
+      "name": "SerialNumber",
+      "label": "Serial Number",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "State",
+      "label": "State",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "picklistValues": [
+        {
+          "value": "Purchased",
+          "label": "Purchased"
+        },
+        {
+          "value": "Shipped",
+          "label": "Shipped"
+        },
+        {
+          "value": "Installed",
+          "label": "Installed"
+        },
+        {
+          "value": "Registered",
+          "label": "Registered"
+        },
+        {
+          "value": "Obsolete",
+          "label": "Obsolete"
+        }
+      ]
+    },
+    {
+      "name": "StatusReason",
+      "label": "Status Reason",
+      "type": "Picklist"
+    },
+    {
+      "name": "StockKeepingUnit",
+      "label": "Stock Keeping Unit",
+      "type": "Text",
+      "length": 180,
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "Street",
+      "label": "Street",
+      "type": "TextArea",
+      "length": 255
+    },
+    {
+      "name": "SumDowntime",
+      "label": "Cumulative Downtime",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SumUnplannedDowntime",
+      "label": "Cumulative Unplanned Downtime",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalLifecycleAmount",
+      "label": "Total Lifecycle Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "UnitPriceUplift",
+      "label": "Unit Price Uplift",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UptimeRecordEnd",
+      "label": "Uptime Record End Date",
+      "type": "DateTime"
+    },
+    {
+      "name": "UptimeRecordStart",
+      "label": "Uptime Record Start Date",
+      "type": "DateTime"
+    },
+    {
+      "name": "UsageEndDate",
+      "label": "Usage End Date",
+      "type": "Date"
+    },
+    {
+      "name": "Uuid",
+      "label": "Unique Identifier",
+      "type": "Text",
+      "length": 255
     }
   ]
 }

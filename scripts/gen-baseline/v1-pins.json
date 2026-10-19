@@ -1,0 +1,3653 @@
+{
+  "Account": {
+    "object": {
+      "label": "Account",
+      "labelPlural": "Accounts",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountNumber": {},
+      "AccountSource": {
+        "standardValueSet": "LeadSource"
+      },
+      "AnnualRevenue": {
+        "scale": 0
+      },
+      "BillingAddress": {},
+      "BillingCity": {},
+      "BillingCountry": {},
+      "BillingGeocodeAccuracy": {
+        "picklistValues": []
+      },
+      "BillingLatitude": {},
+      "BillingLongitude": {},
+      "BillingPostalCode": {},
+      "BillingState": {},
+      "BillingStreet": {},
+      "ChannelProgramLevelName": {},
+      "ChannelProgramName": {},
+      "CleanStatus": {
+        "picklistValues": [
+          {
+            "value": "Matched",
+            "label": "Matched"
+          },
+          {
+            "value": "Different",
+            "label": "Different"
+          },
+          {
+            "value": "Acknowledged",
+            "label": "Acknowledged"
+          },
+          {
+            "value": "NotFound",
+            "label": "NotFound"
+          },
+          {
+            "value": "Inactive",
+            "label": "Inactive"
+          },
+          {
+            "value": "Pending",
+            "label": "Pending"
+          },
+          {
+            "value": "SelectMatch",
+            "label": "SelectMatch"
+          },
+          {
+            "value": "Skipped",
+            "label": "Skipped"
+          }
+        ]
+      },
+      "DandbCompanyId": {
+        "referenceTo": [
+          "DandBCompany"
+        ],
+        "relationshipName": "DandbCompany"
+      },
+      "Description": {},
+      "DunsNumber": {},
+      "Fax": {},
+      "Industry": {
+        "standardValueSet": "Industry"
+      },
+      "IsCustomerPortal": {
+        "defaultValue": "false"
+      },
+      "IsPartner": {
+        "defaultValue": "false"
+      },
+      "IsPriorityRecord": {
+        "defaultValue": "false"
+      },
+      "Jigsaw": {},
+      "LastActivityDate": {},
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "MasterRecordId": {},
+      "NaicsCode": {},
+      "NaicsDesc": {},
+      "Name": {
+        "nameField": true
+      },
+      "NumberOfEmployees": {
+        "precision": 8
+      },
+      "OperatingHoursId": {},
+      "Ownership": {
+        "standardValueSet": "AccountOwnership"
+      },
+      "ParentId": {
+        "childRelationshipName": "ChildAccounts"
+      },
+      "Phone": {},
+      "PhotoUrl": {},
+      "Rating": {
+        "standardValueSet": "AccountRating"
+      },
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "ShippingAddress": {},
+      "ShippingCity": {},
+      "ShippingCountry": {},
+      "ShippingGeocodeAccuracy": {
+        "picklistValues": []
+      },
+      "ShippingLatitude": {},
+      "ShippingLongitude": {},
+      "ShippingPostalCode": {},
+      "ShippingState": {},
+      "ShippingStreet": {},
+      "Sic": {},
+      "SicDesc": {},
+      "Site": {},
+      "TickerSymbol": {},
+      "Tier": {
+        "label": "Tier",
+        "type": "Picklist",
+        "picklistValues": [],
+        "restrictedPicklist": true
+      },
+      "Tradestyle": {},
+      "Type": {
+        "standardValueSet": "AccountType"
+      },
+      "Website": {},
+      "YearStarted": {}
+    }
+  },
+  "Asset": {
+    "object": {
+      "label": "Asset",
+      "labelPlural": "Assets",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountId": {
+        "childRelationshipName": "Assets"
+      },
+      "AssetLevel": {
+        "precision": 3
+      },
+      "AssetProvidedById": {},
+      "AssetServicedById": {},
+      "ContactId": {
+        "childRelationshipName": "Assets"
+      },
+      "Description": {
+        "label": "Asset Description"
+      },
+      "InstallDate": {},
+      "IsCompetitorProduct": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "IsInternal": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "Name": {
+        "nameField": true
+      },
+      "ParentId": {
+        "label": "Parent Asset",
+        "childRelationshipName": "ChildAssets"
+      },
+      "Price": {},
+      "Product2Id": {
+        "label": "Product",
+        "childRelationshipName": "Assets"
+      },
+      "ProductCode": {},
+      "ProductDescription": {
+        "length": 255
+      },
+      "ProductFamily": {
+        "picklistValues": []
+      },
+      "PurchaseDate": {},
+      "Quantity": {
+        "precision": 12,
+        "scale": 2
+      },
+      "RecordTypeId": {
+        "nillable": null
+      },
+      "RootAssetId": {
+        "label": "Root Asset",
+        "createable": false,
+        "updateable": false,
+        "referenceTo": [
+          "Asset"
+        ],
+        "relationshipName": "RootAsset"
+      },
+      "SerialNumber": {},
+      "Status": {
+        "picklistValues": [
+          {
+            "value": "Purchased",
+            "label": "Purchased"
+          },
+          {
+            "value": "Shipped",
+            "label": "Shipped"
+          },
+          {
+            "value": "Installed",
+            "label": "Installed"
+          },
+          {
+            "value": "Registered",
+            "label": "Registered"
+          },
+          {
+            "value": "Obsolete",
+            "label": "Obsolete"
+          }
+        ]
+      },
+      "StockKeepingUnit": {
+        "label": "Stock Keeping Unit"
+      },
+      "UsageEndDate": {}
+    }
+  },
+  "BusinessHours": {
+    "object": {
+      "label": "Business Hours",
+      "labelPlural": "Business Hours",
+      "createable": true,
+      "updateable": true,
+      "deletable": false,
+      "undeletable": false,
+      "searchable": true,
+      "hasOwner": false
+    },
+    "fields": {
+      "IsActive": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "IsDefault": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "Name": {
+        "nameField": true
+      }
+    }
+  },
+  "BusinessProcess": {
+    "object": {
+      "label": "Business Process",
+      "labelPlural": "Business Processes",
+      "createable": true,
+      "updateable": true,
+      "deletable": false,
+      "undeletable": false,
+      "searchable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "Name": {
+        "nameField": true
+      }
+    }
+  },
+  "CallCenter": {
+    "object": {
+      "label": "Call Center",
+      "labelPlural": "Call Centers",
+      "createable": true,
+      "updateable": false,
+      "deletable": false,
+      "undeletable": false,
+      "searchable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "Name": {
+        "label": "Call Center Name",
+        "length": 80,
+        "nameField": true
+      }
+    }
+  },
+  "Campaign": {
+    "object": {
+      "label": "Campaign",
+      "labelPlural": "Campaigns",
+      "hasOwner": true
+    },
+    "fields": {
+      "ActualCost": {
+        "createable": null,
+        "updateable": null
+      },
+      "AmountAllOpportunities": {
+        "nillable": null
+      },
+      "AmountWonOpportunities": {
+        "nillable": null
+      },
+      "BudgetedCost": {
+        "createable": null,
+        "updateable": null
+      },
+      "CampaignMemberRecordTypeId": {
+        "label": "Campaign Member Record Type ID",
+        "createable": null,
+        "updateable": null
+      },
+      "Description": {
+        "createable": null,
+        "updateable": null
+      },
+      "EndDate": {
+        "createable": null,
+        "updateable": null
+      },
+      "ExpectedResponse": {
+        "createable": null,
+        "updateable": null
+      },
+      "ExpectedRevenue": {
+        "createable": null,
+        "updateable": null
+      },
+      "HierarchyActualCost": {
+        "label": "Total Actual Cost in Hierarchy"
+      },
+      "HierarchyAmountAllOpportunities": {
+        "label": "Value Opportunities in Hierarchy",
+        "nillable": null
+      },
+      "HierarchyAmountWonOpportunities": {
+        "label": "Value Won Opportunities in Hierarchy",
+        "nillable": null
+      },
+      "HierarchyBudgetedCost": {
+        "label": "Total Budgeted Cost in Hierarchy"
+      },
+      "HierarchyExpectedRevenue": {
+        "label": "Total Expected Revenue in Hierarchy"
+      },
+      "HierarchyNumberOfContacts": {
+        "label": "Total Contacts in Hierarchy",
+        "precision": 8,
+        "nillable": null
+      },
+      "HierarchyNumberOfConvertedLeads": {
+        "label": "Converted Leads in Hierarchy",
+        "type": "Number",
+        "precision": 8,
+        "scale": 0
+      },
+      "HierarchyNumberOfLeads": {
+        "label": "Leads in Hierarchy",
+        "type": "Number",
+        "precision": 8,
+        "scale": 0
+      },
+      "HierarchyNumberOfOpportunities": {
+        "label": "Opportunities in Hierarchy",
+        "type": "Number",
+        "precision": 8,
+        "scale": 0
+      },
+      "HierarchyNumberOfResponses": {
+        "label": "Responses in Hierarchy",
+        "type": "Number",
+        "precision": 8,
+        "scale": 0
+      },
+      "HierarchyNumberOfWonOpportunities": {
+        "label": "Won Opportunities in Hierarchy",
+        "precision": 8,
+        "nillable": null
+      },
+      "HierarchyNumberSent": {
+        "label": "Num Sent in Hierarchy",
+        "scale": 0
+      },
+      "IsActive": {
+        "createable": null,
+        "updateable": null,
+        "defaultValue": "false"
+      },
+      "LastActivityDate": {},
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "Name": {
+        "label": "Campaign Name",
+        "createable": null,
+        "updateable": null,
+        "nameField": true
+      },
+      "NumberOfContacts": {
+        "label": "Total Contacts",
+        "precision": 8,
+        "nillable": null
+      },
+      "NumberOfConvertedLeads": {
+        "label": "Converted Leads",
+        "precision": 8,
+        "nillable": null
+      },
+      "NumberOfLeads": {
+        "precision": 8,
+        "nillable": null
+      },
+      "NumberOfOpportunities": {
+        "precision": 8,
+        "nillable": null
+      },
+      "NumberOfResponses": {
+        "precision": 8,
+        "nillable": null
+      },
+      "NumberOfWonOpportunities": {
+        "precision": 8,
+        "nillable": null
+      },
+      "NumberSent": {
+        "label": "Num Sent",
+        "scale": 0,
+        "createable": null,
+        "updateable": null
+      },
+      "ParentId": {
+        "label": "Parent ID",
+        "createable": null,
+        "updateable": null,
+        "childRelationshipName": "ChildCampaigns"
+      },
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "StartDate": {
+        "createable": null,
+        "updateable": null
+      },
+      "Status": {
+        "createable": null,
+        "updateable": null,
+        "standardValueSet": "CampaignStatus"
+      },
+      "Type": {
+        "createable": null,
+        "updateable": null,
+        "standardValueSet": "CampaignType"
+      }
+    }
+  },
+  "CampaignMember": {
+    "object": {
+      "label": "Campaign Member",
+      "labelPlural": "Campaign Members",
+      "hasOwner": false
+    },
+    "fields": {
+      "CampaignId": {
+        "childRelationshipName": "CampaignMembers"
+      },
+      "City": {},
+      "CompanyOrAccount": {
+        "label": "Company / Account"
+      },
+      "ContactId": {},
+      "Country": {},
+      "DoNotCall": {
+        "defaultValue": "false"
+      },
+      "Email": {
+        "length": null
+      },
+      "Fax": {
+        "length": null
+      },
+      "FirstName": {},
+      "FirstRespondedDate": {},
+      "HasOptedOutOfEmail": {
+        "defaultValue": "false"
+      },
+      "HasOptedOutOfFax": {
+        "defaultValue": "false"
+      },
+      "HasResponded": {
+        "defaultValue": "false"
+      },
+      "LastName": {},
+      "LeadId": {},
+      "LeadSource": {
+        "standardValueSet": "LeadSource"
+      },
+      "MobilePhone": {
+        "length": null
+      },
+      "Name": {
+        "nameField": true
+      },
+      "Phone": {
+        "length": null
+      },
+      "PostalCode": {},
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "Salutation": {
+        "standardValueSet": "Salutation"
+      },
+      "State": {},
+      "Status": {
+        "label": "Member Status",
+        "defaultedOnCreate": true,
+        "standardValueSet": "CampaignMemberStatus"
+      },
+      "Street": {},
+      "Title": {},
+      "Type": {}
+    }
+  },
+  "Case": {
+    "object": {
+      "label": "Case",
+      "labelPlural": "Cases",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountId": {
+        "childRelationshipName": "Cases"
+      },
+      "AssetId": {
+        "referenceTo": [
+          "Asset"
+        ],
+        "relationshipName": "Asset",
+        "childRelationshipName": "Cases"
+      },
+      "BusinessHoursId": {
+        "nillable": null,
+        "referenceTo": [
+          "BusinessHours"
+        ],
+        "relationshipName": "BusinessHours"
+      },
+      "CaseNumber": {
+        "type": "AutoNumber",
+        "length": null,
+        "nillable": null,
+        "nameField": true,
+        "displayFormat": "{00000000}"
+      },
+      "ClosedDate": {},
+      "Comments": {
+        "updateable": false
+      },
+      "ContactEmail": {
+        "length": null
+      },
+      "ContactFax": {
+        "length": null
+      },
+      "ContactId": {
+        "childRelationshipName": "Cases"
+      },
+      "ContactMobile": {
+        "length": null
+      },
+      "ContactPhone": {
+        "length": null
+      },
+      "Description": {},
+      "EntitlementId": {
+        "label": "Entitlement ID",
+        "type": "Lookup",
+        "referenceTo": [
+          "Entitlement"
+        ],
+        "relationshipName": "Entitlement"
+      },
+      "HasCommentsUnreadByOwner": {
+        "defaultValue": "false"
+      },
+      "IsClosed": {
+        "defaultValue": "false"
+      },
+      "IsClosedOnCreate": {
+        "defaultValue": "false"
+      },
+      "IsEscalated": {
+        "defaultValue": "false"
+      },
+      "IsStopped": {
+        "label": "Stopped",
+        "defaultValue": "false"
+      },
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "MasterRecordId": {},
+      "MilestoneStatus": {
+        "label": "Milestone Status",
+        "type": "Text",
+        "length": 255,
+        "createable": false,
+        "updateable": false
+      },
+      "MilestoneStatusIcon": {
+        "label": "Milestone Status Icon",
+        "type": "Text",
+        "length": 255,
+        "createable": false,
+        "updateable": false
+      },
+      "Origin": {
+        "standardValueSet": "CaseOrigin"
+      },
+      "ParentId": {
+        "childRelationshipName": "Cases"
+      },
+      "Priority": {
+        "standardValueSet": "CasePriority"
+      },
+      "ProductId": {
+        "label": "Product ID",
+        "type": "Lookup",
+        "referenceTo": [
+          "Product2"
+        ],
+        "relationshipName": "Product",
+        "childRelationshipName": "Cases"
+      },
+      "Reason": {
+        "standardValueSet": "CaseReason"
+      },
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "ServiceContractId": {
+        "referenceTo": [
+          "ServiceContract"
+        ],
+        "relationshipName": "ServiceContract"
+      },
+      "SlaExitDate": {
+        "label": "SLA Exit Date",
+        "type": "DateTime"
+      },
+      "SlaStartDate": {
+        "label": "SLA Start Date"
+      },
+      "SourceId": {
+        "label": "Source ID",
+        "referenceTo": [
+          "SocialPost"
+        ],
+        "relationshipName": "Source"
+      },
+      "Status": {
+        "standardValueSet": "CaseStatus"
+      },
+      "StopStartDate": {},
+      "Subject": {},
+      "SuppliedCompany": {},
+      "SuppliedEmail": {
+        "label": "Email",
+        "length": null
+      },
+      "SuppliedName": {},
+      "SuppliedPhone": {},
+      "Type": {
+        "standardValueSet": "CaseType"
+      }
+    }
+  },
+  "Contact": {
+    "object": {
+      "label": "Contact",
+      "labelPlural": "Contacts",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountId": {
+        "childRelationshipName": "Contacts"
+      },
+      "AssistantName": {},
+      "AssistantPhone": {},
+      "Birthdate": {},
+      "BuyerAttributes": {
+        "length": 4099,
+        "picklistValues": [
+          {
+            "value": "BusinessUser",
+            "label": "BusinessUser"
+          },
+          {
+            "value": "Buyer",
+            "label": "Buyer"
+          },
+          {
+            "value": "Champion",
+            "label": "Champion"
+          },
+          {
+            "value": "DecisionMaker",
+            "label": "DecisionMaker"
+          },
+          {
+            "value": "Detractor",
+            "label": "Detractor"
+          },
+          {
+            "value": "Evaluator",
+            "label": "Evaluator"
+          },
+          {
+            "value": "ExecutiveSponsor",
+            "label": "ExecutiveSponsor"
+          },
+          {
+            "value": "TechnicalExpert",
+            "label": "TechnicalExpert"
+          }
+        ]
+      },
+      "CleanStatus": {
+        "picklistValues": [
+          {
+            "value": "Matched",
+            "label": "Matched"
+          },
+          {
+            "value": "Different",
+            "label": "Different"
+          },
+          {
+            "value": "Acknowledged",
+            "label": "Acknowledged"
+          },
+          {
+            "value": "NotFound",
+            "label": "NotFound"
+          },
+          {
+            "value": "Inactive",
+            "label": "Inactive"
+          },
+          {
+            "value": "Pending",
+            "label": "Pending"
+          },
+          {
+            "value": "SelectMatch",
+            "label": "SelectMatch"
+          },
+          {
+            "value": "Skipped",
+            "label": "Skipped"
+          }
+        ]
+      },
+      "ContactSource": {
+        "picklistValues": [
+          {
+            "value": "Auto Create",
+            "label": "Auto Create"
+          }
+        ]
+      },
+      "Department": {},
+      "Description": {},
+      "DoNotCall": {
+        "defaultValue": "false"
+      },
+      "Email": {},
+      "EmailBouncedDate": {
+        "createable": false,
+        "updateable": false
+      },
+      "EmailBouncedReason": {
+        "createable": false,
+        "updateable": false
+      },
+      "Fax": {},
+      "FirstName": {
+        "compoundFieldName": "Name"
+      },
+      "GenderIdentity": {
+        "picklistValues": []
+      },
+      "HasOptedOutOfEmail": {
+        "defaultValue": "false"
+      },
+      "HasOptedOutOfFax": {
+        "defaultValue": "false"
+      },
+      "HomePhone": {},
+      "IndividualId": {},
+      "IsEmailBounced": {
+        "defaultValue": "false"
+      },
+      "IsPriorityRecord": {
+        "defaultValue": "false"
+      },
+      "Jigsaw": {},
+      "LastActivityDate": {},
+      "LastCURequestDate": {
+        "createable": false,
+        "updateable": false
+      },
+      "LastCUUpdateDate": {
+        "createable": false,
+        "updateable": false
+      },
+      "LastName": {
+        "compoundFieldName": "Name"
+      },
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "LeadSource": {
+        "standardValueSet": "LeadSource"
+      },
+      "MailingAddress": {},
+      "MailingCity": {},
+      "MailingCountry": {},
+      "MailingGeocodeAccuracy": {
+        "picklistValues": []
+      },
+      "MailingLatitude": {},
+      "MailingLongitude": {},
+      "MailingPostalCode": {},
+      "MailingState": {},
+      "MailingStreet": {},
+      "MasterRecordId": {},
+      "MobilePhone": {},
+      "Name": {
+        "type": "Name",
+        "nillable": null,
+        "nameField": true
+      },
+      "OtherAddress": {},
+      "OtherCity": {},
+      "OtherCountry": {},
+      "OtherGeocodeAccuracy": {
+        "picklistValues": []
+      },
+      "OtherLatitude": {},
+      "OtherLongitude": {},
+      "OtherPhone": {},
+      "OtherPostalCode": {},
+      "OtherState": {},
+      "OtherStreet": {},
+      "Phone": {},
+      "PhotoUrl": {},
+      "Pronouns": {
+        "picklistValues": []
+      },
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "ReportsToId": {},
+      "Salutation": {
+        "standardValueSet": "Salutation",
+        "compoundFieldName": "Name"
+      },
+      "Title": {}
+    }
+  },
+  "Contract": {
+    "object": {
+      "label": "Contract",
+      "labelPlural": "Contracts",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountId": {
+        "childRelationshipName": "Contracts"
+      },
+      "ActivatedById": {
+        "updateable": false
+      },
+      "ActivatedDate": {
+        "updateable": false
+      },
+      "BillingAddress": {},
+      "BillingCity": {},
+      "BillingCountry": {},
+      "BillingGeocodeAccuracy": {
+        "picklistValues": [
+          {
+            "value": "Address",
+            "label": "Address"
+          },
+          {
+            "value": "NearAddress",
+            "label": "Near Address"
+          },
+          {
+            "value": "Block",
+            "label": "Block"
+          },
+          {
+            "value": "Street",
+            "label": "Street"
+          },
+          {
+            "value": "ExtendedZip",
+            "label": "Extended Zip"
+          },
+          {
+            "value": "Zip",
+            "label": "Zip"
+          },
+          {
+            "value": "Neighborhood",
+            "label": "Neighborhood"
+          },
+          {
+            "value": "City",
+            "label": "City"
+          },
+          {
+            "value": "County",
+            "label": "County"
+          },
+          {
+            "value": "State",
+            "label": "State"
+          },
+          {
+            "value": "Unknown",
+            "label": "Unknown"
+          }
+        ]
+      },
+      "BillingLatitude": {},
+      "BillingLongitude": {},
+      "BillingPostalCode": {},
+      "BillingState": {},
+      "BillingStreet": {},
+      "CompanySignedDate": {},
+      "CompanySignedId": {},
+      "ContractNumber": {
+        "type": "AutoNumber",
+        "length": null,
+        "nillable": null,
+        "nameField": true,
+        "displayFormat": "{00000000}"
+      },
+      "ContractTerm": {
+        "label": "Contract Term (months)",
+        "precision": 4
+      },
+      "CustomerSignedDate": {},
+      "CustomerSignedId": {},
+      "CustomerSignedTitle": {},
+      "Description": {},
+      "EndDate": {},
+      "LastActivityDate": {},
+      "LastApprovedDate": {},
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "Name": {},
+      "OwnerExpirationNotice": {
+        "picklistValues": [
+          {
+            "value": "15",
+            "label": "15 Days"
+          },
+          {
+            "value": "30",
+            "label": "30 Days"
+          },
+          {
+            "value": "45",
+            "label": "45 Days"
+          },
+          {
+            "value": "60",
+            "label": "60 Days"
+          },
+          {
+            "value": "90",
+            "label": "90 Days"
+          },
+          {
+            "value": "120",
+            "label": "120 Days"
+          }
+        ]
+      },
+      "Pricebook2Id": {
+        "referenceTo": [
+          "Pricebook2"
+        ],
+        "relationshipName": "Pricebook2",
+        "childRelationshipName": "Contracts"
+      },
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "ShippingAddress": {},
+      "ShippingCity": {},
+      "ShippingCountry": {},
+      "ShippingGeocodeAccuracy": {
+        "picklistValues": [
+          {
+            "value": "Address",
+            "label": "Address"
+          },
+          {
+            "value": "NearAddress",
+            "label": "Near Address"
+          },
+          {
+            "value": "Block",
+            "label": "Block"
+          },
+          {
+            "value": "Street",
+            "label": "Street"
+          },
+          {
+            "value": "ExtendedZip",
+            "label": "Extended Zip"
+          },
+          {
+            "value": "Zip",
+            "label": "Zip"
+          },
+          {
+            "value": "Neighborhood",
+            "label": "Neighborhood"
+          },
+          {
+            "value": "City",
+            "label": "City"
+          },
+          {
+            "value": "County",
+            "label": "County"
+          },
+          {
+            "value": "State",
+            "label": "State"
+          },
+          {
+            "value": "Unknown",
+            "label": "Unknown"
+          }
+        ]
+      },
+      "ShippingLatitude": {},
+      "ShippingLongitude": {},
+      "ShippingPostalCode": {},
+      "ShippingState": {},
+      "ShippingStreet": {},
+      "SpecialTerms": {},
+      "StartDate": {},
+      "Status": {
+        "standardValueSet": "ContractStatus",
+        "restrictedPicklist": null
+      },
+      "StatusCode": {
+        "picklistValues": [
+          {
+            "value": "Draft",
+            "label": "Draft"
+          },
+          {
+            "value": "InApproval",
+            "label": "In Approval Process"
+          },
+          {
+            "value": "Activated",
+            "label": "Activated"
+          },
+          {
+            "value": "Terminated",
+            "label": "Terminated"
+          },
+          {
+            "value": "Expired",
+            "label": "Expired"
+          }
+        ]
+      }
+    }
+  },
+  "DandBCompany": {
+    "object": {
+      "label": "D&B Company",
+      "labelPlural": "D&B Companies",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": false
+    },
+    "fields": {
+      "Name": {
+        "label": "Company Name",
+        "nameField": true
+      }
+    }
+  },
+  "Entitlement": {
+    "object": {
+      "label": "Entitlement",
+      "labelPlural": "Entitlements",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": false
+    },
+    "fields": {
+      "Name": {
+        "nameField": true,
+        "sortable": false,
+        "groupable": false
+      }
+    }
+  },
+  "Event": {
+    "object": {
+      "label": "Event",
+      "labelPlural": "Events",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountId": {
+        "childRelationshipName": "Events"
+      },
+      "ActivityDate": {},
+      "ActivityDateTime": {},
+      "Attendees": {
+        "label": "Attendees",
+        "type": "Text",
+        "length": 255
+      },
+      "Description": {},
+      "DurationInMinutes": {
+        "label": "Duration (Minutes)",
+        "precision": 4
+      },
+      "Email": {
+        "label": "Email",
+        "type": "Email",
+        "createable": false,
+        "updateable": false
+      },
+      "EndDate": {},
+      "EndDateTime": {
+        "label": "End Date/Time"
+      },
+      "EventSubtype": {
+        "picklistValues": [
+          {
+            "value": "Event",
+            "label": "Event",
+            "default": true
+          },
+          {
+            "value": "Meeting",
+            "label": "Meeting"
+          },
+          {
+            "value": "Call",
+            "label": "Call"
+          },
+          {
+            "value": "Email",
+            "label": "Email"
+          }
+        ]
+      },
+      "IsAllDayEvent": {
+        "defaultValue": "false"
+      },
+      "IsArchived": {
+        "defaultValue": "false"
+      },
+      "IsPrivate": {
+        "defaultValue": "false"
+      },
+      "IsRecurrence": {
+        "label": "Recurrence",
+        "defaultValue": "false"
+      },
+      "IsRecurrence2": {
+        "defaultValue": "false"
+      },
+      "IsReminderSet": {
+        "defaultValue": "false"
+      },
+      "IsVisibleInSelfService": {
+        "label": "Visible in Self Service",
+        "defaultValue": "false"
+      },
+      "Location": {},
+      "Phone": {
+        "label": "Phone",
+        "type": "Phone",
+        "createable": false,
+        "updateable": false
+      },
+      "RecurrenceActivityId": {
+        "referenceTo": [
+          "Event"
+        ],
+        "relationshipName": "RecurrenceActivity"
+      },
+      "RecurrenceDayOfMonth": {
+        "label": "Day of Month",
+        "precision": 2
+      },
+      "RecurrenceDayOfWeekMask": {
+        "label": "Day of Week Mask",
+        "precision": 3
+      },
+      "RecurrenceEndDateOnly": {},
+      "RecurrenceInstance": {
+        "picklistValues": [
+          {
+            "value": "First",
+            "label": "First"
+          },
+          {
+            "value": "Second",
+            "label": "Second"
+          },
+          {
+            "value": "Third",
+            "label": "Third"
+          },
+          {
+            "value": "Fourth",
+            "label": "Fourth"
+          },
+          {
+            "value": "Last",
+            "label": "Last"
+          }
+        ]
+      },
+      "RecurrenceInterval": {
+        "precision": 3
+      },
+      "RecurrenceMonthOfYear": {
+        "picklistValues": [
+          {
+            "value": "January",
+            "label": "January"
+          },
+          {
+            "value": "February",
+            "label": "February"
+          },
+          {
+            "value": "March",
+            "label": "March"
+          },
+          {
+            "value": "April",
+            "label": "April"
+          },
+          {
+            "value": "May",
+            "label": "May"
+          },
+          {
+            "value": "June",
+            "label": "June"
+          },
+          {
+            "value": "July",
+            "label": "July"
+          },
+          {
+            "value": "August",
+            "label": "August"
+          },
+          {
+            "value": "September",
+            "label": "September"
+          },
+          {
+            "value": "October",
+            "label": "October"
+          },
+          {
+            "value": "November",
+            "label": "November"
+          },
+          {
+            "value": "December",
+            "label": "December"
+          }
+        ]
+      },
+      "RecurrenceStartDateTime": {},
+      "RecurrenceTimeZoneSidKey": {
+        "label": "Time Zone",
+        "picklistValues": [
+          {
+            "value": "GMT",
+            "label": "(GMT+00:00) Greenwich Mean Time (GMT)"
+          },
+          {
+            "value": "Europe/London",
+            "label": "(GMT+00:00) British Time (Europe/London)"
+          },
+          {
+            "value": "Europe/Stockholm",
+            "label": "(GMT+01:00) Central European Time (Europe/Stockholm)"
+          },
+          {
+            "value": "Europe/Berlin",
+            "label": "(GMT+01:00) Central European Time (Europe/Berlin)"
+          },
+          {
+            "value": "Europe/Paris",
+            "label": "(GMT+01:00) Central European Time (Europe/Paris)"
+          },
+          {
+            "value": "Europe/Helsinki",
+            "label": "(GMT+02:00) Eastern European Time (Europe/Helsinki)"
+          },
+          {
+            "value": "America/New_York",
+            "label": "(GMT-05:00) Eastern Standard Time (America/New_York)"
+          },
+          {
+            "value": "America/Chicago",
+            "label": "(GMT-06:00) Central Standard Time (America/Chicago)"
+          },
+          {
+            "value": "America/Denver",
+            "label": "(GMT-07:00) Mountain Standard Time (America/Denver)"
+          },
+          {
+            "value": "America/Los_Angeles",
+            "label": "(GMT-08:00) Pacific Standard Time (America/Los_Angeles)"
+          },
+          {
+            "value": "Asia/Tokyo",
+            "label": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)"
+          },
+          {
+            "value": "Australia/Sydney",
+            "label": "(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)"
+          }
+        ]
+      },
+      "RecurrenceType": {
+        "picklistValues": [
+          {
+            "value": "RecursDaily",
+            "label": "Daily"
+          },
+          {
+            "value": "RecursEveryWeekday",
+            "label": "Every Weekday (Mon-Fri)"
+          },
+          {
+            "value": "RecursMonthly",
+            "label": "Monthly"
+          },
+          {
+            "value": "RecursMonthlyNth",
+            "label": "Monthly Nth"
+          },
+          {
+            "value": "RecursWeekly",
+            "label": "Weekly"
+          },
+          {
+            "value": "RecursYearly",
+            "label": "Yearly"
+          },
+          {
+            "value": "RecursYearlyNth",
+            "label": "Yearly Nth"
+          }
+        ]
+      },
+      "ReminderDateTime": {},
+      "ServiceAppointmentId": {
+        "label": "Service Appointment ID",
+        "type": "Lookup",
+        "createable": false,
+        "updateable": false,
+        "referenceTo": [
+          "ServiceAppointment"
+        ],
+        "relationshipName": "ServiceAppointment"
+      },
+      "ShowAs": {
+        "picklistValues": [
+          {
+            "value": "Busy",
+            "label": "Busy",
+            "default": true
+          },
+          {
+            "value": "OutOfOffice",
+            "label": "Out of Office"
+          },
+          {
+            "value": "Free",
+            "label": "Free"
+          }
+        ]
+      },
+      "StartDateTime": {
+        "label": "Start Date/Time"
+      },
+      "Subject": {
+        "nameField": true,
+        "standardValueSet": "EventSubject"
+      },
+      "Type": {
+        "standardValueSet": "EventType"
+      },
+      "WhatId": {
+        "referenceTo": [
+          "Account",
+          "Opportunity",
+          "Case",
+          "Campaign",
+          "Product2",
+          "Asset",
+          "Contract"
+        ]
+      },
+      "WhoId": {}
+    }
+  },
+  "ExternalDataSource": {
+    "object": {
+      "label": "External Data Source",
+      "labelPlural": "External Data Sources",
+      "createable": false,
+      "updateable": false,
+      "deletable": false,
+      "undeletable": false,
+      "searchable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "DeveloperName": {
+        "nameField": true
+      }
+    }
+  },
+  "Group": {
+    "object": {
+      "label": "Group",
+      "labelPlural": "Groups",
+      "deletable": true,
+      "hasOwner": true
+    },
+    "fields": {
+      "DeveloperName": {
+        "label": "API Name"
+      },
+      "DoesIncludeBosses": {
+        "label": "Grant Access Using Hierarchies",
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "DoesSendEmailToMembers": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "Email": {
+        "label": "Group Email",
+        "length": null
+      },
+      "Name": {
+        "label": "Group Name",
+        "nameField": true
+      },
+      "RelatedId": {},
+      "Type": {
+        "label": "Group Type",
+        "picklistValues": [
+          {
+            "value": "Regular",
+            "label": "Regular",
+            "default": true
+          },
+          {
+            "value": "Role",
+            "label": "Role"
+          },
+          {
+            "value": "RoleAndSubordinates",
+            "label": "Role and Subordinates"
+          },
+          {
+            "value": "RoleAndSubordinatesInternal",
+            "label": "Role and Subordinates, Internal"
+          },
+          {
+            "value": "Queue",
+            "label": "Queue"
+          },
+          {
+            "value": "AllCustomerPortal",
+            "label": "All Customer Portal Users"
+          },
+          {
+            "value": "Organization",
+            "label": "Organization"
+          },
+          {
+            "value": "PRMOrganization",
+            "label": "Partner Organization"
+          },
+          {
+            "value": "Territory",
+            "label": "Territory"
+          },
+          {
+            "value": "TerritoryAndSubordinates",
+            "label": "Territory and Subordinates"
+          },
+          {
+            "value": "Manager",
+            "label": "Manager Group"
+          },
+          {
+            "value": "ManagerAndSubordinatesInternal",
+            "label": "Manager Group and Subordinates, Internal"
+          },
+          {
+            "value": "ChannelProgramGroup",
+            "label": "Channel Program Group"
+          },
+          {
+            "value": "GuestUserGroup",
+            "label": "Guest User Group"
+          }
+        ]
+      }
+    }
+  },
+  "IdeaTheme": {
+    "object": {
+      "label": "Idea Theme",
+      "labelPlural": "Idea Themes",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": false
+    },
+    "fields": {
+      "Title": {}
+    }
+  },
+  "Individual": {
+    "object": {
+      "label": "Individual",
+      "labelPlural": "Individuals",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": true
+    },
+    "fields": {
+      "FirstName": {
+        "compoundFieldName": "Name"
+      },
+      "LastName": {
+        "compoundFieldName": "Name"
+      },
+      "Name": {
+        "type": "Name",
+        "length": 121,
+        "nillable": null,
+        "nameField": true
+      }
+    }
+  },
+  "Lead": {
+    "object": {
+      "label": "Lead",
+      "labelPlural": "Leads",
+      "hasOwner": true
+    },
+    "fields": {
+      "Address": {},
+      "AnnualRevenue": {},
+      "CampaignId": {
+        "label": "Campaign ID",
+        "type": "Lookup",
+        "referenceTo": [
+          "Campaign"
+        ],
+        "relationshipName": "Campaign",
+        "childRelationshipName": "Leads"
+      },
+      "City": {
+        "compoundFieldName": "Address"
+      },
+      "CleanStatus": {
+        "picklistValues": [
+          {
+            "value": "Matched",
+            "label": "Matched"
+          },
+          {
+            "value": "Different",
+            "label": "Different"
+          },
+          {
+            "value": "Acknowledged",
+            "label": "Acknowledged"
+          },
+          {
+            "value": "NotFound",
+            "label": "NotFound"
+          },
+          {
+            "value": "Inactive",
+            "label": "Inactive"
+          },
+          {
+            "value": "Pending",
+            "label": "Pending"
+          },
+          {
+            "value": "SelectMatch",
+            "label": "SelectMatch"
+          },
+          {
+            "value": "Skipped",
+            "label": "Skipped"
+          }
+        ]
+      },
+      "Company": {
+        "nillable": false
+      },
+      "CompanyDunsNumber": {},
+      "ConvertedAccountId": {
+        "createable": false
+      },
+      "ConvertedContactId": {
+        "createable": false
+      },
+      "ConvertedDate": {
+        "createable": false
+      },
+      "ConvertedOpportunityId": {
+        "createable": false
+      },
+      "Country": {
+        "compoundFieldName": "Address"
+      },
+      "DandbCompanyId": {
+        "referenceTo": [
+          "DandBCompany"
+        ],
+        "relationshipName": "DandbCompany"
+      },
+      "Description": {},
+      "DoNotCall": {
+        "label": "Do Not Call",
+        "type": "Checkbox",
+        "nillable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "Email": {
+        "length": null
+      },
+      "EmailBouncedDate": {},
+      "EmailBouncedReason": {},
+      "Fax": {
+        "length": null
+      },
+      "FirstName": {
+        "compoundFieldName": "Name"
+      },
+      "GenderIdentity": {
+        "picklistValues": [
+          {
+            "value": "Male",
+            "label": "Male"
+          },
+          {
+            "value": "Female",
+            "label": "Female"
+          },
+          {
+            "value": "Non-Binary",
+            "label": "Non-Binary"
+          },
+          {
+            "value": "Not Listed",
+            "label": "Not Listed"
+          }
+        ]
+      },
+      "GeocodeAccuracy": {
+        "picklistValues": [
+          {
+            "value": "Address",
+            "label": "Address"
+          },
+          {
+            "value": "NearAddress",
+            "label": "Near Address"
+          },
+          {
+            "value": "Block",
+            "label": "Block"
+          },
+          {
+            "value": "Street",
+            "label": "Street"
+          },
+          {
+            "value": "ExtendedZip",
+            "label": "Extended Zip"
+          },
+          {
+            "value": "Zip",
+            "label": "Zip"
+          },
+          {
+            "value": "Neighborhood",
+            "label": "Neighborhood"
+          },
+          {
+            "value": "City",
+            "label": "City"
+          },
+          {
+            "value": "County",
+            "label": "County"
+          },
+          {
+            "value": "State",
+            "label": "State"
+          },
+          {
+            "value": "Unknown",
+            "label": "Unknown"
+          }
+        ],
+        "compoundFieldName": "Address"
+      },
+      "HasOptedOutOfEmail": {
+        "defaultValue": "false"
+      },
+      "HasOptedOutOfFax": {
+        "defaultValue": "false"
+      },
+      "IndividualId": {},
+      "Industry": {
+        "standardValueSet": "Industry"
+      },
+      "IsConverted": {
+        "createable": false,
+        "defaultValue": "false"
+      },
+      "IsPriorityRecord": {
+        "defaultValue": "false"
+      },
+      "IsUnreadByOwner": {
+        "defaultValue": "false"
+      },
+      "Jigsaw": {},
+      "LastActivityDate": {},
+      "LastName": {
+        "compoundFieldName": "Name"
+      },
+      "LastReferencedDate": {},
+      "LastTransferDate": {
+        "label": "Last Transfer Date",
+        "type": "Date",
+        "createable": false,
+        "updateable": false
+      },
+      "LastViewedDate": {},
+      "Latitude": {
+        "compoundFieldName": "Address"
+      },
+      "LeadSource": {
+        "standardValueSet": "LeadSource"
+      },
+      "Longitude": {
+        "compoundFieldName": "Address"
+      },
+      "MasterRecordId": {},
+      "MobilePhone": {
+        "length": null
+      },
+      "Name": {
+        "type": "Name",
+        "length": null,
+        "nameField": true
+      },
+      "NumberOfEmployees": {
+        "precision": 8
+      },
+      "Phone": {
+        "length": null
+      },
+      "PhotoUrl": {
+        "length": null
+      },
+      "PostalCode": {
+        "compoundFieldName": "Address"
+      },
+      "Pronouns": {
+        "picklistValues": [
+          {
+            "value": "He/Him",
+            "label": "He/Him"
+          },
+          {
+            "value": "She/Her",
+            "label": "She/Her"
+          },
+          {
+            "value": "They/Them",
+            "label": "They/Them"
+          },
+          {
+            "value": "He/They",
+            "label": "He/They"
+          },
+          {
+            "value": "She/They",
+            "label": "She/They"
+          },
+          {
+            "value": "They/He",
+            "label": "They/He"
+          },
+          {
+            "value": "They/She",
+            "label": "They/She"
+          },
+          {
+            "value": "Not Listed",
+            "label": "Not Listed"
+          }
+        ]
+      },
+      "Rating": {
+        "standardValueSet": "AccountRating"
+      },
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "Salutation": {
+        "standardValueSet": "Salutation",
+        "compoundFieldName": "Name"
+      },
+      "State": {
+        "compoundFieldName": "Address"
+      },
+      "Status": {
+        "label": "Lead Status",
+        "standardValueSet": "LeadStatus"
+      },
+      "Street": {
+        "compoundFieldName": "Address"
+      },
+      "Title": {},
+      "Website": {
+        "length": null
+      }
+    }
+  },
+  "OperatingHours": {
+    "object": {
+      "label": "Operating Hours",
+      "labelPlural": "Operating Hours",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": true
+    },
+    "fields": {
+      "Name": {
+        "length": 80,
+        "nameField": true
+      }
+    }
+  },
+  "Opportunity": {
+    "object": {
+      "label": "Opportunity",
+      "labelPlural": "Opportunities",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountId": {
+        "childRelationshipName": "Opportunities"
+      },
+      "Amount": {},
+      "CampaignId": {
+        "childRelationshipName": "Opportunities"
+      },
+      "CloseDate": {},
+      "ContactId": {
+        "referenceTo": [
+          "Contact"
+        ],
+        "relationshipName": "Contact"
+      },
+      "ContractId": {
+        "childRelationshipName": "Opportunities"
+      },
+      "Description": {},
+      "ExpectedRevenue": {},
+      "Fiscal": {},
+      "FiscalQuarter": {
+        "precision": 2
+      },
+      "FiscalYear": {
+        "precision": 4
+      },
+      "ForecastCategory": {
+        "picklistValues": [
+          {
+            "value": "Omitted",
+            "label": "Omitted"
+          },
+          {
+            "value": "Pipeline",
+            "label": "Pipeline"
+          },
+          {
+            "value": "BestCase",
+            "label": "Best Case"
+          },
+          {
+            "value": "Forecast",
+            "label": "Commit"
+          },
+          {
+            "value": "Closed",
+            "label": "Closed"
+          }
+        ]
+      },
+      "ForecastCategoryName": {
+        "picklistValues": [
+          {
+            "value": "Omitted",
+            "label": "Omitted"
+          },
+          {
+            "value": "Pipeline",
+            "label": "Pipeline"
+          },
+          {
+            "value": "Best Case",
+            "label": "Best Case"
+          },
+          {
+            "value": "Commit",
+            "label": "Commit"
+          },
+          {
+            "value": "Closed",
+            "label": "Closed"
+          }
+        ]
+      },
+      "HasOpenActivity": {
+        "defaultValue": "false"
+      },
+      "HasOpportunityLineItem": {
+        "defaultValue": "false"
+      },
+      "HasOverdueTask": {
+        "defaultValue": "false"
+      },
+      "IqScore": {
+        "label": "Opportunity Score",
+        "precision": 3
+      },
+      "IsClosed": {
+        "defaultValue": "false"
+      },
+      "IsPriorityRecord": {
+        "defaultValue": "false"
+      },
+      "IsPrivate": {
+        "defaultValue": "false"
+      },
+      "IsWon": {
+        "defaultValue": "false"
+      },
+      "LastActivityDate": {},
+      "LastAmountChangedHistoryId": {
+        "label": "Last Amount Changed History ID"
+      },
+      "LastCloseDateChangedHistoryId": {
+        "label": "Last Close Date Changed History ID"
+      },
+      "LastReferencedDate": {},
+      "LastStageChangeDate": {},
+      "LastViewedDate": {},
+      "LeadSource": {
+        "standardValueSet": "LeadSource"
+      },
+      "Name": {
+        "nameField": true
+      },
+      "NextStep": {},
+      "Pricebook2Id": {
+        "childRelationshipName": "Opportunities"
+      },
+      "Probability": {
+        "precision": 3,
+        "scale": 0
+      },
+      "PushCount": {
+        "precision": 9
+      },
+      "RecordTypeId": {
+        "referenceTo": [
+          "RecordType"
+        ],
+        "relationshipName": "RecordType"
+      },
+      "StageName": {
+        "standardValueSet": "OpportunityStage"
+      },
+      "TotalOpportunityQuantity": {
+        "scale": 2
+      },
+      "Type": {
+        "standardValueSet": "OpportunityType"
+      }
+    }
+  },
+  "OpportunityHistory": {
+    "object": {
+      "label": "Opportunity History",
+      "labelPlural": "Opportunity History",
+      "createable": false,
+      "updateable": false,
+      "deletable": false,
+      "undeletable": false,
+      "searchable": false,
+      "hasOwner": false
+    },
+    "fields": {}
+  },
+  "OpportunityLineItem": {
+    "object": {
+      "label": "Opportunity Product",
+      "labelPlural": "Opportunity Products",
+      "hasOwner": false
+    },
+    "fields": {
+      "Description": {},
+      "Discount": {
+        "precision": 3
+      },
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "ListPrice": {},
+      "Name": {
+        "length": 255,
+        "nameField": true
+      },
+      "OpportunityId": {
+        "childRelationshipName": "OpportunityLineItems"
+      },
+      "PricebookEntryId": {
+        "nillable": false,
+        "childRelationshipName": "OpportunityLineItems"
+      },
+      "Product2Id": {
+        "referenceTo": [
+          "Product2"
+        ],
+        "relationshipName": "Product2",
+        "childRelationshipName": "OpportunityLineItems"
+      },
+      "ProductCode": {},
+      "Quantity": {
+        "precision": 12,
+        "scale": 2
+      },
+      "ServiceDate": {},
+      "SortOrder": {
+        "precision": 3
+      },
+      "Subtotal": {},
+      "TotalPrice": {},
+      "UnitPrice": {}
+    }
+  },
+  "Organization": {
+    "object": {
+      "label": "Organization",
+      "labelPlural": "Organizations",
+      "createable": false,
+      "deletable": false,
+      "undeletable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "Address": {},
+      "City": {
+        "compoundFieldName": "Address"
+      },
+      "ComplianceBccEmail": {},
+      "Country": {
+        "compoundFieldName": "Address"
+      },
+      "DefaultAccountAccess": {
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "Private"
+          },
+          {
+            "value": "Read",
+            "label": "Public Read Only"
+          },
+          {
+            "value": "Edit",
+            "label": "Public Read/Write"
+          },
+          {
+            "value": "ReadEditTransfer",
+            "label": "Public Read/Write/Transfer"
+          }
+        ]
+      },
+      "DefaultCalendarAccess": {
+        "picklistValues": [
+          {
+            "value": "HideDetails",
+            "label": "Hide Details"
+          },
+          {
+            "value": "HideDetailsInsert",
+            "label": "Hide Details and Add Events"
+          },
+          {
+            "value": "ShowDetails",
+            "label": "Show Details"
+          },
+          {
+            "value": "ShowDetailsInsert",
+            "label": "Show Details and Add Events"
+          },
+          {
+            "value": "AllowEdits",
+            "label": "Full Access"
+          }
+        ]
+      },
+      "DefaultCaseAccess": {
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "Private"
+          },
+          {
+            "value": "Read",
+            "label": "Public Read Only"
+          },
+          {
+            "value": "Edit",
+            "label": "Public Read/Write"
+          },
+          {
+            "value": "ReadEditTransfer",
+            "label": "Public Read/Write/Transfer"
+          }
+        ]
+      },
+      "DefaultContactAccess": {
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "Private"
+          },
+          {
+            "value": "Read",
+            "label": "Public Read Only"
+          },
+          {
+            "value": "Edit",
+            "label": "Public Read/Write"
+          },
+          {
+            "value": "ControlledByParent",
+            "label": "Controlled by Parent"
+          }
+        ]
+      },
+      "DefaultLeadAccess": {
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "Private"
+          },
+          {
+            "value": "Read",
+            "label": "Public Read Only"
+          },
+          {
+            "value": "Edit",
+            "label": "Public Read/Write"
+          },
+          {
+            "value": "ReadEditTransfer",
+            "label": "Public Read/Write/Transfer"
+          }
+        ]
+      },
+      "DefaultLocaleSidKey": {
+        "picklistValues": [
+          {
+            "value": "en_US",
+            "label": "English (United States)"
+          },
+          {
+            "value": "en_GB",
+            "label": "English (United Kingdom)"
+          },
+          {
+            "value": "sv_SE",
+            "label": "Swedish (Sweden)"
+          },
+          {
+            "value": "de_DE",
+            "label": "German (Germany)"
+          },
+          {
+            "value": "fr_FR",
+            "label": "French (France)"
+          }
+        ]
+      },
+      "DefaultOpportunityAccess": {
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "Private"
+          },
+          {
+            "value": "Read",
+            "label": "Public Read Only"
+          },
+          {
+            "value": "Edit",
+            "label": "Public Read/Write"
+          },
+          {
+            "value": "ControlledByLeadOrContact",
+            "label": "Controlled by Lead or Contact"
+          },
+          {
+            "value": "ControlledByCampaign",
+            "label": "Controlled by Campaign"
+          }
+        ]
+      },
+      "DefaultPricebookAccess": {
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "No Access"
+          },
+          {
+            "value": "Read",
+            "label": "Read Only"
+          },
+          {
+            "value": "ReadSelect",
+            "label": "Use"
+          }
+        ]
+      },
+      "Division": {},
+      "Fax": {},
+      "FiscalYearStartMonth": {
+        "precision": 9
+      },
+      "InstanceName": {
+        "length": 5
+      },
+      "IsSandbox": {
+        "defaultValue": "false"
+      },
+      "LanguageLocaleKey": {
+        "picklistValues": [
+          {
+            "value": "en_US",
+            "label": "English"
+          },
+          {
+            "value": "sv",
+            "label": "Swedish"
+          },
+          {
+            "value": "de",
+            "label": "German"
+          },
+          {
+            "value": "fr",
+            "label": "French"
+          }
+        ]
+      },
+      "Latitude": {
+        "compoundFieldName": "Address"
+      },
+      "Longitude": {
+        "compoundFieldName": "Address"
+      },
+      "MonthlyPageViewsEntitlement": {
+        "precision": 9
+      },
+      "MonthlyPageViewsUsed": {
+        "precision": 9
+      },
+      "Name": {
+        "nameField": true
+      },
+      "NamespacePrefix": {},
+      "OrganizationType": {
+        "picklistValues": [
+          {
+            "value": "Developer Edition",
+            "label": "Developer Edition"
+          },
+          {
+            "value": "Enterprise Edition",
+            "label": "Enterprise Edition"
+          },
+          {
+            "value": "Unlimited Edition",
+            "label": "Unlimited Edition"
+          },
+          {
+            "value": "Professional Edition",
+            "label": "Professional Edition"
+          },
+          {
+            "value": "Base Edition",
+            "label": "Base Edition"
+          },
+          {
+            "value": "Team Edition",
+            "label": "Team Edition"
+          }
+        ]
+      },
+      "Phone": {},
+      "PostalCode": {
+        "compoundFieldName": "Address"
+      },
+      "PreferencesRequireOpportunityProducts": {
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "PrimaryContact": {},
+      "ReceivesAdminInfoEmails": {
+        "defaultValue": "false"
+      },
+      "ReceivesInfoEmails": {
+        "defaultValue": "false"
+      },
+      "SignupCountryIsoCode": {},
+      "State": {
+        "compoundFieldName": "Address"
+      },
+      "Street": {
+        "compoundFieldName": "Address"
+      },
+      "TimeZoneSidKey": {
+        "picklistValues": [
+          {
+            "value": "GMT",
+            "label": "(GMT+00:00) Greenwich Mean Time (GMT)"
+          },
+          {
+            "value": "Europe/London",
+            "label": "(GMT+00:00) British Time (Europe/London)"
+          },
+          {
+            "value": "Europe/Stockholm",
+            "label": "(GMT+01:00) Central European Time (Europe/Stockholm)"
+          },
+          {
+            "value": "Europe/Berlin",
+            "label": "(GMT+01:00) Central European Time (Europe/Berlin)"
+          },
+          {
+            "value": "Europe/Paris",
+            "label": "(GMT+01:00) Central European Time (Europe/Paris)"
+          },
+          {
+            "value": "Europe/Helsinki",
+            "label": "(GMT+02:00) Eastern European Time (Europe/Helsinki)"
+          },
+          {
+            "value": "America/New_York",
+            "label": "(GMT-05:00) Eastern Standard Time (America/New_York)"
+          },
+          {
+            "value": "America/Chicago",
+            "label": "(GMT-06:00) Central Standard Time (America/Chicago)"
+          },
+          {
+            "value": "America/Denver",
+            "label": "(GMT-07:00) Mountain Standard Time (America/Denver)"
+          },
+          {
+            "value": "America/Los_Angeles",
+            "label": "(GMT-08:00) Pacific Standard Time (America/Los_Angeles)"
+          },
+          {
+            "value": "Asia/Tokyo",
+            "label": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)"
+          },
+          {
+            "value": "Australia/Sydney",
+            "label": "(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)"
+          }
+        ]
+      },
+      "TrialExpirationDate": {},
+      "UiSkin": {
+        "picklistValues": [
+          {
+            "value": "Theme1",
+            "label": "salesforce.com Classic"
+          },
+          {
+            "value": "Theme2",
+            "label": "Salesforce Classic 2010"
+          },
+          {
+            "value": "Theme3",
+            "label": "Salesforce Classic"
+          },
+          {
+            "value": "Theme4d",
+            "label": "Lightning Experience"
+          },
+          {
+            "value": "Theme4t",
+            "label": "Salesforce mobile app"
+          },
+          {
+            "value": "Theme4u",
+            "label": "Lightning Console"
+          },
+          {
+            "value": "PortalDefault",
+            "label": "Portal Default"
+          },
+          {
+            "value": "Webstore",
+            "label": "Webstore"
+          }
+        ]
+      },
+      "UsesStartDateAsFiscalYearName": {
+        "defaultValue": "false"
+      },
+      "WebToCaseDefaultOrigin": {}
+    }
+  },
+  "Pricebook2": {
+    "object": {
+      "label": "Price Book",
+      "labelPlural": "Price Books",
+      "hasOwner": false
+    },
+    "fields": {
+      "Description": {},
+      "IsActive": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "IsArchived": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "IsStandard": {
+        "label": "Standard Price Book",
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "Name": {
+        "nameField": true
+      }
+    }
+  },
+  "PricebookEntry": {
+    "object": {
+      "label": "Price Book Entry",
+      "labelPlural": "Price Book Entries",
+      "hasOwner": false
+    },
+    "fields": {
+      "IsActive": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "IsArchived": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "Name": {
+        "nameField": true
+      },
+      "Pricebook2Id": {
+        "childRelationshipName": "PricebookEntries"
+      },
+      "Product2Id": {
+        "childRelationshipName": "PricebookEntries"
+      },
+      "ProductCode": {},
+      "UnitPrice": {},
+      "UseStandardPrice": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      }
+    }
+  },
+  "Product2": {
+    "object": {
+      "label": "Product",
+      "labelPlural": "Products",
+      "hasOwner": false
+    },
+    "fields": {
+      "Description": {},
+      "DisplayUrl": {
+        "label": "Display Url",
+        "length": 255
+      },
+      "ExternalDataSourceId": {
+        "referenceTo": [
+          "ExternalDataSource"
+        ],
+        "relationshipName": "ExternalDataSource"
+      },
+      "ExternalId": {},
+      "Family": {
+        "picklistValues": []
+      },
+      "IsActive": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "IsArchived": {
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "Name": {
+        "nameField": true
+      },
+      "ProductClass": {
+        "nillable": null,
+        "picklistValues": [
+          {
+            "value": "Bundle",
+            "label": "Bundle"
+          },
+          {
+            "value": "Set",
+            "label": "Set"
+          },
+          {
+            "value": "Simple",
+            "label": "Simple"
+          },
+          {
+            "value": "VariationParent",
+            "label": "Variation Parent"
+          },
+          {
+            "value": "Variation",
+            "label": "Variation"
+          }
+        ]
+      },
+      "ProductCode": {},
+      "QuantityUnitOfMeasure": {
+        "label": "Unit of Measure",
+        "picklistValues": [
+          {
+            "value": "Each",
+            "label": "Each",
+            "default": true
+          }
+        ]
+      },
+      "SellerId": {
+        "label": "Seller ID",
+        "type": "Lookup",
+        "referenceTo": [
+          "Account"
+        ],
+        "relationshipName": "Seller"
+      },
+      "SourceProductId": {
+        "label": "Source Product ID",
+        "type": "Lookup",
+        "referenceTo": [
+          "Product2"
+        ],
+        "relationshipName": "SourceProduct"
+      },
+      "StockKeepingUnit": {
+        "label": "Stock Keeping Unit"
+      },
+      "Type": {
+        "picklistValues": [
+          {
+            "value": "Base",
+            "label": "Base"
+          },
+          {
+            "value": "Null",
+            "label": "Null"
+          }
+        ]
+      }
+    }
+  },
+  "Profile": {
+    "object": {
+      "label": "Profile",
+      "labelPlural": "Profiles",
+      "deletable": true,
+      "undeletable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "Description": {},
+      "LastReferencedDate": {},
+      "LastViewedDate": {},
+      "Name": {
+        "nameField": true
+      },
+      "PermissionsApiEnabled": {
+        "nillable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "PermissionsCustomizeApplication": {
+        "nillable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "PermissionsManageUsers": {
+        "nillable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "PermissionsModifyAllData": {
+        "nillable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "PermissionsRunReports": {
+        "nillable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "PermissionsViewAllData": {
+        "nillable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "UserLicenseId": {
+        "childRelationshipName": "Profiles"
+      },
+      "UserType": {
+        "picklistValues": [
+          {
+            "value": "Standard",
+            "label": "Standard"
+          },
+          {
+            "value": "PowerPartner",
+            "label": "Partner"
+          },
+          {
+            "value": "PowerCustomerSuccess",
+            "label": "Customer Portal Manager"
+          },
+          {
+            "value": "CustomerSuccess",
+            "label": "Customer Portal User"
+          },
+          {
+            "value": "Guest",
+            "label": "Guest"
+          },
+          {
+            "value": "CspLitePortal",
+            "label": "High Volume Portal"
+          }
+        ]
+      }
+    }
+  },
+  "RecordType": {
+    "object": {
+      "label": "Record Type",
+      "labelPlural": "Record Types",
+      "deletable": false,
+      "undeletable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "BusinessProcessId": {
+        "referenceTo": [
+          "BusinessProcess"
+        ],
+        "relationshipName": "BusinessProcess"
+      },
+      "Description": {},
+      "DeveloperName": {},
+      "IsActive": {
+        "createable": null,
+        "defaultValue": "false"
+      },
+      "IsPersonType": {
+        "defaultValue": "false"
+      },
+      "Name": {
+        "idLookup": null,
+        "nameField": true
+      },
+      "NamespacePrefix": {},
+      "SobjectType": {
+        "picklistValues": []
+      }
+    }
+  },
+  "ServiceAppointment": {
+    "object": {
+      "label": "Service Appointment",
+      "labelPlural": "Service Appointments",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": true
+    },
+    "fields": {
+      "AppointmentNumber": {
+        "type": "AutoNumber",
+        "length": null,
+        "nillable": null,
+        "nameField": true,
+        "displayFormat": "{00000000}"
+      }
+    }
+  },
+  "ServiceContract": {
+    "object": {
+      "label": "Service Contract",
+      "labelPlural": "Service Contracts",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": true
+    },
+    "fields": {
+      "Name": {
+        "nameField": true
+      }
+    }
+  },
+  "SocialPost": {
+    "object": {
+      "label": "Social Post",
+      "labelPlural": "Social Posts",
+      "createable": true,
+      "updateable": true,
+      "deletable": true,
+      "undeletable": true,
+      "searchable": true,
+      "hasOwner": true
+    },
+    "fields": {
+      "Name": {
+        "label": "Social Post Name",
+        "nameField": true
+      }
+    }
+  },
+  "Task": {
+    "object": {
+      "label": "Task",
+      "labelPlural": "Tasks",
+      "hasOwner": true
+    },
+    "fields": {
+      "AccountId": {
+        "childRelationshipName": "Tasks"
+      },
+      "ActivityDate": {
+        "label": "Due Date"
+      },
+      "CallDisposition": {},
+      "CallDurationInSeconds": {
+        "precision": 8
+      },
+      "CallObject": {},
+      "CallType": {
+        "picklistValues": [
+          {
+            "value": "Inbound",
+            "label": "Inbound"
+          },
+          {
+            "value": "Internal",
+            "label": "Internal"
+          },
+          {
+            "value": "Outbound",
+            "label": "Outbound"
+          }
+        ]
+      },
+      "CompletedDateTime": {},
+      "Description": {
+        "label": "Comments"
+      },
+      "Email": {
+        "label": "Email",
+        "type": "Email",
+        "createable": false,
+        "updateable": false
+      },
+      "IsArchived": {
+        "defaultValue": "false"
+      },
+      "IsClosed": {
+        "defaultValue": "false"
+      },
+      "IsHighPriority": {
+        "defaultValue": "false"
+      },
+      "IsRecurrence": {
+        "label": "Recurrence",
+        "defaultValue": "false"
+      },
+      "IsReminderSet": {
+        "defaultValue": "false"
+      },
+      "IsVisibleInSelfService": {
+        "label": "Visible in Self Service",
+        "defaultValue": "false"
+      },
+      "Phone": {
+        "label": "Phone",
+        "type": "Phone",
+        "createable": false,
+        "updateable": false
+      },
+      "Priority": {
+        "standardValueSet": "TaskPriority"
+      },
+      "RecurrenceActivityId": {
+        "referenceTo": [
+          "Task"
+        ],
+        "relationshipName": "RecurrenceActivity"
+      },
+      "RecurrenceDayOfMonth": {
+        "label": "Day of Month",
+        "precision": 2
+      },
+      "RecurrenceDayOfWeekMask": {
+        "label": "Day of Week Mask",
+        "precision": 3
+      },
+      "RecurrenceEndDateOnly": {},
+      "RecurrenceInstance": {
+        "picklistValues": [
+          {
+            "value": "First",
+            "label": "First"
+          },
+          {
+            "value": "Second",
+            "label": "Second"
+          },
+          {
+            "value": "Third",
+            "label": "Third"
+          },
+          {
+            "value": "Fourth",
+            "label": "Fourth"
+          },
+          {
+            "value": "Last",
+            "label": "Last"
+          }
+        ]
+      },
+      "RecurrenceInterval": {
+        "precision": 3
+      },
+      "RecurrenceMonthOfYear": {
+        "picklistValues": [
+          {
+            "value": "January",
+            "label": "January"
+          },
+          {
+            "value": "February",
+            "label": "February"
+          },
+          {
+            "value": "March",
+            "label": "March"
+          },
+          {
+            "value": "April",
+            "label": "April"
+          },
+          {
+            "value": "May",
+            "label": "May"
+          },
+          {
+            "value": "June",
+            "label": "June"
+          },
+          {
+            "value": "July",
+            "label": "July"
+          },
+          {
+            "value": "August",
+            "label": "August"
+          },
+          {
+            "value": "September",
+            "label": "September"
+          },
+          {
+            "value": "October",
+            "label": "October"
+          },
+          {
+            "value": "November",
+            "label": "November"
+          },
+          {
+            "value": "December",
+            "label": "December"
+          }
+        ]
+      },
+      "RecurrenceRegeneratedType": {
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "None",
+            "default": true
+          },
+          {
+            "value": "After due date",
+            "label": "After due date"
+          },
+          {
+            "value": "After the task is closed",
+            "label": "After the task is closed"
+          }
+        ]
+      },
+      "RecurrenceStartDateOnly": {},
+      "RecurrenceTimeZoneSidKey": {
+        "label": "Time Zone",
+        "picklistValues": [
+          {
+            "value": "GMT",
+            "label": "(GMT+00:00) Greenwich Mean Time (GMT)"
+          },
+          {
+            "value": "Europe/London",
+            "label": "(GMT+00:00) British Time (Europe/London)"
+          },
+          {
+            "value": "Europe/Stockholm",
+            "label": "(GMT+01:00) Central European Time (Europe/Stockholm)"
+          },
+          {
+            "value": "Europe/Berlin",
+            "label": "(GMT+01:00) Central European Time (Europe/Berlin)"
+          },
+          {
+            "value": "Europe/Paris",
+            "label": "(GMT+01:00) Central European Time (Europe/Paris)"
+          },
+          {
+            "value": "Europe/Helsinki",
+            "label": "(GMT+02:00) Eastern European Time (Europe/Helsinki)"
+          },
+          {
+            "value": "America/New_York",
+            "label": "(GMT-05:00) Eastern Standard Time (America/New_York)"
+          },
+          {
+            "value": "America/Chicago",
+            "label": "(GMT-06:00) Central Standard Time (America/Chicago)"
+          },
+          {
+            "value": "America/Denver",
+            "label": "(GMT-07:00) Mountain Standard Time (America/Denver)"
+          },
+          {
+            "value": "America/Los_Angeles",
+            "label": "(GMT-08:00) Pacific Standard Time (America/Los_Angeles)"
+          },
+          {
+            "value": "Asia/Tokyo",
+            "label": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)"
+          },
+          {
+            "value": "Australia/Sydney",
+            "label": "(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)"
+          }
+        ]
+      },
+      "RecurrenceType": {
+        "picklistValues": [
+          {
+            "value": "RecursDaily",
+            "label": "Daily"
+          },
+          {
+            "value": "RecursEveryWeekday",
+            "label": "Every Weekday (Mon-Fri)"
+          },
+          {
+            "value": "RecursMonthly",
+            "label": "Monthly"
+          },
+          {
+            "value": "RecursMonthlyNth",
+            "label": "Monthly Nth"
+          },
+          {
+            "value": "RecursWeekly",
+            "label": "Weekly"
+          },
+          {
+            "value": "RecursYearly",
+            "label": "Yearly"
+          },
+          {
+            "value": "RecursYearlyNth",
+            "label": "Yearly Nth"
+          }
+        ]
+      },
+      "ReminderDateTime": {},
+      "Status": {
+        "standardValueSet": "TaskStatus"
+      },
+      "Subject": {
+        "nameField": true,
+        "standardValueSet": "TaskSubject"
+      },
+      "TaskSubtype": {
+        "createable": false,
+        "picklistValues": [
+          {
+            "value": "Task",
+            "label": "Task",
+            "default": true
+          },
+          {
+            "value": "Email",
+            "label": "Email"
+          },
+          {
+            "value": "ListEmail",
+            "label": "List Email"
+          },
+          {
+            "value": "Cadence",
+            "label": "Cadence"
+          },
+          {
+            "value": "Call",
+            "label": "Call"
+          }
+        ]
+      },
+      "Type": {
+        "standardValueSet": "TaskType"
+      },
+      "WhatId": {
+        "referenceTo": [
+          "Account",
+          "Opportunity",
+          "Case",
+          "Campaign",
+          "Product2",
+          "Asset",
+          "Contract"
+        ]
+      },
+      "WhoId": {}
+    }
+  },
+  "User": {
+    "object": {
+      "label": "User",
+      "labelPlural": "Users",
+      "deletable": false,
+      "undeletable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "AboutMe": {},
+      "AccountId": {
+        "childRelationshipName": "Users"
+      },
+      "Address": {},
+      "Alias": {},
+      "CallCenterId": {
+        "referenceTo": [
+          "CallCenter"
+        ],
+        "relationshipName": "CallCenter"
+      },
+      "City": {
+        "compoundFieldName": "Address"
+      },
+      "CommunityNickname": {
+        "unique": true
+      },
+      "CompanyName": {},
+      "ContactId": {
+        "childRelationshipName": "Users"
+      },
+      "Country": {
+        "compoundFieldName": "Address"
+      },
+      "DefaultGroupNotificationFrequency": {
+        "picklistValues": [
+          {
+            "value": "P",
+            "label": "Email on Each Post"
+          },
+          {
+            "value": "D",
+            "label": "Daily Digests"
+          },
+          {
+            "value": "W",
+            "label": "Weekly Digests"
+          },
+          {
+            "value": "N",
+            "label": "Never",
+            "default": true
+          }
+        ],
+        "defaultValue": "N"
+      },
+      "DelegatedApproverId": {
+        "referenceTo": [
+          "Group",
+          "User"
+        ],
+        "relationshipName": "DelegatedApprover"
+      },
+      "Department": {},
+      "DigestFrequency": {
+        "picklistValues": [
+          {
+            "value": "D",
+            "label": "Daily",
+            "default": true
+          },
+          {
+            "value": "W",
+            "label": "Weekly"
+          },
+          {
+            "value": "N",
+            "label": "Never"
+          }
+        ],
+        "defaultValue": "D"
+      },
+      "Division": {},
+      "Email": {},
+      "EmailEncodingKey": {
+        "picklistValues": [
+          {
+            "value": "UTF-8",
+            "label": "Unicode (UTF-8)"
+          },
+          {
+            "value": "ISO-8859-1",
+            "label": "General US & Western Europe (ISO-8859-1, ISO-LATIN-1)"
+          }
+        ]
+      },
+      "EmployeeNumber": {},
+      "EndDay": {
+        "picklistValues": []
+      },
+      "Extension": {},
+      "Fax": {},
+      "FederationIdentifier": {},
+      "FirstName": {
+        "compoundFieldName": "Name"
+      },
+      "ForecastEnabled": {
+        "defaultValue": "false"
+      },
+      "FullPhotoUrl": {},
+      "IndividualId": {},
+      "IsActive": {
+        "defaultValue": "true"
+      },
+      "IsSystemControlled": {
+        "label": "System Controlled",
+        "type": "Checkbox",
+        "nillable": false,
+        "createable": false,
+        "updateable": false,
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "JigsawImportLimitOverride": {
+        "precision": 9
+      },
+      "LanguageLocaleKey": {
+        "picklistValues": [
+          {
+            "value": "en_US",
+            "label": "English"
+          },
+          {
+            "value": "sv",
+            "label": "Swedish"
+          },
+          {
+            "value": "de",
+            "label": "German"
+          },
+          {
+            "value": "fr",
+            "label": "French"
+          }
+        ]
+      },
+      "LastLoginDate": {},
+      "LastName": {
+        "compoundFieldName": "Name"
+      },
+      "Latitude": {
+        "compoundFieldName": "Address"
+      },
+      "LocaleSidKey": {
+        "picklistValues": [
+          {
+            "value": "en_US",
+            "label": "English (United States)"
+          },
+          {
+            "value": "en_GB",
+            "label": "English (United Kingdom)"
+          },
+          {
+            "value": "sv_SE",
+            "label": "Swedish (Sweden)"
+          },
+          {
+            "value": "de_DE",
+            "label": "German (Germany)"
+          },
+          {
+            "value": "fr_FR",
+            "label": "French (France)"
+          }
+        ]
+      },
+      "Longitude": {
+        "compoundFieldName": "Address"
+      },
+      "ManagerId": {
+        "childRelationshipName": "ManagedUsers"
+      },
+      "MobilePhone": {},
+      "Name": {
+        "type": "Name",
+        "length": 203,
+        "nillable": null,
+        "nameField": true
+      },
+      "Phone": {},
+      "PostalCode": {
+        "compoundFieldName": "Address"
+      },
+      "ProfileId": {
+        "childRelationshipName": "Users"
+      },
+      "ReceivesAdminInfoEmails": {
+        "defaultValue": "false"
+      },
+      "ReceivesInfoEmails": {
+        "defaultValue": "false"
+      },
+      "SenderEmail": {},
+      "SenderName": {},
+      "Signature": {},
+      "SmallPhotoUrl": {
+        "label": "Photo URL"
+      },
+      "StartDay": {
+        "picklistValues": []
+      },
+      "State": {
+        "compoundFieldName": "Address"
+      },
+      "StayInTouchNote": {},
+      "StayInTouchSignature": {},
+      "StayInTouchSubject": {},
+      "Street": {
+        "compoundFieldName": "Address"
+      },
+      "TimeZoneSidKey": {
+        "picklistValues": [
+          {
+            "value": "GMT",
+            "label": "(GMT+00:00) Greenwich Mean Time (GMT)"
+          },
+          {
+            "value": "Europe/London",
+            "label": "(GMT+00:00) British Time (Europe/London)"
+          },
+          {
+            "value": "Europe/Stockholm",
+            "label": "(GMT+01:00) Central European Time (Europe/Stockholm)"
+          },
+          {
+            "value": "Europe/Berlin",
+            "label": "(GMT+01:00) Central European Time (Europe/Berlin)"
+          },
+          {
+            "value": "Europe/Paris",
+            "label": "(GMT+01:00) Central European Time (Europe/Paris)"
+          },
+          {
+            "value": "Europe/Helsinki",
+            "label": "(GMT+02:00) Eastern European Time (Europe/Helsinki)"
+          },
+          {
+            "value": "America/New_York",
+            "label": "(GMT-05:00) Eastern Standard Time (America/New_York)"
+          },
+          {
+            "value": "America/Chicago",
+            "label": "(GMT-06:00) Central Standard Time (America/Chicago)"
+          },
+          {
+            "value": "America/Denver",
+            "label": "(GMT-07:00) Mountain Standard Time (America/Denver)"
+          },
+          {
+            "value": "America/Los_Angeles",
+            "label": "(GMT-08:00) Pacific Standard Time (America/Los_Angeles)"
+          },
+          {
+            "value": "Asia/Tokyo",
+            "label": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)"
+          },
+          {
+            "value": "Australia/Sydney",
+            "label": "(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)"
+          }
+        ]
+      },
+      "Title": {},
+      "UserPermissionsMarketingUser": {
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "UserPermissionsOfflineUser": {
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "UserPreferencesActivityRemindersPopup": {
+        "defaultedOnCreate": true,
+        "defaultValue": "false"
+      },
+      "UserRoleId": {
+        "childRelationshipName": "Users"
+      },
+      "UserType": {
+        "picklistValues": [
+          {
+            "value": "Standard",
+            "label": "Standard"
+          },
+          {
+            "value": "PowerPartner",
+            "label": "Partner"
+          },
+          {
+            "value": "PowerCustomerSuccess",
+            "label": "Customer Portal Manager"
+          },
+          {
+            "value": "CustomerSuccess",
+            "label": "Customer Portal User"
+          },
+          {
+            "value": "Guest",
+            "label": "Guest"
+          },
+          {
+            "value": "CspLitePortal",
+            "label": "High Volume Portal"
+          }
+        ]
+      },
+      "Username": {
+        "unique": true
+      },
+      "WorkspaceId": {
+        "label": "Workspace ID",
+        "type": "Lookup",
+        "referenceTo": [
+          "IdeaTheme"
+        ],
+        "relationshipName": "Workspace"
+      }
+    }
+  },
+  "UserLicense": {
+    "object": {
+      "label": "User License",
+      "labelPlural": "User Licenses",
+      "createable": false,
+      "updateable": false,
+      "deletable": false,
+      "undeletable": false,
+      "searchable": false,
+      "hasOwner": false
+    },
+    "fields": {
+      "MasterLabel": {},
+      "Name": {
+        "label": "License Name",
+        "length": 80,
+        "nameField": true
+      }
+    }
+  },
+  "UserRole": {
+    "object": {
+      "label": "Role",
+      "labelPlural": "Roles",
+      "createable": true,
+      "deletable": true,
+      "hasOwner": false
+    },
+    "fields": {
+      "CaseAccessForAccountOwner": {
+        "label": "Case Access",
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "None"
+          },
+          {
+            "value": "Read",
+            "label": "Read"
+          },
+          {
+            "value": "Edit",
+            "label": "Edit"
+          }
+        ]
+      },
+      "ContactAccessForAccountOwner": {
+        "label": "Contact Access",
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "None"
+          },
+          {
+            "value": "Read",
+            "label": "Read"
+          },
+          {
+            "value": "Edit",
+            "label": "Edit"
+          }
+        ]
+      },
+      "DeveloperName": {
+        "label": "Role Name"
+      },
+      "ForecastUserId": {
+        "referenceTo": [
+          "User"
+        ],
+        "relationshipName": "ForecastUser"
+      },
+      "MayForecastManagerShare": {
+        "label": "Forecast Manager Can Share",
+        "nillable": null,
+        "defaultedOnCreate": null
+      },
+      "Name": {
+        "nameField": true
+      },
+      "OpportunityAccessForAccountOwner": {
+        "label": "Opportunity Access",
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "None"
+          },
+          {
+            "value": "Read",
+            "label": "Read"
+          },
+          {
+            "value": "Edit",
+            "label": "Edit"
+          }
+        ]
+      },
+      "ParentRoleId": {
+        "referenceTo": [
+          "UserRole"
+        ],
+        "relationshipName": "ParentRole",
+        "childRelationshipName": "ChildRoles"
+      },
+      "PortalAccountId": {
+        "label": "Portal Account ID",
+        "createable": false,
+        "referenceTo": [
+          "Account"
+        ],
+        "relationshipName": "PortalAccount"
+      },
+      "PortalAccountOwnerId": {
+        "label": "Portal Account Owner ID",
+        "referenceTo": [
+          "User"
+        ],
+        "relationshipName": "PortalAccountOwner"
+      },
+      "PortalType": {
+        "createable": false,
+        "picklistValues": [
+          {
+            "value": "None",
+            "label": "None",
+            "default": true
+          },
+          {
+            "value": "CustomerPortal",
+            "label": "Customer Portal"
+          },
+          {
+            "value": "Partner",
+            "label": "Partner"
+          }
+        ]
+      },
+      "RollupDescription": {}
+    }
+  }
+}

@@ -1,4 +1,4 @@
-# Objects describe-check runs by default: the 14 thin standard objects of phase 3.
+# Objects describe-check runs by default: the 14 thin standard objects of phase 3 and the 18 business objects of phase 10.
 # One API name per line; '#' starts a comment. Arguments to the scripts override this list.
 BusinessHours
 BusinessProcess
@@ -14,3 +14,21 @@ ServiceAppointment
 ServiceContract
 SocialPost
 UserLicense
+AccountContactRelation
+AccountTeamMember
+Address
+CaseContactRole
+CaseMilestone
+ContentDocument
+ContentVersion
+ContractLineItem
+EmailMessage
+FeedItem
+Location
+OpportunityContactRole
+OpportunitySplit
+OpportunityTeamMember
+Order
+OrderItem
+Quote
+QuoteLineItem

@@ -30,6 +30,15 @@ export interface FormulaFailure extends Diagnostic {
   missing?: { object: string; field: string };
 }
 
+/**
+ * Informational: a standard object orglet recognises, does not model, and nothing references (BASE2-08, D-06..D-08).
+ * Never a warning, never counted by `--strict`; kept beside, not inside, the warnings/diagnostics pair so their 1:1
+ * invariant holds. Phase 14 expands these into its --summary/--json report without a string change.
+ */
+export interface InfoDiagnostic extends Diagnostic {
+  severity: "info";
+}
+
 export function formatDiagnostic(d: Diagnostic): string {
   return `UNSUPPORTED:${d.area} ${d.message}`;
 }

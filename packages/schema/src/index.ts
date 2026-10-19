@@ -17,7 +17,7 @@ export {
 export type { ColumnSpec } from "./columns.js";
 export { planSchema, planTable } from "./ddl.js";
 export type { TablePlan, ForeignKeySpec, IndexSpec } from "./ddl.js";
-export { migrate } from "./migrate.js";
+export { isWidening, migrate } from "./migrate.js";
 export type { MigrateOptions, MigrateResult } from "./migrate.js";
 export { rollupBackfillSql, rollupDepth, rollupSelectSql } from "./rollup.js";
 export type { RollupStatement } from "./rollup.js";

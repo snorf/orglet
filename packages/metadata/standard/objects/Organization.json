@@ -3,125 +3,985 @@
   "label": "Organization",
   "labelPlural": "Organizations",
   "keyPrefix": "00D",
+  "keyPrefixSource": "unverified",
   "createable": false,
   "deletable": false,
   "undeletable": false,
   "hasOwner": false,
   "fields": [
-    { "name": "Name", "label": "Name", "type": "Text", "length": 80, "nillable": false, "createable": false, "idLookup": true, "nameField": true },
-    { "name": "Division", "label": "Division", "type": "Text", "length": 80, "createable": false },
-    { "name": "Address", "label": "Address", "type": "Address", "createable": false, "updateable": false },
-    { "name": "Street", "label": "Street", "type": "TextArea", "length": 255, "createable": false, "compoundFieldName": "Address" },
-    { "name": "City", "label": "City", "type": "Text", "length": 40, "createable": false, "compoundFieldName": "Address" },
-    { "name": "State", "label": "State/Province", "type": "Text", "length": 80, "createable": false, "compoundFieldName": "Address" },
-    { "name": "PostalCode", "label": "Zip/Postal Code", "type": "Text", "length": 20, "createable": false, "compoundFieldName": "Address" },
-    { "name": "Country", "label": "Country", "type": "Text", "length": 80, "createable": false, "updateable": false, "compoundFieldName": "Address" },
-    { "name": "Latitude", "label": "Latitude", "type": "Number", "precision": 18, "scale": 15, "createable": false, "compoundFieldName": "Address" },
-    { "name": "Longitude", "label": "Longitude", "type": "Number", "precision": 18, "scale": 15, "createable": false, "compoundFieldName": "Address" },
-    { "name": "Phone", "label": "Phone", "type": "Phone", "length": 40, "createable": false },
-    { "name": "Fax", "label": "Fax", "type": "Phone", "length": 40, "createable": false },
-    { "name": "PrimaryContact", "label": "Primary Contact", "type": "Text", "length": 80, "createable": false },
-    { "name": "DefaultLocaleSidKey", "label": "Locale", "type": "Picklist", "nillable": false, "createable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "en_US", "label": "English (United States)" },
-      { "value": "en_GB", "label": "English (United Kingdom)" },
-      { "value": "sv_SE", "label": "Swedish (Sweden)" },
-      { "value": "de_DE", "label": "German (Germany)" },
-      { "value": "fr_FR", "label": "French (France)" }
-    ] },
-    { "name": "TimeZoneSidKey", "label": "Time Zone", "type": "Picklist", "nillable": false, "createable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "GMT", "label": "(GMT+00:00) Greenwich Mean Time (GMT)" },
-      { "value": "Europe/London", "label": "(GMT+00:00) British Time (Europe/London)" },
-      { "value": "Europe/Stockholm", "label": "(GMT+01:00) Central European Time (Europe/Stockholm)" },
-      { "value": "Europe/Berlin", "label": "(GMT+01:00) Central European Time (Europe/Berlin)" },
-      { "value": "Europe/Paris", "label": "(GMT+01:00) Central European Time (Europe/Paris)" },
-      { "value": "Europe/Helsinki", "label": "(GMT+02:00) Eastern European Time (Europe/Helsinki)" },
-      { "value": "America/New_York", "label": "(GMT-05:00) Eastern Standard Time (America/New_York)" },
-      { "value": "America/Chicago", "label": "(GMT-06:00) Central Standard Time (America/Chicago)" },
-      { "value": "America/Denver", "label": "(GMT-07:00) Mountain Standard Time (America/Denver)" },
-      { "value": "America/Los_Angeles", "label": "(GMT-08:00) Pacific Standard Time (America/Los_Angeles)" },
-      { "value": "Asia/Tokyo", "label": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)" },
-      { "value": "Australia/Sydney", "label": "(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)" }
-    ] },
-    { "name": "LanguageLocaleKey", "label": "Language", "type": "Picklist", "nillable": false, "createable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "en_US", "label": "English" },
-      { "value": "sv", "label": "Swedish" },
-      { "value": "de", "label": "German" },
-      { "value": "fr", "label": "French" }
-    ] },
-    { "name": "ReceivesInfoEmails", "label": "Info Emails", "type": "Checkbox", "nillable": false, "createable": false, "defaultedOnCreate": true, "defaultValue": "false" },
-    { "name": "ReceivesAdminInfoEmails", "label": "Info Emails Admin", "type": "Checkbox", "nillable": false, "createable": false, "defaultedOnCreate": true, "defaultValue": "false" },
-    { "name": "PreferencesRequireOpportunityProducts", "label": "RequireOpportunityProducts", "type": "Checkbox", "nillable": false, "createable": false, "defaultedOnCreate": true, "defaultValue": "false" },
-    { "name": "FiscalYearStartMonth", "label": "Fiscal Year Starts In", "type": "Number", "precision": 9, "scale": 0, "createable": false, "updateable": false },
-    { "name": "UsesStartDateAsFiscalYearName", "label": "Fiscal Year Name by Start", "type": "Checkbox", "nillable": false, "createable": false, "updateable": false, "defaultedOnCreate": true, "defaultValue": "false" },
-    { "name": "DefaultAccountAccess", "label": "Default Account Access", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "None", "label": "Private" },
-      { "value": "Read", "label": "Public Read Only" },
-      { "value": "Edit", "label": "Public Read/Write" },
-      { "value": "ReadEditTransfer", "label": "Public Read/Write/Transfer" }
-    ] },
-    { "name": "DefaultContactAccess", "label": "Default Contact Access", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "None", "label": "Private" },
-      { "value": "Read", "label": "Public Read Only" },
-      { "value": "Edit", "label": "Public Read/Write" },
-      { "value": "ControlledByParent", "label": "Controlled by Parent" }
-    ] },
-    { "name": "DefaultOpportunityAccess", "label": "Default Opportunity Access", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "None", "label": "Private" },
-      { "value": "Read", "label": "Public Read Only" },
-      { "value": "Edit", "label": "Public Read/Write" },
-      { "value": "ControlledByLeadOrContact", "label": "Controlled by Lead or Contact" },
-      { "value": "ControlledByCampaign", "label": "Controlled by Campaign" }
-    ] },
-    { "name": "DefaultLeadAccess", "label": "Default Lead Access", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "None", "label": "Private" },
-      { "value": "Read", "label": "Public Read Only" },
-      { "value": "Edit", "label": "Public Read/Write" },
-      { "value": "ReadEditTransfer", "label": "Public Read/Write/Transfer" }
-    ] },
-    { "name": "DefaultCaseAccess", "label": "Default Case Access", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "None", "label": "Private" },
-      { "value": "Read", "label": "Public Read Only" },
-      { "value": "Edit", "label": "Public Read/Write" },
-      { "value": "ReadEditTransfer", "label": "Public Read/Write/Transfer" }
-    ] },
-    { "name": "DefaultCalendarAccess", "label": "Default Calendar Access", "type": "Picklist", "createable": false, "updateable": false, "defaultedOnCreate": true, "restrictedPicklist": true, "picklistValues": [
-      { "value": "HideDetails", "label": "Hide Details" },
-      { "value": "HideDetailsInsert", "label": "Hide Details and Add Events" },
-      { "value": "ShowDetails", "label": "Show Details" },
-      { "value": "ShowDetailsInsert", "label": "Show Details and Add Events" },
-      { "value": "AllowEdits", "label": "Full Access" }
-    ] },
-    { "name": "DefaultPricebookAccess", "label": "Default Price Book Access", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "None", "label": "No Access" },
-      { "value": "Read", "label": "Read Only" },
-      { "value": "ReadSelect", "label": "Use" }
-    ] },
-    { "name": "OrganizationType", "label": "Edition", "type": "Picklist", "createable": false, "updateable": false, "restrictedPicklist": true, "picklistValues": [
-      { "value": "Developer Edition", "label": "Developer Edition" },
-      { "value": "Enterprise Edition", "label": "Enterprise Edition" },
-      { "value": "Unlimited Edition", "label": "Unlimited Edition" },
-      { "value": "Professional Edition", "label": "Professional Edition" },
-      { "value": "Base Edition", "label": "Base Edition" },
-      { "value": "Team Edition", "label": "Team Edition" }
-    ] },
-    { "name": "NamespacePrefix", "label": "Namespace Prefix", "type": "Text", "length": 15, "createable": false, "updateable": false, "idLookup": true },
-    { "name": "InstanceName", "label": "Instance Name", "type": "Text", "length": 5, "createable": false, "updateable": false },
-    { "name": "IsSandbox", "label": "Is Sandbox", "type": "Checkbox", "nillable": false, "createable": false, "updateable": false, "defaultedOnCreate": true, "defaultValue": "false" },
-    { "name": "MonthlyPageViewsUsed", "label": "Monthly Page Views Used", "type": "Number", "precision": 9, "scale": 0, "createable": false, "updateable": false },
-    { "name": "MonthlyPageViewsEntitlement", "label": "Monthly Page Views Allowed", "type": "Number", "precision": 9, "scale": 0, "createable": false, "updateable": false },
-    { "name": "TrialExpirationDate", "label": "Trial Expiration Date", "type": "DateTime", "createable": false, "updateable": false },
-    { "name": "ComplianceBccEmail", "label": "Compliance BCC Email", "type": "Email", "length": 80, "createable": false, "updateable": false },
-    { "name": "UiSkin", "label": "UI Skin", "type": "Picklist", "createable": false, "defaultedOnCreate": true, "restrictedPicklist": true, "picklistValues": [
-      { "value": "Theme1", "label": "salesforce.com Classic" },
-      { "value": "Theme2", "label": "Salesforce Classic 2010" },
-      { "value": "Theme3", "label": "Salesforce Classic" },
-      { "value": "Theme4d", "label": "Lightning Experience" },
-      { "value": "Theme4t", "label": "Salesforce mobile app" },
-      { "value": "Theme4u", "label": "Lightning Console" },
-      { "value": "PortalDefault", "label": "Portal Default" },
-      { "value": "Webstore", "label": "Webstore" }
-    ] },
-    { "name": "SignupCountryIsoCode", "label": "Signup Country", "type": "Text", "length": 2, "createable": false, "updateable": false },
-    { "name": "WebToCaseDefaultOrigin", "label": "Web to Cases Default Origin", "type": "Text", "length": 40, "createable": false }
+    {
+      "name": "Address",
+      "label": "Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AllowsSelfServiceLogin",
+      "label": "Allows Self Service Login",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "City",
+      "label": "City",
+      "type": "Text",
+      "length": 40,
+      "createable": false,
+      "compoundFieldName": "Address"
+    },
+    {
+      "name": "ComplianceBccEmail",
+      "label": "Compliance BCC Email",
+      "type": "Email",
+      "length": 80,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Country",
+      "label": "Country",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "Address"
+    },
+    {
+      "name": "CountryCode",
+      "label": "Country Code",
+      "type": "Picklist"
+    },
+    {
+      "name": "DailyWebToCaseCount",
+      "label": "Daily Web To Case Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DailyWebToCaseLimit",
+      "label": "Daily Web To Case Limit",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DailyWebToLeadCount",
+      "label": "Daily Web To Lead Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DailyWebToLeadLimit",
+      "label": "Daily Web To Lead Limit",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultAccountAccess",
+      "label": "Default Account Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "None",
+          "label": "Private"
+        },
+        {
+          "value": "Read",
+          "label": "Public Read Only"
+        },
+        {
+          "value": "Edit",
+          "label": "Public Read/Write"
+        },
+        {
+          "value": "ReadEditTransfer",
+          "label": "Public Read/Write/Transfer"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultAccountAndContactAccess",
+      "label": "Default Account And Contact Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultCalendarAccess",
+      "label": "Default Calendar Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "picklistValues": [
+        {
+          "value": "HideDetails",
+          "label": "Hide Details"
+        },
+        {
+          "value": "HideDetailsInsert",
+          "label": "Hide Details and Add Events"
+        },
+        {
+          "value": "ShowDetails",
+          "label": "Show Details"
+        },
+        {
+          "value": "ShowDetailsInsert",
+          "label": "Show Details and Add Events"
+        },
+        {
+          "value": "AllowEdits",
+          "label": "Full Access"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultCampaignAccess",
+      "label": "Default Campaign Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultCaseAccess",
+      "label": "Default Case Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "None",
+          "label": "Private"
+        },
+        {
+          "value": "Read",
+          "label": "Public Read Only"
+        },
+        {
+          "value": "Edit",
+          "label": "Public Read/Write"
+        },
+        {
+          "value": "ReadEditTransfer",
+          "label": "Public Read/Write/Transfer"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultContactAccess",
+      "label": "Default Contact Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "None",
+          "label": "Private"
+        },
+        {
+          "value": "Read",
+          "label": "Public Read Only"
+        },
+        {
+          "value": "Edit",
+          "label": "Public Read/Write"
+        },
+        {
+          "value": "ControlledByParent",
+          "label": "Controlled by Parent"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultLeadAccess",
+      "label": "Default Lead Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "None",
+          "label": "Private"
+        },
+        {
+          "value": "Read",
+          "label": "Public Read Only"
+        },
+        {
+          "value": "Edit",
+          "label": "Public Read/Write"
+        },
+        {
+          "value": "ReadEditTransfer",
+          "label": "Public Read/Write/Transfer"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultLocaleSidKey",
+      "label": "Locale",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "picklistValues": [
+        {
+          "value": "en_US",
+          "label": "English (United States)"
+        },
+        {
+          "value": "en_GB",
+          "label": "English (United Kingdom)"
+        },
+        {
+          "value": "sv_SE",
+          "label": "Swedish (Sweden)"
+        },
+        {
+          "value": "de_DE",
+          "label": "German (Germany)"
+        },
+        {
+          "value": "fr_FR",
+          "label": "French (France)"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultOpportunityAccess",
+      "label": "Default Opportunity Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "None",
+          "label": "Private"
+        },
+        {
+          "value": "Read",
+          "label": "Public Read Only"
+        },
+        {
+          "value": "Edit",
+          "label": "Public Read/Write"
+        },
+        {
+          "value": "ControlledByLeadOrContact",
+          "label": "Controlled by Lead or Contact"
+        },
+        {
+          "value": "ControlledByCampaign",
+          "label": "Controlled by Campaign"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultPricebookAccess",
+      "label": "Default Price Book Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "None",
+          "label": "No Access"
+        },
+        {
+          "value": "Read",
+          "label": "Read Only"
+        },
+        {
+          "value": "ReadSelect",
+          "label": "Use"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "DefaultTerritoryCaseAccess",
+      "label": "Default Territory Case Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultTerritoryContactAccess",
+      "label": "Default Territory Contact Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultTerritoryOppAccess",
+      "label": "Default Territory Opp Access",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DelegatedAuthenticationServiceUrl",
+      "label": "Single Sign-On Gateway URL",
+      "type": "Url",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Text",
+      "length": 80,
+      "createable": false
+    },
+    {
+      "name": "Fax",
+      "label": "Fax",
+      "type": "Phone",
+      "length": 40,
+      "createable": false
+    },
+    {
+      "name": "FiscalYearStartMonth",
+      "label": "Fiscal Year Starts In",
+      "type": "Number",
+      "precision": 9,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "GeocodeAccuracy",
+      "label": "Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HomepageHtml",
+      "label": "Homepage Html",
+      "type": "TextArea",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "InstanceName",
+      "label": "Instance Name",
+      "type": "Text",
+      "length": 5,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsReadOnly",
+      "label": "Is Read Only",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsSandbox",
+      "label": "Is Sandbox",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "LanguageLocaleKey",
+      "label": "Language",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "picklistValues": [
+        {
+          "value": "en_US",
+          "label": "English"
+        },
+        {
+          "value": "sv",
+          "label": "Swedish"
+        },
+        {
+          "value": "de",
+          "label": "German"
+        },
+        {
+          "value": "fr",
+          "label": "French"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "LastWebToCaseDate",
+      "label": "Last Web To Case Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastWebToLeadDate",
+      "label": "Last Web To Lead Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Latitude",
+      "label": "Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "createable": false,
+      "compoundFieldName": "Address"
+    },
+    {
+      "name": "Longitude",
+      "label": "Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "createable": false,
+      "compoundFieldName": "Address"
+    },
+    {
+      "name": "MaxActionsPerRule",
+      "label": "Max Actions Per Rule",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MaxRulesPerEntity",
+      "label": "Max Rules Per Entity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MonthlyPageViewsEntitlement",
+      "label": "Monthly Page Views Allowed",
+      "type": "Number",
+      "precision": 9,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MonthlyPageViewsUsed",
+      "label": "Monthly Page Views Used",
+      "type": "Number",
+      "precision": 9,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "createable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "NamespacePrefix",
+      "label": "Namespace Prefix",
+      "type": "Text",
+      "length": 15,
+      "createable": false,
+      "updateable": false,
+      "idLookup": true
+    },
+    {
+      "name": "NumKnowledgeService",
+      "label": "Knowledge Licenses",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OrganizationType",
+      "label": "Edition",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "picklistValues": [
+        {
+          "value": "Developer Edition",
+          "label": "Developer Edition"
+        },
+        {
+          "value": "Enterprise Edition",
+          "label": "Enterprise Edition"
+        },
+        {
+          "value": "Unlimited Edition",
+          "label": "Unlimited Edition"
+        },
+        {
+          "value": "Professional Edition",
+          "label": "Professional Edition"
+        },
+        {
+          "value": "Base Edition",
+          "label": "Base Edition"
+        },
+        {
+          "value": "Team Edition",
+          "label": "Team Edition"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "Phone",
+      "label": "Phone",
+      "type": "Phone",
+      "length": 40,
+      "createable": false
+    },
+    {
+      "name": "PostalCode",
+      "label": "Zip/Postal Code",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "compoundFieldName": "Address"
+    },
+    {
+      "name": "PreferencesAutoSelectIndividualOnMerge",
+      "label": "AutoSelectIndividualOnMerge",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesConsentManagementEnabled",
+      "label": "ConsentManagementEnabled",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesEventScheduler",
+      "label": "Preferences Event Scheduler",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PreferencesLightningLoginEnabled",
+      "label": "LightningLoginEnabled",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesOnlyLLPermUserAllowed",
+      "label": "OnlyLLPermUserAllowed",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PreferencesPublicSectorTaxRevEnabled",
+      "label": "Preferences Public Sector Tax Rev Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PreferencesRequireOpportunityProducts",
+      "label": "RequireOpportunityProducts",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "PreferencesS1BrowserEnabled",
+      "label": "Preferences S1 Browser Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PreferencesTerminateOldestSession",
+      "label": "Preferences Terminate Oldest Session",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PreferencesTransactionSecurityPolicy",
+      "label": "TransactionSecurityPolicy",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false
+    },
+    {
+      "name": "PrimaryContact",
+      "label": "Primary Contact",
+      "type": "Text",
+      "length": 80,
+      "createable": false
+    },
+    {
+      "name": "ReceivesAdminInfoEmails",
+      "label": "Info Emails Admin",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "ReceivesInfoEmails",
+      "label": "Info Emails",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "SelfServicDefaultCaseOrigin",
+      "label": "Self Servic Default Case Origin",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceCasePlural",
+      "label": "Self Service Case Plural",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceCaseSingle",
+      "label": "Self Service Case Single",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceEmailSenderAddress",
+      "label": "Self Service Email Sender Address",
+      "type": "Email",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceEmailSenderName",
+      "label": "Self Service Email Sender Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceEnabledForResponseRules",
+      "label": "Self Service Enabled For Response Rules",
+      "type": "Checkbox",
+      "createable": false
+    },
+    {
+      "name": "SelfServiceFeatureConfig",
+      "label": "Self Service Feature Config",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceLogoutUrl",
+      "label": "Self Service Logout Url",
+      "type": "Url",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceMaxNumSuggestions",
+      "label": "Self Service Max Num Suggestions",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceNewCommentCheckedByDefault",
+      "label": "Self Service New Comment Checked By Default",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "SelfServicePageHeight",
+      "label": "Self Service Page Height",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServicePageWidth",
+      "label": "Self Service Page Width",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceSelfClosedCaseStatus",
+      "label": "Self Service Self Closed Case Status",
+      "type": "Picklist",
+      "createable": false
+    },
+    {
+      "name": "SelfServiceSolutionCategoryAvailable",
+      "label": "Self Service Solution Category Available",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "SelfServiceSolutionPlural",
+      "label": "Self Service Solution Plural",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceSolutionSingle",
+      "label": "Self Service Solution Single",
+      "type": "Text",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceStyleSheetUrl",
+      "label": "Self Service Style Sheet Url",
+      "type": "Url",
+      "length": 255,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceWelcomePageConfig",
+      "label": "Self Service Welcome Page Config",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false
+    },
+    {
+      "name": "SelfServiceWelcomeText",
+      "label": "Self Service Welcome Text",
+      "type": "Text",
+      "length": 32000,
+      "createable": false
+    },
+    {
+      "name": "SignupCountryIsoCode",
+      "label": "Signup Country",
+      "type": "Text",
+      "length": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "State",
+      "label": "State/Province",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "compoundFieldName": "Address"
+    },
+    {
+      "name": "StateCode",
+      "label": "State Code",
+      "type": "Picklist"
+    },
+    {
+      "name": "Street",
+      "label": "Street",
+      "type": "TextArea",
+      "length": 255,
+      "createable": false,
+      "compoundFieldName": "Address"
+    },
+    {
+      "name": "TimeZoneSidKey",
+      "label": "Time Zone",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "picklistValues": [
+        {
+          "value": "GMT",
+          "label": "(GMT+00:00) Greenwich Mean Time (GMT)"
+        },
+        {
+          "value": "Europe/London",
+          "label": "(GMT+00:00) British Time (Europe/London)"
+        },
+        {
+          "value": "Europe/Stockholm",
+          "label": "(GMT+01:00) Central European Time (Europe/Stockholm)"
+        },
+        {
+          "value": "Europe/Berlin",
+          "label": "(GMT+01:00) Central European Time (Europe/Berlin)"
+        },
+        {
+          "value": "Europe/Paris",
+          "label": "(GMT+01:00) Central European Time (Europe/Paris)"
+        },
+        {
+          "value": "Europe/Helsinki",
+          "label": "(GMT+02:00) Eastern European Time (Europe/Helsinki)"
+        },
+        {
+          "value": "America/New_York",
+          "label": "(GMT-05:00) Eastern Standard Time (America/New_York)"
+        },
+        {
+          "value": "America/Chicago",
+          "label": "(GMT-06:00) Central Standard Time (America/Chicago)"
+        },
+        {
+          "value": "America/Denver",
+          "label": "(GMT-07:00) Mountain Standard Time (America/Denver)"
+        },
+        {
+          "value": "America/Los_Angeles",
+          "label": "(GMT-08:00) Pacific Standard Time (America/Los_Angeles)"
+        },
+        {
+          "value": "Asia/Tokyo",
+          "label": "(GMT+09:00) Japan Standard Time (Asia/Tokyo)"
+        },
+        {
+          "value": "Australia/Sydney",
+          "label": "(GMT+10:00) Australian Eastern Standard Time (Australia/Sydney)"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "TrialExpirationDate",
+      "label": "Trial Expiration Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UiSkin",
+      "label": "UI Skin",
+      "type": "Picklist",
+      "createable": false,
+      "defaultedOnCreate": true,
+      "picklistValues": [
+        {
+          "value": "Theme1",
+          "label": "salesforce.com Classic"
+        },
+        {
+          "value": "Theme2",
+          "label": "Salesforce Classic 2010"
+        },
+        {
+          "value": "Theme3",
+          "label": "Salesforce Classic"
+        },
+        {
+          "value": "Theme4d",
+          "label": "Lightning Experience"
+        },
+        {
+          "value": "Theme4t",
+          "label": "Salesforce mobile app"
+        },
+        {
+          "value": "Theme4u",
+          "label": "Lightning Console"
+        },
+        {
+          "value": "PortalDefault",
+          "label": "Portal Default"
+        },
+        {
+          "value": "Webstore",
+          "label": "Webstore"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "UsesStartDateAsFiscalYearName",
+      "label": "Fiscal Year Name by Start",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "defaultValue": "false"
+    },
+    {
+      "name": "UsesWebToCase",
+      "label": "Uses Web To Case",
+      "type": "Checkbox",
+      "createable": false
+    },
+    {
+      "name": "UsesWebToLead",
+      "label": "Uses Web To Lead",
+      "type": "Checkbox",
+      "createable": false
+    },
+    {
+      "name": "WebToCaseDefaultOrigin",
+      "label": "Web to Cases Default Origin",
+      "type": "Text",
+      "length": 40,
+      "createable": false
+    }
   ]
 }

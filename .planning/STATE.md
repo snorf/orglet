@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: planning
-stopped_at: Phase 8 complete 2026-10-13 (verified, 2 human UAT items open)
-last_updated: "2026-10-13T13:55:47.761Z"
-last_activity: 2026-10-13
+status: ready-to-plan
+stopped_at: Phase 10 complete and verified (4/4 success criteria); Phase 11 not started
+last_updated: "2026-10-16T21:08:55.374Z"
+last_activity: 2026-10-16
 progress:
-  total_phases: 16
-  completed_phases: 1
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 17
+  completed_phases: 3
+  total_plans: 25
+  completed_plans: 25
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 9 — Baseline Generator, Parity & OwnerId Narrowing (v1.1 real-org fidelity)
+**Current focus:** Phase 11 — custom-metadata-custom-settings-labels (not started)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 9 of 14 (Baseline Generator, Parity & OwnerId Narrowing) — not started
-Plan: —
-Status: Ready to plan
-Last activity: 2026-10-13 — Phase 8 complete (10 plans, verified; sigha PRs and CI sync-check open as UAT)
+Phase: 11 (Custom Metadata, Custom Settings & Labels)
+Plan: Not started
+Status: Phase 10 complete and verified; Phase 11 ready to plan
+Last activity: 2026-10-16
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -101,6 +101,19 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 08 P05 | 20min | 3 tasks | 11 files |
 | Phase 08 P06 | 10min | 2 tasks | 8 files |
 | Phase 08 P07 | 10min | 2 tasks | 4 files |
+| Phase 09 P01 | 20min | 3 tasks | 12 files |
+| Phase 09 P03 | 31min | 2 tasks | 41 files |
+| Phase 09 P04 | 14min | 3 tasks | 44 files |
+| Phase 09 P05 | 10min | 2 tasks | 9 files |
+| Phase 09 P06 | 17min | 1 tasks | 6 files |
+| Phase 09 P07 | 17min | 3 tasks | 51 files |
+| Phase 09 P08 | 14min | 2 tasks | 21 files |
+| Phase 09 P09 | 6min | 1 tasks | 4 files |
+| Phase 10 P02 | 15min | 2 tasks | 6 files |
+| Phase 10 P01 | 25min | 2 tasks | 9 files |
+| Phase 10 P04 | 35min | 3 tasks | 100 files |
+| Phase 10 P05 | 25min | 2 tasks | 9 files |
+| Phase 10 P06 | checkpoint | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -169,10 +182,38 @@ Recent decisions affecting current work:
 - [Phase 07]: 07-03: empty Bulk 2.0 upload and Jigsaw* tests excluded as not-implemented, upsert-without-Id as test-defect; no orglet code change (07-04 branch B)
 - [Phase 08]: 08-02: KeyPrefixProvenance type name; validateBaseline hard-fails in buildOrgSchema; m0 custom-metadata guard is a conservative assumption
 - [Phase 08]: 08-08: sigha unary ! and Owner:User colon branches prepared locally in sigha-upstream (reuse NOT builtin; colon absorbed in scanIdentifier); nothing pushed
+- [Phase 09]: 09-03: BusinessProcess is documented in the Object Reference as 'Business Process' and is extracted; NOT_IN_PDF is empty
+- [Phase 09]: 09-03: PDF field-table labels are matched by text, not column position (bulleted field groups shift the details column); Limit: N characters also yields maxLength
+- [Phase 09]: 09-04: 20 of 35 v1.0 files were not code-unit sorted; D-19 sort applied, parity test compares fields by name; reformat is whitespace plus field order, no content change
+- [Phase 09]: 09-04: combobox -> Picklist, id skipped, Restricted picklist -> restrictedPicklist; 19 v1.0 fields kept via overrides keep entries, no keepObject (BusinessProcess is in the PDF)
+- [Phase 09]: diffGate compares sqlTypeFor output with migrate()'s exported isWidening, so the gate and migrate() share one definition of narrowing (MIGR-03)
+- [Phase 09]: MasterDetail refusal lives in pipeline.ts after pins and overrides; 'existed in v1.0' = object has a v1-pins entry, 'new' = no field pin; allowlist is never consulted
+- [Phase 09]: 09-06: a new Lookup whose Refers To neither source states is skipped and reported as reference-target (none stated), never aborted; v1.0 fields keep the abort
+- [Phase 09]: 09-06: Checkbox is exempt from the forced-nullable rule (engine defaults an absent Checkbox to false before the required check; v1.0 writes nillable:false on 65/80 Checkboxes)
+- [Phase 09]: 09-06: system names excluded case-insensitively and emitted case collisions abort (columnName lower-cases); length conflicts on new fields settled by the larger value via 12 overrides
+- [Phase 09]: 09-06 checkpoint: settle-conflicts, name rule for target-less lookups (13 fields via overrides set referenceTo in 09-07); accepted skip ratio 10.1% documented (83/818), 12.1% raw (99/818)
+- [Phase 09]: 09-07: a sf-skills field_reference label ending a sentence or over 80 chars is prose; the generator emits the humanised name as guessed (87 Profile Permissions* labels)
+- [Phase 09]: 09-07: pinned v1.0 names are always in the generator inventory, so a field both sources dropped aborts in full mode too
+- [Phase 09]: 09-07: SKIP_RATIO_MAX 0.103 (84/818 documented; Product2.RecordTypeId is field_reference-only so Johan's 83 was off by one; raw 99/818 matches) - Johan to confirm
+- [Phase 09]: 09-07: Postgres test leg runs vitest maxWorkers 3; a v2 org schema (~500 relations, ~190 FKs) in one migrate() transaction exhausted the default lock table with 10 parallel files
+- [Phase 09]: 09-07: BASE2-02 and BASE2-03 ticked under amended wording (D-10); BASE2-01 left for 09-08 (ownerTargets overrides)
+- [Phase 09]: 09-08: ownerTargets derived from both sources' OwnerId Refers To restricted to User/Group; override wins and is reported override-resolved; a missing or unmodelled target (Calendar, Organization) without an override aborts instead of being dropped by intersection
+- [Phase 09]: 09-08: ownerTargets written only when narrower than [Group, User]; 8 objects User-only (Event by override), 8 stay polymorphic (Group, ServiceContract by override)
+- [Phase 09]: 09-08: BASE2-01 ticked (owner targets now in overrides.json); BASE2-04 left pending for 09-09 (wording names unmodelled objects and Calendar on Event; poly-check re-run)
+- [Phase 09]: 09-09: D-14 scenario lives in upgrade-owner.test.ts with its own schema so upgrade.test.ts EXPECTED_WARNINGS stays []; the Group-owned Account warns exactly once and the FK lands silently after correction
+- [Phase 09]: 09-09: BASE2-04 wording amended to the 35 modelled objects (8 User-only incl. Event by D-12 override, 8 polymorphic incl. Group by override, 19 without OwnerId, Phase 10 forward clause) and ticked; conformance 8/8 PASS locally, poly-check 4/4 both legs
+- [Phase 10]: 10-02: unreferenced unmodelled standard objects go to BuildResult.info and one quiet-gated info: line in check; warnings/diagnostics stay 1:1; --strict ignores it
+- [Phase 10]: 10-01: de-describe key prefix source accepted with a ref (intentional reversal of the Phase 9 D-07 guard per D-01); rule 4 forced-nullable limited to objects with v1 pins (D-18)
+- [Phase 10]: 10-03: OpportunitySplit 049 and all 18 prefixes confirmed from the author's own DE describe (no D-02); four labelPlural and the OpportunitySplit name field corrected from DE; ContentVersion.ContentDocumentId nullable override accepted as a stopgap, full file upload tracked as backlog 999.10
+- [Phase 10]: 10-04: duplicate-spelling skips go on the field_reference-only spelling; Entitlement lookup on documented LocationID, OrderItem on RelatedOrderItemID
+- [Phase 10]: 10-04: OpportunitySplit.Split generated as AutoNumber name field; merge added to known Supported Calls
+- [Phase 10]: 10-04 fix: field names take the SDK (field_reference/describe) spelling where the Object Reference differs only by case; renameFrom override for PDF spellings without a twin (Quote.RecordTypeId, AccountTeamMember.PhotoUrl); DE describe 2026-10-14 is the evidence
+- [Phase 10]: 10-05: OrderItem.QuoteLineItemId and RelatedOrderItemId overridden nillable:true (sf-skills required flag contradicts its own descriptions; OrderItem was uninsertable); engine/REST behaviour of the 18 proven without production code change
+- [Phase 10]: 10-06 fix: Quote.OpportunityId joins the roll-up lookup allowlist (documented Create/Filter-only, same signature as OpportunityLineItem.OpportunityId); Phase 5 D-08 reversed, a roll-up over an unlisted lookup now degrades with UNSUPPORTED:rollup-relationship instead of failing the load
+- [Phase 10]: 10-06 fix: Quote hasOwner set by override with the author's DE describe as ref; D-21 unchanged (field_reference alone still does not imply an owner)
 
 ### Pending Todos
 
-- Narrow baseline OwnerId referenceTo per object (metadata, 2026-10-08)
 - Support Relationship:Object.Field colon syntax for polymorphic formula references (formula, 2026-10-08)
 - v1.0 audit tech debt (see milestones/v1.0-MILESTONE-AUDIT.md): combined Bulk-ingest + roll-up test;
   roll-up re-backfill todo; refresh 04-VERIFICATION.md status after UAT; VALIDATION.md maps; make the
@@ -192,6 +233,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T13:52:44.434Z
-Stopped at: Completed 08-07-PLAN.md
+Last session: 2026-10-14T14:38:33.348Z
+Stopped at: Completed 10-06-PLAN.md (all 6 plans done, phase verification pending)
 Resume file: None

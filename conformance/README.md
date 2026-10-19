@@ -8,13 +8,13 @@ real-world metadata retrieved from the author's own Developer Edition.
 
 | Check | Date | orglet commit | SDK | Result | Details |
 |---|---|---|---|---|---|
-| DE retrieve check (`orglet check --strict`) | 2026-10-12 | c648d9e | n/a | exit 0, 0 warnings, 37 objects (2 custom), 983 fields | [DE retrieve check](#de-retrieve-check) |
-| jsforce e2e subset: core | 2026-10-12 | 3b6ad5a | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
-| jsforce e2e subset: Bulk API 2.0 | 2026-10-12 | 3b6ad5a | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
-| simple-salesforce script | 2026-10-12 | 3b6ad5a | simple-salesforce 1.12.10 | 29/29 passed | [python/README.md](python/README.md) |
-| describe-check | 2026-10-12 | 3b6ad5a | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 14/14, simple-salesforce 14/14 | [describe-check/README.md](describe-check/README.md) |
-| poly-check | 2026-10-12 | 3b6ad5a | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 4/4, simple-salesforce 4/4 | [poly-check/README.md](poly-check/README.md) |
-| rollup-check | 2026-10-12 | 3b6ad5a | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5 | [rollup-check/README.md](rollup-check/README.md) |
+| DE retrieve check (`orglet check --strict`) | 2026-10-16 | 00354b4 | n/a | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced | [DE retrieve check](#de-retrieve-check) |
+| jsforce e2e subset: core | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
+| jsforce e2e subset: Bulk API 2.0 | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
+| simple-salesforce script | 2026-10-14 | fb9c397 | simple-salesforce 1.12.10 | 29/29 passed | [python/README.md](python/README.md) |
+| describe-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32 | [describe-check/README.md](describe-check/README.md) |
+| poly-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 4/4, simple-salesforce 4/4 | [poly-check/README.md](poly-check/README.md) |
+| rollup-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5 | [rollup-check/README.md](rollup-check/README.md) |
 
 Every row except the DE retrieve check runs against `examples/acme` on a fresh schema.
 
@@ -47,3 +47,4 @@ lines and the summary line are recorded.
 | 2026-09-29 | 15 warnings (baseline) |
 | 2026-10-09 | 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-12 | exit 0, 0 warnings, 37 objects (2 custom), 983 fields |
+| 2026-10-16 | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced |

@@ -3,6 +3,7 @@
   "label": "Business Hours",
   "labelPlural": "Business Hours",
   "keyPrefix": "01m",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": true,
   "deletable": false,
@@ -10,8 +11,116 @@
   "searchable": true,
   "hasOwner": false,
   "fields": [
-    { "name": "Name", "label": "Business Hours Name", "type": "Text", "length": 80, "nillable": false, "idLookup": true, "nameField": true },
-    { "name": "IsActive", "label": "Active", "type": "Checkbox" },
-    { "name": "IsDefault", "label": "Default Business Hours", "type": "Checkbox" }
+    {
+      "name": "BusinessHoursId",
+      "label": "Business Hours ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "BusinessHours"
+      ]
+    },
+    {
+      "name": "FridayEndTime",
+      "label": "Friday End",
+      "type": "Time"
+    },
+    {
+      "name": "FridayStartTime",
+      "label": "Friday Start",
+      "type": "Time"
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox"
+    },
+    {
+      "name": "IsDefault",
+      "label": "Default Business Hours",
+      "type": "Checkbox"
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MondayEndTime",
+      "label": "Monday End",
+      "type": "Time"
+    },
+    {
+      "name": "MondayStartTime",
+      "label": "Monday Start",
+      "type": "Time"
+    },
+    {
+      "name": "Name",
+      "label": "Business Hours Name",
+      "type": "Text",
+      "length": 80,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "SaturdayEndTime",
+      "label": "Saturday End",
+      "type": "Time"
+    },
+    {
+      "name": "SaturdayStartTime",
+      "label": "Saturday Start",
+      "type": "Time"
+    },
+    {
+      "name": "SundayEndTime",
+      "label": "Sunday End",
+      "type": "Time"
+    },
+    {
+      "name": "SundayStartTime",
+      "label": "Sunday Start",
+      "type": "Time"
+    },
+    {
+      "name": "ThursdayEndTime",
+      "label": "Thursday End",
+      "type": "Time"
+    },
+    {
+      "name": "ThursdayStartTime",
+      "label": "Thursday Start",
+      "type": "Time"
+    },
+    {
+      "name": "TimeZoneSidKey",
+      "label": "Time Zone",
+      "type": "Picklist"
+    },
+    {
+      "name": "TuesdayEndTime",
+      "label": "Tuesday End",
+      "type": "Time"
+    },
+    {
+      "name": "TuesdayStartTime",
+      "label": "Tuesday Start",
+      "type": "Time"
+    },
+    {
+      "name": "WednesdayEndTime",
+      "label": "Wednesday End",
+      "type": "Time"
+    },
+    {
+      "name": "WednesdayStartTime",
+      "label": "Wednesday Start",
+      "type": "Time"
+    }
   ]
 }

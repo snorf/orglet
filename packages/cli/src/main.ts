@@ -33,7 +33,7 @@ Options:
                   none persisted yet (for example your own org's keyPrefix values); never overrides a
                   persisted assignment
   --drop-prefixes With reset: also forget the org's persisted custom-object key prefixes
-  --strict      With check: exit 1 if any warning was printed (default: always exit 0)
+  --strict      With check: exit 1 if any warning was printed (default: always exit 0); info lines never count
   --quiet       Only print errors
 `;
 
@@ -74,12 +74,19 @@ async function check(c: Common, strict: boolean): Promise<number> {
   const result = await loadOrgSchema(c.project ? { projectDir: c.project } : {});
   const objects = result.schema.list();
   log(c, `${objects.length} objects (${objects.filter((o) => o.custom).length} custom), ${objects.reduce((n, o) => n + o.fields.length, 0)} fields`);
+  // D-10: the featureGated tag is visible here and in the baseline JSON, never as a describe key.
+  const gated = objects.reduce((n, o) => n + o.fields.filter((f) => f.featureGated === true).length, 0);
+  if (gated > 0) log(c, `${gated} feature-gated standard fields included (nullable; present in an org only when the feature is enabled)`);
   // Without a database the prefixes are only the name-order scheme; `orglet up` persists the real ones.
   const custom = objects.filter((o) => o.custom);
   for (const o of custom) log(c, `  ${o.name}  ${o.keyPrefix}  (provisional)`);
   if (custom.length > 0) log(c, "custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter");
   const warnings = [...result.warnings, ...new FormulaRegistry(result.schema).warnings];
   for (const w of warnings) console.warn(`warning: ${w}`);
+  // BASE2-08 (D-08): unmodelled standard objects nothing references are informational: one sorted stdout line after the
+  // warnings, quiet-gated like every log line, never prefixed "warning:" and never counted by --strict.
+  const unreferenced = [...new Set(result.info.map((d) => d.object).filter((n): n is string => n !== undefined))].sort();
+  if (unreferenced.length > 0) log(c, `info: ${unreferenced.length} standard objects not modelled and unreferenced: ${unreferenced.join(", ")}`);
   // --strict turns any warning (UNSUPPORTED:* or otherwise) into a failing exit code, for acceptance runs and CI.
   return strict && warnings.length > 0 ? 1 : 0;
 }

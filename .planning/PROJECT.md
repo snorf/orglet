@@ -28,7 +28,25 @@ define the next milestone.
 **v1.1 progress:** Phase 8 complete 2026-10-13 — upgrade safety net (populated v1.0 upgrade test on
 pglite and Postgres 16, `UNSUPPORTED:schema-fk`, idempotent second `up`), nullable key prefixes end to
 end, structured diagnostic records beside the unchanged warning strings, and the two upstream sigha
-branches pushed to snorf/sigha (PRs not yet opened).
+branches pushed to snorf/sigha (PRs not yet opened). Phase 9 complete 2026-10-14 — the standard-object
+baseline is now generator output (`scripts/gen-baseline`, offline, from a pinned sf-skills snapshot and a
+facts-only Object Reference extraction, with `overrides.json` hand facts and a CI drift gate): the 35
+objects grew from 659 to 2 536 fields with v1.0 fields byte-identical, 135 fields tagged `featureGated`,
+skips listed in `PROVENANCE.json` (accepted documented skip ratio 0.103), a v1-vs-v2 diff gate plus
+MasterDetail refusal (MIGR-03), and per-object `ownerTargets` (eight User-only objects; Owner.X now
+compiles in formulas and SOQL on Account, Contact, Opportunity, Contract, Asset, Campaign). 575 tests,
+conformance 8/8 legs green locally. Phase 10 complete 2026-10-16 — the 18 business objects (Quote, QuoteLineItem, Order,
+OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole,
+OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument,
+ContentVersion, FeedItem, Location, Address) are generated baseline objects with DE-confirmed key prefixes,
+DML flags from the Object Reference "Supported Calls" line, documented-required fields kept required, and
+blob/junction/geolocation fields omitted and reported; `orglet check` separates referenced from
+unreferenced unmodelled standard objects (one `info:` line, never a `--strict` failure); roll-ups over
+Quote.OpportunityId are allowed and a roll-up over an unlisted lookup degrades with
+`UNSUPPORTED:rollup-relationship` instead of failing the load. 632 tests on Postgres 16, conformance
+8/8 legs green with describe-check 32/32 on both SDKs, DE retrieve check exit 0 with 0 warnings over
+55 objects. Stopgap: ContentVersion.ContentDocumentId is nullable until file upload is done properly
+(backlog 999.10).
 
 ## Current Milestone: v1.1 real-org fidelity
 
@@ -40,9 +58,10 @@ in a quiet informational category, not as warnings.
 **Target features:**
 - Standard-object baseline v2 generated from the public Object Reference: field parity for the
   existing 35 objects (incl. the thin phase-3 ones) and the business objects a typical sales/service org
-  references (Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember,
-  OpportunityTeamMember, OpportunityContactRole, ContractLineItem, EmailMessage,
-  ContentDocument/ContentVersion, FeedItem, Location/Address).
+  references (Quote, QuoteLineItem, Order,
+  OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole,
+  OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument/ContentVersion,
+  FeedItem, Location/Address).
 - Formula coverage: `$UserRole`, `$Api`, `$Setup`, `$Label`, `$CustomMetadata` globals; OwnerId
   `referenceTo` narrowed per object so plain `Owner.X` compiles; `Relationship:Object.Field` colon
   syntax and the `!` operator fixed upstream in sigha and resynced. `$Permission` stays an explicit
@@ -177,6 +196,16 @@ Validated in Phase 8 (v1.1, 2026-10-13):
 - ✓ Standard objects without a confirmed key prefix load with `keyPrefix: null` plus a source label,
   describe correctly and never take part in prefix-based polymorphic matching — BASE2-05
 
+Validated in Phase 10 (v1.1, 2026-10-16):
+
+- ✓ The 18 business objects exist as generated baseline objects with documented key prefix, name
+  field, system fields, documented API fields and explicit DML flags; blob fields are omitted and
+  listed in the generator report — BASE2-06
+- ✓ DML against the 18 respects the documented flags with `INVALID_TYPE_FOR_OPERATION`; a lookup with
+  an unparsable Id is `MALFORMED_ID`, a wrong-type or missing Id is `INVALID_CROSS_REFERENCE_KEY` — BASE2-07
+- ✓ `orglet check` keeps the warnings of a referenced-but-unmodelled standard object and reports an
+  unreferenced one on an informational line that never fails `--strict` — BASE2-08
+
 ### Active
 
 Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements are defined in
@@ -307,4 +336,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-13 after Phase 8 (upgrade safety net & nullable key prefixes)*
+*Last updated: 2026-10-16 after Phase 10 (business standard objects)*

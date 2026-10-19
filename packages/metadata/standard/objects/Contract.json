@@ -3,29 +3,33 @@
   "label": "Contract",
   "labelPlural": "Contracts",
   "keyPrefix": "800",
+  "keyPrefixSource": "unverified",
   "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
   "fields": [
     {
       "name": "AccountId",
       "label": "Account ID",
       "type": "Lookup",
+      "nillable": false,
       "referenceTo": [
         "Account"
       ],
       "relationshipName": "Account",
-      "childRelationshipName": "Contracts",
-      "nillable": false
+      "childRelationshipName": "Contracts"
     },
     {
       "name": "ActivatedById",
       "label": "Activated By ID",
       "type": "Lookup",
+      "createable": false,
+      "updateable": false,
       "referenceTo": [
         "User"
       ],
-      "relationshipName": "ActivatedBy",
-      "createable": false,
-      "updateable": false
+      "relationshipName": "ActivatedBy"
     },
     {
       "name": "ActivatedDate",
@@ -33,6 +37,11 @@
       "type": "DateTime",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "AggregationStrategy",
+      "label": "Aggregation Strategy",
+      "type": "Picklist"
     },
     {
       "name": "BillingAddress",
@@ -56,11 +65,15 @@
       "compoundFieldName": "BillingAddress"
     },
     {
+      "name": "BillingCountryCode",
+      "label": "Billing Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
       "name": "BillingGeocodeAccuracy",
       "label": "Billing Geocode Accuracy",
       "type": "Picklist",
-      "compoundFieldName": "BillingAddress",
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "Address",
@@ -106,7 +119,9 @@
           "value": "Unknown",
           "label": "Unknown"
         }
-      ]
+      ],
+      "restrictedPicklist": true,
+      "compoundFieldName": "BillingAddress"
     },
     {
       "name": "BillingLatitude",
@@ -139,6 +154,12 @@
       "compoundFieldName": "BillingAddress"
     },
     {
+      "name": "BillingStateCode",
+      "label": "Billing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
       "name": "BillingStreet",
       "label": "Billing Street",
       "type": "TextArea",
@@ -163,12 +184,12 @@
       "name": "ContractNumber",
       "label": "Contract Number",
       "type": "AutoNumber",
-      "displayFormat": "{00000000}",
-      "nameField": true,
-      "idLookup": true,
       "createable": false,
       "updateable": false,
-      "defaultedOnCreate": true
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
     },
     {
       "name": "ContractTerm",
@@ -176,6 +197,13 @@
       "type": "Number",
       "precision": 4,
       "scale": 0
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
     },
     {
       "name": "CustomerSignedDate",
@@ -209,6 +237,22 @@
       "type": "Date",
       "createable": false,
       "updateable": false
+    },
+    {
+      "name": "HasContractCotermination",
+      "label": "Has Contract Cotermination",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsPricingContract",
+      "label": "Is Pricing Contract",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
     },
     {
       "name": "LastActivityDate",
@@ -248,7 +292,6 @@
       "name": "OwnerExpirationNotice",
       "label": "Owner Expiration Notice",
       "type": "Picklist",
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "15",
@@ -274,7 +317,8 @@
           "value": "120",
           "label": "120 Days"
         }
-      ]
+      ],
+      "restrictedPicklist": true
     },
     {
       "name": "Pricebook2Id",
@@ -287,6 +331,11 @@
       "childRelationshipName": "Contracts"
     },
     {
+      "name": "PricingSource",
+      "label": "Pricing Source",
+      "type": "Picklist"
+    },
+    {
       "name": "RecordTypeId",
       "label": "Record Type ID",
       "type": "Lookup",
@@ -294,6 +343,18 @@
         "RecordType"
       ],
       "relationshipName": "RecordType"
+    },
+    {
+      "name": "RenewalTerm2",
+      "label": "Renewal Term",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6
+    },
+    {
+      "name": "RenewalTermUnit",
+      "label": "Renewal Term Unit",
+      "type": "Picklist"
     },
     {
       "name": "ShippingAddress",
@@ -317,11 +378,15 @@
       "compoundFieldName": "ShippingAddress"
     },
     {
+      "name": "ShippingCountryCode",
+      "label": "Shipping Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
       "name": "ShippingGeocodeAccuracy",
       "label": "Shipping Geocode Accuracy",
       "type": "Picklist",
-      "compoundFieldName": "ShippingAddress",
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "Address",
@@ -367,7 +432,9 @@
           "value": "Unknown",
           "label": "Unknown"
         }
-      ]
+      ],
+      "restrictedPicklist": true,
+      "compoundFieldName": "ShippingAddress"
     },
     {
       "name": "ShippingLatitude",
@@ -400,11 +467,26 @@
       "compoundFieldName": "ShippingAddress"
     },
     {
+      "name": "ShippingStateCode",
+      "label": "Shipping State Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
       "name": "ShippingStreet",
       "label": "Shipping Street",
       "type": "TextArea",
       "length": 255,
       "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "SourceQuoteId",
+      "label": "Source Quote ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Quote"
+      ],
+      "relationshipName": "Contract"
     },
     {
       "name": "SpecialTerms",
@@ -432,7 +514,6 @@
       "nillable": false,
       "createable": false,
       "updateable": false,
-      "restrictedPicklist": true,
       "picklistValues": [
         {
           "value": "Draft",
@@ -454,7 +535,15 @@
           "value": "Expired",
           "label": "Expired"
         }
-      ]
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "UnitPriceUplift",
+      "label": "Unit Price Uplift",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
     }
   ]
 }

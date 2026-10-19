@@ -3,6 +3,7 @@
   "label": "Service Contract",
   "labelPlural": "Service Contracts",
   "keyPrefix": "810",
+  "keyPrefixSource": "unverified",
   "createable": true,
   "updateable": true,
   "deletable": true,
@@ -10,6 +11,363 @@
   "searchable": true,
   "hasOwner": true,
   "fields": [
-    { "name": "Name", "label": "Contract Name", "type": "Text", "length": 255, "nillable": false, "nameField": true }
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ]
+    },
+    {
+      "name": "ActivationDate",
+      "label": "Activation Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AdditionalDiscount",
+      "label": "Additional Discount",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
+    },
+    {
+      "name": "ApprovalStatus",
+      "label": "Approval Status",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "BillingAddress",
+      "label": "Billing Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BillingCity",
+      "label": "Billing City",
+      "type": "Text",
+      "length": 40,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingCountry",
+      "label": "Billing Country",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingCountryCode",
+      "label": "Billing Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingGeocodeAccuracy",
+      "label": "Billing Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingLatitude",
+      "label": "Billing Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingLongitude",
+      "label": "Billing Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingPostalCode",
+      "label": "Billing Zip",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingState",
+      "label": "Billing State",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingStateCode",
+      "label": "Billing State Code",
+      "type": "Picklist",
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "BillingStreet",
+      "label": "Billing Street",
+      "type": "TextArea",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "BillingAddress"
+    },
+    {
+      "name": "ContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Contact"
+      ]
+    },
+    {
+      "name": "ContractNumber",
+      "label": "Contract Number",
+      "type": "Text",
+      "length": 30,
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 32000,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Discount",
+      "label": "Discount",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "EndDate",
+      "label": "End Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "GrandTotal",
+      "label": "Grand Total",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "Date",
+      "createable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "Date",
+      "createable": false
+    },
+    {
+      "name": "LineItemCount",
+      "label": "Line Items",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Contract Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "nameField": true
+    },
+    {
+      "name": "Pricebook2Id",
+      "label": "Price Book ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Pricebook2"
+      ]
+    },
+    {
+      "name": "ShippingAddress",
+      "label": "Shipping Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ShippingCity",
+      "label": "Shipping City",
+      "type": "Text",
+      "length": 40,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingCountry",
+      "label": "Shipping Country",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingCountryCode",
+      "label": "Shipping Country Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingGeocodeAccuracy",
+      "label": "Shipping Geocode Accuracy",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingHandling",
+      "label": "Shipping and Handling",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ShippingLatitude",
+      "label": "Shipping Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingLongitude",
+      "label": "Shipping Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingPostalCode",
+      "label": "Shipping Zip",
+      "type": "Text",
+      "length": 20,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingState",
+      "label": "Shipping State",
+      "type": "Text",
+      "length": 80,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingStateCode",
+      "label": "Shipping State Code",
+      "type": "Picklist",
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "ShippingStreet",
+      "label": "Shipping Street",
+      "type": "TextArea",
+      "length": 255,
+      "compoundFieldName": "ShippingAddress"
+    },
+    {
+      "name": "SpecialTerms",
+      "label": "Special Terms",
+      "type": "LongTextArea",
+      "length": 32000
+    },
+    {
+      "name": "StartDate",
+      "label": "Start Date",
+      "type": "Date"
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Subtotal",
+      "label": "Subtotal",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Tax",
+      "label": "Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2
+    },
+    {
+      "name": "Term",
+      "label": "Term (months)",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "TotalPrice",
+      "label": "Total Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    }
   ]
 }

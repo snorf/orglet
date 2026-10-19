@@ -3,7 +3,10 @@
  * packages/metadata/test/fixtures/baseline-v1.0) and holding Group-owned and --import rows is upgraded the way
  * `orglet up` does it (reconcileKeyPrefixes -> migrate -> bootstrapOrg, cli/src/main.ts) and must keep every row.
  * Later phases extend EXPECTED_WARNINGS when their baseline change is meant to warn; they never weaken the row or
- * second-run assertions. Runs on pglite by default and on Postgres 16 with ORGLET_DATABASE_URL.
+ * second-run assertions. Since Phase 9 the baseline grows additively: ADD COLUMN and ADD CONSTRAINT are expected,
+ * rows are compared on their v1.0 columns, and DROP TABLE, DROP COLUMN and ALTER COLUMN ... TYPE stay
+ * forbidden. Since Phase 10 the baseline also grows by new objects: CREATE TABLE is allowed for exactly the 18 Phase 10
+ * tables (NEW_TABLES) and stays forbidden for every v1.0 table. Runs on pglite by default and on Postgres 16 with ORGLET_DATABASE_URL.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -17,8 +20,10 @@ import type { Session } from "./hooks.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const V1_BASELINE = fileURLToPath(new URL("../../metadata/test/fixtures/baseline-v1.0/", import.meta.url));
-/** Warnings the current code is expected to print when upgrading the v1.0 fixture org. Phase 8: none (no baseline change yet). */
+/** Warnings the current code is expected to print when upgrading the v1.0 fixture org. Phase 9 v2 baseline: none (every change is an ADD COLUMN or an FK the fixture rows satisfy). */
 const EXPECTED_WARNINGS: string[] = [];
+/** The tables of the 18 objects Phase 10 adds; the only CREATE TABLE statements the upgrade may emit. */
+const NEW_TABLES = ["accountcontactrelation", "accountteammember", "address", "casecontactrole", "casemilestone", "contentdocument", "contentversion", "contractlineitem", "emailmessage", "feeditem", "location", "opportunitycontactrole", "opportunitysplit", "opportunityteammember", "order", "orderitem", "quote", "quotelineitem"];
 const TABLES = ["account", "contact", "case", "group"] as const;
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
 
@@ -26,6 +31,8 @@ let testDb: TestDb;
 let pool: Pool;
 let session: Session;
 let before: Record<string, unknown[]>;
+/** Column names per table as the v1.0 build created them; later baselines only append columns. */
+const V1_COLUMNS: Record<string, string[]> = {};
 
 const schemaFrom = async (dir?: string): Promise<OrgSchema> =>
   buildOrgSchema(dir === undefined ? await loadBaseline() : await loadBaseline(dir), await readSourceProject(ACME)).schema;
@@ -39,7 +46,14 @@ const up = async (schema: OrgSchema) => {
 };
 
 const snapshot = async (): Promise<Record<string, unknown[]>> =>
-  Object.fromEntries(await Promise.all(TABLES.map(async (t) => [t, (await pool.query(`SELECT * FROM ${quote(orgSchema)}.${quote(t)} ORDER BY "id"`)).rows] as const)));
+  Object.fromEntries(
+    await Promise.all(
+      TABLES.map(async (t) => {
+        const cols = (V1_COLUMNS[t] ?? []).map(quote).join(", ");
+        return [t, (await pool.query(`SELECT ${cols} FROM ${quote(orgSchema)}.${quote(t)} ORDER BY "id"`)).rows] as const;
+      }),
+    ),
+  );
 
 const insertOk = async (engine: DmlEngine, sobject: string, input: Record<string, unknown>): Promise<string> => {
   const [r] = await engine.insert(session, sobject, [input]);
@@ -83,6 +97,13 @@ describe("upgrading a populated v1.0 database with the current code (MIGR-01)", 
     await insertOk(importer, "Contact", { Id: toCaseSafeId("003000000000IMP"), LastName: "Imported", AccountId: importedAccount, CreatedDate: "2020-01-02T03:04:05.000+0000", CreatedById: session.userId });
     await insertOk(importer, "Case", { Id: toCaseSafeId("500000000000IMP"), Subject: "Imported queue case", OwnerId: groupId, CreatedDate: "2020-02-03T04:05:06.000+0000", CreatedById: session.userId });
 
+    for (const t of TABLES) {
+      const cols = await pool.query<{ column_name: string }>(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position",
+        [orgSchema, t],
+      );
+      V1_COLUMNS[t] = cols.rows.map((r) => r.column_name);
+    }
     before = await snapshot();
     expect(before["account"]?.length).toBeGreaterThanOrEqual(2);
     expect(before["contact"]?.length).toBeGreaterThanOrEqual(2);
@@ -90,13 +111,19 @@ describe("upgrading a populated v1.0 database with the current code (MIGR-01)", 
     expect(before["group"]?.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("upgrading it keeps every row byte-identical and warns exactly the expected list", async () => {
+  it("upgrading it keeps every row identical on its v1.0 columns, only adds, and warns exactly the expected list", async () => {
     const now = await schemaFrom();
     const { prefixes, migration } = await up(now);
     expect(prefixes.assignments).toEqual([]);
     expect(prefixes.warnings).toEqual([]);
     expect(migration.warnings).toEqual(EXPECTED_WARNINGS);
-    expect(migration.statements.filter((s) => /^(CREATE TABLE|ALTER TABLE .* (ADD|DROP|ALTER) COLUMN|DROP TABLE)/.test(s))).toEqual([]);
+    const FORBIDDEN = /^(DROP TABLE|ALTER TABLE \S+ DROP COLUMN|ALTER TABLE \S+ ALTER COLUMN \S+ TYPE)/;
+    expect(migration.statements.filter((s) => FORBIDDEN.test(s))).toEqual([]);
+    const created = migration.statements.filter((s) => s.startsWith("CREATE TABLE")).map((s) => /^CREATE TABLE "[^"]+"\."([^"]+)"/.exec(s)?.[1]);
+    expect([...created].sort()).toEqual(NEW_TABLES);
+    expect(created.filter((t) => t !== undefined && ["account", "contact", "case", "group"].includes(t))).toEqual([]);
+    // SC5 with the v2 baseline: the upgrade is additive, so new columns must actually be added (not a no-op by accident).
+    expect(migration.statements.some((s) => /^ALTER TABLE \S+ ADD COLUMN /.test(s))).toBe(true);
     expect(await snapshot()).toEqual(before);
   });
 

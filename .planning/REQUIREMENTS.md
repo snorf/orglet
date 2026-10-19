@@ -28,7 +28,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   key on a populated column that holds rows violating it, `migrate()` names every offending table,
   column and row count, logs one `UNSUPPORTED:schema-fk` warning per column, skips that foreign key
   and completes; it never deletes or rewrites data.
-- [ ] **MIGR-03**: The baseline generator refuses to emit a new MasterDetail (NOT NULL) column on an
+- [x] **MIGR-03**: The baseline generator refuses to emit a new MasterDetail (NOT NULL) column on an
   object that existed in v1.0, and a v1-vs-v2 diff gate fails when a v1.0 field disappears or
   narrows without an allowlisted reason, so an upgrade never leaves permanent `schema-drop` or
   `schema-narrow` warnings.
@@ -37,42 +37,53 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Baseline v2 (standard objects and fields)
 
-- [ ] **BASE2-01**: A deterministic generator under `scripts/` produces the baseline JSON for a listed
+- [x] **BASE2-01**: A deterministic generator under `scripts/` produces the baseline JSON for a listed
   set of standard objects from a vendored, licence-attributed snapshot of Salesforce's published
   object catalogue (Apache-2.0), cross-checked at generation time against the public Object Reference
   PDF; a flag is "verified" when both agree and otherwise carries a provenance mark; disagreements
   and hand facts (key prefix, precision/scale, compound fields, standard value sets, owner targets)
   live in a committed `overrides.json` with a reason per entry; the output contains no documentation
   prose; CI fails when regeneration differs from the committed files.
-- [ ] **BASE2-02**: Regenerating the existing 35 baseline objects first reproduces their current
+- [x] **BASE2-02**: Regenerating the existing 35 baseline objects first reproduces their current
   shape (no-op diff), then adds every documented API field with its type, length, nillable,
   createable, updateable and defaulted-on-create flags, so `orglet check` on a retrieve that uses
-  those fields reports zero `UNSUPPORTED:standard-field` for them.
-- [ ] **BASE2-03**: Feature-gated fields (available only when an org feature is enabled) are included
-  as nullable fields tagged `featureGated` in the baseline JSON and visible in describe, replacing
-  the v1.0 rule of skipping them.
-- [ ] **BASE2-04**: `OwnerId.referenceTo` is defined per object from the Object Reference (User-only
-  on Account, Contact, Opportunity, Contract, Asset, Campaign, Individual, Solution, ContentVersion;
-  User and Group on Case, Lead, Task, SocialPost, Order, Location, ContactRequest, WorkOrder,
-  ServiceAppointment, OperatingHours, ServiceContract; Calendar and User on Event; none on Quote,
-  QuoteLineItem, Entitlement, Product2, Pricebook2, PricebookEntry, EmailMessage, FeedItem,
-  Address), so plain `Owner.X` formula traversal and `Owner.X` SOQL compile on User-only objects
-  while polymorphic behaviour from v1.0 is unchanged on queue-enabled objects.
+  those fields reports zero `UNSUPPORTED:standard-field` for them, except documented fields the
+  generator reports as not modellable (unsupported type, or reference target outside the baseline).
+- [x] **BASE2-03**: Feature-gated fields (available only when an org feature is enabled) are included
+  as nullable fields tagged `featureGated` in the baseline JSON and described as nullable fields (the
+  tag itself is not a describe key), replacing the v1.0 rule of skipping them.
+  *Deviation note 2026-10-14: wording aligned with Phase 9 delivered scope (D-10, locked decision 4).*
+- [x] **BASE2-04**: `OwnerId.referenceTo` is defined per object by the generator as `ownerTargets`,
+  derived from both sources (sf-skills and the Object Reference) for the 35 modelled objects: User-only
+  on Account, Asset, Campaign, Contact, Contract, Event, Individual and Opportunity (Event by a reasoned
+  override, D-12: the documented Calendar owner is not modelled; widen when a Calendar object lands);
+  User and Group on the modelled objects whose owner stays polymorphic (Case, Lead, Task, SocialPost,
+  ServiceAppointment, OperatingHours, ServiceContract, and Group by override because its documented
+  Organization owner is not modelled); none on the 19 objects without `OwnerId` (Entitlement, Product2,
+  Pricebook2, PricebookEntry among them). Plain `Owner.X` formula traversal and `Owner.X` SOQL compile
+  on User-only objects while polymorphic behaviour from v1.0 is unchanged on queue-enabled objects, and a
+  v1.0 database holding a Group-owned row on a now-User-only object upgrades with one
+  `UNSUPPORTED:schema-fk` warning and no rewrite (D-14). Objects added from Phase 10 on (Solution,
+  ContentVersion, Order, Location, ContactRequest, WorkOrder, Quote, QuoteLineItem, EmailMessage,
+  FeedItem, Address) follow the same generator rule when they land.
+  *Deviation note 2026-10-14: wording aligned with Phase 9 delivered scope (09-09; CONTEXT D-11, D-12, D-14).*
 - [x] **BASE2-05**: Every standard-object key prefix in the baseline is either confirmed by two
   independent public sources or stored as `null` with a source label; an object with a null prefix
   still loads, describes and is reference-checked, and the generator never invents a prefix.
-- [ ] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
+- [x] **BASE2-06**: The 18 business objects a typical sales/service org references exist as baseline
   objects with documented key prefix (or null per BASE2-05), name field, system fields, documented
   API fields and explicit create/update/delete/undelete flags: Quote, QuoteLineItem, Order,
   OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember,
   OpportunityContactRole, OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone,
   EmailMessage, ContentDocument, ContentVersion, FeedItem, Location, Address. Blob fields
   (`ContentVersion.VersionData`) are omitted and listed in the generator report.
-- [ ] **BASE2-07**: DML against each of the 18 objects respects its documented flags (OrderItem no
+- [x] **BASE2-07**: DML against each of the 18 objects respects its documented flags (OrderItem no
   undelete; CaseMilestone no create or delete; ContentDocument no create; ContentVersion no delete)
-  and violations return `INVALID_TYPE_FOR_OPERATION` as in v1.0; lookups to any of them with an
-  invalid Id are rejected with `INVALID_CROSS_REFERENCE_KEY`.
-- [ ] **BASE2-08**: `orglet check` distinguishes a standard object that is referenced (by a lookup,
+  and violations return `INVALID_TYPE_FOR_OPERATION` as in v1.0; a lookup to any of them
+  with an unparsable Id is rejected with `MALFORMED_ID`, and with a well-formed Id of the wrong object
+  type or with no matching row with `INVALID_CROSS_REFERENCE_KEY`, as in v1.0.
+  *Deviation note 2026-10-14: lookup error codes split by case (Phase 10 D-15/D-20): `MALFORMED_ID` for an unparsable Id is documented; wrong type and missing row keep v1.0's `INVALID_CROSS_REFERENCE_KEY`. One official REST example returns `MALFORMED_ID` for a wrong-type `Document.FolderId`; deferred as a separate decision.*
+- [x] **BASE2-08**: `orglet check` distinguishes a standard object that is referenced (by a lookup,
   roll-up, formula or validation rule in the retrieve or baseline) from one that is not: a
   referenced-but-unmodelled object stays an `UNSUPPORTED:reference-target` warning; an unreferenced,
   unmodelled standard object is reported in an informational category that never fails `--strict`.
@@ -219,16 +230,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | MIGR-01 | Phase 8 | Complete |
 | MIGR-02 | Phase 8 | Complete |
-| MIGR-03 | Phase 9 | Pending |
+| MIGR-03 | Phase 9 | Complete |
 | MIGR-04 | Phase 8 | Complete |
-| BASE2-01 | Phase 9 | Pending |
-| BASE2-02 | Phase 9 | Pending |
-| BASE2-03 | Phase 9 | Pending |
-| BASE2-04 | Phase 9 | Pending |
+| BASE2-01 | Phase 9 | Complete |
+| BASE2-02 | Phase 9 | Complete |
+| BASE2-03 | Phase 9 | Complete |
+| BASE2-04 | Phase 9 | Complete |
 | BASE2-05 | Phase 8 | Complete |
-| BASE2-06 | Phase 10 | Pending |
-| BASE2-07 | Phase 10 | Pending |
-| BASE2-08 | Phase 10 | Pending |
+| BASE2-06 | Phase 10 | Complete |
+| BASE2-07 | Phase 10 | Complete |
+| BASE2-08 | Phase 10 | Complete |
 | CMDT-01 | Phase 11 | Pending |
 | CMDT-02 | Phase 11 | Pending |
 | CMDT-03 | Phase 11 | Pending |

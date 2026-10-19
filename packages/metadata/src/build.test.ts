@@ -4,10 +4,11 @@ import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Ba
 import { formatDiagnostic } from "./diagnostics.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+const V1_BASELINE = fileURLToPath(new URL("../test/fixtures/baseline-v1.0/", import.meta.url));
 
 const SYSTEM_FIELDS = ["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"];
 /** Objects the Object Reference gives no name-equivalent field (D-02); adding one must be a conscious act. */
-const NO_NAME_FIELD = ["OpportunityHistory"];
+const NO_NAME_FIELD = ["AccountContactRelation", "AccountTeamMember", "CaseContactRole", "CaseMilestone", "FeedItem", "OpportunityContactRole", "OpportunityHistory"];
 /** 03-RESEARCH.md Fact Table as amended by CONTEXT D-03a. extra = fields beyond system fields and OwnerId. */
 const THIN: Record<
   string,
@@ -27,6 +28,34 @@ const THIN: Record<
   ServiceContract: { keyPrefix: "810", hasOwner: true, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name"] },
   SocialPost: { keyPrefix: "0ST", hasOwner: true, createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, nameField: "Name", extra: ["Name"] },
   UserLicense: { keyPrefix: "100", hasOwner: false, createable: false, updateable: false, deletable: false, undeletable: false, searchable: false, nameField: "Name", extra: ["Name", "MasterLabel"] },
+};
+
+/**
+ * The 18 Phase 10 business objects. Every prefix was confirmed from the author's own Developer Edition describe at the D-04
+ * checkpoint (keyPrefixSource de-describe); flags come from the Object Reference Supported Calls. extra lookups are the load-bearing ones.
+ */
+const BUSINESS: Record<
+  string,
+  { keyPrefix: string; owner: boolean; flags: string; nameField: string | null; lookups: [string, string][] }
+> = {
+  Quote: { keyPrefix: "0Q0", owner: true, flags: "CUDXS", nameField: "Name", lookups: [["OpportunityId", "Opportunity"], ["AccountId", "Account"]] },
+  QuoteLineItem: { keyPrefix: "0QL", owner: false, flags: "CUDXS", nameField: "LineNumber", lookups: [["QuoteId", "Quote"], ["Product2Id", "Product2"], ["PricebookEntryId", "PricebookEntry"]] },
+  Order: { keyPrefix: "801", owner: true, flags: "CUDXS", nameField: "OrderNumber", lookups: [["AccountId", "Account"], ["OpportunityId", "Opportunity"]] },
+  OrderItem: { keyPrefix: "802", owner: false, flags: "CUD--", nameField: "OrderItemNumber", lookups: [["OrderId", "Order"]] },
+  AccountContactRelation: { keyPrefix: "07k", owner: false, flags: "CUD--", nameField: null, lookups: [["AccountId", "Account"], ["ContactId", "Contact"]] },
+  AccountTeamMember: { keyPrefix: "01M", owner: false, flags: "CUD--", nameField: null, lookups: [["AccountId", "Account"], ["UserId", "User"]] },
+  OpportunityTeamMember: { keyPrefix: "00q", owner: false, flags: "CUD--", nameField: "Name", lookups: [["OpportunityId", "Opportunity"], ["UserId", "User"]] },
+  OpportunityContactRole: { keyPrefix: "00K", owner: false, flags: "CUD--", nameField: null, lookups: [["OpportunityId", "Opportunity"], ["ContactId", "Contact"]] },
+  OpportunitySplit: { keyPrefix: "049", owner: false, flags: "CUD--", nameField: "Split", lookups: [["OpportunityId", "Opportunity"]] },
+  ContractLineItem: { keyPrefix: "811", owner: false, flags: "CUDXS", nameField: "LineItemNumber", lookups: [["ServiceContractId", "ServiceContract"]] },
+  CaseContactRole: { keyPrefix: "03j", owner: false, flags: "CUD--", nameField: null, lookups: [["CasesId", "Case"], ["ContactId", "Contact"]] },
+  CaseMilestone: { keyPrefix: "555", owner: false, flags: "-U---", nameField: null, lookups: [["CaseId", "Case"]] },
+  EmailMessage: { keyPrefix: "02s", owner: false, flags: "CUDXS", nameField: "Name", lookups: [["ParentId", "Case"]] },
+  ContentDocument: { keyPrefix: "069", owner: true, flags: "-UDXS", nameField: "Title", lookups: [] },
+  ContentVersion: { keyPrefix: "068", owner: true, flags: "CU--S", nameField: "Title", lookups: [["ContentDocumentId", "ContentDocument"]] },
+  FeedItem: { keyPrefix: "0D5", owner: false, flags: "CUD-S", nameField: null, lookups: [] },
+  Location: { keyPrefix: "131", owner: true, flags: "CUDXS", nameField: "Name", lookups: [] },
+  Address: { keyPrefix: "130", owner: false, flags: "CUDXS", nameField: "Name", lookups: [["ParentId", "Location"]] },
 };
 
 describe("standard baseline alone", () => {
@@ -94,11 +123,85 @@ describe("standard baseline alone", () => {
     }
   });
 
-  it("thin: each of the 14 objects carries only Id, the system fields, OwnerId when owned and its name, seed or compound fields", () => {
+  it("thin: each of the 14 objects keeps its v1.0 fields and only gains documented ones (BASE2-02 supersedes the phase-3 'only' rule)", async () => {
+    const v1 = await loadBaseline(V1_BASELINE);
     for (const [name, f] of Object.entries(THIN)) {
-      const obj = result.schema.getObject(name);
-      expect(obj?.fields.map((x) => x.name).sort(), name).toEqual([...SYSTEM_FIELDS, ...(f.hasOwner ? ["OwnerId"] : []), ...f.extra].sort());
+      const v1Names = [...SYSTEM_FIELDS, ...(f.hasOwner ? ["OwnerId"] : []), ...(v1.objects.find((o) => o.name === name)?.fields.map((x) => x.name) ?? [])];
+      // The frozen v1.0 fixture is exactly the phase-3 thin shape; the live baseline must be a superset of it.
+      expect([...v1Names].sort(), name).toEqual([...SYSTEM_FIELDS, ...(f.hasOwner ? ["OwnerId"] : []), ...f.extra].sort());
+      const now = new Set(result.schema.getObject(name)?.fields.map((x) => x.name));
+      for (const n of v1Names) expect(now.has(n), `${name}.${n}`).toBe(true);
     }
+  });
+
+  it("business: each of the 18 loads with its prefix, prefix source, owner and DML flags (BASE2-06)", () => {
+    expect(Object.keys(BUSINESS)).toHaveLength(18);
+    for (const [name, f] of Object.entries(BUSINESS)) {
+      const flag = (i: number, letter: string): boolean => f.flags[i] === letter;
+      expect(result.schema.getObject(name), name).toMatchObject({
+        name,
+        custom: false,
+        queryable: true,
+        keyPrefix: f.keyPrefix,
+        keyPrefixSource: "de-describe",
+        hasOwner: f.owner,
+        createable: flag(0, "C"),
+        updateable: flag(1, "U"),
+        deletable: flag(2, "D"),
+        undeletable: flag(3, "X"),
+        searchable: flag(4, "S"),
+      });
+    }
+    expect(result.schema.getObject("ContentDocument")?.fields.find((x) => x.name === "OwnerId")?.referenceTo).toEqual(["User"]);
+    expect(result.schema.getObject("ContentVersion")?.fields.find((x) => x.name === "OwnerId")?.referenceTo).toEqual(["User"]);
+    // Quote lists OwnerId only in the sf-skills field_reference, so its owner comes from a hasOwner override (Task 3 finding); its targets stay polymorphic.
+    expect(result.schema.getObject("Quote")?.fields.some((x) => x.name === "OwnerId")).toBe(true);
+  });
+
+  it("business: each of the 18 has its name field, or none", () => {
+    for (const [name, f] of Object.entries(BUSINESS)) {
+      expect(result.schema.getObject(name)?.fields.filter((x) => x.nameField).map((x) => x.name), name).toEqual(f.nameField === null ? [] : [f.nameField]);
+    }
+  });
+
+  it("business: load-bearing lookups point at their documented targets (research Pitfall 1)", () => {
+    for (const [name, f] of Object.entries(BUSINESS)) {
+      for (const [field, target] of f.lookups) expect(result.schema.getField(name, field)?.referenceTo, `${name}.${field}`).toEqual([target]);
+    }
+    expect(result.schema.getField("FeedItem", "ParentId")?.referenceTo).toEqual(expect.arrayContaining(["Account", "Case"]));
+  });
+
+  it("business: blob, junction and geolocation fields are not in the schema", () => {
+    for (const [object, field] of [["ContentVersion", "VersionData"], ["FeedItem", "ContentData"], ["EmailMessage", "BccIds"], ["EmailMessage", "CcIds"], ["EmailMessage", "ContentDocumentIds"], ["EmailMessage", "ToIds"], ["Location", "Location"]] as const) {
+      expect(result.schema.getField(object, field), `${object}.${field}`).toBeUndefined();
+    }
+  });
+
+  it("baseline field names take the SDK spelling where the Object Reference differs only by case", () => {
+    // Confirmed against the author's own Developer Edition describe (2026-10-14) wherever the field exists there.
+    const names = (o: string): string[] => result.schema.getObject(o)?.fields.map((f) => f.name) ?? [];
+    for (const [object, right, wrong] of [
+      ["Entitlement", "LocationId", "LocationID"],
+      ["OrderItem", "RelatedOrderItemId", "RelatedOrderItemID"],
+      ["ContentVersion", "VersionDataUrl", "VersionDataURL"],
+      ["Quote", "RecordTypeId", "RecordTypeID"],
+      ["AccountTeamMember", "PhotoUrl", "PhotoURL"],
+      ["OpportunityTeamMember", "PhotoUrl", "PhotoURL"],
+      ["Account", "PersonBirthdate", "PersonBirthDate"],
+      ["ExternalDataSource", "IsWritable", "isWritable"],
+    ] as const) {
+      expect(names(object), `${object}.${right}`).toContain(right);
+      expect(names(object), `${object}.${wrong}`).not.toContain(wrong);
+    }
+    // The documented spelling is correct where the SDK list agrees with it.
+    expect(names("DandBCompany")).toContain("URL");
+  });
+
+  it("business: case-twin key prefixes stay distinct", () => {
+    const prefix = (o: string): string | null | undefined => result.schema.getObject(o)?.keyPrefix;
+    expect([prefix("AccountTeamMember"), prefix("BusinessHours")]).toEqual(["01M", "01m"]);
+    expect([prefix("OpportunityTeamMember"), prefix("Lead")]).toEqual(["00q", "00Q"]);
+    expect([prefix("OpportunityContactRole"), prefix("OpportunityLineItem")]).toEqual(["00K", "00k"]);
   });
 
   it("thin: field details follow the Object Reference", () => {
@@ -395,21 +498,34 @@ describe("roll-up summary resolution", () => {
     expect(r.schema.getField("Parent__c", "B__c")?.rollup?.operation).toBe("SUM");
   });
 
-  it("roll-ups on standard objects resolve over the three whitelisted lookups", () => {
+  it("roll-ups on standard objects resolve over the four whitelisted lookups", () => {
     const r = build([
       sourceObject("Account", [summary("Opp_Total__c", "sum", "Opportunity.AccountId", "Opportunity.Amount")]),
-      sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice")]),
+      sourceObject("Opportunity", [summary("Items_Total__c", "sum", "OpportunityLineItem.OpportunityId", "OpportunityLineItem.TotalPrice"), summary("Quote_Count__c", "count", "Quote.OpportunityId")]),
       sourceObject("Campaign", [summary("Member_Count__c", "count", "CampaignMember.CampaignId")]),
     ]);
     expect(r.schema.getField("Account", "Opp_Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, custom: true, rollup: { childObject: "Opportunity", foreignKey: "AccountId" } });
     expect(r.schema.getField("Opportunity", "Items_Total__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2, rollup: { childObject: "OpportunityLineItem", foreignKey: "OpportunityId" } });
     expect(r.schema.getField("Campaign", "Member_Count__c")).toMatchObject({ type: "Number", precision: 18, scale: 0, rollup: { childObject: "CampaignMember", foreignKey: "CampaignId" } });
+    expect(r.schema.getField("Opportunity", "Quote_Count__c")).toMatchObject({ type: "Number", precision: 18, scale: 0, rollup: { childObject: "Quote", foreignKey: "OpportunityId" } });
     expect(rollupWarnings(r)).toEqual([]);
   });
 
-  it("a roll-up over a plain lookup fails metadata load naming the field and the rule", () => {
-    expect(() => build([sourceObject("Account", [summary("Contact_Count__c", "count", "Contact.AccountId")])])).toThrowError(/Account\.Contact_Count__c.*Contact\.AccountId.*master-detail/);
-    expect(() => build(parentChild([summary("Ref_Count__c", "count", "Child__c.Ref__c")]))).toThrowError(/Parent__c\.Ref_Count__c.*Child__c\.Ref__c/);
+  it("a roll-up over a lookup that is not whitelisted is skipped with rollup-relationship and the load continues", () => {
+    const r = build([sourceObject("Account", [summary("Contact_Count__c", "count", "Contact.AccountId")])]);
+    expect(r.schema.getField("Account", "Contact_Count__c")).toBeUndefined();
+    expect(r.schema.getObject("Account")).toBeDefined();
+    expect(rollupWarnings(r)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-relationship Account\.Contact_Count__c: .*master-detail.*Contact\.AccountId.*Quote\.OpportunityId.*; field skipped$/)]);
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+    expect(r.diagnostics.filter((d) => d.area === "rollup-relationship")).toEqual([
+      { area: "rollup-relationship", kind: "rollup", object: "Account", field: "Contact_Count__c", message: expect.stringMatching(/^Account\.Contact_Count__c: .*; field skipped$/) as string },
+    ]);
+
+    const custom = build(parentChild([summary("Ref_Count__c", "count", "Child__c.Ref__c")]));
+    expect(custom.schema.getField("Parent__c", "Ref_Count__c")).toBeUndefined();
+    expect(custom.schema.getObject("Parent__c")).toBeDefined();
+    expect(rollupWarnings(custom)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-relationship Parent__c\.Ref_Count__c: .*Child__c\.Ref__c/)]);
+    expect(custom.warnings).toEqual(custom.diagnostics.map(formatDiagnostic));
   });
 
   it("a whitelisted child missing from the baseline degrades to rollup-target instead of failing", () => {
@@ -641,5 +757,144 @@ describe("nullable key prefixes (D-08..D-12)", () => {
     ["m00", "invalid baseline: PrefixlessLink key prefix m00 is in the custom-metadata range m0*"],
   ])("key prefix %s is rejected by the baseline loader", (keyPrefix, message) => {
     expect(() => buildOrgSchema(withObjects({ ...link(), keyPrefix }))).toThrow(message);
+  });
+});
+
+describe("owner targets and feature-gated fields in the baseline (D-09, D-11)", () => {
+  let real: Baseline;
+  beforeAll(async () => {
+    real = await loadBaseline();
+  });
+  const narrow = (extra: Record<string, unknown> = {}): StandardObjectJson =>
+    ({
+      name: "NarrowOwned",
+      label: "Narrow Owned",
+      labelPlural: "Narrow Owneds",
+      keyPrefix: null,
+      keyPrefixSource: "unverified",
+      createable: false,
+      hasOwner: true,
+      ownerTargets: ["User"],
+      fields: [{ name: "Name", label: "Name", type: "Text", length: 80, nillable: false, idLookup: true, nameField: true }],
+      ...extra,
+    });
+  const withObjects = (...extra: StandardObjectJson[]): Baseline => ({ ...real, objects: [...real.objects, ...extra] });
+
+  it("an owned object without ownerTargets keeps the polymorphic User/Group owner", () => {
+    expect(buildOrgSchema(real).schema.getField("Case", "OwnerId")?.referenceTo).toEqual(["User", "Group"]);
+  });
+
+  it("each owned standard object's OwnerId targets follow its Object Reference entry (D-11)", () => {
+    // BASE2-04: User-only where the Object Reference states only User (Event: Calendar is not modelled, D-12); User and Group
+    // where it states both (ServiceContract and Group by override, locked decisions 3 and 4).
+    const USER_ONLY = ["Account", "Asset", "Campaign", "Contact", "ContentDocument", "ContentVersion", "Contract", "Event", "Individual", "Opportunity"];
+    const USER_AND_GROUP = ["Case", "Group", "Lead", "Location", "OperatingHours", "Order", "Quote", "ServiceAppointment", "ServiceContract", "SocialPost", "Task"];
+    const schema = buildOrgSchema(real).schema;
+    for (const o of USER_ONLY) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User"]);
+    for (const o of USER_AND_GROUP) expect(schema.getField(o, "OwnerId")?.referenceTo, o).toEqual(["User", "Group"]);
+    const owned = real.objects.filter((o) => o.hasOwner).map((o) => o.name).sort();
+    expect(owned).toEqual([...USER_ONLY, ...USER_AND_GROUP].sort());
+  });
+
+  it("ownerTargets narrows OwnerId.referenceTo and nothing else", () => {
+    const owner = buildOrgSchema(withObjects(narrow())).schema.getField("NarrowOwned", "OwnerId");
+    expect(owner).toMatchObject({ referenceTo: ["User"], relationshipName: "Owner", nillable: false, defaultedOnCreate: true });
+  });
+
+  it.each([
+    [{ ownerTargets: [] }, "invalid baseline: NarrowOwned has an empty ownerTargets"],
+    [{ ownerTargets: ["User", "User"] }, "invalid baseline: NarrowOwned lists User twice in ownerTargets"],
+    [{ ownerTargets: ["Calendar"] }, "invalid baseline: NarrowOwned has ownerTargets entry Calendar; only User and Group are allowed"],
+    [{ hasOwner: false }, "invalid baseline: NarrowOwned has ownerTargets but no owner (hasOwner is false)"],
+  ])("invalid ownerTargets %j is rejected by the baseline loader", (override, message) => {
+    expect(() => buildOrgSchema(withObjects(narrow(override)))).toThrow(message);
+  });
+
+  it("a featureGated field loads as a plain nullable field carrying the tag", () => {
+    const gated = narrow({
+      hasOwner: false,
+      ownerTargets: undefined,
+      fields: [
+        { name: "Name", label: "Name", type: "Text", length: 80, nillable: false, idLookup: true, nameField: true },
+        { name: "GatedThing", label: "Gated Thing", type: "Text", length: 40, featureGated: true },
+      ],
+    });
+    const schema = buildOrgSchema(withObjects(gated)).schema;
+    expect(schema.getField("NarrowOwned", "GatedThing")).toMatchObject({ featureGated: true, nillable: true });
+    expect("featureGated" in schema.getField("NarrowOwned", "Name")!).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BASE2-08: referenced versus unreferenced unmodelled standard objects.
+
+describe("referenced versus unreferenced unmodelled standard objects (BASE2-08)", () => {
+  let baseline: Baseline;
+  beforeAll(async () => {
+    baseline = await loadBaseline();
+  });
+  const build = (objects: SourceObject[], b: Baseline = baseline): BuildResult =>
+    buildOrgSchema(b, { rootDir: "", packageDirectories: [], objects, globalValueSets: [], standardValueSets: [], warnings: [] });
+  const woFoo = (name = "WorkOrder"): SourceObject => sourceObject(name, [sourceField("Foo__c", "Text", { length: 10 })]);
+  const barWithLookup = (extra: SourceField[] = []): SourceObject =>
+    sourceObject("Bar__c", [sourceField("Wo__c", "Lookup", { referenceTo: "WorkOrder", relationshipName: "Wo" }), ...extra]);
+  const mentions = (r: BuildResult, name: string): boolean => r.info.some((d) => d.object === name);
+
+  it("an unmodelled standard object nothing references is informational, not a warning (D-07)", () => {
+    const r = build([woFoo()]);
+    expect(r.warnings.filter((w) => w.includes("WorkOrder"))).toEqual([]);
+    expect(r.info).toContainEqual({
+      severity: "info",
+      area: "standard-object-unmodelled",
+      object: "WorkOrder",
+      message: "WorkOrder is not modelled and nothing references it; its metadata was skipped",
+    });
+    expect(r.schema.getObject("WorkOrder")).toBeUndefined();
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+  });
+
+  it("an unmodelled standard object a lookup references keeps both warnings (D-05)", () => {
+    const r = build([woFoo(), barWithLookup()]);
+    expect(r.warnings.filter((w) => w.includes("WorkOrder"))).toEqual([
+      "UNSUPPORTED:standard-object WorkOrder skipped",
+      "UNSUPPORTED:reference-target WorkOrder is referenced but not defined; lookups to it are unchecked",
+    ]);
+    expect(mentions(r, "WorkOrder")).toBe(false);
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+  });
+
+  it("a roll-up child reference counts as referenced without adding a reference-target warning (D-09)", () => {
+    const r = build([
+      woFoo("Solution"),
+      sourceObject("Parent__c", [summary("Cnt__c", "count", "Solution.Parent__c")]),
+    ]);
+    expect(r.warnings).toContain("UNSUPPORTED:standard-object Solution skipped");
+    expect(r.warnings.some((w) => w.startsWith("UNSUPPORTED:rollup-target") && w.includes("Cnt__c"))).toBe(true);
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:reference-target") && w.includes("Solution"))).toEqual([]);
+    expect(mentions(r, "Solution")).toBe(false);
+  });
+
+  it("a formula or validation rule reaches another object only through a lookup, so the lookup classifies it", () => {
+    const plain = build([woFoo(), barWithLookup()]);
+    const withFormula = build([woFoo(), barWithLookup([sourceField("Wo_Subject__c", "Text", { length: 80, formula: "Wo__r.Subject" })])]);
+    expect(withFormula.warnings.filter((w) => w.includes("WorkOrder"))).toEqual(plain.warnings.filter((w) => w.includes("WorkOrder")));
+    expect(mentions(withFormula, "WorkOrder")).toBe(false);
+  });
+
+  it("generator-skipped lookup targets that nothing references are informational (D-06)", () => {
+    expect(baseline.skippedReferenceTargets).toContain("ActivityMetric");
+    expect(baseline.skippedReferenceTargets).not.toContain("(none stated)");
+    const r = buildOrgSchema(baseline);
+    expect(r.info).toContainEqual(expect.objectContaining({ severity: "info", area: "reference-target-skipped", object: "ActivityMetric" }));
+    for (const d of r.info) expect(r.schema.getObject(d.object!)).toBeUndefined();
+    const names = r.info.map((d) => d.object!);
+    expect(names).toEqual([...names].sort());
+    expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(names.length);
+  });
+
+  it("a baseline directory without PROVENANCE.json loads with no skipped targets", async () => {
+    const v1 = await loadBaseline(V1_BASELINE);
+    expect(v1.skippedReferenceTargets).toBeUndefined();
+    expect(buildOrgSchema(v1).info.filter((d) => d.area === "reference-target-skipped")).toEqual([]);
   });
 });

@@ -1,0 +1,84 @@
+{
+  "object": "OpportunityTeamMember",
+  "supportedCalls": [
+    "create",
+    "delete",
+    "describeLayout",
+    "describeSObjects",
+    "getDeleted",
+    "getUpdated",
+    "query",
+    "retrieve",
+    "update",
+    "upsert"
+  ],
+  "fields": {
+    "IsDeleted": {
+      "type": "boolean",
+      "properties": [
+        "Defaulted on create",
+        "Filter"
+      ]
+    },
+    "Name": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "OpportunityAccessLevel": {
+      "type": "picklist",
+      "properties": [
+        "Filter",
+        "Nillable",
+        "Restricted picklist"
+      ]
+    },
+    "OpportunityId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter"
+      ]
+    },
+    "PhotoURL": {
+      "type": "url",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ],
+      "gating": [
+        "chatter"
+      ]
+    },
+    "TeamMemberRole": {
+      "type": "picklist",
+      "properties": [
+        "Create",
+        "Filter",
+        "Nillable",
+        "Update"
+      ]
+    },
+    "Title": {
+      "type": "string",
+      "properties": [
+        "Filter",
+        "Group",
+        "Nillable",
+        "Sort"
+      ]
+    },
+    "UserId": {
+      "type": "reference",
+      "properties": [
+        "Create",
+        "Filter"
+      ]
+    }
+  }
+}
