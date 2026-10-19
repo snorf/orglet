@@ -113,7 +113,17 @@ Plans:
   3. A `MetadataRelationship` field to another `__mdt` returns that record's Id, a relationship to an entity or field definition returns its qualified API name and `Rel__r.QualifiedApiName` is selectable, and a dangling target warns and stays null.
   4. A List or Hierarchy custom setting describes as `customSetting: true` with no `OwnerId`; a second hierarchy row for the same `SetupOwnerId` fails with `DUPLICATE_VALUE`; `orglet check` states that custom-setting data is not part of a retrieve.
   5. Custom labels from `CustomLabels.labels-meta.xml` are present on the loaded org schema with name, value, language and category.
-**Plans**: TBD
+**Plans**: 9 plans
+Plans:
+- [ ] 11-01-PLAN.md — Wave 0: conformance/cmdt-check fixture + expected facts, jsforce/simple-salesforce legs, seed.test.ts scaffold (CMDT-01..04, CSET-01, CSET-02)
+- [ ] 11-02-PLAN.md — type contracts (MetadataRelationship, customMetadata/customSetting, labels) + SFDX reader for records, labels, customSettingsType (CMDT-02, CMDT-03, CSET-01, CSET-02)
+- [ ] 11-03-PLAN.md — buildOrgSchema: __mdt objects and m pool, MetadataRelationship fields, record matching, custom-setting shape and info item, labels (CMDT-01, CMDT-03, CSET-01, CSET-02)
+- [ ] 11-04-PLAN.md — deriveCustomMetadataId, m00..mzz key-prefix pool, unique-Lookup index and no FK for MetadataRelationship (CMDT-01, CMDT-02, CSET-01)
+- [ ] 11-05-PLAN.md — soft-delete filters only where IsDeleted exists; Rel__r.QualifiedApiName and the D-10 rejection in SOQL (CMDT-03, CMDT-04)
+- [ ] 11-06-PLAN.md — planCustomMetadataSeed (pure) + seedCustomMetadata full sync + D-04 summary (CMDT-02, CMDT-03)
+- [ ] 11-07-PLAN.md — describe flags, DML refusal incl. import mode and Bulk ingest, SetupOwnerId default, HTTP tests (CMDT-01, CMDT-04, CSET-01)
+- [ ] 11-08-PLAN.md — CLI: up seeds and reports, check settings info line and counts; upgrade and setting-migration tests (CMDT-02, CSET-01, CSET-02)
+- [ ] 11-09-PLAN.md — run-all.sh second server + cmdt-check legs, phase gate on fresh schemas (CMDT-04, CSET-01)
 **Research flag**: YES (`MetadataRelationship` stored value and describe spelling, the `customSetting` flag on `__mdt`, DML error code, `m00` prefix, nil handling).
 
 ### Phase 12: sigha Resync & Formula Globals
