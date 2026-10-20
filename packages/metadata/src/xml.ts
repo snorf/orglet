@@ -13,6 +13,7 @@ const REPEATED = new Set([
   "validationRules",
   "fields",
   "recordTypes",
+  "labels",
 ]);
 
 const parser = new XMLParser({

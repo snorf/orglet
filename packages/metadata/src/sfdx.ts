@@ -1,6 +1,6 @@
 /**
  * Reads an SFDX project directory in source format and returns the raw
- * customisations it contains. No merging with the standard baseline happens
+ * customisations it contains, including customMetadata/ record files, custom labels and custom settings types. No merging with the standard baseline happens
  * here; see build.ts.
  */
 import { readdir, readFile, stat } from "node:fs/promises";
@@ -8,6 +8,8 @@ import { join, basename } from "node:path";
 import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
 import { parseMetadataXml, str, bool, num, list, child, type XmlNode } from "./xml.js";
 import type {
+  CustomLabelDef,
+  CustomMetadataRecord,
   DeleteConstraint,
   FieldType,
   FormulaBlankTreatment,
@@ -72,6 +74,8 @@ export interface SourceObject {
   nameField?: { label?: string; type?: "Text" | "AutoNumber"; displayFormat?: string };
   sharingModel?: string;
   description?: string;
+  /** CustomObject.customSettingsType (D-17); absent for every other object. */
+  customSettingsType?: "List" | "Hierarchy";
   fields: SourceField[];
   validationRules: ValidationRuleDef[];
   recordTypes: RecordTypeDef[];
@@ -87,6 +91,10 @@ export interface SourceProject {
   warnings: string[];
   /** Structured form of `warnings`, same order (D-15); always set by readSourceProject. */
   diagnostics?: Diagnostic[];
+  /** customMetadata/ record files, unresolved (type matched by buildOrgSchema). Always set by readSourceProject. */
+  customMetadata?: CustomMetadataRecord[];
+  /** labels/*.labels-meta.xml entries in file order, duplicates included (build keeps the first, D-22). Always set by readSourceProject. */
+  labels?: CustomLabelDef[];
 }
 
 const CUSTOM_FIELD_TYPES = new Set<string>([
@@ -188,7 +196,7 @@ function parseField(node: XmlNode, file: string, sink: DiagnosticSink): SourceFi
   const type = str(node, "type");
   if (type !== undefined) {
     if (!CUSTOM_FIELD_TYPES.has(type)) throw new Error(`${file}: unknown field type ${type}`);
-    if (type === "ExternalLookup" || type === "IndirectLookup" || type === "MetadataRelationship") {
+    if (type === "ExternalLookup" || type === "IndirectLookup") {
       pushDiagnostic(sink, { area: "field-type", kind: "field", field: fullName, message: `${file}: field type ${type} is not supported yet; field skipped` } satisfies SkippedItem);
       return undefined;
     }
@@ -206,6 +214,7 @@ function parseField(node: XmlNode, file: string, sink: DiagnosticSink): SourceFi
   set("unique", bool(node, "unique"));
   set("externalId", bool(node, "externalId"));
   set("caseSensitive", bool(node, "caseSensitive"));
+  // MetadataRelationship (D-06): referenceTo names another __mdt, EntityDefinition or FieldDefinition. <metadataRelationshipControllingField> is a Setup-UI filter, not data, and is ignored (D-11).
   const refs: unknown = node["referenceTo"];
   const firstRef: unknown = Array.isArray(refs) ? refs[0] : refs;
   if (typeof firstRef === "string") set("referenceTo", firstRef);
@@ -301,6 +310,13 @@ async function readObjectDir(dir: string, sink: DiagnosticSink): Promise<SourceO
     if (sharing !== undefined) obj.sharingModel = sharing;
     const description = str(node, "description");
     if (description !== undefined) obj.description = description;
+    // <visibility> (Public/Protected/PackageProtected) is parsed by nobody and ignored (D-17).
+    const cst = str(node, "customSettingsType");
+    if (cst === "" || cst === "Hierarchy") obj.customSettingsType = "Hierarchy"; // Hierarchy is the Metadata API default
+    else if (cst === "List") obj.customSettingsType = "List";
+    else if (cst !== undefined) {
+      pushDiagnostic(sink, { area: "custom-setting", kind: "object", object: name, message: `${objFile}: customSettingsType ${cst} is not List or Hierarchy; ${name} loaded as an ordinary custom object` } satisfies SkippedItem);
+    }
     const nf = child(node, "nameField");
     if (nf) {
       obj.nameField = {};
@@ -356,12 +372,57 @@ async function readStandardValueSet(file: string): Promise<StandardValueSetDef> 
   };
 }
 
+/** First text of a possibly repeated element. */
+function firstText(raw: unknown): string {
+  // ignoreAttributes drops xsi:type and xsi:nil: nil, empty and absent all arrive as "" and mean null (D-05, Pitfall 2a).
+  const v: unknown = Array.isArray(raw) ? raw[0] : raw;
+  return typeof v === "string" ? v : "";
+}
+
+async function readCustomMetadataRecord(file: string, sink: DiagnosticSink): Promise<CustomMetadataRecord | undefined> {
+  const base = basename(file).replace(/\.md-meta\.xml$/, "");
+  const dot = base.indexOf(".");
+  if (dot <= 0 || dot === base.length - 1) {
+    pushDiagnostic(sink, { area: "custom-metadata-record", message: `${file}: file name is not <Type>.<Record>.md-meta.xml; record skipped` });
+    return undefined;
+  }
+  // The file name omits __mdt; DeveloperNames cannot contain dots, so split at the first one (Pitfall 3).
+  const type = `${base.slice(0, dot)}__mdt`;
+  const developerName = base.slice(dot + 1);
+  const node = parseMetadataXml(await readFile(file, "utf8"), "CustomMetadata", file);
+  const values: CustomMetadataRecord["values"] = [];
+  for (const v of list(node, "values")) {
+    const field = str(v, "field") ?? "";
+    if (field === "") continue;
+    values.push({ field, value: firstText(v["value"]) });
+  }
+  return { type, developerName, label: str(node, "label") || developerName, protected: bool(node, "protected") ?? false, values, file };
+}
+
+async function readCustomLabels(file: string): Promise<CustomLabelDef[]> {
+  const node = parseMetadataXml(await readFile(file, "utf8"), "CustomLabels", file);
+  const out: CustomLabelDef[] = [];
+  for (const l of list(node, "labels")) {
+    const fullName = str(l, "fullName");
+    if (!fullName) throw new Error(`${file}: custom label without <fullName>`);
+    const def: CustomLabelDef = { fullName, value: firstText(l["value"]), language: str(l, "language") || "en_US", protected: bool(l, "protected") ?? false };
+    const categories = str(l, "categories");
+    if (categories !== undefined) def.categories = categories;
+    const shortDescription = str(l, "shortDescription");
+    if (shortDescription !== undefined) def.shortDescription = shortDescription;
+    out.push(def);
+  }
+  return out;
+}
+
 export async function readSourceProject(rootDir: string): Promise<SourceProject> {
   const packageDirectories = await readPackageDirectories(rootDir);
   const warnings: string[] = [];
   const diagnostics: Diagnostic[] = [];
   const sink: DiagnosticSink = { warnings, diagnostics };
-  const project: SourceProject = { rootDir, packageDirectories, objects: [], globalValueSets: [], standardValueSets: [], warnings, diagnostics };
+  const customMetadata: CustomMetadataRecord[] = [];
+  const labels: CustomLabelDef[] = [];
+  const project: SourceProject = { rootDir, packageDirectories, objects: [], globalValueSets: [], standardValueSets: [], warnings, diagnostics, customMetadata, labels };
 
   for (const pkgDir of packageDirectories) {
     for (const objectsDir of await findDirs(pkgDir, "objects")) {
@@ -379,6 +440,16 @@ export async function readSourceProject(rootDir: string): Promise<SourceProject>
       for (const file of await filesWithSuffix(dir, ".standardValueSet-meta.xml")) {
         project.standardValueSets.push(await readStandardValueSet(file));
       }
+    }
+    // translations/ is not read (D-22, v2 CSET-03).
+    for (const dir of await findDirs(pkgDir, "customMetadata")) {
+      for (const file of await filesWithSuffix(dir, ".md-meta.xml")) {
+        const r = await readCustomMetadataRecord(file, sink);
+        if (r) customMetadata.push(r);
+      }
+    }
+    for (const dir of await findDirs(pkgDir, "labels")) {
+      for (const file of await filesWithSuffix(dir, ".labels-meta.xml")) labels.push(...(await readCustomLabels(file)));
     }
   }
   return project;
