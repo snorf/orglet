@@ -4,7 +4,7 @@
  * every stored field is a column named after its lower-cased API name.
  */
 import { createHash } from "node:crypto";
-import type { FieldDef, SObjectDef } from "@orglet/metadata";
+import { definitionTarget, type FieldDef, type SObjectDef } from "@orglet/metadata";
 
 export const DEFAULT_ORG_SCHEMA = "org";
 export const INTERNAL_SCHEMA = "_orglet";
@@ -51,6 +51,9 @@ export function sqlTypeFor(field: FieldDef): string {
     case "Lookup":
     case "MasterDetail":
       return "char(18)";
+    case "MetadataRelationship":
+      // D-07/D-08: an mdt target stores the record Id; an EntityDefinition/FieldDefinition target stores the qualified API name.
+      return definitionTarget(field) !== undefined ? "varchar(255)" : "char(18)";
     case "Checkbox":
       return "boolean";
     case "Number":

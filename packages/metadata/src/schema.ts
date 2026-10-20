@@ -1,5 +1,6 @@
 import type {
   ChildRelationship,
+  CustomLabelDef,
   FieldDef,
   GlobalValueSetDef,
   OrgSchema,
@@ -16,6 +17,8 @@ export class OrgSchemaImpl implements OrgSchema {
     readonly objects: ReadonlyMap<string, SObjectDef>,
     readonly globalValueSets: ReadonlyMap<string, GlobalValueSetDef>,
     readonly standardValueSets: ReadonlyMap<string, StandardValueSetDef>,
+    /** Keyed by lower-cased fullName. */
+    readonly labels: ReadonlyMap<string, CustomLabelDef> = new Map(),
   ) {
     for (const obj of objects.values()) {
       const byName = new Map<string, FieldDef>();
@@ -44,6 +47,10 @@ export class OrgSchemaImpl implements OrgSchema {
 
   getObject(name: string): SObjectDef | undefined {
     return this.objects.get(name.toLowerCase());
+  }
+
+  getLabel(fullName: string): CustomLabelDef | undefined {
+    return this.labels.get(fullName.toLowerCase());
   }
 
   getField(objectName: string, fieldName: string): FieldDef | undefined {
@@ -75,4 +82,18 @@ export class OrgSchemaImpl implements OrgSchema {
   toJSON(): { objects: SObjectDef[] } {
     return { objects: this.list() };
   }
+}
+
+/** Whether the object has a recycle bin (an IsDeleted column). Custom metadata types do not (D-16); every soft-delete filter asks this. */
+export function hasSoftDelete(obj: SObjectDef): boolean {
+  return obj.fields.some((f) => f.name === "IsDeleted");
+}
+
+/** The definition a MetadataRelationship points at when its target is not an sObject (D-08), else undefined. */
+export function definitionTarget(field: FieldDef): "EntityDefinition" | "FieldDefinition" | undefined {
+  if (field.type !== "MetadataRelationship") return undefined;
+  const target = field.referenceTo?.[0]?.toLowerCase();
+  if (target === "entitydefinition") return "EntityDefinition";
+  if (target === "fielddefinition") return "FieldDefinition";
+  return undefined;
 }

@@ -43,6 +43,7 @@ function describeType(f: FieldDef): string {
       return "multipicklist";
     case "Lookup":
     case "MasterDetail":
+    case "MetadataRelationship":
       return "reference";
     case "Address":
       return "address";
