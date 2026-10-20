@@ -246,6 +246,8 @@ export function registerBulkRoutes(app: FastifyInstance, ctx: ApiContext): void 
     if (!INGEST_OPERATIONS.has(operation)) {
       return sendErrors(reply, 400, [apiError("INVALIDJOB", "InvalidJob : operation must be one of insert, update, upsert, delete, hardDelete")]);
     }
+    // D-14: an ingest job on custom metadata could never succeed (the engine refuses every row), so it is refused at creation; Bulk query jobs stay allowed.
+    if (obj.customMetadata === true) return sendErrors(reply, 400, [apiError("INVALID_TYPE_FOR_OPERATION", `entity type ${obj.name} does not support ${operation}`)]);
     const externalIdFieldName = typeof body["externalIdFieldName"] === "string" ? body["externalIdFieldName"] : undefined;
     if (operation === "upsert" && !externalIdFieldName) {
       return sendErrors(reply, 400, [apiError("INVALIDJOB", "InvalidJob : externalIdFieldName is required for upsert jobs")]);

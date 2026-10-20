@@ -83,6 +83,8 @@ export function registerSobjectRoutes(app: FastifyInstance, ctx: ApiContext): vo
   app.get<{ Params: { type: string } }>("/services/data/v:version/sobjects/:type/updated", async (req, reply) => {
     const obj = objectOr404(req.params.type, reply);
     if (!obj) return;
+    // replicateable is false on custom metadata (describe, D-15): getUpdated/getDeleted are not among its Supported Calls, and it has no IsDeleted (D-16).
+    if (obj.customMetadata === true) return sendErrors(reply, 400, [apiError("INVALID_TYPE_FOR_OPERATION", `entity type ${obj.name} does not support getUpdated`)]);
     const w = window(req, reply);
     if (!w) return;
     const page = await runQuery(ctx.engine, session(req), `SELECT Id FROM ${obj.name} WHERE LastModifiedDate >= ${soqlDate(w.start)} AND LastModifiedDate <= ${soqlDate(w.end)} ORDER BY LastModifiedDate`, { apiVersion: version(req) });
@@ -92,6 +94,7 @@ export function registerSobjectRoutes(app: FastifyInstance, ctx: ApiContext): vo
   app.get<{ Params: { type: string } }>("/services/data/v:version/sobjects/:type/deleted", async (req, reply) => {
     const obj = objectOr404(req.params.type, reply);
     if (!obj) return;
+    if (obj.customMetadata === true) return sendErrors(reply, 400, [apiError("INVALID_TYPE_FOR_OPERATION", `entity type ${obj.name} does not support getDeleted`)]);
     const w = window(req, reply);
     if (!w) return;
     const page = await runQuery(ctx.engine, session(req), `SELECT Id, LastModifiedDate FROM ${obj.name} WHERE IsDeleted = true AND LastModifiedDate >= ${soqlDate(w.start)} AND LastModifiedDate <= ${soqlDate(w.end)} ORDER BY LastModifiedDate`, { apiVersion: version(req), includeDeleted: true });
