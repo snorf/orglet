@@ -6,6 +6,7 @@ import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type InfoDiagnost
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import type {
+  CustomLabelDef,
   CustomMetadataRecord,
   FieldDef,
   FieldType,
@@ -37,7 +38,7 @@ export interface BuildResult {
   warnings: string[];
   /** Structured form of `warnings`, same order (D-15). */
   diagnostics: Diagnostic[];
-  /** Unmodelled standard objects nothing references (D-06/D-07), sorted by object; never in warnings. */
+  /** Informational items, sorted by object: unmodelled standard objects nothing references (D-06/D-07) and custom settings loaded without data (Phase 11 D-20); never in warnings. Consumers filter by area. */
   info: InfoDiagnostic[];
   /** Record files matched to a loaded __mdt type (canonical type casing), in file order. Values are coerced and relationships resolved by @orglet/engine planCustomMetadataSeed. */
   customMetadata: CustomMetadataRecord[];
@@ -499,9 +500,30 @@ function recordTypeField(): FieldDef {
   return f;
 }
 
+/**
+ * D-18: a Hierarchy setting holds one row per org, profile or user (Apex Developer Guide, Custom Settings). Unique so a second row
+ * for the same owner fails DUPLICATE_VALUE through the engine's 23505 mapping; the engine defaults it to the Organization.
+ * Label "Location ID" and updateable are orglet choices.
+ */
+function setupOwnerField(): FieldDef {
+  const f = baseField("SetupOwnerId", "Location ID", "Lookup", false);
+  f.referenceTo = ["Organization", "Profile", "User"];
+  f.relationshipName = "SetupOwner";
+  f.nillable = false;
+  f.defaultedOnCreate = true;
+  f.unique = true;
+  return f;
+}
+
 function fromSourceObject(obj: SourceObject, keyPrefix: string, sets: ValueSets): SObjectDef {
-  const hasOwner = !obj.fields.some((f) => f.type === "MasterDetail");
+  const setting = obj.customSettingsType;
+  // D-17: a custom setting has no owner.
+  const hasOwner = setting === undefined && !obj.fields.some((f) => f.type === "MasterDetail");
   const sys = systemFields(hasOwner);
+  const name = nameFieldFor(obj);
+  // D-19: Name is required and unique on a List setting, optional on a Hierarchy setting (secondary source, 11-RESEARCH Open Question 5).
+  if (setting === "Hierarchy") name.nillable = true;
+  if (setting === "List") name.unique = true;
   const custom = obj.fields.filter((f) => f.type !== "Summary").map((f) => fromSourceField(f, obj.name, sets));
   if (obj.recordTypes.length > 0) custom.unshift(recordTypeField());
   const label = obj.label ?? obj.name.replace(/__c$/i, "");
@@ -518,8 +540,9 @@ function fromSourceObject(obj: SourceObject, keyPrefix: string, sets: ValueSets)
     queryable: true,
     searchable: true,
     hasOwner,
+    ...(setting !== undefined ? { customSetting: setting } : {}),
     ...(obj.sharingModel !== undefined ? { sharingModel: obj.sharingModel } : {}),
-    fields: [...sys.head, nameFieldFor(obj), ...sys.tail, ...custom],
+    fields: [...sys.head, name, ...sys.tail, ...(setting === "Hierarchy" ? [setupOwnerField()] : []), ...custom],
     validationRules: obj.validationRules,
     recordTypes: obj.recordTypes,
   };
@@ -595,6 +618,7 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
 
   const unmodelledStandard = new Set<Diagnostic>();
   const sourceObjects = project?.objects ?? [];
+  // D-19: custom settings are __c objects and share the a00..azz pool; the platform's series for settings is undocumented (orglet choice).
   const customObjects = sourceObjects.filter((o) => isCustomObjectName(o.name)).sort((a, b) => a.name.localeCompare(b.name));
   customObjects.forEach((o, i) => {
     for (const sf of o.fields) if (sf.type === "Summary") pending.push({ objectName: o.name, field: sf });
@@ -645,6 +669,18 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
 
   resolveRollups(objects, pending, sink, rollupField);
 
+  // D-21, D-22: labels are keyed case-insensitively; the first definition wins and a duplicate warns once.
+  const labels = new Map<string, CustomLabelDef>();
+  for (const l of project?.labels ?? []) {
+    const key = l.fullName.toLowerCase();
+    const first = labels.get(key);
+    if (first !== undefined) {
+      pushDiagnostic(sink, { area: "custom-label", message: `${l.fullName} duplicates ${first.fullName}; the first definition is kept` });
+      continue;
+    }
+    labels.set(key, l);
+  }
+
   // D-05: record files belong to a loaded __mdt type; anything else is skipped with one warning.
   const customMetadata: CustomMetadataRecord[] = [];
   for (const r of project?.customMetadata ?? []) {
@@ -690,6 +726,10 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     sink.warnings.splice(i, 1);
     info.push({ severity: "info", area: "standard-object-unmodelled", object: d.object, message: `${d.object} is not modelled and nothing references it; its metadata was skipped` });
   }
+  // D-20: a fact about the retrieve format, not an orglet gap, so no warning and no UNSUPPORTED.
+  for (const o of [...objects.values()].filter((x) => x.customSetting !== undefined).sort((a, b) => a.name.localeCompare(b.name))) {
+    info.push({ severity: "info", area: "custom-setting-no-data", object: o.name, message: `${o.name} is a ${o.customSetting} custom setting; custom-setting data is not part of a retrieve` });
+  }
   // D-06: documented lookup targets the generator skipped, when neither modelled nor referenced.
   for (const name of baseline.skippedReferenceTargets ?? []) {
     const key = name.toLowerCase();
@@ -705,5 +745,5 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
   });
   uniqueInfo.sort((a, b) => (a.object! < b.object! ? -1 : a.object! > b.object! ? 1 : 0));
 
-  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings: sink.warnings, diagnostics: sink.diagnostics, info: uniqueInfo, customMetadata };
+  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets, labels), warnings: sink.warnings, diagnostics: sink.diagnostics, info: uniqueInfo, customMetadata };
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { fileURLToPath } from "node:url";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type CustomMetadataRecord, type FieldType, type SourceField, type SourceFilterItem, type SourceObject, type StandardObjectJson } from "./index.js";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type CustomLabelDef, type CustomMetadataRecord, type FieldType, type SourceField, type SourceFilterItem, type SourceObject, type StandardObjectJson } from "./index.js";
 import { formatDiagnostic } from "./diagnostics.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
@@ -1007,5 +1007,102 @@ describe("custom metadata types (CMDT-01, CMDT-03)", () => {
     const r = build([foo()]);
     expect(r.customMetadata).toEqual([]);
     expect(r.schema.labels.size).toBe(0);
+  });
+});
+
+describe("custom settings and labels (CSET-01, CSET-02)", () => {
+  const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
+  let baseline: Baseline;
+  beforeAll(async () => {
+    baseline = await loadBaseline();
+  });
+  const build = (objects: SourceObject[], labels?: CustomLabelDef[]): BuildResult =>
+    buildOrgSchema(baseline, {
+      rootDir: "",
+      packageDirectories: [],
+      objects,
+      globalValueSets: [],
+      standardValueSets: [],
+      warnings: [],
+      ...(labels !== undefined ? { labels } : {}),
+    });
+  const setting = (name: string, kind: "List" | "Hierarchy"): SourceObject => ({
+    ...sourceObject(name, [sourceField("On__c", "Checkbox")]),
+    customSettingsType: kind,
+  });
+  const label = (fullName: string, value: string): CustomLabelDef => ({ fullName, value, language: "en_US", protected: false });
+
+  it("a Hierarchy setting has no OwnerId, an optional Name and a unique, defaulted SetupOwnerId to Organization, Profile and User (D-17..D-19)", () => {
+    const s = build([setting("Cfg__c", "Hierarchy")]).schema;
+    expect(s.getObject("Cfg__c")).toMatchObject({
+      customSetting: "Hierarchy",
+      hasOwner: false,
+      custom: true,
+      createable: true,
+      updateable: true,
+      deletable: true,
+      undeletable: true,
+      queryable: true,
+    });
+    expect(s.getField("Cfg__c", "OwnerId")).toBeUndefined();
+    expect(s.getField("Cfg__c", "Name")).toMatchObject({ nillable: true, unique: false });
+    expect(s.getField("Cfg__c", "SetupOwnerId")).toMatchObject({
+      type: "Lookup",
+      referenceTo: ["Organization", "Profile", "User"],
+      relationshipName: "SetupOwner",
+      unique: true,
+      nillable: false,
+      defaultedOnCreate: true,
+      createable: true,
+    });
+  });
+
+  it("a List setting has no OwnerId and no SetupOwnerId; Name is required and unique", () => {
+    const s = build([setting("Lst__c", "List")]).schema;
+    expect(s.getObject("Lst__c")).toMatchObject({ customSetting: "List", hasOwner: false });
+    expect(s.getField("Lst__c", "OwnerId")).toBeUndefined();
+    expect(s.getField("Lst__c", "SetupOwnerId")).toBeUndefined();
+    expect(s.getField("Lst__c", "Name")).toMatchObject({ nillable: false, unique: true });
+  });
+
+  it("custom settings share the a00..azz pool with custom objects in name order (D-19)", () => {
+    const s = build([setting("Cfg__c", "Hierarchy"), sourceObject("Box__c", [])]).schema;
+    expect([s.getObject("Box__c")?.keyPrefix, s.getObject("Cfg__c")?.keyPrefix]).toEqual(["a00", "a01"]);
+  });
+
+  it("each custom setting is one info item in area custom-setting-no-data, never a warning (D-20)", () => {
+    const r = build([setting("Cfg__c", "Hierarchy")]);
+    expect(r.info).toContainEqual({
+      severity: "info",
+      area: "custom-setting-no-data",
+      object: "Cfg__c",
+      message: "Cfg__c is a Hierarchy custom setting; custom-setting data is not part of a retrieve",
+    });
+    expect(r.warnings.filter((w) => w.includes("Cfg__c"))).toEqual([]);
+  });
+
+  it("labels land on the schema with a case-insensitive lookup; a duplicate fullName keeps the first and warns once (D-21, D-22)", () => {
+    const r = build([], [label("Welcome_Message", "A"), label("Other", "B"), label("welcome_message", "C")]);
+    expect(r.schema.labels.size).toBe(2);
+    expect(r.schema.getLabel("WELCOME_MESSAGE")?.value).toBe("A");
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:custom-label"))).toEqual([
+      "UNSUPPORTED:custom-label welcome_message duplicates Welcome_Message; the first definition is kept",
+    ]);
+  });
+
+  it("the conformance fixture builds to its expected facts", async () => {
+    const r = await loadOrgSchema({ projectDir: CMDT });
+    expect(r.warnings).toHaveLength(2);
+    expect(r.warnings.filter((w) => /^UNSUPPORTED:custom-metadata-record .*Retired_Type\.Old\.md-meta\.xml: Retired_Type__mdt is not a custom metadata type in objects\/; record Old skipped$/.test(w))).toHaveLength(1);
+    expect(r.warnings).toContain("UNSUPPORTED:custom-label welcome_message duplicates Welcome_Message; the first definition is kept");
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+    const prefix = (n: string) => r.schema.getObject(n)?.keyPrefix;
+    expect(["App_Config__c", "Region_List__c", "Ticket__c", "Support_Tier__mdt", "Tier_Group__mdt"].map(prefix)).toEqual(["a00", "a01", "a02", "m00", "m01"]);
+    expect(r.customMetadata).toHaveLength(5);
+    expect(r.schema.labels.size).toBe(2);
+    expect(r.schema.getLabel("terms_link_text")?.value).toBe("Terms & Conditions <v2>");
+    const settings = r.info.filter((d) => d.area === "custom-setting-no-data").map((d) => d.object);
+    expect(settings).toEqual(["App_Config__c", "Region_List__c"]);
+    expect(r.schema.getField("Support_Tier__mdt", "Target_Field__c")?.referenceTo).toEqual(["FieldDefinition"]);
   });
 });
