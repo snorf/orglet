@@ -104,7 +104,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   another `__mdt` resolves to that record's Id in a second pass, a relationship to an entity or
   field definition stores the qualified API name, and `Rel__r.QualifiedApiName` is selectable in
   SOQL as an alias of the stored string; a dangling target warns and leaves the field null.
-- [ ] **CMDT-04**: SOQL and REST describe/retrieve of `__mdt` objects work through jsforce and
+- [x] **CMDT-04**: SOQL and REST describe/retrieve of `__mdt` objects work through jsforce and
   simple-salesforce; create, update and delete through the data API are rejected with a documented
   Salesforce error code (or `INVALID_TYPE_FOR_OPERATION` where none is documented) and never
   silently accepted.
@@ -243,7 +243,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMDT-01 | Phase 11 | Complete |
 | CMDT-02 | Phase 11 | Complete |
 | CMDT-03 | Phase 11 | Complete |
-| CMDT-04 | Phase 11 | Pending |
+| CMDT-04 | Phase 11 | Complete |
 | CSET-01 | Phase 11 | Complete |
 | CSET-02 | Phase 11 | Complete |
 | FORM-01 | Phase 12 | Pending |
