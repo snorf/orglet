@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { generateId, keyPrefixOf, matchLookupTarget, matchTargetByPrefix, normalizeId, toCaseSafeId } from "./ids.js";
+import { deriveCustomMetadataId, generateId, keyPrefixOf, matchLookupTarget, matchTargetByPrefix, normalizeId, toCaseSafeId } from "./ids.js";
 
 describe("case-safe ID checksum", () => {
   // Pairs published in Salesforce community answers and widely reused in test suites.
@@ -116,5 +116,35 @@ describe("null key prefix targets (D-08)", () => {
 
   it("a single prefixed target keeps the prefix check", () => {
     expect(matchLookupTarget([user], 1, generateId("00G"))).toBeUndefined();
+  });
+});
+
+describe("deriveCustomMetadataId (D-01)", () => {
+  it("returns the same 18-character case-safe Id on every call", () => {
+    const a = deriveCustomMetadataId("m00", "Support_Tier__mdt", "Gold");
+    expect(deriveCustomMetadataId("m00", "Support_Tier__mdt", "Gold")).toBe(a);
+    expect(a).toHaveLength(18);
+    expect(normalizeId(a)).toBe(a);
+    expect(a.startsWith("m00")).toBe(true);
+  });
+
+  it("ignores the casing of type and DeveloperName", () => {
+    expect(deriveCustomMetadataId("m00", "Support_Tier__mdt", "Gold")).toBe(deriveCustomMetadataId("m00", "support_tier__MDT", "GOLD"));
+  });
+
+  it("different records, types or prefixes get different Ids", () => {
+    const gold = deriveCustomMetadataId("m00", "Support_Tier__mdt", "Gold");
+    expect(deriveCustomMetadataId("m00", "Support_Tier__mdt", "Silver")).not.toBe(gold);
+    expect(deriveCustomMetadataId("m00", "Tier_Group__mdt", "Gold")).not.toBe(gold);
+    expect(deriveCustomMetadataId("m01", "Support_Tier__mdt", "Gold")).not.toBe(gold);
+  });
+
+  it("is stable across releases (golden value)", () => {
+    // Changing this value changes every derived custom-metadata Id in every existing org.
+    expect(deriveCustomMetadataId("m00", "Support_Tier__mdt", "Gold")).toBe("m00dI6W8ONPwAT6Q0N");
+  });
+
+  it("rejects a prefix that is not three alphanumerics", () => {
+    expect(() => deriveCustomMetadataId("m0", "Support_Tier__mdt", "Gold")).toThrow("invalid key prefix: m0");
   });
 });
