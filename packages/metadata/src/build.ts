@@ -6,6 +6,7 @@ import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type InfoDiagnost
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import type {
+  CustomMetadataRecord,
   FieldDef,
   FieldType,
   GlobalValueSetDef,
@@ -18,7 +19,7 @@ import type {
   StandardValueSetDef,
 } from "./types.js";
 import type { SourceField, SourceObject, SourceProject } from "./sfdx.js";
-import { OrgSchemaImpl } from "./schema.js";
+import { OrgSchemaImpl, definitionTarget } from "./schema.js";
 import { resolveRollups, splitRollupRef, type PendingRollup, type RollupColumn } from "./rollup.js";
 
 const STANDARD_DIR = fileURLToPath(new URL("../standard/", import.meta.url));
@@ -38,6 +39,8 @@ export interface BuildResult {
   diagnostics: Diagnostic[];
   /** Unmodelled standard objects nothing references (D-06/D-07), sorted by object; never in warnings. */
   info: InfoDiagnostic[];
+  /** Record files matched to a loaded __mdt type (canonical type casing), in file order. Values are coerced and relationships resolved by @orglet/engine planCustomMetadataSeed. */
+  customMetadata: CustomMetadataRecord[];
 }
 
 export async function loadBaseline(dir: string = STANDARD_DIR): Promise<Baseline> {
@@ -368,6 +371,16 @@ function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): 
       }
       break;
     }
+    case "MetadataRelationship": {
+      if (sf.referenceTo === undefined) throw new Error(`${objectName}.${sf.fullName}: MetadataRelationship without <referenceTo>`);
+      // D-07/D-08: Lookup-shaped for describe and relationship queries, but stored as a plain name column: no FK and no child relationship.
+      const lower = sf.referenceTo.toLowerCase();
+      const target = lower === "entitydefinition" ? "EntityDefinition" : lower === "fielddefinition" ? "FieldDefinition" : sf.referenceTo;
+      f.referenceTo = [target];
+      f.relationshipName = sf.fullName.replace(/__c$/i, "__r");
+      if (sf.relationshipLabel !== undefined) f.relationshipLabel = sf.relationshipLabel;
+      break;
+    }
     case "Location":
       readOnly(f);
       f.groupable = false;
@@ -412,6 +425,72 @@ function isCustomObjectName(name: string): boolean {
   return /__c$/i.test(name);
 }
 
+function isCustomMetadataName(name: string): boolean {
+  return /__mdt$/i.test(name);
+}
+
+/**
+ * D-16: the custom-metadata system fields the Object Reference documents plus the audit fields every orglet object has;
+ * no Name, OwnerId or IsDeleted (no recycle bin). Labels and lengths the Object Reference does not state are orglet choices.
+ */
+function customMetadataSystemFields(): { head: FieldDef[]; tail: FieldDef[] } {
+  const sys = systemFields(false);
+  const id = sys.head[0];
+  if (id === undefined) throw new Error("systemFields returned no Id");
+  const text = (name: string, label: string, length: number, nillable: boolean): FieldDef => {
+    const f = readOnly(baseField(name, label, "Text", false));
+    f.length = length;
+    f.nillable = nillable;
+    return f;
+  };
+  const developerName = text("DeveloperName", "Custom Metadata Record Name", 40, false);
+  developerName.unique = true;
+  const masterLabel = text("MasterLabel", "Label", 40, false);
+  masterLabel.nameField = true;
+  // The Object Reference lists Label with an empty value list, i.e. a picklist; its value always equals MasterLabel (Pitfall 11).
+  const label = readOnly(baseField("Label", "Label", "Picklist", false));
+  label.length = 40;
+  label.nillable = false;
+  label.picklist = picklistFromValues([], false);
+  // Documented as a string, "always the default language of the developing organization"; en_US here, the bootstrap Organization's LanguageLocaleKey.
+  const language = text("Language", "Master Language", 40, false);
+  const namespacePrefix = text("NamespacePrefix", "Namespace Prefix", 15, true);
+  // NamespacePrefix__DeveloperName fits 15+2+40; the length is an orglet choice.
+  const qualified = text("QualifiedApiName", "Qualified API Name", 70, false);
+  const isProtected = readOnly(baseField("IsProtected", "Protected Component", "Checkbox", false));
+  isProtected.nillable = false;
+  isProtected.defaultedOnCreate = true;
+  isProtected.defaultValue = "false";
+  // Spelled SystemModstamp like every other orglet object although the Object Reference writes SystemModStamp.
+  return { head: [id, developerName, masterLabel, label, language, namespacePrefix, qualified, isProtected], tail: sys.tail };
+}
+
+function fromCustomMetadataObject(obj: SourceObject, keyPrefix: string, sets: ValueSets): SObjectDef {
+  const sys = customMetadataSystemFields();
+  const custom = obj.fields.filter((f) => f.type !== "Summary").map((f) => readOnly(fromSourceField(f, obj.name, sets)));
+  const label = obj.label ?? obj.name.replace(/__mdt$/i, "");
+  return {
+    name: obj.name,
+    label,
+    labelPlural: obj.pluralLabel ?? `${label}s`,
+    keyPrefix,
+    custom: true,
+    // D-15: the Object Reference's Supported Calls for custom metadata types are describeSObjects(), query() and retrieve();
+    // every other capability is false. Fields are read-only for the same reason (describe never claims more than orglet supports).
+    createable: false,
+    updateable: false,
+    deletable: false,
+    undeletable: false,
+    queryable: true,
+    searchable: false,
+    hasOwner: false,
+    customMetadata: true,
+    fields: [...sys.head, ...sys.tail, ...custom],
+    validationRules: obj.validationRules,
+    recordTypes: [],
+  };
+}
+
 function recordTypeField(): FieldDef {
   const f = baseField("RecordTypeId", "Record Type ID", "Lookup", false);
   f.referenceTo = ["RecordType"];
@@ -453,13 +532,15 @@ function fromSourceObject(obj: SourceObject, keyPrefix: string, sets: ValueSets)
  * `orglet check` reports and what a brand-new org starts from; once `orglet up` has run, the
  * assignment persisted in `_orglet.key_prefixes` (see `reconcileKeyPrefixes` in @orglet/schema)
  * is the truth, so adding, removing or renaming objects never shifts an existing object's prefix.
+ * `m` is the custom-metadata series (`m00` per public Tooling EntityDefinition fixtures, 11-RESEARCH Open Question 4),
+ * numbered over __mdt types only so a new type never shifts a __c prefix (D-02).
  */
-function customKeyPrefix(index: number): string {
+function customKeyPrefix(index: number, pool: "a" | "m" = "a"): string {
   const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   const hi = alphabet[Math.floor(index / alphabet.length)];
   const lo = alphabet[index % alphabet.length];
-  if (hi === undefined || lo === undefined) throw new Error("too many custom objects");
-  return `a${hi}${lo}`;
+  if (hi === undefined || lo === undefined) throw new Error(pool === "m" ? "too many custom metadata types" : "too many custom objects");
+  return `${pool}${hi}${lo}`;
 }
 
 const PROVENANCE = new Set<string>(["doc", "sdk-fixture", "de-describe", "unverified"]);
@@ -520,11 +601,16 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     objects.set(o.name.toLowerCase(), fromSourceObject(o, customKeyPrefix(i), sets));
   });
 
+  const metadataTypes = sourceObjects.filter((o) => isCustomMetadataName(o.name)).sort((a, b) => a.name.localeCompare(b.name));
+  metadataTypes.forEach((o, i) => {
+    objects.set(o.name.toLowerCase(), fromCustomMetadataObject(o, customKeyPrefix(i, "m"), sets));
+  });
+
   for (const o of sourceObjects) {
-    if (isCustomObjectName(o.name)) continue;
+    if (isCustomObjectName(o.name) || isCustomMetadataName(o.name)) continue;
     const target = objects.get(o.name.toLowerCase());
     if (!target) {
-      const area = /__(e|mdt|x|b|share|history|feed)$/i.test(o.name) ? "object-kind" : "standard-object";
+      const area = /__(e|x|b|share|history|feed)$/i.test(o.name) ? "object-kind" : "standard-object";
       const skipped = { area, kind: "object", object: o.name, message: `${o.name} skipped` } satisfies SkippedItem;
       pushDiagnostic(sink, skipped);
       if (area === "standard-object") unmodelledStandard.add(skipped);
@@ -559,6 +645,21 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
 
   resolveRollups(objects, pending, sink, rollupField);
 
+  // D-05: record files belong to a loaded __mdt type; anything else is skipped with one warning.
+  const customMetadata: CustomMetadataRecord[] = [];
+  for (const r of project?.customMetadata ?? []) {
+    const obj = objects.get(r.type.toLowerCase());
+    if (obj?.customMetadata !== true) {
+      pushDiagnostic(sink, {
+        area: "custom-metadata-record",
+        object: r.type,
+        message: `${r.file}: ${r.type} is not a custom metadata type in objects/; record ${r.developerName} skipped`,
+      });
+      continue;
+    }
+    customMetadata.push({ ...r, type: obj.name });
+  }
+
   // Dangling references are allowed (e.g. Campaign not in phase 0) but reported once per target.
   // "Referenced" (D-05, D-09) = named in referenceTo of a lookup, master-detail or owner field, or as a roll-up child.
   // Formula and validation-rule paths to another object go through such a field, so no separate scan is needed.
@@ -566,6 +667,8 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
   const referenced = new Set<string>();
   for (const obj of objects.values()) {
     for (const f of obj.fields) {
+      // Entity/field definition targets are checked per record at seed time, D-09.
+      if (definitionTarget(f) !== undefined) continue;
       for (const ref of f.referenceTo ?? []) {
         referenced.add(ref.toLowerCase());
         if (!objects.has(ref.toLowerCase())) missing.add(ref);
@@ -602,5 +705,5 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
   });
   uniqueInfo.sort((a, b) => (a.object! < b.object! ? -1 : a.object! > b.object! ? 1 : 0));
 
-  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings: sink.warnings, diagnostics: sink.diagnostics, info: uniqueInfo };
+  return { schema: new OrgSchemaImpl(objects, globalValueSets, standardValueSets), warnings: sink.warnings, diagnostics: sink.diagnostics, info: uniqueInfo, customMetadata };
 }
