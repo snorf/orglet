@@ -445,3 +445,26 @@ describe("polymorphic lookups with a target that has no key prefix (D-08)", () =
     expect(q).not.toContain("'null'");
   });
 });
+
+describe("objects without a recycle bin (Pitfall 1)", () => {
+  const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
+  let cmdt: OrgSchema;
+  beforeAll(async () => {
+    cmdt = (await loadOrgSchema({ projectDir: CMDT })).schema;
+  });
+  const compileMdt = (soql: string, includeDeleted = false): CompiledQuery => compileSoql(soql, { schema: cmdt, orgSchema: "org", now, includeDeleted });
+
+  it("a __mdt root query has no isdeleted filter, with or without queryAll", () => {
+    for (const includeDeleted of [false, true]) {
+      expect(compileMdt("SELECT Id, DeveloperName FROM Support_Tier__mdt", includeDeleted).sql).not.toContain("isdeleted");
+    }
+  });
+
+  it("a semi-join into a __mdt has no isdeleted filter", () => {
+    expect(compileMdt("SELECT Id FROM Tier_Group__mdt WHERE Id IN (SELECT Tier_Group__c FROM Support_Tier__mdt)").sql).not.toContain("isdeleted");
+  });
+
+  it("objects with IsDeleted keep the filter", () => {
+    expect(compileMdt("SELECT Id FROM Ticket__c").sql).toContain('t0."isdeleted" = false');
+  });
+});

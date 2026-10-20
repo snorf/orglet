@@ -3,7 +3,7 @@
  * rows back into Salesforce records (nested parents, child subquery arrays, aggregates).
  */
 import { parseQuery, type FieldType, type Query, type Subquery, type WhereClause, type Condition, type ConditionWithValueQuery, type OrderByClause, type GroupByClause, type HavingClause, type FunctionExp } from "@jetstreamapp/soql-parser-js";
-import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
+import { definitionTarget, hasSoftDelete, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { columnName, quote, tableName } from "@orglet/schema";
 import { dateLiteralRange, dateNLiteralRange, toIsoDate, type DateRange } from "./dates.js";
 import { invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
@@ -290,7 +290,8 @@ class Compiler {
     }
 
     const where = this.compileWhere(scope, query.where, stripAlias);
-    const deletedFilter = this.options.includeDeleted ? undefined : `${scope.alias}.${quote("isdeleted")} = false`;
+    // Custom metadata types have no recycle bin and no IsDeleted column (D-16).
+    const deletedFilter = this.options.includeDeleted || !hasSoftDelete(obj) ? undefined : `${scope.alias}.${quote("isdeleted")} = false`;
     const whereSql = [deletedFilter, where].filter(Boolean).join(" AND ");
     const groupBy = aggregate ? this.compileGroupBy(scope, query.groupBy, stripAlias) : "";
     const having = aggregate ? this.compileHaving(scope, query.having, stripAlias) : "";
@@ -513,7 +514,7 @@ class Compiler {
     const shape = this.compileSObjectSelect(scope, sub.fields ?? [], selectItems, stripAlias);
     if (shape.computed.length > 0) throw unsupported("soql-formula", `formula fields in child subquery ${sub.relationshipName} are not supported yet`);
     const where = this.compileWhere(scope, sub.where, stripAlias);
-    const deleted = this.options.includeDeleted ? "" : ` AND ${scope.alias}.${quote("isdeleted")} = false`;
+    const deleted = this.options.includeDeleted || !hasSoftDelete(scope.obj) ? "" : ` AND ${scope.alias}.${quote("isdeleted")} = false`;
     const orderBy = this.compileOrderBy(scope, sub.orderBy, stripAlias, false);
     const inner =
       `SELECT ${selectItems.join(", ")} FROM ${this.table(child)} ${scope.alias}` +
@@ -675,7 +676,7 @@ class Compiler {
       if (!innerField || innerField.type !== "Field" || (q.fields?.length ?? 0) !== 1) throw malformed("semi-join subquery must select a single Id or lookup field");
       const r = inner.resolve(innerScope, [innerField.field]);
       const where = inner.compileWhere(innerScope, q.where, (n) => n);
-      const deleted = this.options.includeDeleted ? "" : ` AND ${innerScope.alias}.${quote("isdeleted")} = false`;
+      const deleted = this.options.includeDeleted || !hasSoftDelete(innerScope.obj) ? "" : ` AND ${innerScope.alias}.${quote("isdeleted")} = false`;
       const sub = `SELECT ${inner.expr(innerScope.alias, innerObj, r.field)} FROM ${this.table(innerObj)} ${innerScope.alias}` + [...innerScope.joins.values()].map((j) => ` ${j.sql}`).join("") + ` WHERE TRUE${deleted}${where ? ` AND (${where})` : ""}`;
       this.params = inner.params;
       const op = cond.operator === "NOT IN" ? "NOT IN" : "IN";

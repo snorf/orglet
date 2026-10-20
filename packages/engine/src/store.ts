@@ -1,8 +1,8 @@
 /**
  * Row-level Postgres access for one org schema. Knows about column naming and the
- * IsDeleted soft-delete flag; knows nothing about validation or order of execution.
+ * IsDeleted soft-delete flag where the object has one; knows nothing about validation or order of execution.
  */
-import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
+import { hasSoftDelete, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { columnName, isVirtual, quote, sequenceName, tableName, type Queryable } from "@orglet/schema";
 import type { RecordData, RecordValue } from "@orglet/formula";
 
@@ -29,7 +29,7 @@ export class Store {
   async loadByIds(client: Queryable, obj: SObjectDef, ids: string[], includeDeleted = false): Promise<Map<string, RecordData>> {
     if (ids.length === 0) return new Map();
     const res = await client.query<RecordData>(
-      `SELECT ${this.selectList(obj)} FROM ${this.table(obj)} WHERE ${quote("id")} = ANY($1)${includeDeleted ? "" : ` AND ${quote("isdeleted")} = false`}`,
+      `SELECT ${this.selectList(obj)} FROM ${this.table(obj)} WHERE ${quote("id")} = ANY($1)${includeDeleted || !hasSoftDelete(obj) ? "" : ` AND ${quote("isdeleted")} = false`}`,
       [ids],
     );
     return new Map(res.rows.map((r) => [r["Id"] as string, r]));
@@ -38,7 +38,7 @@ export class Store {
   async findByField(client: Queryable, obj: SObjectDef, field: FieldDef, value: RecordValue): Promise<RecordData[]> {
     const col = quote(columnName(field));
     const where = field.caseSensitive || typeof value !== "string" ? `${col} = $1` : `lower(${col}) = lower($1)`;
-    const res = await client.query<RecordData>(`SELECT ${this.selectList(obj)} FROM ${this.table(obj)} WHERE ${where} AND ${quote("isdeleted")} = false`, [value]);
+    const res = await client.query<RecordData>(`SELECT ${this.selectList(obj)} FROM ${this.table(obj)} WHERE ${where}${hasSoftDelete(obj) ? ` AND ${quote("isdeleted")} = false` : ""}`, [value]);
     return res.rows;
   }
 
@@ -46,7 +46,7 @@ export class Store {
   async existingIds(client: Queryable, obj: SObjectDef, ids: string[], includeDeleted = false): Promise<Set<string>> {
     if (ids.length === 0) return new Set();
     const res = await client.query<{ id: string }>(
-      `SELECT ${quote("id")} AS id FROM ${this.table(obj)} WHERE ${quote("id")} = ANY($1)${includeDeleted ? "" : ` AND ${quote("isdeleted")} = false`}`,
+      `SELECT ${quote("id")} AS id FROM ${this.table(obj)} WHERE ${quote("id")} = ANY($1)${includeDeleted || !hasSoftDelete(obj) ? "" : ` AND ${quote("isdeleted")} = false`}`,
       [ids],
     );
     return new Set(res.rows.map((r) => r.id));
@@ -92,7 +92,7 @@ export class Store {
   async childrenOf(client: Queryable, child: SObjectDef, field: FieldDef, parentIds: string[], includeDeleted = false): Promise<RecordData[]> {
     if (parentIds.length === 0) return [];
     const res = await client.query<RecordData>(
-      `SELECT ${this.selectList(child)} FROM ${this.table(child)} WHERE ${quote(columnName(field))} = ANY($1)${includeDeleted ? "" : ` AND ${quote("isdeleted")} = false`}`,
+      `SELECT ${this.selectList(child)} FROM ${this.table(child)} WHERE ${quote(columnName(field))} = ANY($1)${includeDeleted || !hasSoftDelete(child) ? "" : ` AND ${quote("isdeleted")} = false`}`,
       [parentIds],
     );
     return res.rows;
