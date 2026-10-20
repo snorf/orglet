@@ -6,7 +6,7 @@ import { parseQuery, type FieldType, type Query, type Subquery, type WhereClause
 import { definitionTarget, hasSoftDelete, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { columnName, quote, tableName } from "@orglet/schema";
 import { dateLiteralRange, dateNLiteralRange, toIsoDate, type DateRange } from "./dates.js";
-import { invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
+import { definitionRelationshipOnly, invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
 import { NAME_OBJECT_FIELDS, pseudoField } from "./polymorphic.js";
 import { TYPEOF_RESTRICTIONS, assertTypeofAllowed, diagnoseTypeofParseError, notATarget, notPolymorphic } from "./typeof.js";
 
@@ -145,6 +145,11 @@ class Compiler {
   // -------------------------------------------------------------------------------------
   // Field resolution
 
+  /** The MetadataRelationship field of `obj` whose `__r` name is `seg` and whose target is EntityDefinition/FieldDefinition (not a modelled object). */
+  private definitionRelationship(obj: SObjectDef, seg: string): FieldDef | undefined {
+    return obj.fields.find((f) => definitionTarget(f) !== undefined && f.relationshipName?.toLowerCase() === seg.toLowerCase());
+  }
+
   /** Resolve a possibly dotted field path within `scope`, adding parent joins as needed. */
   private resolve(scope: Scope, path: string[]): Resolved {
     let obj = scope.obj;
@@ -155,6 +160,12 @@ class Compiler {
       key = key ? `${key}.${seg.toLowerCase()}` : seg.toLowerCase();
       let join = scope.joins.get(key);
       if (!join) {
+        const def = this.definitionRelationship(obj, seg);
+        if (def !== undefined) {
+          const defLeaf = path[path.length - 1] ?? "";
+          if (i !== path.length - 2 || defLeaf.toLowerCase() !== "qualifiedapiname") throw definitionRelationshipOnly(def.relationshipName ?? seg, path.join("."));
+          return { field: pseudoField("QualifiedApiName"), obj, alias, sql: `${alias}.${quote(columnName(def))}` };
+        }
         const resolved = this.options.schema.resolveRelationship(obj.name, seg);
         if (resolved === undefined) throw invalidRelationship(seg, obj.name);
         const { field: rel, target, targets } = resolved;
@@ -351,6 +362,9 @@ class Compiler {
       let key = "";
       for (const seg of path) {
         key = key ? `${key}.${seg.toLowerCase()}` : seg.toLowerCase();
+        // A definition relationship is never an intermediate hop (D-10).
+        const def = this.definitionRelationship(obj, seg);
+        if (def !== undefined) throw definitionRelationshipOnly(def.relationshipName ?? seg, path.join("."));
         // Resolve through the scope (creates the join) to get the canonical relationship name.
         const resolved = this.options.schema.resolveRelationship(obj.name, seg);
         if (resolved === undefined) throw invalidRelationship(seg, obj.name);
@@ -399,6 +413,20 @@ class Compiler {
             const field = this.options.schema.getField(scope.obj.name, f.field);
             if (!field) throw invalidField(f.field, scope.obj.name);
             addField(shape, scope.alias, scope.obj, field);
+            break;
+          }
+          const last = rels[rels.length - 1] ?? "";
+          const host = rels.length > 1 ? parentShape(rels.slice(0, -1)) : { shape, alias: scope.alias, obj: scope.obj, poly: undefined };
+          const def = host.poly ? undefined : this.definitionRelationship(host.obj, last);
+          if (def !== undefined) {
+            if (f.field.toLowerCase() !== "qualifiedapiname") throw definitionRelationshipOnly(def.relationshipName ?? last, `${rels.join(".")}.${f.field}`);
+            // D-10, orglet choice: the stored qualified API name doubles as the parent's id, so attributes.url is /sobjects/EntityDefinition/<name> and a null value is a null parent.
+            const relName = def.relationshipName ?? last;
+            if (!host.shape.parents.has(relName)) {
+              const col = this.nextColumn();
+              selectItems.push(`${host.alias}.${quote(columnName(def))} AS ${quote(col)}`);
+              host.shape.parents.set(relName, { kind: "sobject", type: definitionTarget(def) ?? "", idAlias: col, fields: [{ name: "QualifiedApiName", alias: col }], computed: [], parents: new Map(), children: new Map() });
+            }
             break;
           }
           const p = parentShape(rels);

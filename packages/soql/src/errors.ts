@@ -24,3 +24,7 @@ export const invalidRelationship = (rel: string, _entity: string): SoqlError =>
   new SoqlError("INVALID_FIELD", `\nDidn't understand relationship '${rel}' in field path. If you are attempting to use a custom relationship, be sure to append the '__r' after the custom relationship name. Please reference your WSDL or the describe call for the appropriate names.`);
 
 export const unsupported = (area: string, detail: string): SoqlError => new SoqlError("UNSUPPORTED", `UNSUPPORTED:${area} ${detail}`);
+
+/** D-10: EntityDefinition/FieldDefinition are not modelled objects; a MetadataRelationship to them exposes only the stored qualified API name. errorCode stays INVALID_FIELD (not UNSUPPORTED) per D-10. */
+export const definitionRelationshipOnly = (rel: string, path: string): SoqlError =>
+  new SoqlError("INVALID_FIELD", `UNSUPPORTED:entity-definition only QualifiedApiName is selectable on ${rel}; ${path} is not supported`);
