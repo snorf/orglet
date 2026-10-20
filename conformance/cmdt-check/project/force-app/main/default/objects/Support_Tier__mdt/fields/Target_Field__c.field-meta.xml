@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target_Field__c</fullName>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Target Field</label>
+    <referenceTo>FieldDefinition</referenceTo>
+    <metadataRelationshipControllingField>Support_Tier__mdt.Target_Object__c</metadataRelationshipControllingField>
+    <relationshipLabel>Target Fields</relationshipLabel>
+    <relationshipName>Support_Tiers_By_Field</relationshipName>
+    <required>false</required>
+    <unique>false</unique>
+    <externalId>false</externalId>
+    <type>MetadataRelationship</type>
+</CustomField>

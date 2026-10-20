@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Default_Tier__c</fullName>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Default Tier</label>
+    <referenceTo>Support_Tier__mdt</referenceTo>
+    <relationshipLabel>Default Tiers</relationshipLabel>
+    <relationshipName>Tier_Groups</relationshipName>
+    <required>false</required>
+    <unique>false</unique>
+    <externalId>false</externalId>
+    <type>MetadataRelationship</type>
+</CustomField>
