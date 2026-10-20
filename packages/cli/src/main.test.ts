@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { main } from "./main.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
 
 async function project(files: Record<string, string>): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), "orglet-cli-"));
@@ -169,6 +170,81 @@ describe("check", () => {
     expect(warns).toEqual([]);
     expect(logs.some((l) => INFO_LINE.test(l))).toBe(true);
     expect(logs[0]).toMatch(/^\d+ objects \(4 custom\), \d+ fields$/);
+  });
+
+  const SETTINGS_LINE = "info: 2 custom settings loaded without data (custom-setting data is not part of a retrieve): App_Config__c, Region_List__c";
+  const settingOnly = () =>
+    project({
+      "objects/Cfg__c/Cfg__c.object-meta.xml":
+        '<?xml version="1.0" encoding="UTF-8"?><CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Cfg</label><customSettingsType>List</customSettingsType></CustomObject>',
+    });
+
+  it("lists __mdt types with m prefixes beside custom objects and counts records and labels (D-02, D-21)", async () => {
+    expect(await main(["check", "--project", CMDT])).toBe(0);
+    expect(logs[0]).toMatch(/^\d+ objects \(5 custom\), \d+ fields$/);
+    for (const l of [
+      "  App_Config__c  a00  (provisional)",
+      "  Region_List__c  a01  (provisional)",
+      "  Ticket__c  a02  (provisional)",
+      "  Support_Tier__mdt  m00  (provisional)",
+      "  Tier_Group__mdt  m01  (provisional)",
+      "custom metadata: 5 records in 2 types",
+      "2 custom labels",
+    ]) expect(logs).toContain(l);
+  });
+
+  it("prints the fixture's eight warnings and fails --strict", async () => {
+    expect(await main(["check", "--project", CMDT])).toBe(0);
+    expect(warns).toHaveLength(8);
+    const normalised = warns.map((w) => w.replace(/^(warning: UNSUPPORTED:custom-metadata-record ).*Retired_Type\.Old\.md-meta\.xml/, "$1<path>/Retired_Type.Old.md-meta.xml")).sort();
+    expect(normalised).toEqual(
+      [
+        "warning: UNSUPPORTED:custom-metadata-record <path>/Retired_Type.Old.md-meta.xml: Retired_Type__mdt is not a custom metadata type in objects/; record Old skipped",
+        "warning: UNSUPPORTED:custom-label welcome_message duplicates Welcome_Message; the first definition is kept",
+        "warning: UNSUPPORTED:custom-metadata-record Support_Tier__mdt.Unknown_Field__c is not a field of Support_Tier__mdt; values dropped (records: Bronze)",
+        "warning: UNSUPPORTED:custom-metadata-record Support_Tier__mdt.Max_Seats__c: values that cannot be stored as Number were stored as null (records: Bronze)",
+        "warning: UNSUPPORTED:custom-metadata-record Support_Tier__mdt.Region__c: values that cannot be stored as Picklist were stored as null (records: Silver)",
+        "warning: UNSUPPORTED:custom-metadata-record Support_Tier__mdt.Tier_Group__c: target Tier_Group__mdt record Missing_Group does not exist; stored as null (records: Bronze)",
+        "warning: UNSUPPORTED:reference-target Support_Tier__mdt.Target_Object__c: EntityDefinition target Solution is not modelled by orglet; stored as null (records: Bronze)",
+        "warning: UNSUPPORTED:reference-target Support_Tier__mdt.Target_Field__c: FieldDefinition target Account.No_Such_Field__c is not modelled by orglet; stored as null (records: Bronze)",
+      ].sort(),
+    );
+    warns = [];
+    expect(await main(["check", "--strict", "--project", CMDT])).toBe(1);
+  });
+
+  it("states that custom-setting data is not part of a retrieve on one info line, after the standard info line (D-20)", async () => {
+    expect(await main(["check", "--project", CMDT])).toBe(0);
+    expect(logs.filter((l) => l === SETTINGS_LINE)).toHaveLength(1);
+    expect(logs[logs.length - 1]).toBe(SETTINGS_LINE);
+    expect(warns.filter((w) => w.includes("App_Config__c") || w.includes("Region_List__c"))).toEqual([]);
+    const standard = logs.find((l) => INFO_LINE.test(l));
+    if (standard !== undefined) {
+      const names = INFO_LINE.exec(standard)![2]!.split(", ");
+      expect(names).not.toContain("App_Config__c");
+      expect(names).not.toContain("Region_List__c");
+    }
+  });
+
+  it("a project whose only finding is a custom setting passes --strict", async () => {
+    const root = await settingOnly();
+    try {
+      expect(await main(["check", "--strict", "--project", root])).toBe(0);
+      expect(warns).toEqual([]);
+      expect(logs).toContain("info: 1 custom settings loaded without data (custom-setting data is not part of a retrieve): Cfg__c");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("--quiet hides the settings line", async () => {
+    const root = await settingOnly();
+    try {
+      expect(await main(["check", "--quiet", "--project", root])).toBe(0);
+      expect(logs).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
 

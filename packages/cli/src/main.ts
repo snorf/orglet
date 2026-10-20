@@ -10,7 +10,7 @@ import { resolve } from "node:path";
 import { readFile } from "node:fs/promises";
 import { loadOrgSchema } from "@orglet/metadata";
 import { createPool, databaseUrlFromEnv, migrate, quote, DEFAULT_ORG_SCHEMA, KeyPrefixError, dropKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, type ReconcileKeyPrefixesResult } from "@orglet/schema";
-import { bootstrapOrg, DmlEngine, FormulaRegistry } from "@orglet/engine";
+import { bootstrapOrg, customMetadataSummary, DmlEngine, FormulaRegistry, planCustomMetadataSeed, seedCustomMetadata } from "@orglet/engine";
 import { createApiServer, prepareBulk, dropBulkJobs, type AuthConfig } from "@orglet/api";
 
 const USAGE = `orglet - a self-hosted, Salesforce-compatible org
@@ -29,10 +29,10 @@ Options:
   --users       Comma-separated username:password pairs; without it any password is accepted
   --import      Data-migration mode: keep supplied Ids and audit fields, skip lookup checks,
                 validation rules and hooks (load parents and children in any order)
-  --key-prefixes  JSON file { "Foo__c": "a0X", ... } seeding key prefixes for custom objects that have
-                  none persisted yet (for example your own org's keyPrefix values); never overrides a
-                  persisted assignment
-  --drop-prefixes With reset: also forget the org's persisted custom-object key prefixes
+  --key-prefixes  JSON file { "Foo__c": "a0X", "Bar__mdt": "m0Y", ... } seeding key prefixes for custom objects
+                  and custom metadata types (__mdt take the m00..mzz range) that have none persisted yet
+                  (for example your own org's keyPrefix values); never overrides a persisted assignment
+  --drop-prefixes With reset: also forget the org's persisted custom-object and custom-metadata key prefixes
   --strict      With check: exit 1 if any warning was printed (default: always exit 0); info lines never count
   --quiet       Only print errors
 `;
@@ -81,12 +81,19 @@ async function check(c: Common, strict: boolean): Promise<number> {
   const custom = objects.filter((o) => o.custom);
   for (const o of custom) log(c, `  ${o.name}  ${o.keyPrefix}  (provisional)`);
   if (custom.length > 0) log(c, "custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter");
-  const warnings = [...result.warnings, ...new FormulaRegistry(result.schema).warnings];
+  const cmdt = planCustomMetadataSeed(result.schema, result.customMetadata);
+  if (cmdt.types.length > 0) log(c, `custom metadata: ${cmdt.records} records in ${cmdt.types.length} types`);
+  if (result.schema.labels.size > 0) log(c, `${result.schema.labels.size} custom labels`);
+  // D-05: seed-plan warnings count under --strict like every other warning.
+  const warnings = [...result.warnings, ...cmdt.warnings, ...new FormulaRegistry(result.schema).warnings];
   for (const w of warnings) console.warn(`warning: ${w}`);
   // BASE2-08 (D-08): unmodelled standard objects nothing references are informational: one sorted stdout line after the
   // warnings, quiet-gated like every log line, never prefixed "warning:" and never counted by --strict.
-  const unreferenced = [...new Set(result.info.map((d) => d.object).filter((n): n is string => n !== undefined))].sort();
+  const unreferenced = [...new Set(result.info.filter((d) => d.area === "standard-object-unmodelled" || d.area === "reference-target-skipped").map((d) => d.object).filter((n): n is string => n !== undefined))].sort();
   if (unreferenced.length > 0) log(c, `info: ${unreferenced.length} standard objects not modelled and unreferenced: ${unreferenced.join(", ")}`);
+  // D-20: a fact about the retrieve format, not an orglet gap: no UNSUPPORTED, never counted by --strict.
+  const settings = result.info.filter((d) => d.area === "custom-setting-no-data").map((d) => d.object).filter((n): n is string => n !== undefined).sort();
+  if (settings.length > 0) log(c, `info: ${settings.length} custom settings loaded without data (custom-setting data is not part of a retrieve): ${settings.join(", ")}`);
   // --strict turns any warning (UNSUPPORTED:* or otherwise) into a failing exit code, for acceptance runs and CI.
   return strict && warnings.length > 0 ? 1 : 0;
 }
@@ -139,6 +146,10 @@ async function up(c: Common, port: number, force: boolean, auth: AuthConfig, imp
   log(c, `schema "${c.orgSchema}": ${changes} change(s) applied`);
 
   const boot = await bootstrapOrg(pool, loaded.schema, { orgSchema: c.orgSchema });
+  // Phase 11 (D-03, D-04): sync __mdt rows from the record files on every up, --import included; prefixes are final (reconciled) and the admin exists (audit fields).
+  const cmdt = planCustomMetadataSeed(loaded.schema, loaded.customMetadata);
+  for (const w of cmdt.warnings) console.warn(`warning: ${w}`);
+  log(c, customMetadataSummary(await seedCustomMetadata(pool, loaded.schema, cmdt, { orgSchema: c.orgSchema, userId: boot.session.userId })));
   // Bulk jobs persist in _orglet: create the tables, fail jobs a previous run left mid-flight, drop expired ones (D-04).
   const bulk = await prepareBulk(pool, c.orgSchema);
   if (bulk.reconciled > 0) log(c, `bulk: marked ${bulk.reconciled} job(s) left in progress by a previous run as Failed`);
