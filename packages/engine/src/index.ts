@@ -14,3 +14,5 @@ export { loadParents } from "./parents.js";
 export { coerceValue, coerceRecord, normalizeDatetime } from "./coerce.js";
 export { runQuery } from "./query.js";
 export type { QueryOptions, QueryPage } from "./query.js";
+export { planCustomMetadataSeed, seedCustomMetadata, customMetadataSummary } from "./seed.js";
+export type { CustomMetadataPlan, CustomMetadataSeedRow, CustomMetadataSeedOptions, CustomMetadataSeedResult } from "./seed.js";
