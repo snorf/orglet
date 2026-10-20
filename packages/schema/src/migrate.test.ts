@@ -310,6 +310,38 @@ describe("roll-up backfill", () => {
   });
 });
 
+describe("a custom object that becomes a custom setting (Phase 11 upgrade impact)", () => {
+  const settingSchema = `test_${randomBytes(4).toString("hex")}`;
+  const cfg = (customSettingsType?: "List" | "Hierarchy"): SourceObject => ({
+    name: "Cfg__c",
+    fields: [{ fullName: "On__c", label: "On", type: "Checkbox" }],
+    validationRules: [],
+    recordTypes: [],
+    ...(customSettingsType !== undefined ? { customSettingsType } : {}),
+  });
+  const build = async (o: SourceObject): Promise<OrgSchema> =>
+    buildOrgSchema(await loadBaseline(), { rootDir: "", packageDirectories: [], objects: [o], globalValueSets: [], standardValueSets: [], warnings: [] }).schema;
+  const DROP = "UNSUPPORTED:schema-drop column cfg__c.ownerid is no longer in the metadata; kept (use --force to drop)";
+
+  afterAll(async () => {
+    await pool.query(`DROP SCHEMA IF EXISTS ${quote(settingSchema)} CASCADE`);
+  });
+
+  it("keeps the orphan ownerid with one schema-drop warning, adds setupownerid with its unique index, and stays quiet of CREATEs afterwards", async () => {
+    await migrate(pool, await build(cfg()), { orgSchema: settingSchema });
+    const asSetting = await build(cfg("Hierarchy"));
+    const up = await migrate(pool, asSetting, { orgSchema: settingSchema });
+    expect(up.warnings).toEqual([DROP]);
+    const cols = await pool.query<{ column_name: string }>(`SELECT column_name FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'cfg__c'`, [settingSchema]);
+    expect(cols.rows.map((r) => r.column_name)).toContain("setupownerid");
+    const idx = await pool.query<{ indexdef: string }>(`SELECT indexdef FROM pg_indexes WHERE schemaname = $1 AND indexname = 'ux_cfg__c_setupownerid'`, [settingSchema]);
+    expect(idx.rows[0]?.indexdef).toContain("CREATE UNIQUE INDEX");
+    const again = await migrate(pool, asSetting, { orgSchema: settingSchema });
+    expect(again.warnings).toEqual([DROP]);
+    expect(again.statements.filter((s) => /^CREATE (TABLE|(UNIQUE )?INDEX|SEQUENCE)/.test(s))).toEqual([]);
+  });
+});
+
 describe("isWidening", () => {
   it("admits only widening changes, shared with the baseline diff gate (MIGR-03)", () => {
     expect(isWidening("varchar(40)", "varchar(80)")).toBe(true);
