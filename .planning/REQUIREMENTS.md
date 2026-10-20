@@ -95,12 +95,12 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   `NamespacePrefix`, `QualifiedApiName`, `IsProtected`, `SystemModstamp`), a key prefix from the
   `m00` series allocated and persisted through the existing key-prefix mechanism, and describe
   flags that match the documented supported calls (describe, query, retrieve only).
-- [ ] **CMDT-02**: Records in `customMetadata/<Type>.<Record>.md-meta.xml` are seeded into the
+- [x] **CMDT-02**: Records in `customMetadata/<Type>.<Record>.md-meta.xml` are seeded into the
   type's table at `orglet up` with deterministic Ids (stable across reloads, keyed by type and
   `DeveloperName`), values coerced by the field's declared type (`"007"` stays text, `xsi:nil` is
   null, a missing field warns once), and a full sync on reload (changed rows updated, removed
   records deleted).
-- [ ] **CMDT-03**: `MetadataRelationship` fields load instead of being skipped: a relationship to
+- [x] **CMDT-03**: `MetadataRelationship` fields load instead of being skipped: a relationship to
   another `__mdt` resolves to that record's Id in a second pass, a relationship to an entity or
   field definition stores the qualified API name, and `Rel__r.QualifiedApiName` is selectable in
   SOQL as an alias of the stored string; a dangling target warns and leaves the field null.
@@ -108,11 +108,11 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   simple-salesforce; create, update and delete through the data API are rejected with a documented
   Salesforce error code (or `INVALID_TYPE_FOR_OPERATION` where none is documented) and never
   silently accepted.
-- [ ] **CSET-01**: A custom object carrying `customSettingsType` (List or Hierarchy) loads as a custom
+- [x] **CSET-01**: A custom object carrying `customSettingsType` (List or Hierarchy) loads as a custom
   setting: describe reports `customSetting: true`, the object has no `OwnerId`, a hierarchy setting
   has `SetupOwnerId` (Organization, Profile or User) with uniqueness enforced as `DUPLICATE_VALUE`,
   and `orglet check` states that custom-setting data is not part of a retrieve.
-- [ ] **CSET-02**: Custom labels in `labels/CustomLabels.labels-meta.xml` load onto the org schema
+- [x] **CSET-02**: Custom labels in `labels/CustomLabels.labels-meta.xml` load onto the org schema
   (name, value, language, category) so `$Label` formulas resolve; translations are out of scope.
 
 ### Formulas
@@ -241,11 +241,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE2-07 | Phase 10 | Complete |
 | BASE2-08 | Phase 10 | Complete |
 | CMDT-01 | Phase 11 | Pending |
-| CMDT-02 | Phase 11 | Pending |
-| CMDT-03 | Phase 11 | Pending |
+| CMDT-02 | Phase 11 | Complete |
+| CMDT-03 | Phase 11 | Complete |
 | CMDT-04 | Phase 11 | Pending |
-| CSET-01 | Phase 11 | Pending |
-| CSET-02 | Phase 11 | Pending |
+| CSET-01 | Phase 11 | Complete |
+| CSET-02 | Phase 11 | Complete |
 | FORM-01 | Phase 12 | Pending |
 | FORM-02 | Phase 12 | Pending |
 | FORM-03 | Phase 12 | Pending |
