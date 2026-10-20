@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-10-20T19:44:31.131Z"
+stopped_at: Completed 11-03-PLAN.md
+last_updated: "2026-10-20T19:48:56.932Z"
 last_activity: 2026-10-20
 progress:
   total_phases: 17
   completed_phases: 3
   total_plans: 34
-  completed_plans: 27
+  completed_plans: 29
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 11 (custom-metadata-custom-settings-labels) — EXECUTING
-Plan: 3 of 9
+Plan: 5 of 9
 Status: Ready to execute
 Last activity: 2026-10-20
 
@@ -116,6 +116,8 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 10 P06 | checkpoint | 3 tasks | 6 files |
 | Phase 11 P01 | 15min | 2 tasks | 33 files |
 | Phase 11 P02 | 10min | 2 tasks | 10 files |
+| Phase 11 P04 | 10min | 2 tasks | 7 files |
+| Phase 11 P03 | 15min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -213,6 +215,8 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-05: OrderItem.QuoteLineItemId and RelatedOrderItemId overridden nillable:true (sf-skills required flag contradicts its own descriptions; OrderItem was uninsertable); engine/REST behaviour of the 18 proven without production code change
 - [Phase 10]: 10-06 fix: Quote.OpportunityId joins the roll-up lookup allowlist (documented Create/Filter-only, same signature as OpportunityLineItem.OpportunityId); Phase 5 D-08 reversed, a roll-up over an unlisted lookup now degrades with UNSUPPORTED:rollup-relationship instead of failing the load
 - [Phase 10]: 10-06 fix: Quote hasOwner set by override with the author's DE describe as ref; D-21 unchanged (field_reference alone still does not imply an owner)
+- [Phase 11]: Golden derived CMDT Id: deriveCustomMetadataId(m00,Support_Tier__mdt,Gold)=m00dI6W8ONPwAT6Q0N
+- [Phase 11]: 11-03: Hierarchy Name nillable, List Name unique; customKeyPrefix pool parameter keeps metadata self-contained
 
 ### Pending Todos
 
@@ -235,6 +239,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-20T19:44:31.126Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-10-20T19:48:56.926Z
+Stopped at: Completed 11-03-PLAN.md
 Resume file: None

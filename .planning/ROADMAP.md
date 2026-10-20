@@ -117,8 +117,8 @@ Plans:
 Plans:
 - [x] 11-01-PLAN.md — Wave 0: conformance/cmdt-check fixture + expected facts, jsforce/simple-salesforce legs, seed.test.ts scaffold (CMDT-01..04, CSET-01, CSET-02)
 - [x] 11-02-PLAN.md — type contracts (MetadataRelationship, customMetadata/customSetting, labels) + SFDX reader for records, labels, customSettingsType (CMDT-02, CMDT-03, CSET-01, CSET-02)
-- [ ] 11-03-PLAN.md — buildOrgSchema: __mdt objects and m pool, MetadataRelationship fields, record matching, custom-setting shape and info item, labels (CMDT-01, CMDT-03, CSET-01, CSET-02)
-- [ ] 11-04-PLAN.md — deriveCustomMetadataId, m00..mzz key-prefix pool, unique-Lookup index and no FK for MetadataRelationship (CMDT-01, CMDT-02, CSET-01)
+- [x] 11-03-PLAN.md — buildOrgSchema: __mdt objects and m pool, MetadataRelationship fields, record matching, custom-setting shape and info item, labels (CMDT-01, CMDT-03, CSET-01, CSET-02)
+- [x] 11-04-PLAN.md — deriveCustomMetadataId, m00..mzz key-prefix pool, unique-Lookup index and no FK for MetadataRelationship (CMDT-01, CMDT-02, CSET-01)
 - [ ] 11-05-PLAN.md — soft-delete filters only where IsDeleted exists; Rel__r.QualifiedApiName and the D-10 rejection in SOQL (CMDT-03, CMDT-04)
 - [ ] 11-06-PLAN.md — planCustomMetadataSeed (pure) + seedCustomMetadata full sync + D-04 summary (CMDT-02, CMDT-03)
 - [ ] 11-07-PLAN.md — describe flags, DML refusal incl. import mode and Bulk ingest, SetupOwnerId default, HTTP tests (CMDT-01, CMDT-04, CSET-01)
@@ -177,7 +177,7 @@ Plans:
 | 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 10/10 | Complete | 2026-10-13 |
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
 | 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
-| 11. Custom Metadata, Custom Settings & Labels | v1.1 | 2/9 | In Progress|  |
+| 11. Custom Metadata, Custom Settings & Labels | v1.1 | 4/9 | In Progress|  |
 | 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
@@ -190,7 +190,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 2/9 plans executed
+**Plans:** 4/9 plans executed
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)

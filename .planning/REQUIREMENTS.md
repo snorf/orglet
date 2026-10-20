@@ -90,7 +90,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Custom metadata types and custom settings
 
-- [ ] **CMDT-01**: A custom metadata type (`__mdt`) in the retrieve loads as a read-only object with
+- [x] **CMDT-01**: A custom metadata type (`__mdt`) in the retrieve loads as a read-only object with
   the documented system fields (`DeveloperName`, `MasterLabel`, `Label`, `Language`,
   `NamespacePrefix`, `QualifiedApiName`, `IsProtected`, `SystemModstamp`), a key prefix from the
   `m00` series allocated and persisted through the existing key-prefix mechanism, and describe
@@ -240,7 +240,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BASE2-06 | Phase 10 | Complete |
 | BASE2-07 | Phase 10 | Complete |
 | BASE2-08 | Phase 10 | Complete |
-| CMDT-01 | Phase 11 | Pending |
+| CMDT-01 | Phase 11 | Complete |
 | CMDT-02 | Phase 11 | Complete |
 | CMDT-03 | Phase 11 | Complete |
 | CMDT-04 | Phase 11 | Pending |
