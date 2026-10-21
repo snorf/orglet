@@ -43,8 +43,8 @@ Describe, DML refusal and read paths for custom metadata, plus custom-setting Se
 - The test setup also calls `prepareBulk` / `dropBulkJobs` (needed for the Bulk assertions) and uses permissive auth with a token request.
 - TDD RED commits were not made separately (tests written after the implementation, committed together as in earlier plans); test file is wholly committed with Task 1 although its Bulk and /updated tests need Task 2's code.
 
-## Known issue (out of scope, infrastructure)
-On embedded pglite the test "a List setting needs a unique Name" is intermittently a 500 ("Received unexpected parseComplete message from backend") after a unique-violation, roughly 1 run in 4. It does not occur against real Postgres. It is a pg/pglite-socket protocol quirk, not a logic fault; not fixed here.
+## Known issue (resolved by the orchestrator in 13bc0c2)
+On embedded pglite the two DUPLICATE_VALUE tests were intermittently a 500 ("Received unexpected parseComplete message from backend") after a unique violation, about 2 runs in 3 when run in a loop, and the same loop on `examples/acme` failed too, so this was a pre-existing test-infrastructure gap exposed by this plan. Root cause is electric-sql/pglite#958 (ReadyForQuery sent before the client's Sync). `test/db.ts` now filters the premature messages per connection; the upstream fix (pglite PR #1144) is unreleased and upgrading to pglite 0.5.10 / pglite-socket 0.2.13 did not help.
 
 ## Known Stubs
 None.
