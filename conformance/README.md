@@ -15,8 +15,10 @@ real-world metadata retrieved from the author's own Developer Edition.
 | describe-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32 | [describe-check/README.md](describe-check/README.md) |
 | poly-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 4/4, simple-salesforce 4/4 | [poly-check/README.md](poly-check/README.md) |
 | rollup-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5 | [rollup-check/README.md](rollup-check/README.md) |
+| cmdt-check | pending | pending | pending | pending | [cmdt-check/README.md](cmdt-check/README.md) |
 
-Every row except the DE retrieve check runs against `examples/acme` on a fresh schema.
+Every row except the DE retrieve check and cmdt-check runs against `examples/acme` on a fresh schema; cmdt-check runs
+against `conformance/cmdt-check/project` on its own server and schema.
 
 ## Running everything
 
@@ -25,10 +27,13 @@ pnpm build
 PORT=8094 ORG_SCHEMA=final7 PYTHON=conformance/describe-check/.venv/bin/python conformance/run-all.sh
 ```
 
-`run-all.sh` starts its own server against `examples/acme`, runs every leg above and stops the server.
+`run-all.sh` starts its own server against `examples/acme` plus a second one against `conformance/cmdt-check/project`
+(port `CMDT_PORT`, default `PORT`+1; schema `CMDT_SCHEMA`, default `<ORG_SCHEMA>_cmdt`, also fresh), runs every leg
+above and stops both servers.
 `PORT` (default 8093), `ORG_SCHEMA` (default `conformance_run`; must be a fresh schema, the script never
 resets one) and `PYTHON` (default `conformance/python/.venv/bin/python`) are read from the environment.
-Clean up afterwards with `node packages/cli/dist/index.js reset --org-schema <schema> --drop-prefixes`.
+Clean up afterwards with `node packages/cli/dist/index.js reset --org-schema <schema> --drop-prefixes` and the same
+for the second schema: `node packages/cli/dist/index.js reset --org-schema <schema>_cmdt --drop-prefixes`.
 
 CI runs it in the `conformance` job of `.github/workflows/ci.yml` on every push and pull request. It is not a
 required status check on `main`; it may become one after it has been stable for a while (changing the ruleset

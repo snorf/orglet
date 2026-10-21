@@ -14,7 +14,7 @@ All names are invented.
 
 ## Running
 
-By hand (plan 11-09 wires it into `run-all.sh`):
+`conformance/run-all.sh` runs both legs against a second server. By hand:
 
 ```bash
 node packages/cli/dist/index.js up --project conformance/cmdt-check/project --org-schema cmdt_check --port 8095 --quiet &
@@ -48,3 +48,8 @@ node packages/cli/dist/index.js reset --org-schema cmdt_check --drop-prefixes
   ```
 
 - `orglet check` info line: `info: 2 custom settings loaded without data (custom-setting data is not part of a retrieve): App_Config__c, Region_List__c`.
+
+## Results
+
+| Date | orglet commit | SDK | Result |
+|---|---|---|---|
