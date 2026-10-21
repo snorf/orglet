@@ -44,7 +44,7 @@ const contract = JSON.parse(readFileSync(new URL("../../../conformance/describe-
 const refusal = (name: string, op: string) => [{ message: `entity type ${name} does not support ${op}`, errorCode: "INVALID_TYPE_FOR_OPERATION" }];
 const describeOf = async (name: string) => json(await get(`${V}/sobjects/${name}/describe`));
 const fieldOf = (d: Json, name: string) => (d["fields"] as Json[]).find((f) => f["name"] === name);
-const mdtCount = async (): Promise<number> => Number((await pool.query<{ n: string }>(`SELECT count(*) AS n FROM ${quote(orgSchema)}.support_tier__mdt`)).rows[0].n);
+const mdtCount = async (): Promise<number> => Number((await pool.query<{ n: string }>(`SELECT count(*) AS n FROM ${quote(orgSchema)}.support_tier__mdt`)).rows[0]?.n);
 
 beforeAll(async () => {
   testDb = await openTestDb();
@@ -190,7 +190,7 @@ describe("DML on custom metadata is refused", () => {
 
     expect(await mdtCount()).toBe(3);
     const gold = await pool.query<{ masterlabel: string }>(`SELECT masterlabel FROM ${quote(orgSchema)}.support_tier__mdt WHERE developername = 'Gold'`);
-    expect(gold.rows[0].masterlabel).toBe("Gold");
+    expect(gold.rows[0]?.masterlabel).toBe("Gold");
   });
 
   it("sObject Collections and composite get the per-record refusal", async () => {
