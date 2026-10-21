@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: executing
-stopped_at: Completed 11-07-PLAN.md
-last_updated: "2026-10-20T20:00:17.753Z"
-last_activity: 2026-10-20
+status: verifying
+stopped_at: Completed 11-09-PLAN.md
+last_updated: "2026-10-21T06:57:29.332Z"
+last_activity: 2026-10-21
 progress:
   total_phases: 17
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 34
-  completed_plans: 33
+  completed_plans: 34
   percent: 14
 ---
 
@@ -30,8 +30,8 @@ rather than faked.
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 11 (custom-metadata-custom-settings-labels) — EXECUTING
 Plan: 9 of 9
-Status: Ready to execute
-Last activity: 2026-10-20
+Status: Phase complete — ready for verification
+Last activity: 2026-10-21
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -122,6 +122,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 11 P05 | 15min | 2 tasks | 5 files |
 | Phase 11 P08 | 10min | 2 tasks | 4 files |
 | Phase 11 P07 | 20min | 2 tasks | 5 files |
+| Phase 11 P09 | 40min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -221,6 +222,7 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-06 fix: Quote hasOwner set by override with the author's DE describe as ref; D-21 unchanged (field_reference alone still does not imply an owner)
 - [Phase 11]: Golden derived CMDT Id: deriveCustomMetadataId(m00,Support_Tier__mdt,Gold)=m00dI6W8ONPwAT6Q0N
 - [Phase 11]: 11-03: Hierarchy Name nillable, List Name unique; customKeyPrefix pool parameter keeps metadata self-contained
+- [Phase 11]: Unique reference indexes on soft-delete objects are partial (WHERE isdeleted = false) so deleted Hierarchy setting rows release SetupOwnerId
 
 ### Pending Todos
 
@@ -243,6 +245,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-20T20:00:17.748Z
-Stopped at: Completed 11-07-PLAN.md
+Last session: 2026-10-21T06:57:29.328Z
+Stopped at: Completed 11-09-PLAN.md
 Resume file: None
