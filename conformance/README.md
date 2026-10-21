@@ -15,7 +15,7 @@ real-world metadata retrieved from the author's own Developer Edition.
 | describe-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32 | [describe-check/README.md](describe-check/README.md) |
 | poly-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 4/4, simple-salesforce 4/4 | [poly-check/README.md](poly-check/README.md) |
 | rollup-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5 | [rollup-check/README.md](rollup-check/README.md) |
-| cmdt-check | pending | pending | pending | pending | [cmdt-check/README.md](cmdt-check/README.md) |
+| cmdt-check | 2026-10-21 | 7660878 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
 
 Every row except the DE retrieve check and cmdt-check runs against `examples/acme` on a fresh schema; cmdt-check runs
 against `conformance/cmdt-check/project` on its own server and schema.

@@ -53,3 +53,9 @@ node packages/cli/dist/index.js reset --org-schema cmdt_check --drop-prefixes
 
 | Date | orglet commit | SDK | Result |
 |---|---|---|---|
+| 2026-10-21 | 7660878 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 (via `conformance/run-all.sh`, all ten legs PASS) |
+
+UI smoke: the built-in page (`packages/api/ui/index.html`) was not opened in a browser. The calls it makes were exercised
+over HTTP on the fixture server instead: the page loads (200), `Support_Tier__mdt` describes with 20 fields and no `Name`
+field, and `SELECT Id, DeveloperName FROM Support_Tier__mdt` returns the three records. The page's field table only uses
+describe attributes, so it does not depend on a `Name` field.
