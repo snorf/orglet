@@ -1,7 +1,7 @@
 /**
  * Generates DDL for an OrgSchema. Pure: returns SQL strings, executes nothing.
  */
-import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
+import { hasSoftDelete, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { columnFor, columnName, identifier, quote, sequenceName, tableName, type ColumnSpec } from "./columns.js";
 
 export interface TablePlan {
@@ -24,6 +24,8 @@ export interface IndexSpec {
   unique: boolean;
   /** SQL expression list, e.g. `"accountid"` or `lower("code__c")`. */
   expression: string;
+  /** Partial-index predicate: rows it excludes (soft-deleted ones) do not take part in uniqueness. */
+  where?: string;
 }
 
 function isTextType(field: FieldDef): boolean {
@@ -54,7 +56,8 @@ export function planTable(schema: OrgSchema, obj: SObjectDef): TablePlan {
     const reference = field.type === "Lookup" || field.type === "MasterDetail" || field.type === "MetadataRelationship";
     if (field.unique) {
       const expr = isTextType(field) && !field.caseSensitive ? `lower(${quote(col)})` : quote(col);
-      indexes.push({ name: identifier(`ux_${table}_${col}`), unique: true, expression: expr });
+      // A deleted custom-setting row is gone for good in Salesforce (no recycle bin), so a soft-deleted SetupOwnerId must not block a new default row.
+      indexes.push({ name: identifier(`ux_${table}_${col}`), unique: true, expression: expr, ...(reference && hasSoftDelete(obj) ? { where: '"isdeleted" = false' } : {}) });
     } else if (reference || field.externalId) {
       indexes.push({ name: identifier(`ix_${table}_${col}`), unique: false, expression: quote(col) });
     }
@@ -98,7 +101,7 @@ export function foreignKeySql(orgSchema: string, table: string, fk: ForeignKeySp
 }
 
 export function indexSql(orgSchema: string, table: string, ix: IndexSpec): string {
-  return `CREATE ${ix.unique ? "UNIQUE " : ""}INDEX IF NOT EXISTS ${quote(ix.name)} ON ${quote(orgSchema)}.${quote(table)} (${ix.expression})`;
+  return `CREATE ${ix.unique ? "UNIQUE " : ""}INDEX IF NOT EXISTS ${quote(ix.name)} ON ${quote(orgSchema)}.${quote(table)} (${ix.expression})${ix.where ? ` WHERE ${ix.where}` : ""}`;
 }
 
 export function sequenceSql(orgSchema: string, name: string): string {

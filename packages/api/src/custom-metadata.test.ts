@@ -141,6 +141,10 @@ describe("custom settings", () => {
     expect(again.statusCode).toBe(400);
     expect(arr(again)[0]).toMatchObject({ errorCode: "DUPLICATE_VALUE", fields: ["SetupOwnerId"] });
 
+    // A deleted setting row must not keep blocking its SetupOwnerId (the unique index ignores soft-deleted rows).
+    expect((await del(`${V}/sobjects/App_Config__c/${String(json(user)["id"])}`)).statusCode).toBe(204);
+    expect((await post(`${V}/sobjects/App_Config__c`, { SetupOwnerId: userId })).statusCode).toBe(201);
+
     const ticket = await post(`${V}/sobjects/Ticket__c`, { Name: "T1" });
     expect(ticket.statusCode).toBe(201);
     const wrong = await post(`${V}/sobjects/App_Config__c`, { SetupOwnerId: String(json(ticket)["id"]) });
