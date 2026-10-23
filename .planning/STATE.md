@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: "Phase 12 plan 01: tasks 1-2 done, awaiting Johan push of integration/phase-12 (ff6c108)"
-last_updated: "2026-10-23T13:01:12.086Z"
-last_activity: 2026-10-23 -- Phase 12 execution started
+stopped_at: Completed 12-01-PLAN.md (integration/phase-12 pushed, ff6c108)
+last_updated: "2026-10-23T13:28:49.352Z"
+last_activity: 2026-10-23
 progress:
   total_phases: 18
   completed_phases: 4
   total_plans: 42
-  completed_plans: 34
+  completed_plans: 35
   percent: 14
 ---
 
@@ -29,9 +29,9 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 12 (sigha-resync-formula-globals) — EXECUTING
-Plan: 1 of 8
-Status: Executing Phase 12
-Last activity: 2026-10-23 -- Phase 12 execution started
+Plan: 2 of 8
+Status: Ready to execute
+Last activity: 2026-10-23
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -123,6 +123,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 11 P08 | 10min | 2 tasks | 4 files |
 | Phase 11 P07 | 20min | 2 tasks | 5 files |
 | Phase 11 P09 | 40min | 2 tasks | 5 files |
+| Phase 12 P01 | n/a | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -245,6 +246,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-23T13:01:12.070Z
-Stopped at: Phase 12 plan 01: tasks 1-2 done, awaiting Johan push of integration/phase-12 (ff6c108)
+Last session: 2026-10-23T13:28:49.346Z
+Stopped at: Completed 12-01-PLAN.md (integration/phase-12 pushed, ff6c108)
 Resume file: None
