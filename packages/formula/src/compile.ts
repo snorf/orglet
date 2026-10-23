@@ -35,6 +35,25 @@ export interface FieldReference {
   type: SfType;
 }
 
+/** Global roots a formula can read; `$System` is the constant OriginDateTime. */
+export type GlobalRoot = "$User" | "$Profile" | "$Organization" | "$RecordType" | "$UserRole" | "$Api" | "$Label" | "$CustomMetadata" | "$Setup" | "$System";
+
+/** Fields read on one object: `path` is the relationship path from the formula's record ([] = the record itself). */
+export interface ObjectFieldDependency {
+  object: string;
+  path: string[];
+  fields: string[];
+}
+
+export interface FormulaDependencies {
+  /** Own object first, then parents by path length and path text; field names canonical and sorted. */
+  fields: ObjectFieldDependency[];
+  /** Sorted, unique. */
+  globals: GlobalRoot[];
+  /** NOW/TODAY/TIMENOW or an evaluation-time global: the value can change without the record changing. */
+  volatile: boolean;
+}
+
 export interface CompiledFormula {
   source: string;
   objectName: string;
@@ -47,6 +66,8 @@ export interface CompiledFormula {
   /** True when PRIORVALUE, ISCHANGED or ISNEW is used, i.e. the old record is needed. */
   usesRecordState: boolean;
   diagnostics: Diagnostic[];
+  /** Structured dependency list for Phase 13 (D-14); no reverse index here. */
+  dependencies: FormulaDependencies;
 }
 
 /** A field reference that does not resolve: the object it was looked up on and the missing name. */
@@ -78,11 +99,36 @@ const GLOBAL_OBJECTS: Record<string, string> = {
   $recordtype: "RecordType",
 };
 
+const TIME_FUNCTIONS = new Set(["NOW", "TODAY", "TIMENOW"]);
+
+// `$System.OriginDateTime`, `$Label` and `$CustomMetadata` are constants fixed at metadata load, so they do not make a
+// formula volatile (orglet choice for D-14; Phase 13 decides what a roll-up may use).
+const EVALUATION_TIME_GLOBALS: ReadonlySet<GlobalRoot> = new Set<GlobalRoot>(["$User", "$Profile", "$Organization", "$RecordType", "$UserRole", "$Api", "$Setup"]);
+
 interface Resolver {
   schema: OrgSchema;
   objectName: string;
   references: Map<string, FieldReference>;
   usesRecordState: boolean;
+  /** Fields read per object, keyed by the canonical relationship prefix joined with "." ("" = own object). */
+  fields: Map<string, ObjectFieldDependency>;
+  globals: Set<GlobalRoot>;
+  volatile: boolean;
+}
+
+type ResolvedPath = { path: string[]; field: FieldDef; hops: { object: string; field: string }[] };
+
+function noteFields(r: Resolver, resolved: ResolvedPath): void {
+  resolved.hops.forEach((hop, i) => {
+    const path = resolved.path.slice(0, i);
+    const key = path.join(".");
+    let entry = r.fields.get(key);
+    if (!entry) {
+      entry = { object: hop.object, path, fields: [] };
+      r.fields.set(key, entry);
+    }
+    if (!entry.fields.includes(hop.field)) entry.fields.push(hop.field);
+  });
 }
 
 function fieldNotFound(name: string, missing?: MissingField): FormulaCompileError {
@@ -90,10 +136,11 @@ function fieldNotFound(name: string, missing?: MissingField): FormulaCompileErro
 }
 
 /** Resolve a dotted path from `objectName` and return the canonical path and leaf field. */
-function resolvePath(schema: OrgSchema, objectName: string, path: readonly string[]): { path: string[]; field: FieldDef } {
+function resolvePath(schema: OrgSchema, objectName: string, path: readonly string[]): ResolvedPath {
   let current = schema.getObject(objectName);
   if (!current) throw new FormulaCompileError(`Object ${objectName} does not exist`);
   const canonical: string[] = [];
+  const hops: ResolvedPath["hops"] = [];
   let groupHop = false;
   for (let i = 0; i < path.length; i++) {
     const segment = path[i] ?? "";
@@ -105,13 +152,15 @@ function resolvePath(schema: OrgSchema, objectName: string, path: readonly strin
       const field = schema.getField(current.name, leaf);
       if (!field) throw fieldNotFound(path.join("."), { object: current.name, field: segment });
       canonical.push(field.name);
-      return { path: canonical, field };
+      hops.push({ object: current.name, field: field.name });
+      return { path: canonical, field, hops };
     }
     const colon = segment.indexOf(":");
     const relName = colon === -1 ? segment : segment.slice(0, colon);
     const typed = colon === -1 ? undefined : segment.slice(colon + 1);
     const resolved = schema.resolveRelationship(current.name, relName);
     if (resolved === undefined) throw fieldNotFound(path.join("."), { object: current.name, field: segment });
+    hops.push({ object: current.name, field: resolved.field.name });
     if (typed !== undefined) {
       // Salesforce names the target of a polymorphic owner as Owner:User / Owner:Queue (Help "Tips for Building Cross-Object Formulas"); Queue is a Group row (D-10).
       const wanted = typed.toLowerCase() === "queue" ? "group" : typed.toLowerCase();
@@ -141,15 +190,21 @@ function register(r: Resolver, ref: FieldReference): FieldRef {
 function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
   const root = node.path[0] ?? "";
   if (node.isGlobal || root.startsWith("$")) {
-    if (root.toLowerCase() === "$system") return node; // $System.OriginDateTime is a constant in the evaluator
+    if (root.toLowerCase() === "$system") {
+      r.globals.add("$System");
+      return node;
+    } // $System.OriginDateTime is a constant in the evaluator
     const objectName = GLOBAL_OBJECTS[root.toLowerCase()];
     if (!objectName) throw new FormulaCompileError(`UNSUPPORTED:formula-global ${node.path.join(".")} is not available`);
     const resolved = resolvePath(r.schema, objectName, node.path.slice(1));
-    const globalName = `$${objectName}`;
+    const globalName = `$${objectName}` as GlobalRoot;
+    r.globals.add(globalName);
+    if (EVALUATION_TIME_GLOBALS.has(globalName)) r.volatile = true;
     const key = [globalName, ...resolved.path].join(".");
     return register(r, { key, kind: "global", path: resolved.path, global: globalName, field: resolved.field, type: sfTypeOf(resolved.field) });
   }
   const resolved = resolvePath(r.schema, r.objectName, node.path);
+  noteFields(r, resolved);
   const key = resolved.path.join(".");
   return register(r, { key, kind: "field", path: resolved.path, field: resolved.field, type: sfTypeOf(resolved.field) });
 }
@@ -169,6 +224,7 @@ function rewriteCall(node: FunctionCall, r: Resolver): Expr {
     const arg = expectFieldArg(node);
     if (arg.isGlobal || (arg.path[0] ?? "").startsWith("$")) throw new FormulaCompileError(`${name} cannot be used on a global variable`);
     const resolved = resolvePath(r.schema, r.objectName, arg.path);
+    noteFields(r, resolved);
     const kind: ReferenceKind = name === "PRIORVALUE" ? "prior" : "changed";
     const key = [kind === "prior" ? "$Prior" : "$Changed", ...resolved.path].join(".");
     return register(r, { key, kind, path: resolved.path, field: resolved.field, type: kind === "prior" ? sfTypeOf(resolved.field) : "Boolean" });
@@ -177,6 +233,7 @@ function rewriteCall(node: FunctionCall, r: Resolver): Expr {
     r.usesRecordState = true;
     return register(r, { key: "$Record.IsNew", kind: "isNew", path: [], type: "Boolean" });
   }
+  if (TIME_FUNCTIONS.has(name)) r.volatile = true;
   return { ...node, args: node.args.map((a) => rewrite(a, r)) };
 }
 
@@ -211,7 +268,7 @@ export function compileFormula(source: string, options: CompileOptions): Compile
     throw new FormulaCompileError(`Error in formula: ${analysisErrors.map((d) => d.message).join("; ")}`, analysisErrors);
   }
 
-  const resolver: Resolver = { schema: options.schema, objectName: options.objectName, references: new Map(), usesRecordState: false };
+  const resolver: Resolver = { schema: options.schema, objectName: options.objectName, references: new Map(), usesRecordState: false, fields: new Map(), globals: new Set(), volatile: false };
   const ast = rewrite(parsed.ast, resolver);
   const references = [...resolver.references.values()];
   const parentPaths = new Map<string, string[]>();
@@ -231,5 +288,12 @@ export function compileFormula(source: string, options: CompileOptions): Compile
     parentPaths: [...parentPaths.values()],
     usesRecordState: resolver.usesRecordState,
     diagnostics: [...parsed.diagnostics, ...analysis],
+    dependencies: {
+      fields: [...resolver.fields.values()]
+        .map((e) => ({ ...e, fields: [...e.fields].sort() }))
+        .sort((a, b) => a.path.length - b.path.length || (a.path.join(".") < b.path.join(".") ? -1 : a.path.join(".") > b.path.join(".") ? 1 : 0)),
+      globals: [...resolver.globals].sort(),
+      volatile: resolver.volatile,
+    },
   };
 }
