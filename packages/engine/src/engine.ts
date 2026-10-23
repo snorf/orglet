@@ -272,10 +272,16 @@ export class DmlEngine {
   async project(client: PoolClient, session: Session, obj: SObjectDef, rows: RecordData[]): Promise<void> {
     if (rows.length === 0) return;
     const globals = await this.loadGlobals(client, session);
-    await loadParents(client, this.store, obj, rows, this.formulas.parentPaths(obj, ["fields"]));
+    const paths = this.formulas.parentPaths(obj, ["fields"]);
+    await loadParents(client, this.store, obj, rows, paths);
+    // The REST sObject Rows resource returns field values only, so parents loaded to evaluate formulas must not
+    // reach recordJson (REST API Developer Guide, "sObject Rows"). Relationship names never equal field API names
+    // (Owner vs OwnerId, Account__r vs Account__c).
+    const parentKeys = new Set(paths.map((p) => p[0]).filter((k): k is string => k !== undefined));
     for (const row of rows) {
       applyFormulaFields(this.formulas, obj, row, globals);
       applyCompoundFields(obj, row);
+      for (const key of parentKeys) delete row[key];
     }
   }
 
