@@ -121,7 +121,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   commit recorded in `VENDOR.md` while the upstream PR is open) that accepts unary `!` as NOT and the
   `Relationship:Object.Field` colon syntax; `sync-sigha.sh` runs on macOS and Linux; the formula
   corpus pass count is compared against the v1.0 baseline (6 312 cases) and may not regress.
-- [ ] **FORM-02**: `Owner:User.Field` / `Owner:Queue.Field` (and any `Rel:Object.Field`) compile
+- [x] **FORM-02**: `Owner:User.Field` / `Owner:Queue.Field` (and any `Rel:Object.Field`) compile
   against the named target of a polymorphic lookup and evaluate to blank when the row's actual
   target is a different object; `Queue` is accepted as an alias of `Group`; a qualifier naming an
   object the lookup cannot reference is a compile error with Salesforce's wording.
@@ -247,7 +247,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CSET-01 | Phase 11 | Complete |
 | CSET-02 | Phase 11 | Complete |
 | FORM-01 | Phase 12 | Complete |
-| FORM-02 | Phase 12 | Pending |
+| FORM-02 | Phase 12 | Complete |
 | FORM-03 | Phase 12 | Pending |
 | FORM-04 | Phase 12 | Pending |
 | FORM-05 | Phase 12 | Pending |
