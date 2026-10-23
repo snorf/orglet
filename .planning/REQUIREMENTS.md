@@ -128,7 +128,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 - [ ] **FORM-03**: `$UserRole.<field>` resolves from the running user's role at evaluation time (blank
   when the user has no role) and `$Api.Partner_Server_URL_<n>`, `$Api.Enterprise_Server_URL_<n>` and
   `$Api.Session_ID` resolve to the running server's URLs and the request's session.
-- [ ] **FORM-04**: `$Label.<Name>` and `$CustomMetadata.<Type__mdt>.<Record>.<Field__c>` are resolved
+- [x] **FORM-04**: `$Label.<Name>` and `$CustomMetadata.<Type__mdt>.<Record>.<Field__c>` are resolved
   at compile time from the loaded labels and custom-metadata records; an unknown label, type or field
   is a compile error with Salesforce's wording, and an unknown record evaluates blank with one
   aggregated `UNSUPPORTED:custom-metadata-record` warning.
@@ -249,7 +249,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FORM-01 | Phase 12 | Complete |
 | FORM-02 | Phase 12 | Complete |
 | FORM-03 | Phase 12 | Pending |
-| FORM-04 | Phase 12 | Pending |
+| FORM-04 | Phase 12 | Complete |
 | FORM-05 | Phase 12 | Pending |
 | ROLL2-01 | Phase 13 | Pending |
 | CHECK-01 | Phase 14 | Pending |

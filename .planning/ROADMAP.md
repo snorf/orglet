@@ -142,7 +142,7 @@ Plans:
 - [x] 12-02-PLAN.md — resync to the fork pin + VENDOR.md baseline; typed Rel:Object segments compile, regex fallback removed, it.fails flipped (FORM-01, FORM-02)
 - [x] 12-03-PLAN.md — typed polymorphic parent loading (Owner:User / Owner:Queue), no relationship-key leak in retrieve (FORM-02)
 - [x] 12-04-PLAN.md — FormulaDependencies on CompiledFormula + registry fieldDependencies/ruleDependencies/usesGlobal (D-14; FORM-03, FORM-05)
-- [ ] 12-05-PLAN.md — $Label and $CustomMetadata at compile time, aggregated custom-metadata-record warning, registry/CLI wiring (FORM-04)
+- [x] 12-05-PLAN.md — $Label and $CustomMetadata at compile time, aggregated custom-metadata-record warning, registry/CLI wiring (FORM-04)
 - [ ] 12-06-PLAN.md — $UserRole and Hierarchy $Setup (user -> profile -> org), List setting / $Permission reasons, gated loading (FORM-03, FORM-05)
 - [ ] 12-07-PLAN.md — $Api via Session.request, one-time no-request warning, Bulk keeps no token, HTTP end-to-end (FORM-03)
 - [ ] 12-08-PLAN.md — phase gate incl. check --strict and run-all.sh; close todo, PROJECT.md row, REQUIREMENTS (FORM-01..05)
@@ -187,7 +187,7 @@ Plans:
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
 | 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
-| 12. sigha Resync & Formula Globals | v1.1 | 4/8 | In Progress|  |
+| 12. sigha Resync & Formula Globals | v1.1 | 5/8 | In Progress|  |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
 
@@ -199,7 +199,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 4/8 plans executed
+**Plans:** 5/8 plans executed
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
