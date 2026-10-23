@@ -3,7 +3,7 @@
  * once, and computes read-time projections (formula and compound fields) on rows.
  */
 import { formatDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
-import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type EvaluationContext, type RecordData, type RecordValue } from "@orglet/formula";
+import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type EvaluationContext, type FormulaDependencies, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
 
 export interface CompiledRule {
   rule: ValidationRuleDef;
@@ -22,6 +22,8 @@ export class FormulaRegistry {
   private readonly rules = new Map<string, CompiledRule[]>();
   private readonly fields = new Map<string, CompiledField[]>();
   private readonly defaults = new Map<string, CompiledFormula>();
+  /** Global roots read by any compiled rule, formula field or default; lets loaders skip globals nothing uses. */
+  private readonly globalsUsed = new Set<GlobalRoot>();
 
   constructor(readonly schema: OrgSchema) {
     for (const obj of schema.objects.values()) {
@@ -54,7 +56,9 @@ export class FormulaRegistry {
 
   private tryCompile(source: string, obj: SObjectDef, context: "validation_rule" | "formula_field" | "default_value", what: string, field: string | undefined, treatBlanksAs?: "BlankAsBlank" | "BlankAsZero"): CompiledFormula | undefined {
     try {
-      return compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}) });
+      const compiled = compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}) });
+      for (const g of compiled.dependencies.globals) this.globalsUsed.add(g);
+      return compiled;
     } catch (err) {
       if (err instanceof FormulaCompileError) {
         const failure: FormulaFailure = {
@@ -83,6 +87,22 @@ export class FormulaRegistry {
 
   defaultValue(obj: SObjectDef, field: FieldDef): CompiledFormula | undefined {
     return this.defaults.get(`${obj.name.toLowerCase()}.${field.name.toLowerCase()}`);
+  }
+
+  /** Dependency list of a formula field on `obj` (name case-insensitive), or undefined when it is not a compiled formula field. */
+  fieldDependencies(obj: SObjectDef, fieldName: string): FormulaDependencies | undefined {
+    const wanted = fieldName.toLowerCase();
+    return this.formulaFields(obj).find((f) => f.field.name.toLowerCase() === wanted)?.compiled.dependencies;
+  }
+
+  /** Dependency list of an active validation rule on `obj`, or undefined when it is unknown or did not compile. */
+  ruleDependencies(obj: SObjectDef, ruleName: string): FormulaDependencies | undefined {
+    return this.validationRules(obj).find((r) => r.rule.name === ruleName)?.compiled.dependencies;
+  }
+
+  /** True when any compiled rule, formula field or default value reads the global root. */
+  usesGlobal(root: GlobalRoot): boolean {
+    return this.globalsUsed.has(root);
   }
 
   /** Parent paths any validation rule or formula field on `obj` needs loaded. */

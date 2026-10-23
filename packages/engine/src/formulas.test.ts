@@ -45,3 +45,41 @@ describe("FormulaRegistry diagnostics", () => {
     expect(new FormulaRegistry(schema).diagnostics).toEqual([]);
   });
 });
+
+describe("FormulaRegistry dependencies", () => {
+  async function extended() {
+    const { schema } = await loadOrgSchema({ projectDir: ACME });
+    const account = schema.getObject("Account") as SObjectDef;
+    const template = account.fields.find((f) => f.name === "Name") as FieldDef;
+    const obj: SObjectDef = {
+      ...account,
+      validationRules: [...account.validationRules, { name: "Uses_User", active: true, errorConditionFormula: "$User.Alias = 'x'", errorMessage: "m" }],
+      fields: [...account.fields, { ...template, name: "Owner_Alias__c", label: "Owner Alias", type: "Text", formula: "Owner.Alias" }],
+    };
+    const objects = new Map(schema.objects);
+    objects.set("account", obj);
+    return { obj, registry: new FormulaRegistry(new OrgSchemaImpl(objects, schema.globalValueSets, schema.standardValueSets, schema.labels)) };
+  }
+
+  it("the registry exposes each formula field's and rule's dependency list", async () => {
+    const { obj, registry } = await extended();
+    const compiled = registry.formulaFields(obj).find((f) => f.field.name === "Owner_Alias__c")?.compiled;
+    expect(compiled).toBeDefined();
+    expect(registry.fieldDependencies(obj, "owner_alias__c")).toEqual(compiled?.dependencies);
+    expect(registry.fieldDependencies(obj, "owner_alias__c")?.fields).toEqual([
+      { object: "Account", path: [], fields: ["OwnerId"] },
+      { object: "User", path: ["Owner"], fields: ["Alias"] },
+    ]);
+    expect(registry.ruleDependencies(obj, "Uses_User")?.globals).toEqual(["$User"]);
+    expect(registry.fieldDependencies(obj, "Nope__c")).toBeUndefined();
+    expect(registry.ruleDependencies(obj, "Nope")).toBeUndefined();
+  });
+
+  it("usesGlobal is true only for roots some compiled formula reads", async () => {
+    const { registry } = await extended();
+    expect(registry.usesGlobal("$User")).toBe(true);
+    const { schema } = await loadOrgSchema({ projectDir: ACME });
+    const plain = new FormulaRegistry(schema);
+    for (const root of ["$UserRole", "$Setup", "$Api"] as const) expect(plain.usesGlobal(root)).toBe(false);
+  });
+});
