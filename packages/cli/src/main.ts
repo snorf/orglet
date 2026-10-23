@@ -85,7 +85,7 @@ async function check(c: Common, strict: boolean): Promise<number> {
   if (cmdt.types.length > 0) log(c, `custom metadata: ${cmdt.records} records in ${cmdt.types.length} types`);
   if (result.schema.labels.size > 0) log(c, `${result.schema.labels.size} custom labels`);
   // D-05: seed-plan warnings count under --strict like every other warning.
-  const warnings = [...result.warnings, ...cmdt.warnings, ...new FormulaRegistry(result.schema).warnings];
+  const warnings = [...result.warnings, ...cmdt.warnings, ...new FormulaRegistry(result.schema, cmdt).warnings];
   for (const w of warnings) console.warn(`warning: ${w}`);
   // BASE2-08 (D-08): unmodelled standard objects nothing references are informational: one sorted stdout line after the
   // warnings, quiet-gated like every log line, never prefixed "warning:" and never counted by --strict.
@@ -154,7 +154,7 @@ async function up(c: Common, port: number, force: boolean, auth: AuthConfig, imp
   const bulk = await prepareBulk(pool, c.orgSchema);
   if (bulk.reconciled > 0) log(c, `bulk: marked ${bulk.reconciled} job(s) left in progress by a previous run as Failed`);
   if (bulk.purged > 0) log(c, `bulk: purged ${bulk.purged} job(s) older than 7 days`);
-  const engine = new DmlEngine(pool, loaded.schema, { orgSchema: c.orgSchema, importMode });
+  const engine = new DmlEngine(pool, loaded.schema, { orgSchema: c.orgSchema, importMode, customMetadata: cmdt });
   for (const w of engine.warnings) console.warn(`warning: ${w}`);
   if (importMode) console.warn("import mode: Ids and audit fields are accepted; lookups, validation rules and hooks are not enforced");
   engine.bus.subscribe((events) => {

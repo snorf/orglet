@@ -18,10 +18,13 @@ import { applyCompoundFields, applyFormulaFields, FormulaRegistry } from "./form
 import type { DmlOperation, Session, TriggerContext, TriggerExecutor } from "./hooks.js";
 import { loadParents } from "./parents.js";
 import { affectedParents, RollupRegistry, type ParentGroup, type RollupKind } from "./rollups.js";
+import type { CustomMetadataPlan } from "./seed.js";
 import { formatAutoNumber, Store } from "./store.js";
 
 export interface EngineOptions {
   orgSchema?: string;
+  /** Custom-metadata records (planCustomMetadataSeed) for $CustomMetadata formulas; without it every record is unknown (blank + warning). */
+  customMetadata?: CustomMetadataPlan;
   executors?: TriggerExecutor[];
   /**
    * Data-migration mode: records may carry their original Id and audit fields, lookups are
@@ -98,7 +101,7 @@ export class DmlEngine {
   ) {
     this.orgSchema = options.orgSchema ?? DEFAULT_ORG_SCHEMA;
     this.store = new Store(schema, this.orgSchema);
-    this.formulas = new FormulaRegistry(schema);
+    this.formulas = new FormulaRegistry(schema, options.customMetadata);
     this.rollups = new RollupRegistry(schema);
     this.executors = options.executors ?? [];
     this.importMode = options.importMode ?? false;

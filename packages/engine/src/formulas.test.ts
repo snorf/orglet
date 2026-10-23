@@ -5,9 +5,11 @@
 import { describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { formatDiagnostic, loadOrgSchema, OrgSchemaImpl, type FieldDef, type SObjectDef } from "@orglet/metadata";
-import { FormulaRegistry } from "./formulas.js";
+import { applyFormulaFields, FormulaRegistry } from "./formulas.js";
+import { planCustomMetadataSeed } from "./seed.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
 
 describe("FormulaRegistry diagnostics", () => {
   it("a formula that does not compile is a FormulaFailure record beside the unchanged warning string", async () => {
@@ -81,5 +83,77 @@ describe("FormulaRegistry dependencies", () => {
     const { schema } = await loadOrgSchema({ projectDir: ACME });
     const plain = new FormulaRegistry(schema);
     for (const root of ["$UserRole", "$Setup", "$Api"] as const) expect(plain.usesGlobal(root)).toBe(false);
+  });
+});
+
+describe("custom metadata and labels in the registry", () => {
+  async function extended() {
+    const built = await loadOrgSchema({ projectDir: CMDT });
+    const ticket = built.schema.getObject("Ticket__c") as SObjectDef;
+    const template = ticket.fields.find((f) => f.name === "Priority__c") as FieldDef;
+    const formulaField = (name: string, formula: string): FieldDef => ({ ...template, name, label: name, type: "Text", formula });
+    const obj: SObjectDef = {
+      ...ticket,
+      validationRules: [
+        ...ticket.validationRules,
+        {
+          name: "Missing_Twice",
+          active: true,
+          errorConditionFormula: "ISBLANK($CustomMetadata.Support_Tier__mdt.Platinum.Code__c) && ISBLANK($CustomMetadata.Support_Tier__mdt.Platinum.Region__c)",
+          errorMessage: "m",
+        },
+      ],
+      fields: [
+        ...ticket.fields,
+        formulaField("Tier_Code__c", "$CustomMetadata.Support_Tier__mdt.Gold.Code__c"),
+        formulaField("Missing_Tier__c", "$CustomMetadata.Support_Tier__mdt.Platinum.Code__c"),
+        formulaField("Terms__c", "$Label.Terms_Link_Text"),
+      ],
+    };
+    const objects = new Map(built.schema.objects);
+    objects.set("ticket__c", obj);
+    const schema = new OrgSchemaImpl(objects, built.schema.globalValueSets, built.schema.standardValueSets, built.schema.labels);
+    return { built, schema, obj, plan: planCustomMetadataSeed(schema, built.customMetadata) };
+  }
+
+  const MISSING = (what: string) => `UNSUPPORTED:custom-metadata-record ${what} references custom metadata records that do not exist (Support_Tier__mdt.Platinum); those references evaluate blank`;
+
+  it("warns once per formula that names a missing record, in step with the structured diagnostics", async () => {
+    const { schema, plan } = await extended();
+    const registry = new FormulaRegistry(schema, plan);
+    expect(registry.warnings).toHaveLength(2);
+    expect(registry.warnings).toEqual(expect.arrayContaining([MISSING("formula field Ticket__c.Missing_Tier__c"), MISSING("validation rule Ticket__c.Missing_Twice")]));
+    expect(registry.diagnostics).toContainEqual({
+      area: "custom-metadata-record",
+      what: "formula field Ticket__c.Missing_Tier__c",
+      object: "Ticket__c",
+      field: "Missing_Tier__c",
+      message: "formula field Ticket__c.Missing_Tier__c references custom metadata records that do not exist (Support_Tier__mdt.Platinum); those references evaluate blank",
+    });
+    expect(registry.warnings).toEqual(registry.diagnostics.map(formatDiagnostic));
+  });
+
+  it("computes loaded records and labels and leaves a missing record blank", async () => {
+    const { schema, obj, plan } = await extended();
+    const record: Record<string, string | number | boolean | null> = {};
+    applyFormulaFields(new FormulaRegistry(schema, plan), obj, record, {});
+    expect(record["Tier_Code__c"]).toBe("007");
+    expect(record["Missing_Tier__c"]).toBeNull();
+    expect(record["Terms__c"]).toBe("Terms & Conditions <v2>");
+  });
+
+  it("still compiles every formula without a plan, treating each record as unknown", async () => {
+    const { schema, obj } = await extended();
+    const registry = new FormulaRegistry(schema);
+    expect(registry.formulaFields(obj).map((f) => f.field.name)).toEqual(expect.arrayContaining(["Tier_Code__c", "Missing_Tier__c", "Terms__c"]));
+    const record: Record<string, string | number | boolean | null> = {};
+    applyFormulaFields(registry, obj, record, {});
+    expect(record["Tier_Code__c"]).toBeNull();
+    expect(registry.warnings).toContain(MISSING("formula field Ticket__c.Tier_Code__c").replace("Platinum", "Gold"));
+  });
+
+  it("has no diagnostics for the unmodified fixture", async () => {
+    const { built } = await extended();
+    expect(new FormulaRegistry(built.schema, planCustomMetadataSeed(built.schema, built.customMetadata)).diagnostics).toEqual([]);
   });
 });

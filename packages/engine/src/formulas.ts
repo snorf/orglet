@@ -2,8 +2,10 @@
  * Compiles every validation rule, formula field and default-value expression in the schema
  * once, and computes read-time projections (formula and compound fields) on rows.
  */
-import { formatDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
-import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type EvaluationContext, type FormulaDependencies, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
+import { formatDiagnostic, pushDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
+import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type CustomMetadataValues, type EvaluationContext, type FormulaDependencies, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
+
+import type { CustomMetadataPlan } from "./seed.js";
 
 export interface CompiledRule {
   rule: ValidationRuleDef;
@@ -25,7 +27,16 @@ export class FormulaRegistry {
   /** Global roots read by any compiled rule, formula field or default; lets loaders skip globals nothing uses. */
   private readonly globalsUsed = new Set<GlobalRoot>();
 
-  constructor(readonly schema: OrgSchema) {
+  /** Lower-cased type -> lower-cased DeveloperName -> values, for `$CustomMetadata` references. */
+  private readonly customMetadataValues: CustomMetadataValues | undefined;
+
+  constructor(
+    readonly schema: OrgSchema,
+    customMetadata?: CustomMetadataPlan,
+  ) {
+    this.customMetadataValues = customMetadata
+      ? new Map(customMetadata.types.map((t) => [t.object.name.toLowerCase(), new Map(t.rows.map((row) => [row.developerName.toLowerCase(), row.values]))]))
+      : undefined;
     for (const obj of schema.objects.values()) {
       const key = obj.name.toLowerCase();
       this.rules.set(
@@ -56,8 +67,12 @@ export class FormulaRegistry {
 
   private tryCompile(source: string, obj: SObjectDef, context: "validation_rule" | "formula_field" | "default_value", what: string, field: string | undefined, treatBlanksAs?: "BlankAsBlank" | "BlankAsZero"): CompiledFormula | undefined {
     try {
-      const compiled = compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}) });
+      const compiled = compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}), ...(this.customMetadataValues ? { customMetadata: this.customMetadataValues } : {}) });
       for (const g of compiled.dependencies.globals) this.globalsUsed.add(g);
+      // One structured diagnostic per compile warning keeps warnings == diagnostics.map(formatDiagnostic) (D-15).
+      for (const w of compiled.warnings) {
+        pushDiagnostic(this, { area: w.area, what, object: obj.name, ...(field !== undefined ? { field } : {}), message: `${what} ${w.message}` } satisfies FormulaFailure);
+      }
       return compiled;
     } catch (err) {
       if (err instanceof FormulaCompileError) {
