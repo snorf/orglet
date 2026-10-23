@@ -57,6 +57,19 @@ unique `SetupOwnerId` defaulting to the org), and `CustomLabels` land on `OrgSch
 `conformance/cmdt-check` fixture and legs (8/8 on both SDKs), 725 tests on pglite, 727 on Postgres 16,
 10/10 conformance legs green. Test infrastructure: `test/db.ts` filters pglite's premature ReadyForQuery
 (electric-sql/pglite#958) so repeated unique violations no longer desync pg.
+Phase 12 complete 2026-10-23 — the vendored sigha is resynced to a pinned fork commit
+(`snorf/sigha` `integration/phase-12`, `ff6c108`) that lexes unary `!` and the `Relationship:Object.Field`
+colon syntax; an orglet-owned corpus guard locks the measured baseline (6 312 pass of 9 730 rows on
+`salesforce-v2.json`) and CI re-syncs from the `Repository:` line in `VENDOR.md`. `Owner:User.Email` and
+`Owner:Queue.QueueName` load the typed parent only when the Id prefix matches (blank otherwise), traverse
+further like an ordinary lookup, and loaded parents no longer leak into REST retrieve output. Every compiled
+formula carries a dependency list (fields per object, global roots, volatility) exposed on
+`FormulaRegistry`. New globals: `$Label` and `$CustomMetadata` at compile time (unknown record = blank plus
+one aggregated warning), `$UserRole`, hierarchy `$Setup` merged per field user → profile → organization,
+and `$Api` (`Partner_Server_URL_<n>`, `Enterprise_Server_URL_<n>` with version n/10, `Session_ID`) from an
+optional `Session.request` that only REST requests carry; `$Permission` and `$Setup` on List settings stay
+`UNSUPPORTED:formula-global` with the reason stated. 805 tests on pglite, 807 on Postgres 16, 10/10
+conformance legs, CI green on Linux including `sigha-sync-check`.
 
 ## Current Milestone: v1.1 real-org fidelity
 
@@ -234,6 +247,22 @@ Validated in Phase 11 (v1.1, 2026-10-21):
 - ✓ `CustomLabels.labels-meta.xml` loads onto `OrgSchema.labels` with name, value, language, category,
   protected and short description — CSET-02
 
+Validated in Phase 12 (v1.1, 2026-10-23):
+
+- ✓ sigha resynced to a pinned fork commit recorded in `VENDOR.md` with `Repository:` + `Revision:` lines,
+  `!` as NOT and colon syntax lexed, corpus baseline 6 312/9 730 locked by `packages/sigha/test/corpus-baseline.test.ts`,
+  `sync-sigha.sh` proven on macOS locally and on Linux in CI — FORM-01
+- ✓ `Rel:Object.Field` compiles against a declared target (`Queue` aliases `Group`, `QueueName`/`QueueEmail`
+  alias `Name`/`Email`), evaluates blank for the other type, and an unreferenceable qualifier is a compile
+  error `Field … does not exist. Check spelling.` — FORM-02
+- ✓ `$UserRole.<field>` from the running user's role (blank without one); `$Api.*` from the request's base URL
+  and bearer token, blank with one aggregated warning per formula when no request context exists — FORM-03
+- ✓ `$Label` and `$CustomMetadata` resolved at compile time from loaded labels and records; unknown label,
+  type or field is a compile error, unknown record is blank with one `UNSUPPORTED:custom-metadata-record`
+  warning — FORM-04
+- ✓ Hierarchy `$Setup` merged per field user → profile → organization → blank, queried only when a formula
+  uses it; List `$Setup` and `$Permission` stay `UNSUPPORTED:formula-global` with the reason — FORM-05
+
 ### Active
 
 Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements are defined in
@@ -349,6 +378,10 @@ on port 8180 with the `devrandom` org schema.
 | `__mdt` DML refused even in import mode; custom settings share the `a` prefix pool and keep full DML | Record files are the only source of `__mdt` rows and the sync would overwrite imports; the setting prefix series is undocumented, so sharing is orglet's recorded choice (Phase 11 D-13/D-19) | ✓ Good (Phase 11) |
 | Unique reference indexes on soft-delete objects are partial (`WHERE isdeleted = false`) | A deleted custom-setting row is gone for good in Salesforce, so its `SetupOwnerId` must not block a new org default; found by the cmdt-check conformance run | ✓ Good (Phase 11; existing schemas keep the old full index, no migration, phase unreleased) |
 | Test harness filters pglite's premature ReadyForQuery per connection instead of upgrading pglite | electric-sql/pglite#958 is unfixed in released versions (0.5.10 / socket 0.2.13 tried, worse); the filter is test-only and documented for removal | ✓ Good (Phase 11; remove when PR #1144 ships) |
+| sigha pinned to a named fork commit (`snorf/sigha` `integration/phase-12`), re-pin to upstream as a later quick task; corpus baseline locked by an orglet-owned test outside `packages/sigha/src` | Upstream PR latency must not block the phase; the sync script wipes `src/`, so the guard lives in `test/`; only `salesforce-v2.json` (BSD-3) counts | ✓ Good |
+| Request context for `$Api` travels as an optional `Session.request {baseUrl, sessionId}` set only by the REST `session(req)` helper; Bulk jobs never hold the token | Engine and registry are shared across requests, so values must be per evaluation; one helper keeps the token out of persisted job state | ✓ Good |
+| `CompiledFormula.dependencies {fields, globals, volatile}` is the registry's structured surface; graph, reverse index and cycle detection belong to Phase 13 | Phase 13 roll-up rules need roots and volatility, not a full graph; keeps Phase 12 bounded | ✓ Good |
+| `$Setup` falls through per field user → profile → organization and then to blank, never to the field's `defaultValue`; `$Api` version suffix is API version × 10 | No public doc describes a default-value fall-through (orglet choice); `_600` = 60.0 is documented, superseding the discuss-phase guess | ✓ Good |
 | CI `conformance` job added but not a required check on `main` yet | New job; promote to required once stable, as an explicit ruleset change (D-14) | — Pending |
 
 ## Evolution
@@ -369,4 +402,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-21 after Phase 11 (custom metadata, custom settings and labels)*
+*Last updated: 2026-10-23 after Phase 12 (sigha resync and formula globals)*
