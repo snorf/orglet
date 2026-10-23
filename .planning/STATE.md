@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: executing
-stopped_at: Completed 12-07-PLAN.md
-last_updated: "2026-10-23T13:52:13.698Z"
+status: verifying
+stopped_at: Completed 12-08-PLAN.md
+last_updated: "2026-10-23T13:56:39.550Z"
 last_activity: 2026-10-23
 progress:
   total_phases: 18
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 42
-  completed_plans: 41
+  completed_plans: 42
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ rather than faked.
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 12 (sigha-resync-formula-globals) — EXECUTING
 Plan: 8 of 8
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-23
 
 Progress: [█░░░░░░░░░] 14%
@@ -130,6 +130,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 12 P05 | 15min | 2 tasks | 8 files |
 | Phase 12 P06 | 15min | 2 tasks | 7 files |
 | Phase 12 P07 | 15min | 3 tasks | 10 files |
+| Phase 12 P08 | n/a | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -234,6 +235,7 @@ Recent decisions affecting current work:
 - [Phase 12]: Plan 12-05: $Label master value only, namespaced unsupported; $CustomMetadata key DeveloperName case-insensitive, unknown record blank + aggregated UNSUPPORTED:custom-metadata-record warning
 - [Phase 12]: Hierarchy $Setup merges per field user->profile->organization with no read-time defaultValue fallback; $UserRole/$Setup loaded only when formulas use them
 - [Phase 12]: D-08 correction: $Api _<n> suffix is API version times ten (_600 -> 60.0)
+- [Phase 12]: Phase 12 gate passed; Python conformance legs need a non-x86 venv on arm64 (scratch venv used)
 
 ### Pending Todos
 
@@ -256,6 +258,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-23T13:52:13.692Z
-Stopped at: Completed 12-07-PLAN.md
+Last session: 2026-10-23T13:56:39.545Z
+Stopped at: Completed 12-08-PLAN.md
 Resume file: None
