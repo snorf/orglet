@@ -165,6 +165,13 @@ function evaluateNode(node: Expr, env: EvalEnv): EvalResult {
       // field was already materialized to 0 at read in zero mode
       // (org-verified, semantics:unary_minus_blank), so a blank here is a
       // typeless blank and stays null (semantics:null_literal_add [zero]).
+      if (node.op === "!") {
+        // Formula.g4 rewrites `!x` to NOT(x): same blank propagation and
+        // coercion as the function (a blank operand makes a blank Boolean).
+        return operand.blank
+          ? blank("Boolean")
+          : normalizeEmptyText(BUILTINS.NOT!([operand], env));
+      }
       if (operand.blank) {
         return blank("Number");
       }

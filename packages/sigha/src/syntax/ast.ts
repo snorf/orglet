@@ -29,8 +29,12 @@ export type BinaryOperator =
   | "&&"
   | "||";
 
-/** `NOT`/`AND`/`OR` are functions in Salesforce; the only prefix operators are sign. */
-export type UnaryOperator = "-" | "+";
+/**
+ * Sign, plus `!` as logical NOT. `AND`/`OR` are functions in Salesforce and
+ * `NOT()` is too, but the formula grammar also accepts a prefix `!`
+ * (Formula.g4 `BANG unaryExpression`), which the engine rewrites to NOT.
+ */
+export type UnaryOperator = "-" | "+" | "!";
 
 interface NodeBase {
   readonly span: Span;

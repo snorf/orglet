@@ -196,7 +196,9 @@ class Parser {
   private parseUnary(): Expr {
     if (
       this.current().kind === "operator" &&
-      (this.current().text === "-" || this.current().text === "+")
+      (this.current().text === "-" ||
+        this.current().text === "+" ||
+        this.current().text === "!")
     ) {
       // Sign chains recurse here without re-entering parseExpr, so they need
       // their own depth check (`----…1` would otherwise blow the stack).

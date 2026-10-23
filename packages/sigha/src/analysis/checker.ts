@@ -110,6 +110,10 @@ class Checker {
         return this.check(node.expr);
       case "UnaryOp": {
         const operand = this.check(node.operand);
+        if (node.op === "!") {
+          this.expectBoolean(operand, node.operand.span, node.op);
+          return "Boolean";
+        }
         if (operand !== "Unknown" && !isNumeric(operand)) {
           this.report(
             "operator-type-mismatch",
