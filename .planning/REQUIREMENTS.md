@@ -117,7 +117,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Formulas
 
-- [ ] **FORM-01**: The vendored sigha is resynced to a pinned full upstream commit (or a named fork
+- [x] **FORM-01**: The vendored sigha is resynced to a pinned full upstream commit (or a named fork
   commit recorded in `VENDOR.md` while the upstream PR is open) that accepts unary `!` as NOT and the
   `Relationship:Object.Field` colon syntax; `sync-sigha.sh` runs on macOS and Linux; the formula
   corpus pass count is compared against the v1.0 baseline (6 312 cases) and may not regress.
@@ -246,7 +246,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMDT-04 | Phase 11 | Complete |
 | CSET-01 | Phase 11 | Complete |
 | CSET-02 | Phase 11 | Complete |
-| FORM-01 | Phase 12 | Pending |
+| FORM-01 | Phase 12 | Complete |
 | FORM-02 | Phase 12 | Pending |
 | FORM-03 | Phase 12 | Pending |
 | FORM-04 | Phase 12 | Pending |

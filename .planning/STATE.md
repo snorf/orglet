@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 12-01-PLAN.md (integration/phase-12 pushed, ff6c108)
-last_updated: "2026-10-23T13:28:49.352Z"
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-10-23T13:32:48.088Z"
 last_activity: 2026-10-23
 progress:
   total_phases: 18
   completed_phases: 4
   total_plans: 42
-  completed_plans: 35
+  completed_plans: 36
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 12 (sigha-resync-formula-globals) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 Status: Ready to execute
 Last activity: 2026-10-23
 
@@ -124,6 +124,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 11 P07 | 20min | 2 tasks | 5 files |
 | Phase 11 P09 | 40min | 2 tasks | 5 files |
 | Phase 12 P01 | n/a | 3 tasks | 3 files |
+| Phase 12 P02 | n/a | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -224,6 +225,7 @@ Recent decisions affecting current work:
 - [Phase 11]: Golden derived CMDT Id: deriveCustomMetadataId(m00,Support_Tier__mdt,Gold)=m00dI6W8ONPwAT6Q0N
 - [Phase 11]: 11-03: Hierarchy Name nillable, List Name unique; customKeyPrefix pool parameter keeps metadata self-contained
 - [Phase 11]: Unique reference indexes on soft-delete objects are partial (WHERE isdeleted = false) so deleted Hierarchy setting rows release SetupOwnerId
+- [Phase 12]: Typed Relationship:Object qualifier accepted for any declared lookup target; invalid qualifier uses generic unknown-field error; Queue aliases Group
 
 ### Pending Todos
 
@@ -246,6 +248,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-23T13:28:49.346Z
-Stopped at: Completed 12-01-PLAN.md (integration/phase-12 pushed, ff6c108)
+Last session: 2026-10-23T13:32:48.082Z
+Stopped at: Completed 12-02-PLAN.md
 Resume file: None
