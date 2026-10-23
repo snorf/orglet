@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: verifying
-stopped_at: Completed 12-08-PLAN.md
-last_updated: "2026-10-23T13:56:39.550Z"
+status: planning
+stopped_at: Phase 12 complete and verified
+last_updated: "2026-10-23T14:04:57.369Z"
 last_activity: 2026-10-23
 progress:
   total_phases: 18
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 12 — sigha-resync-formula-globals
+**Current focus:** Phase 13 — roll-ups-over-formula-fields (not started)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 12 (sigha-resync-formula-globals) — EXECUTING
-Plan: 8 of 8
-Status: Phase complete — ready for verification
+Phase: 13 (Roll-Ups over Formula Fields)
+Plan: Not started
+Status: Phase 12 complete and verified (5/5 success criteria, CI green on Linux); Phase 13 ready to discuss/plan
 Last activity: 2026-10-23
 
 Progress: [█░░░░░░░░░] 14%

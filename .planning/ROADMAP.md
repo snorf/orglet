@@ -187,7 +187,7 @@ Plans:
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
 | 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
-| 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete   | 2026-10-23 |
+| 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
 
@@ -199,7 +199,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 8/8 plans complete
+**Plans:** 0 plans
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
