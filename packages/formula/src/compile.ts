@@ -8,9 +8,12 @@
  */
 import type { FieldDef, OrgSchema } from "@orglet/metadata";
 import { analyze, parse, type Diagnostic, type Expr, type FieldRef, type FunctionCall, type SfType } from "@orglet/sigha";
-import { sfTypeOf } from "./values.js";
+import { sfTypeOf, type RecordData, type RecordValue } from "./values.js";
 
 export type FormulaContextId = "formula_field" | "validation_rule" | "default_value";
+
+/** Custom-metadata values: lower-cased type API name -> lower-cased DeveloperName -> field API name -> value (already coerced by declared type). */
+export type CustomMetadataValues = ReadonlyMap<string, ReadonlyMap<string, RecordData>>;
 
 export interface CompileOptions {
   schema: OrgSchema;
@@ -19,9 +22,11 @@ export interface CompileOptions {
   context: FormulaContextId;
   /** Metadata `formulaTreatBlanksAs`; only formula fields have the toggle. */
   treatBlanksAs?: "BlankAsBlank" | "BlankAsZero";
+  /** Loaded custom-metadata records for `$CustomMetadata`; without it every record is unknown (blank + warning). */
+  customMetadata?: CustomMetadataValues;
 }
 
-export type ReferenceKind = "field" | "prior" | "changed" | "isNew" | "global";
+export type ReferenceKind = "field" | "prior" | "changed" | "isNew" | "global" | "label" | "customMetadata";
 
 export interface FieldReference {
   /** Key used in the evaluator's field map: the rewritten path joined with ".". */
@@ -33,6 +38,8 @@ export interface FieldReference {
   global?: string;
   field?: FieldDef;
   type: SfType;
+  /** label / customMetadata: value fixed at compile time (D-17). */
+  value?: RecordValue;
 }
 
 /** Global roots a formula can read; `$System` is the constant OriginDateTime. */
@@ -54,6 +61,12 @@ export interface FormulaDependencies {
   volatile: boolean;
 }
 
+/** A formula that compiles but is degraded; message is relative to the formula (the registry prefixes what). */
+export interface CompileWarning {
+  area: string;
+  message: string;
+}
+
 export interface CompiledFormula {
   source: string;
   objectName: string;
@@ -68,6 +81,8 @@ export interface CompiledFormula {
   diagnostics: Diagnostic[];
   /** Structured dependency list for Phase 13 (D-14); no reverse index here. */
   dependencies: FormulaDependencies;
+  /** Compiles but degraded, e.g. a `$CustomMetadata` record that does not exist (UNSUPPORTED:custom-metadata-record). */
+  warnings: CompileWarning[];
 }
 
 /** A field reference that does not resolve: the object it was looked up on and the missing name. */
@@ -114,6 +129,9 @@ interface Resolver {
   fields: Map<string, ObjectFieldDependency>;
   globals: Set<GlobalRoot>;
   volatile: boolean;
+  customMetadata?: CustomMetadataValues;
+  /** `Type__mdt.DeveloperName` of every $CustomMetadata record that was not loaded. */
+  unknownRecords: Set<string>;
 }
 
 type ResolvedPath = { path: string[]; field: FieldDef; hops: { object: string; field: string }[] };
@@ -194,6 +212,37 @@ function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
       r.globals.add("$System");
       return node;
     } // $System.OriginDateTime is a constant in the evaluator
+    if (root.toLowerCase() === "$label") {
+      // Master label value only; translations are v2 (CSET-03). Case-insensitive like getLabel; the namespaced
+      // `$Label.ns.Name` form is unsupported (orglet choice). Fixed at metadata load, so not volatile (D-17).
+      const label = node.path.length === 2 ? r.schema.getLabel(node.path[1] ?? "") : undefined;
+      if (!label) throw fieldNotFound(node.path.join("."), { object: "$Label", field: node.path.slice(1).join(".") });
+      r.globals.add("$Label");
+      return register(r, { key: `$Label.${label.fullName}`, kind: "label", path: [label.fullName], type: "Text", value: label.value });
+    }
+    if (root.toLowerCase() === "$custommetadata") {
+      // $CustomMetadata.Type__mdt.Record.Field__c only. A fifth segment would span a relationship and long text area
+      // fields are not available either; Salesforce documents both as unsupported in formulas. Record key = DeveloperName,
+      // case-insensitive. An unknown record compiles, evaluates blank and is reported once per formula.
+      const [, typeName = "", recordName = "", fieldName = ""] = node.path;
+      const type = node.path.length === 4 ? r.schema.getObject(typeName) : undefined;
+      if (!type || type.customMetadata !== true) throw fieldNotFound(node.path.join("."), { object: "$CustomMetadata", field: typeName });
+      const field = r.schema.getField(type.name, fieldName);
+      if (!field || field.type === "LongTextArea") throw fieldNotFound(node.path.join("."), { object: type.name, field: fieldName });
+      const row = r.customMetadata?.get(type.name.toLowerCase())?.get(recordName.toLowerCase());
+      if (row === undefined) r.unknownRecords.add(`${type.name}.${recordName}`);
+      const rec = typeof row?.["DeveloperName"] === "string" ? row["DeveloperName"] : recordName;
+      const raw = row?.[field.name];
+      r.globals.add("$CustomMetadata");
+      return register(r, {
+        key: `$CustomMetadata.${type.name}.${rec}.${field.name}`,
+        kind: "customMetadata",
+        path: [type.name, rec, field.name],
+        field,
+        type: sfTypeOf(field),
+        value: raw === undefined || typeof raw === "object" ? null : raw,
+      });
+    }
     const objectName = GLOBAL_OBJECTS[root.toLowerCase()];
     if (!objectName) throw new FormulaCompileError(`UNSUPPORTED:formula-global ${node.path.join(".")} is not available`);
     const resolved = resolvePath(r.schema, objectName, node.path.slice(1));
@@ -268,12 +317,12 @@ export function compileFormula(source: string, options: CompileOptions): Compile
     throw new FormulaCompileError(`Error in formula: ${analysisErrors.map((d) => d.message).join("; ")}`, analysisErrors);
   }
 
-  const resolver: Resolver = { schema: options.schema, objectName: options.objectName, references: new Map(), usesRecordState: false, fields: new Map(), globals: new Set(), volatile: false };
+  const resolver: Resolver = { schema: options.schema, objectName: options.objectName, references: new Map(), usesRecordState: false, fields: new Map(), globals: new Set(), volatile: false, unknownRecords: new Set(), ...(options.customMetadata ? { customMetadata: options.customMetadata } : {}) };
   const ast = rewrite(parsed.ast, resolver);
   const references = [...resolver.references.values()];
   const parentPaths = new Map<string, string[]>();
   for (const ref of references) {
-    if (ref.kind === "global" || ref.kind === "isNew" || ref.path.length < 2) continue;
+    if (ref.kind === "global" || ref.kind === "label" || ref.kind === "customMetadata" || ref.kind === "isNew" || ref.path.length < 2) continue;
     const parent = ref.path.slice(0, -1);
     parentPaths.set(parent.join("."), parent);
   }
@@ -295,5 +344,9 @@ export function compileFormula(source: string, options: CompileOptions): Compile
       globals: [...resolver.globals].sort(),
       volatile: resolver.volatile,
     },
+    warnings:
+      resolver.unknownRecords.size > 0
+        ? [{ area: "custom-metadata-record", message: `references custom metadata records that do not exist (${[...resolver.unknownRecords].sort().join(", ")}); those references evaluate blank` }]
+        : [],
   };
 }

@@ -3,6 +3,8 @@ export { compileFormula, FormulaCompileError } from "./compile.js";
 export type {
   CompileOptions,
   CompiledFormula,
+  CompileWarning,
+  CustomMetadataValues,
   FieldReference,
   FormulaContextId,
   FormulaDependencies,

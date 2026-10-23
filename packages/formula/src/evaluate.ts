@@ -63,6 +63,9 @@ function valueFor(ref: FieldReference, ctx: EvaluationContext): SfValue {
       return bool(!recordValuesEqual(lookup(ctx.old, ref.path), lookup(ctx.record, ref.path)));
     case "isNew":
       return bool(ctx.isNew);
+    case "label":
+    case "customMetadata":
+      return toSfValue(ref.value ?? null, ref.type);
   }
 }
 
