@@ -160,3 +160,42 @@ describe("$Permission", () => {
     );
   });
 });
+
+describe("$Api", () => {
+  const api = { baseUrl: "http://localhost:8093", sessionId: "tok123", organizationId: "00D000000000001AAA" };
+  const withApi = (source: string, context: FormulaContextId = "formula_field") => evaluateCompiled(f(source, context), { record: {}, isNew: true, api }).value;
+
+  it("builds the partner URL from the version times ten", () => {
+    expect(withApi("$Api.Partner_Server_URL_600")).toBe("http://localhost:8093/services/Soap/u/60.0/00D000000000001AAA");
+    expect(withApi("$Api.Partner_Server_URL_255")).toBe("http://localhost:8093/services/Soap/u/25.5/00D000000000001AAA");
+  });
+
+  it("builds the enterprise URL on the /c/ path", () => {
+    expect(withApi("$Api.Enterprise_Server_URL_590")).toBe("http://localhost:8093/services/Soap/c/59.0/00D000000000001AAA");
+  });
+
+  it("returns the session id and canonicalises reference keys", () => {
+    expect(withApi("$api.session_id")).toBe("tok123");
+    expect(f("$api.session_id").references.map((r) => r.key)).toEqual(["$Api.Session_ID"]);
+    expect(f("$API.partner_server_url_600").references.map((r) => r.key)).toEqual(["$Api.Partner_Server_URL_600"]);
+  });
+
+  it("is blank without a request context", () => {
+    for (const src of ["$Api.Session_ID", "$Api.Partner_Server_URL_600", "$Api.Enterprise_Server_URL_590"]) {
+      expect(evaluateCompiled(f(src), { record: {}, isNew: true }).value).toBeNull();
+    }
+  });
+
+  it.each(["$Api.Partner_Server_URL_0", "$Api.Partner_Server_URL_abc", "$Api.Partner_Server_URL", "$Api.Foo", "$Api.Session_ID.X"])(
+    "rejects %s with the generic wording",
+    (src) => {
+      expect(() => f(src)).toThrow(/does not exist\. Check spelling\./);
+    },
+  );
+
+  it.each<FormulaContextId>(["formula_field", "validation_rule", "default_value"])("is volatile and tracked as a global in %s", (context) => {
+    const compiled = f("$Api.Session_ID", context);
+    expect(compiled.dependencies.globals).toEqual(["$Api"]);
+    expect(compiled.dependencies.volatile).toBe(true);
+  });
+});

@@ -26,7 +26,7 @@ export interface CompileOptions {
   customMetadata?: CustomMetadataValues;
 }
 
-export type ReferenceKind = "field" | "prior" | "changed" | "isNew" | "global" | "label" | "customMetadata" | "setup";
+export type ReferenceKind = "field" | "prior" | "changed" | "isNew" | "global" | "label" | "customMetadata" | "setup" | "api";
 
 export interface FieldReference {
   /** Key used in the evaluator's field map: the rewritten path joined with ".". */
@@ -42,6 +42,10 @@ export interface FieldReference {
   setting?: string;
   /** label / customMetadata: value fixed at compile time (D-17). */
   value?: RecordValue;
+  /** api: which $Api value this is. */
+  apiKind?: "partner" | "enterprise" | "session";
+  /** api: version the `_<n>` suffix encodes, `"60.0"` for `_600`. */
+  apiVersion?: string;
 }
 
 /** Global roots a formula can read; `$System` is the constant OriginDateTime. */
@@ -245,6 +249,25 @@ function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
         type: sfTypeOf(field),
         value: raw === undefined || typeof raw === "object" ? null : raw,
       });
+    }
+    if (root.toLowerCase() === "$api") {
+      // The suffix is the API version times ten (Visualforce Developer Guide "$Api": Partner_Server_URL_250 is 25.0), so
+      // _600 is 60.0 and _255 is 25.5. Orglet allows $Api in every formula context (blank without a request, 12-07).
+      const name = node.path.length === 2 ? (node.path[1] ?? "") : "";
+      const url = /^(partner|enterprise)_server_url_(\d+)$/i.exec(name);
+      const n = url ? Number(url[2]) : 0;
+      const notFound = () => fieldNotFound(node.path.join("."), { object: "$Api", field: node.path.slice(1).join(".") });
+      let ref: FieldReference;
+      if (/^session_id$/i.test(name)) {
+        ref = { key: "$Api.Session_ID", kind: "api", path: ["Session_ID"], type: "Text", apiKind: "session" };
+      } else if (url && n > 0) {
+        const partner = (url[1] ?? "").toLowerCase() === "partner";
+        const key = `${partner ? "Partner" : "Enterprise"}_Server_URL_${url[2]}`;
+        ref = { key: `$Api.${key}`, kind: "api", path: [key], type: "Text", apiKind: partner ? "partner" : "enterprise", apiVersion: (n / 10).toFixed(1) };
+      } else throw notFound();
+      r.globals.add("$Api");
+      r.volatile = true;
+      return register(r, ref);
     }
     if (root.toLowerCase() === "$permission") {
       throw new FormulaCompileError(
