@@ -10,7 +10,7 @@
  */
 import type { FieldDef, FormulaFailure, OrgSchema, SObjectDef } from "@orglet/metadata";
 import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchLookupTarget, rollupSelectSql, type Pool, type PoolClient } from "@orglet/schema";
-import { asString, evaluateCompiled, type EvaluationContext, type RecordData } from "@orglet/formula";
+import { asString, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
 import { ChangeBus, type ChangeEvent, type ChangeType } from "./events.js";
@@ -76,6 +76,8 @@ interface Globals {
   organization?: RecordData;
   userRole?: RecordData;
   setup?: Map<string, RecordData>;
+  /** $Api: present only when the session carries a request context. */
+  api?: { baseUrl: string; sessionId: string; organizationId: string };
 }
 
 type ObjectOperation = "insert" | "update" | "upsert" | "delete" | "undelete";
@@ -388,6 +390,7 @@ export class DmlEngine {
       const role = typeof roleId === "string" ? await load("UserRole", roleId) : undefined;
       if (role) globals.userRole = role;
     }
+    if (session.request) globals.api = { baseUrl: session.request.baseUrl, sessionId: session.request.sessionId, organizationId: session.organizationId };
     const settings = this.formulas.settingsUsed();
     if (settings.length > 0) globals.setup = await this.loadHierarchySettings(client, session, settings);
     return globals;
@@ -658,7 +661,7 @@ export class DmlEngine {
     candidates.forEach((w, i) => {
       const ctx: EvaluationContext = { record: rows[i] as RecordData, isNew, ...globals, ...(w.old ? { old: w.old } : {}) };
       for (const { rule, compiled } of rules) {
-        const result = evaluateCompiled(compiled, ctx);
+        const result = this.formulas.evaluate(compiled, ctx);
         // A rule that errors at runtime blocks the save, like the platform does.
         if (result.value === true || result.error !== undefined) w.errors.push(Errors.customValidation(rule.errorMessage, rule.errorDisplayField));
       }
@@ -690,7 +693,7 @@ export class DmlEngine {
       }
       const compiled = this.formulas.defaultValue(obj, field);
       if (compiled && field.type !== "Checkbox") {
-        const result = evaluateCompiled(compiled, { record: {}, isNew: true, ...globals });
+        const result = this.formulas.evaluate(compiled, { record: {}, isNew: true, ...globals });
         if (result.value !== null) out[field.name] = result.value;
       }
     }

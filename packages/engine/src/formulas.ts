@@ -3,7 +3,7 @@
  * once, and computes read-time projections (formula and compound fields) on rows.
  */
 import { formatDiagnostic, pushDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
-import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type CustomMetadataValues, type EvaluationContext, type FormulaDependencies, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
+import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type CustomMetadataValues, type EvaluationContext, type FormulaDependencies, type FormulaResult, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
 
 import type { CustomMetadataPlan } from "./seed.js";
 
@@ -27,6 +27,8 @@ export class FormulaRegistry {
   /** Global roots read by any compiled rule, formula field or default; lets loaders skip globals nothing uses. */
   private readonly globalsUsed = new Set<GlobalRoot>();
   private readonly settings = new Set<string>();
+  private readonly owners = new WeakMap<CompiledFormula, { what: string; object: string; field?: string }>();
+  private readonly warnedNoRequest = new WeakSet<CompiledFormula>();
 
   /** Lower-cased type -> lower-cased DeveloperName -> values, for `$CustomMetadata` references. */
   private readonly customMetadataValues: CustomMetadataValues | undefined;
@@ -75,6 +77,7 @@ export class FormulaRegistry {
       for (const w of compiled.warnings) {
         pushDiagnostic(this, { area: w.area, what, object: obj.name, ...(field !== undefined ? { field } : {}), message: `${what} ${w.message}` } satisfies FormulaFailure);
       }
+      this.owners.set(compiled, { what, object: obj.name, ...(field !== undefined ? { field } : {}) });
       return compiled;
     } catch (err) {
       if (err instanceof FormulaCompileError) {
@@ -92,6 +95,24 @@ export class FormulaRegistry {
       }
       throw err;
     }
+  }
+
+  /** evaluateCompiled plus D-09: the first evaluation of a $Api formula without a request context warns once, per formula. */
+  evaluate(compiled: CompiledFormula, ctx: EvaluationContext): FormulaResult {
+    if (ctx.api === undefined && compiled.dependencies.globals.includes("$Api") && !this.warnedNoRequest.has(compiled)) {
+      this.warnedNoRequest.add(compiled);
+      const owner = this.owners.get(compiled);
+      if (owner) {
+        pushDiagnostic(this, {
+          area: "formula-global",
+          what: owner.what,
+          object: owner.object,
+          ...(owner.field !== undefined ? { field: owner.field } : {}),
+          message: `${owner.what} uses $Api but was evaluated without a request context; $Api values are blank`,
+        } satisfies FormulaFailure);
+      }
+    }
+    return evaluateCompiled(compiled, ctx);
   }
 
   validationRules(obj: SObjectDef): CompiledRule[] {
@@ -139,7 +160,7 @@ export class FormulaRegistry {
 /** Compute formula fields onto `record` (parents must already be attached). */
 export function applyFormulaFields(registry: FormulaRegistry, obj: SObjectDef, record: RecordData, ctx: Omit<EvaluationContext, "record" | "isNew">): void {
   for (const { field, compiled } of registry.formulaFields(obj)) {
-    record[field.name] = evaluateCompiled(compiled, { ...ctx, record, isNew: false }).value;
+    record[field.name] = registry.evaluate(compiled, { ...ctx, record, isNew: false }).value;
   }
 }
 

@@ -11,6 +11,8 @@ export interface Session {
   userId: string;
   organizationId: string;
   profileId: string;
+  /** Set only for REST/SOAP requests by the API layer; never persisted, logged or put on a Bulk job ($Api, D-06/D-07). */
+  request?: { baseUrl: string; sessionId: string };
 }
 
 export interface TriggerContext {

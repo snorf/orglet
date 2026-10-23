@@ -157,3 +157,52 @@ describe("unsupported globals", () => {
     expect(registry.warnings).toEqual(registry.diagnostics.map(formatDiagnostic));
   });
 });
+
+describe("$Api at the engine level", () => {
+  let f: Fixture;
+  const WARN = "without a request context";
+  const apiWarnings = () => f.engine.warnings.filter((w) => w.includes(WARN));
+
+  beforeAll(async () => {
+    f = await setup((base) =>
+      extend(base, (o, t) => ({
+        ...o,
+        fields: [...o.fields, formula(t, "Api_Session__c", "Text", "$Api.Session_ID"), formula(t, "Api_Partner__c", "Text", "$Api.Partner_Server_URL_600")],
+        validationRules: [...o.validationRules, { name: "Api_Rule", active: true, errorConditionFormula: "ISBLANK($Api.Session_ID) && Name = 'never'", errorMessage: "x" }],
+      })),
+    );
+  });
+  afterAll(() => teardown(f));
+
+  it("without a request context $Api is blank and warns once per formula", async () => {
+    const a = await insert(f, "Ticket__c", { Name: "T-1" });
+    const b = await insert(f, "Ticket__c", { Name: "T-2" });
+    for (let i = 0; i < 2; i++) {
+      const rows = await f.engine.retrieve(f.session, "Ticket__c", [a, b]);
+      for (const id of [a, b]) {
+        expect(rows.get(id)?.["Api_Session__c"]).toBeNull();
+        expect(rows.get(id)?.["Api_Partner__c"]).toBeNull();
+      }
+    }
+    const formulaWarnings = apiWarnings().filter((w) => w.includes("formula field")).sort();
+    expect(formulaWarnings).toEqual([
+      "UNSUPPORTED:formula-global formula field Ticket__c.Api_Partner__c uses $Api but was evaluated without a request context; $Api values are blank",
+      "UNSUPPORTED:formula-global formula field Ticket__c.Api_Session__c uses $Api but was evaluated without a request context; $Api values are blank",
+    ]);
+    expect(f.engine.warnings).toEqual(f.engine.diagnostics.map(formatDiagnostic));
+  });
+
+  it("with a request context $Api reads the request", async () => {
+    const id = await insert(f, "Ticket__c", { Name: "T-4" });
+    const before = f.engine.warnings.length;
+    const rows = await f.engine.retrieve({ ...f.session, request: { baseUrl: "http://h:1", sessionId: "tok" } }, "Ticket__c", [id]);
+    expect(rows.get(id)?.["Api_Session__c"]).toBe("tok");
+    expect(rows.get(id)?.["Api_Partner__c"]).toBe(`http://h:1/services/Soap/u/60.0/${f.session.organizationId}`);
+    expect(f.engine.warnings.length).toBe(before);
+  });
+
+  it("a validation rule using $Api does not block a save without a request", async () => {
+    await insert(f, "Ticket__c", { Name: "T-3" });
+    expect(apiWarnings().filter((w) => w.includes("validation rule Ticket__c.Api_Rule"))).toHaveLength(1);
+  });
+});
