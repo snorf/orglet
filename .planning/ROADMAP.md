@@ -275,3 +275,12 @@ Plans:
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.11: Archive mode: read-only replica served from a Heimdall backup (BACKLOG)
+
+**Goal:** Run orglet as a read-only replica of a former Salesforce org without copying the data into orglet's own tables: orglet loads the retrieve for schema, describe, SOQL and REST exactly as today, but record data is served from a Heimdall backup store (Heimdall owns the data, orglet owns the configuration). The schema layer emits views or foreign tables over the backup instead of tables; formula and roll-up fields are exposed as the stored values the org computed, never recomputed with `$User`/`NOW()`; every DML is refused with `INVALID_TYPE_FOR_OPERATION` except an explicit erasure path for GDPR deletes; SOSL-style search over names and emails covers the first question an archive gets. Open before planning: Heimdall's storage format and how orglet attaches to it (same Postgres, `postgres_fdw`, or files), coverage of history, activity and file objects (needs 999.10 for ContentVersion), and real authentication plus an audit log for non-developer readers. Raised 2026-10-23; real-org data stays with the author, orglet is built and tested against public fixtures only.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
