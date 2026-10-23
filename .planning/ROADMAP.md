@@ -31,7 +31,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 - [x] **Phase 9: Baseline Generator, Parity & OwnerId Narrowing** - A deterministic generator reproduces the 35 existing objects, then adds every documented field and per-object OwnerId targets (completed 2026-10-14)
 - [x] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart (completed 2026-10-16)
 - [x] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load (completed 2026-10-21)
-- [ ] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas
+- [x] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas (completed 2026-10-23)
 - [ ] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields
 - [ ] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run
 
@@ -136,7 +136,16 @@ Plans:
   3. `$UserRole.<field>` is blank for a user without a role, and `$Api.Partner_Server_URL_<n>`, `$Api.Enterprise_Server_URL_<n>` and `$Api.Session_ID` evaluate to the running server's URLs and the request's session.
   4. `$Label.<Name>` and `$CustomMetadata.<Type__mdt>.<Record>.<Field__c>` resolve from loaded data; an unknown label, type or field is a compile error, and an unknown record evaluates blank with one aggregated `UNSUPPORTED:custom-metadata-record` warning.
   5. `$Setup.<Setting__c>.<Field__c>` returns the user, profile or organization value in that order for a hierarchy setting, while `$Setup` on a list setting and `$Permission` still raise `UNSUPPORTED:formula-global` with the reason stated.
-**Plans**: TBD
+**Plans**: 8 plans
+Plans:
+- [x] 12-01-PLAN.md — corpus baseline guard, fork-aware sync script + CI, fork integration branch, Johan pushes it (FORM-01)
+- [x] 12-02-PLAN.md — resync to the fork pin + VENDOR.md baseline; typed Rel:Object segments compile, regex fallback removed, it.fails flipped (FORM-01, FORM-02)
+- [x] 12-03-PLAN.md — typed polymorphic parent loading (Owner:User / Owner:Queue), no relationship-key leak in retrieve (FORM-02)
+- [x] 12-04-PLAN.md — FormulaDependencies on CompiledFormula + registry fieldDependencies/ruleDependencies/usesGlobal (D-14; FORM-03, FORM-05)
+- [x] 12-05-PLAN.md — $Label and $CustomMetadata at compile time, aggregated custom-metadata-record warning, registry/CLI wiring (FORM-04)
+- [x] 12-06-PLAN.md — $UserRole and Hierarchy $Setup (user -> profile -> org), List setting / $Permission reasons, gated loading (FORM-03, FORM-05)
+- [x] 12-07-PLAN.md — $Api via Session.request, one-time no-request warning, Bulk keeps no token, HTTP end-to-end (FORM-03)
+- [x] 12-08-PLAN.md — phase gate incl. check --strict and run-all.sh; close todo, PROJECT.md row, REQUIREMENTS (FORM-01..05)
 **Research flag**: YES, small (`$Setup` null-field fall-through, `$Api` URL shapes, `$Label` casing).
 
 ### Phase 13: Roll-Ups over Formula Fields
@@ -178,7 +187,7 @@ Plans:
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
 | 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
-| 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
+| 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
 
@@ -270,6 +279,15 @@ Plans:
 ### Phase 999.10: ContentVersion file upload done properly (BACKLOG)
 
 **Goal:** Make file upload work as in a real org instead of through the Phase 10 ContentDocumentId nullable override: create the ContentDocument automatically on ContentVersion insert when ContentDocumentId is omitted (then drop the override so describe reports nillable: false as the DE does), store VersionData as a blob field (base64 over REST, bytea in Postgres) with the GET /sobjects/ContentVersion/{id}/VersionData download endpoint, and model ContentDocumentLink so a file can be attached to a record. Raised at the Phase 10 D-04 checkpoint (2026-10-14): file upload is a central capability and the override is a stopgap. Unblocks the ContentVersion half of 999.9.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.11: Archive mode: read-only replica served from a Heimdall backup (BACKLOG)
+
+**Goal:** Run orglet as a read-only replica of a former Salesforce org without copying the data into orglet's own tables: orglet loads the retrieve for schema, describe, SOQL and REST exactly as today, but record data is served from a Heimdall backup store (Heimdall owns the data, orglet owns the configuration). The schema layer emits views or foreign tables over the backup instead of tables; formula and roll-up fields are exposed as the stored values the org computed, never recomputed with `$User`/`NOW()`; every DML is refused with `INVALID_TYPE_FOR_OPERATION` except an explicit erasure path for GDPR deletes; SOSL-style search over names and emails covers the first question an archive gets. Heimdall keeps a central Postgres with metadata about every record and the record rows themselves as Bulk 2.0 query CSV in S3. Two candidate shapes to decide at discuss time: (a) serve straight from S3 (a query engine over CSV behind the SOQL compiler, no copy, no indexes, every query a scan), or (b) treat orglet's Postgres as a rebuildable cache: an `orglet archive load` streams the CSVs from S3 with `COPY` into tables driven by the Heimdall inventory, reusing the Bulk 2.0 CSV parsing and import-mode coercion, with FK checks deferred so lookup cycles need no ordering; SOQL, indexes, search and related lists then work unchanged. Open before planning: that choice, coverage of history, activity and file objects (needs 999.10 for ContentVersion), and real authentication plus an audit log for non-developer readers. Raised 2026-10-23; real-org data stays with the author, orglet is built and tested against public fixtures only.
 **Requirements:** TBD
 **Plans:** 0 plans
 

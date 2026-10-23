@@ -12,6 +12,11 @@ export interface EvaluationContext {
   profile?: RecordData;
   organization?: RecordData;
   recordType?: RecordData;
+  userRole?: RecordData;
+  /** Merged Hierarchy setting values by lower-cased setting API name. */
+  setup?: ReadonlyMap<string, RecordData>;
+  /** Request context for `$Api`; absent for Bulk jobs and engine-direct use, where `$Api` is blank. */
+  api?: { baseUrl: string; sessionId: string; organizationId: string };
   /** Clock for TODAY()/NOW(); defaults to the real clock. */
   now?: Date;
 }
@@ -44,6 +49,8 @@ function globalRecord(ctx: EvaluationContext, global: string): RecordData | unde
       return ctx.organization;
     case "$RecordType":
       return ctx.recordType;
+    case "$UserRole":
+      return ctx.userRole;
     default:
       return undefined;
   }
@@ -63,6 +70,15 @@ function valueFor(ref: FieldReference, ctx: EvaluationContext): SfValue {
       return bool(!recordValuesEqual(lookup(ctx.old, ref.path), lookup(ctx.record, ref.path)));
     case "isNew":
       return bool(ctx.isNew);
+    case "setup":
+      return toSfValue(lookup(ctx.setup?.get((ref.setting ?? "").toLowerCase()), ref.path), ref.type);
+    case "api":
+      if (!ctx.api) return toSfValue(null, "Text");
+      if (ref.apiKind === "session") return toSfValue(ctx.api.sessionId, "Text");
+      return toSfValue(`${ctx.api.baseUrl}/services/Soap/${ref.apiKind === "partner" ? "u" : "c"}/${ref.apiVersion ?? ""}/${ctx.api.organizationId}`, "Text");
+    case "label":
+    case "customMetadata":
+      return toSfValue(ref.value ?? null, ref.type);
   }
 }
 

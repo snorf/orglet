@@ -65,9 +65,17 @@ export function sendErrors(reply: FastifyReply, status: number, errors: ApiError
 export const INVALID_SESSION: ApiError = { message: "Session expired or invalid", errorCode: "INVALID_SESSION_ID" };
 export const NOT_FOUND: ApiError = { message: "The requested resource does not exist", errorCode: "NOT_FOUND" };
 
-export function session(req: FastifyRequest): Session {
+/** The logged-in session as stored, without request context: for anything that outlives the request (Bulk jobs). */
+export function loginSession(req: FastifyRequest): Session {
   if (!req.login) throw new DmlError("INVALID_SESSION_ID", "Session expired or invalid", 401);
   return req.login.session;
+}
+
+// $Api.Session_ID is the bearer token the client got as access_token (D-07); the base URL is the one login returned as
+// instance_url (D-06). The context lives only on this per-request object: never logged, stored or put on a job.
+export function session(req: FastifyRequest): Session {
+  if (!req.login) throw new DmlError("INVALID_SESSION_ID", "Session expired or invalid", 401);
+  return { ...req.login.session, request: { baseUrl: baseUrl(req), sessionId: req.login.token } };
 }
 
 export function baseUrl(req: FastifyRequest): string {

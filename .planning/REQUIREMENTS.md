@@ -117,22 +117,22 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Formulas
 
-- [ ] **FORM-01**: The vendored sigha is resynced to a pinned full upstream commit (or a named fork
+- [x] **FORM-01**: The vendored sigha is resynced to a pinned full upstream commit (or a named fork
   commit recorded in `VENDOR.md` while the upstream PR is open) that accepts unary `!` as NOT and the
   `Relationship:Object.Field` colon syntax; `sync-sigha.sh` runs on macOS and Linux; the formula
   corpus pass count is compared against the v1.0 baseline (6 312 cases) and may not regress.
-- [ ] **FORM-02**: `Owner:User.Field` / `Owner:Queue.Field` (and any `Rel:Object.Field`) compile
+- [x] **FORM-02**: `Owner:User.Field` / `Owner:Queue.Field` (and any `Rel:Object.Field`) compile
   against the named target of a polymorphic lookup and evaluate to blank when the row's actual
   target is a different object; `Queue` is accepted as an alias of `Group`; a qualifier naming an
   object the lookup cannot reference is a compile error with Salesforce's wording.
-- [ ] **FORM-03**: `$UserRole.<field>` resolves from the running user's role at evaluation time (blank
+- [x] **FORM-03**: `$UserRole.<field>` resolves from the running user's role at evaluation time (blank
   when the user has no role) and `$Api.Partner_Server_URL_<n>`, `$Api.Enterprise_Server_URL_<n>` and
   `$Api.Session_ID` resolve to the running server's URLs and the request's session.
-- [ ] **FORM-04**: `$Label.<Name>` and `$CustomMetadata.<Type__mdt>.<Record>.<Field__c>` are resolved
+- [x] **FORM-04**: `$Label.<Name>` and `$CustomMetadata.<Type__mdt>.<Record>.<Field__c>` are resolved
   at compile time from the loaded labels and custom-metadata records; an unknown label, type or field
   is a compile error with Salesforce's wording, and an unknown record evaluates blank with one
   aggregated `UNSUPPORTED:custom-metadata-record` warning.
-- [ ] **FORM-05**: `$Setup.<Setting__c>.<Field__c>` resolves hierarchy custom settings at evaluation
+- [x] **FORM-05**: `$Setup.<Setting__c>.<Field__c>` resolves hierarchy custom settings at evaluation
   time per field in the order user, profile, organization; `$Setup` on a list custom setting and
   `$Permission.<name>` remain explicit `UNSUPPORTED:formula-global` warnings with the reason stated.
 
@@ -246,11 +246,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CMDT-04 | Phase 11 | Complete |
 | CSET-01 | Phase 11 | Complete |
 | CSET-02 | Phase 11 | Complete |
-| FORM-01 | Phase 12 | Pending |
-| FORM-02 | Phase 12 | Pending |
-| FORM-03 | Phase 12 | Pending |
-| FORM-04 | Phase 12 | Pending |
-| FORM-05 | Phase 12 | Pending |
+| FORM-01 | Phase 12 | Complete |
+| FORM-02 | Phase 12 | Complete |
+| FORM-03 | Phase 12 | Complete |
+| FORM-04 | Phase 12 | Complete |
+| FORM-05 | Phase 12 | Complete |
 | ROLL2-01 | Phase 13 | Pending |
 | CHECK-01 | Phase 14 | Pending |
 | CHECK-02 | Phase 14 | Pending |

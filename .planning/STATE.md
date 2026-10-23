@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: planning
-stopped_at: Phase 11 complete and verified
-last_updated: "2026-10-21T07:01:23.118Z"
-last_activity: 2026-10-21
+stopped_at: Phase 12 complete and verified
+last_updated: "2026-10-23T14:04:57.369Z"
+last_activity: 2026-10-23
 progress:
-  total_phases: 17
-  completed_phases: 4
-  total_plans: 34
-  completed_plans: 34
+  total_phases: 18
+  completed_phases: 5
+  total_plans: 42
+  completed_plans: 42
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 12 — sigha-resync-formula-globals (not started)
+**Current focus:** Phase 13 — roll-ups-over-formula-fields (not started)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 12 (sigha Resync & Formula Globals)
+Phase: 13 (Roll-Ups over Formula Fields)
 Plan: Not started
-Status: Phase 11 complete and verified (5/5 success criteria); Phase 12 ready to discuss/plan
-Last activity: 2026-10-21
+Status: Phase 12 complete and verified (5/5 success criteria, CI green on Linux); Phase 13 ready to discuss/plan
+Last activity: 2026-10-23
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -123,6 +123,14 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 11 P08 | 10min | 2 tasks | 4 files |
 | Phase 11 P07 | 20min | 2 tasks | 5 files |
 | Phase 11 P09 | 40min | 2 tasks | 5 files |
+| Phase 12 P01 | n/a | 3 tasks | 3 files |
+| Phase 12 P02 | n/a | 2 tasks | 11 files |
+| Phase 12 P03 | n/a | 2 tasks | 3 files |
+| Phase 12 P04 | 8min | 2 tasks | 5 files |
+| Phase 12 P05 | 15min | 2 tasks | 8 files |
+| Phase 12 P06 | 15min | 2 tasks | 7 files |
+| Phase 12 P07 | 15min | 3 tasks | 10 files |
+| Phase 12 P08 | n/a | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -223,6 +231,11 @@ Recent decisions affecting current work:
 - [Phase 11]: Golden derived CMDT Id: deriveCustomMetadataId(m00,Support_Tier__mdt,Gold)=m00dI6W8ONPwAT6Q0N
 - [Phase 11]: 11-03: Hierarchy Name nillable, List Name unique; customKeyPrefix pool parameter keeps metadata self-contained
 - [Phase 11]: Unique reference indexes on soft-delete objects are partial (WHERE isdeleted = false) so deleted Hierarchy setting rows release SetupOwnerId
+- [Phase 12]: Typed Relationship:Object qualifier accepted for any declared lookup target; invalid qualifier uses generic unknown-field error; Queue aliases Group
+- [Phase 12]: Plan 12-05: $Label master value only, namespaced unsupported; $CustomMetadata key DeveloperName case-insensitive, unknown record blank + aggregated UNSUPPORTED:custom-metadata-record warning
+- [Phase 12]: Hierarchy $Setup merges per field user->profile->organization with no read-time defaultValue fallback; $UserRole/$Setup loaded only when formulas use them
+- [Phase 12]: D-08 correction: $Api _<n> suffix is API version times ten (_600 -> 60.0)
+- [Phase 12]: Phase 12 gate passed; Python conformance legs need a non-x86 venv on arm64 (scratch venv used)
 
 ### Pending Todos
 
@@ -245,6 +258,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-21T06:57:29.328Z
-Stopped at: Completed 11-09-PLAN.md
+Last session: 2026-10-23T13:56:39.545Z
+Stopped at: Completed 12-08-PLAN.md
 Resume file: None

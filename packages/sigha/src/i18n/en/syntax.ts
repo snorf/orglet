@@ -44,7 +44,6 @@ export const syntax = {
     unterminatedComment: "Unterminated comment: missing closing '*/'.",
     unterminatedString: "Unterminated string literal.",
     unexpectedDollar: "Unexpected '$': expected a global name.",
-    unexpectedBang: "Unexpected '!'.",
     unexpectedPipe: "Unexpected '|'. For logical OR, use '||' or OR().",
     nestedComment:
       "Block comments do not nest — this comment ends at the first '*/'.",

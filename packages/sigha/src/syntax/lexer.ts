@@ -330,6 +330,17 @@ class Lexer {
     while (isIdentContinue(this.peek())) {
       this.pos++;
     }
+    // Polymorphic relationship reference `Owner:User.Email`: formula-engine
+    // names the relationship `Owner:User` (FormulaUtils.getPolymorphicFieldName,
+    // DOMAIN_DELIMETER ':', LexerRules.g4 COLON). Formulas have no other use
+    // for ':' between two identifiers, so absorb `:Type` into this segment; a
+    // colon not followed by an identifier start keeps its diagnostic.
+    if (this.peek() === ":" && isIdentStart(this.peek(1))) {
+      this.pos++;
+      while (isIdentContinue(this.peek())) {
+        this.pos++;
+      }
+    }
     const text = this.src.slice(start, this.pos);
     const keyword = KEYWORD_KINDS[text.toUpperCase()];
     return this.token(keyword ?? "identifier", start, leading);
@@ -424,12 +435,9 @@ class Lexer {
           this.pos++; // `!=`
           return this.token("operator", start, leading);
         }
-        this.error(
-          "unexpected-character",
-          span(start, this.pos),
-          t().syntax.lexer.unexpectedBang,
-        );
-        return this.token("error", start, leading);
+        // A lone `!` is the prefix logical-NOT operator (Formula.g4
+        // `BANG : '!'`); the parser decides whether it is in a valid position.
+        return this.token("operator", start, leading);
       default: {
         // Consume a full code point so an astral character (emoji) yields one
         // error token with a real hex, not two mojibake surrogate halves.

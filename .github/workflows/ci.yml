@@ -106,12 +106,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # D-17: run the vendoring script on GNU userland into a throwaway dir and prove the vendored copy is
-      # exactly reproducible from the recorded revision. Nothing under packages/sigha is written (Phase 1 D-18).
+      # exactly reproducible from the recorded revision. The repository comes from VENDOR.md's Repository: line (a fork
+      # while upstream PRs are open, D-01). Nothing under packages/sigha is written (Phase 1 D-18).
       - run: |
           REV=$(sed -n 's/^Revision: //p' packages/sigha/VENDOR.md)
+          REPO=$(sed -n 's/^Repository: //p' packages/sigha/VENDOR.md)
           mkdir -p "$RUNNER_TEMP/sigha"
           cp packages/sigha/VENDOR.md "$RUNNER_TEMP/sigha/VENDOR.md"
-          SIGHA_DEST="$RUNNER_TEMP/sigha" bash scripts/sync-sigha.sh "$REV"
+          SIGHA_REPO="${REPO:-https://github.com/rfaulhaber/sigha.git}" SIGHA_DEST="$RUNNER_TEMP/sigha" bash scripts/sync-sigha.sh "$REV"
           diff -r packages/sigha/src "$RUNNER_TEMP/sigha/src"
           diff -r packages/sigha/corpus "$RUNNER_TEMP/sigha/corpus"
           diff packages/sigha/LICENSE "$RUNNER_TEMP/sigha/LICENSE"

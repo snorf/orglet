@@ -2,8 +2,10 @@
  * Compiles every validation rule, formula field and default-value expression in the schema
  * once, and computes read-time projections (formula and compound fields) on rows.
  */
-import { formatDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
-import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type EvaluationContext, type RecordData, type RecordValue } from "@orglet/formula";
+import { formatDiagnostic, pushDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
+import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type CustomMetadataValues, type EvaluationContext, type FormulaDependencies, type FormulaResult, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
+
+import type { CustomMetadataPlan } from "./seed.js";
 
 export interface CompiledRule {
   rule: ValidationRuleDef;
@@ -22,8 +24,22 @@ export class FormulaRegistry {
   private readonly rules = new Map<string, CompiledRule[]>();
   private readonly fields = new Map<string, CompiledField[]>();
   private readonly defaults = new Map<string, CompiledFormula>();
+  /** Global roots read by any compiled rule, formula field or default; lets loaders skip globals nothing uses. */
+  private readonly globalsUsed = new Set<GlobalRoot>();
+  private readonly settings = new Set<string>();
+  private readonly owners = new WeakMap<CompiledFormula, { what: string; object: string; field?: string }>();
+  private readonly warnedNoRequest = new WeakSet<CompiledFormula>();
 
-  constructor(readonly schema: OrgSchema) {
+  /** Lower-cased type -> lower-cased DeveloperName -> values, for `$CustomMetadata` references. */
+  private readonly customMetadataValues: CustomMetadataValues | undefined;
+
+  constructor(
+    readonly schema: OrgSchema,
+    customMetadata?: CustomMetadataPlan,
+  ) {
+    this.customMetadataValues = customMetadata
+      ? new Map(customMetadata.types.map((t) => [t.object.name.toLowerCase(), new Map(t.rows.map((row) => [row.developerName.toLowerCase(), row.values]))]))
+      : undefined;
     for (const obj of schema.objects.values()) {
       const key = obj.name.toLowerCase();
       this.rules.set(
@@ -54,7 +70,15 @@ export class FormulaRegistry {
 
   private tryCompile(source: string, obj: SObjectDef, context: "validation_rule" | "formula_field" | "default_value", what: string, field: string | undefined, treatBlanksAs?: "BlankAsBlank" | "BlankAsZero"): CompiledFormula | undefined {
     try {
-      return compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}) });
+      const compiled = compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}), ...(this.customMetadataValues ? { customMetadata: this.customMetadataValues } : {}) });
+      for (const g of compiled.dependencies.globals) this.globalsUsed.add(g);
+      for (const ref of compiled.references) if (ref.kind === "setup" && ref.setting !== undefined) this.settings.add(ref.setting);
+      // One structured diagnostic per compile warning keeps warnings == diagnostics.map(formatDiagnostic) (D-15).
+      for (const w of compiled.warnings) {
+        pushDiagnostic(this, { area: w.area, what, object: obj.name, ...(field !== undefined ? { field } : {}), message: `${what} ${w.message}` } satisfies FormulaFailure);
+      }
+      this.owners.set(compiled, { what, object: obj.name, ...(field !== undefined ? { field } : {}) });
+      return compiled;
     } catch (err) {
       if (err instanceof FormulaCompileError) {
         const failure: FormulaFailure = {
@@ -73,6 +97,24 @@ export class FormulaRegistry {
     }
   }
 
+  /** evaluateCompiled plus D-09: the first evaluation of a $Api formula without a request context warns once, per formula. */
+  evaluate(compiled: CompiledFormula, ctx: EvaluationContext): FormulaResult {
+    if (ctx.api === undefined && compiled.dependencies.globals.includes("$Api") && !this.warnedNoRequest.has(compiled)) {
+      this.warnedNoRequest.add(compiled);
+      const owner = this.owners.get(compiled);
+      if (owner) {
+        pushDiagnostic(this, {
+          area: "formula-global",
+          what: owner.what,
+          object: owner.object,
+          ...(owner.field !== undefined ? { field: owner.field } : {}),
+          message: `${owner.what} uses $Api but was evaluated without a request context; $Api values are blank`,
+        } satisfies FormulaFailure);
+      }
+    }
+    return evaluateCompiled(compiled, ctx);
+  }
+
   validationRules(obj: SObjectDef): CompiledRule[] {
     return this.rules.get(obj.name.toLowerCase()) ?? [];
   }
@@ -83,6 +125,27 @@ export class FormulaRegistry {
 
   defaultValue(obj: SObjectDef, field: FieldDef): CompiledFormula | undefined {
     return this.defaults.get(`${obj.name.toLowerCase()}.${field.name.toLowerCase()}`);
+  }
+
+  /** Dependency list of a formula field on `obj` (name case-insensitive), or undefined when it is not a compiled formula field. */
+  fieldDependencies(obj: SObjectDef, fieldName: string): FormulaDependencies | undefined {
+    const wanted = fieldName.toLowerCase();
+    return this.formulaFields(obj).find((f) => f.field.name.toLowerCase() === wanted)?.compiled.dependencies;
+  }
+
+  /** Dependency list of an active validation rule on `obj`, or undefined when it is unknown or did not compile. */
+  ruleDependencies(obj: SObjectDef, ruleName: string): FormulaDependencies | undefined {
+    return this.validationRules(obj).find((r) => r.rule.name === ruleName)?.compiled.dependencies;
+  }
+
+  /** True when any compiled rule, formula field or default value reads the global root. */
+  /** Canonical API names of the Hierarchy custom settings any compiled formula reads, sorted. */
+  settingsUsed(): string[] {
+    return [...this.settings].sort();
+  }
+
+  usesGlobal(root: GlobalRoot): boolean {
+    return this.globalsUsed.has(root);
   }
 
   /** Parent paths any validation rule or formula field on `obj` needs loaded. */
@@ -97,7 +160,7 @@ export class FormulaRegistry {
 /** Compute formula fields onto `record` (parents must already be attached). */
 export function applyFormulaFields(registry: FormulaRegistry, obj: SObjectDef, record: RecordData, ctx: Omit<EvaluationContext, "record" | "isNew">): void {
   for (const { field, compiled } of registry.formulaFields(obj)) {
-    record[field.name] = evaluateCompiled(compiled, { ...ctx, record, isNew: false }).value;
+    record[field.name] = registry.evaluate(compiled, { ...ctx, record, isNew: false }).value;
   }
 }
 

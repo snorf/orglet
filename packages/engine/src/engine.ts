@@ -10,7 +10,7 @@
  */
 import type { FieldDef, FormulaFailure, OrgSchema, SObjectDef } from "@orglet/metadata";
 import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchLookupTarget, rollupSelectSql, type Pool, type PoolClient } from "@orglet/schema";
-import { asString, evaluateCompiled, type EvaluationContext, type RecordData } from "@orglet/formula";
+import { asString, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
 import { ChangeBus, type ChangeEvent, type ChangeType } from "./events.js";
@@ -18,10 +18,13 @@ import { applyCompoundFields, applyFormulaFields, FormulaRegistry } from "./form
 import type { DmlOperation, Session, TriggerContext, TriggerExecutor } from "./hooks.js";
 import { loadParents } from "./parents.js";
 import { affectedParents, RollupRegistry, type ParentGroup, type RollupKind } from "./rollups.js";
+import type { CustomMetadataPlan } from "./seed.js";
 import { formatAutoNumber, Store } from "./store.js";
 
 export interface EngineOptions {
   orgSchema?: string;
+  /** Custom-metadata records (planCustomMetadataSeed) for $CustomMetadata formulas; without it every record is unknown (blank + warning). */
+  customMetadata?: CustomMetadataPlan;
   executors?: TriggerExecutor[];
   /**
    * Data-migration mode: records may carry their original Id and audit fields, lookups are
@@ -71,6 +74,10 @@ interface Globals {
   user?: RecordData;
   profile?: RecordData;
   organization?: RecordData;
+  userRole?: RecordData;
+  setup?: Map<string, RecordData>;
+  /** $Api: present only when the session carries a request context. */
+  api?: { baseUrl: string; sessionId: string; organizationId: string };
 }
 
 type ObjectOperation = "insert" | "update" | "upsert" | "delete" | "undelete";
@@ -98,7 +105,7 @@ export class DmlEngine {
   ) {
     this.orgSchema = options.orgSchema ?? DEFAULT_ORG_SCHEMA;
     this.store = new Store(schema, this.orgSchema);
-    this.formulas = new FormulaRegistry(schema);
+    this.formulas = new FormulaRegistry(schema, options.customMetadata);
     this.rollups = new RollupRegistry(schema);
     this.executors = options.executors ?? [];
     this.importMode = options.importMode ?? false;
@@ -272,10 +279,16 @@ export class DmlEngine {
   async project(client: PoolClient, session: Session, obj: SObjectDef, rows: RecordData[]): Promise<void> {
     if (rows.length === 0) return;
     const globals = await this.loadGlobals(client, session);
-    await loadParents(client, this.store, obj, rows, this.formulas.parentPaths(obj, ["fields"]));
+    const paths = this.formulas.parentPaths(obj, ["fields"]);
+    await loadParents(client, this.store, obj, rows, paths);
+    // The REST sObject Rows resource returns field values only, so parents loaded to evaluate formulas must not
+    // reach recordJson (REST API Developer Guide, "sObject Rows"). Relationship names never equal field API names
+    // (Owner vs OwnerId, Account__r vs Account__c).
+    const parentKeys = new Set(paths.map((p) => p[0]).filter((k): k is string => k !== undefined));
     for (const row of rows) {
       applyFormulaFields(this.formulas, obj, row, globals);
       applyCompoundFields(obj, row);
+      for (const key of parentKeys) delete row[key];
     }
   }
 
@@ -371,7 +384,38 @@ export class DmlEngine {
     if (profile) globals.profile = profile;
     const organization = await load("Organization", session.organizationId);
     if (organization) globals.organization = organization;
+    // Only formulas that read $UserRole / $Setup pay for these queries (research Pattern 4).
+    if (this.formulas.usesGlobal("$UserRole")) {
+      const roleId = user?.["UserRoleId"];
+      const role = typeof roleId === "string" ? await load("UserRole", roleId) : undefined;
+      if (role) globals.userRole = role;
+    }
+    if (session.request) globals.api = { baseUrl: session.request.baseUrl, sessionId: session.request.sessionId, organizationId: session.organizationId };
+    const settings = this.formulas.settingsUsed();
+    if (settings.length > 0) globals.setup = await this.loadHierarchySettings(client, session, settings);
     return globals;
+  }
+
+  /**
+   * Per-field merge user -> profile -> organization, as Apex `getInstance()` documents for Hierarchy settings.
+   * No read-time fallback to the field's defaultValue (orglet choice, D-16): a field no level defines is blank.
+   */
+  private async loadHierarchySettings(client: PoolClient, session: Session, names: string[]): Promise<Map<string, RecordData>> {
+    const result = new Map<string, RecordData>();
+    for (const name of names) {
+      const obj = this.schema.getObject(name);
+      const owner = this.schema.getField(name, "SetupOwnerId");
+      if (!obj || !owner) continue;
+      const rows: (RecordData | undefined)[] = [];
+      for (const id of [session.userId, session.profileId, session.organizationId]) rows.push((await this.store.findByField(client, obj, owner, id))[0]);
+      const merged: RecordData = {};
+      for (const f of obj.fields) {
+        const hit = rows.find((row) => row?.[f.name] !== null && row?.[f.name] !== undefined);
+        if (hit) merged[f.name] = hit[f.name];
+      }
+      result.set(obj.name.toLowerCase(), merged);
+    }
+    return result;
   }
 
   // ---------------------------------------------------------------------------------------
@@ -617,7 +661,7 @@ export class DmlEngine {
     candidates.forEach((w, i) => {
       const ctx: EvaluationContext = { record: rows[i] as RecordData, isNew, ...globals, ...(w.old ? { old: w.old } : {}) };
       for (const { rule, compiled } of rules) {
-        const result = evaluateCompiled(compiled, ctx);
+        const result = this.formulas.evaluate(compiled, ctx);
         // A rule that errors at runtime blocks the save, like the platform does.
         if (result.value === true || result.error !== undefined) w.errors.push(Errors.customValidation(rule.errorMessage, rule.errorDisplayField));
       }
@@ -649,7 +693,7 @@ export class DmlEngine {
       }
       const compiled = this.formulas.defaultValue(obj, field);
       if (compiled && field.type !== "Checkbox") {
-        const result = evaluateCompiled(compiled, { record: {}, isNew: true, ...globals });
+        const result = this.formulas.evaluate(compiled, { record: {}, isNew: true, ...globals });
         if (result.value !== null) out[field.name] = result.value;
       }
     }

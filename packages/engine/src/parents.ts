@@ -21,7 +21,7 @@ export async function loadParents(client: Queryable, store: Store, obj: SObjectD
     for (const seg of segments.slice(0, -1)) {
       const rel = relationship(store.schema, current.obj, seg);
       if (!rel) return;
-      // Formula compilation rejects traversal past a polymorphic parent (D-08/D-16), so a path never continues past one.
+      // Un-typed traversal past a polymorphic parent never compiles (D-08).
       if (rel.polymorphic) return;
       const next = rel.targets[0];
       if (!next) return;
@@ -46,8 +46,18 @@ export async function loadParents(client: Queryable, store: Store, obj: SObjectD
   }
 }
 
-function relationship(schema: OrgSchema, obj: SObjectDef, relationshipName: string): { field: string; targets: SObjectDef[]; polymorphic: boolean; declared: number } | undefined {
-  const resolved = schema.resolveRelationship(obj.name, relationshipName);
+function relationship(schema: OrgSchema, obj: SObjectDef, segment: string): { field: string; targets: SObjectDef[]; polymorphic: boolean; declared: number } | undefined {
+  const colon = segment.indexOf(":");
+  const resolved = schema.resolveRelationship(obj.name, colon < 0 ? segment : segment.slice(0, colon));
   if (resolved === undefined) return undefined;
-  return { field: resolved.field.name, targets: resolved.targets, polymorphic: (resolved.field.referenceTo?.length ?? 0) > 1, declared: resolved.field.referenceTo?.length ?? 1 };
+  const declared = resolved.field.referenceTo?.length ?? 1;
+  if (colon < 0) return { field: resolved.field.name, targets: resolved.targets, polymorphic: declared > 1, declared };
+  // A typed segment ends the polymorphism (D-11): the Id is loaded only when its key prefix names that
+  // target, via matchLookupTarget([target], declared, id), which also keeps a narrowed single-target
+  // lookup whose target has no key prefix working (D-12). Queue is an alias of Group (D-10).
+  const typed = segment.slice(colon + 1).toLowerCase();
+  const wanted = typed === "queue" ? "group" : typed;
+  const target = resolved.targets.find((t) => t.name.toLowerCase() === wanted);
+  if (target === undefined) return undefined;
+  return { field: resolved.field.name, targets: [target], polymorphic: false, declared };
 }
