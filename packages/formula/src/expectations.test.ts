@@ -1,8 +1,6 @@
 /**
- * Orglet-side expectations for formula syntax that the vendored sigha parser does not accept yet (D-20).
- * Cases that already work are plain guards so the Phase 12 resync cannot regress them; cases that need the
- * upstream fix are `it.fails`, which vitest reports as passing while the gap exists and as a failure the
- * moment the resync closes it, so Phase 12 must flip them to `it`.
+ * Orglet-side expectations for formula syntax: guards for what always worked, and the unary `!` and
+ * `Relationship:Object.Field` forms enabled by the Phase 12 sigha resync (formerly `it.fails`, D-05).
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -35,28 +33,47 @@ describe("formula syntax guards (work today, must keep working)", () => {
   });
 });
 
-describe("known upstream gaps (it.fails until the Phase 12 sigha resync)", () => {
-  // Known upstream gap: rfaulhaber/sigha lexes a lone ! as an error (branch snorf/sigha:feat/unary-bang).
-  it.fails("unary `!` negates its operand like NOT()", () => {
+describe("formulas the Phase 12 resync enabled", () => {
+  it("unary `!` negates its operand like NOT()", () => {
     const c = rule("!ISBLANK(Name)");
     expect(run(c, { record: { Name: "Acme" } }).value).toBe(true);
+    expect(run(c, { record: { Name: null } }).value).toBe(false);
   });
 
-  // Known upstream gap: sigha has no Relationship:Object colon syntax (branch snorf/sigha:feat/polymorphic-colon-ref).
-  it.fails("`Owner:User.Email` reaches the User owner of a polymorphic lookup", () => {
+  it("`!X` equals NOT(X) for null, empty and non-empty values", () => {
+    const bang = rule("!ISBLANK(Name)");
+    const not = rule("NOT(ISBLANK(Name))");
+    for (const Name of [null, "", "a"]) expect(run(bang, { record: { Name } }).value).toBe(run(not, { record: { Name } }).value);
+  });
+
+  it("`!` negates a parenthesised comparison", () => {
+    const c = rule("!(Name = 'x')");
+    expect(run(c, { record: { Name: "y" } }).value).toBe(true);
+    expect(run(c, { record: { Name: "x" } }).value).toBe(false);
+  });
+
+  it("`!` binds tighter than `&&`", () => {
+    const c = rule("!ISBLANK(Name) && ISBLANK(Website)");
+    expect(run(c, { record: { Name: "Acme", Website: null } }).value).toBe(true);
+    expect(run(c, { record: { Name: "Acme", Website: "x" } }).value).toBe(false);
+    expect(run(c, { record: { Name: null, Website: null } }).value).toBe(false);
+  });
+
+  it("`Owner:User.Email` reaches the User owner of a polymorphic lookup", () => {
     const c = rule("Owner:User.Email = 'a@b.se'", "Case");
-    expect(c.parentPaths.length).toBeGreaterThan(0);
+    expect(c.parentPaths).toEqual([["Owner:User"]]);
+    expect(c.references[0]?.key).toBe("Owner:User.Email");
   });
 
-  // Known upstream gap: sigha has no Relationship:Object colon syntax (branch snorf/sigha:feat/polymorphic-colon-ref).
-  it.fails("`Owner:Group.Name` reaches the Group owner of a polymorphic lookup", () => {
+  it("`Owner:Group.Name` reaches the Group owner of a polymorphic lookup", () => {
     const c = rule("Owner:Group.Name = 'Support'", "Case");
-    expect(c.parentPaths.length).toBeGreaterThan(0);
+    expect(c.parentPaths).toEqual([["Owner:Group"]]);
+    expect(c.references[0]?.key).toBe("Owner:Group.Name");
   });
 
-  // Known upstream gap: sigha has no Relationship:Object colon syntax (branch snorf/sigha:feat/polymorphic-colon-ref).
-  it.fails("`Owner:Queue.Name` is accepted as an alias of `Owner:Group`", () => {
+  it("`Owner:Queue.Name` is accepted as an alias of `Owner:Group`", () => {
     const c = rule("Owner:Queue.Name = 'Support'", "Case");
-    expect(c.parentPaths.length).toBeGreaterThan(0);
+    expect(c.parentPaths).toEqual([["Owner:Group"]]);
+    expect(c.references[0]?.key).toBe("Owner:Group.Name");
   });
 });

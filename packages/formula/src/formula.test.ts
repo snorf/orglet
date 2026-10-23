@@ -55,10 +55,21 @@ describe("compileFormula", () => {
     expect(rule("Owner.Alias = 'x'").references[0]).toMatchObject({ key: "Owner.Alias", type: "Text" });
   });
 
-  it("reports the Owner:Object colon syntax as UNSUPPORTED:formula until sigha parses it", () => {
-    expect(() => rule("Owner:Group.Name = 'x'", "Case")).toThrow(FormulaCompileError);
-    expect(() => rule("Owner:Group.Name = 'x'", "Case")).toThrow(/^UNSUPPORTED:formula polymorphic reference Owner:Group\.Name /);
-    expect(() => rule("Owner:User.Alias = 'x'")).toThrow(/UNSUPPORTED:formula polymorphic reference Owner:User\.Alias/);
+  it("a typed qualifier picks one target of the lookup, and a qualifier the lookup cannot reference fails like an unknown field", () => {
+    expect(() => rule("Owner:Contact.Name = 'x'", "Case")).toThrow("Field Owner:Contact.Name does not exist. Check spelling.");
+    let err: unknown;
+    try {
+      rule("Owner:Contact.Name = 'x'", "Case");
+    } catch (e) {
+      err = e;
+    }
+    expect((err as FormulaCompileError).missing).toEqual({ object: "Case", field: "Owner:Contact" });
+    expect(() => rule("ISBLANK(Owner:User)", "Case")).toThrow("does not exist");
+    expect(rule("Owner:Queue.QueueName = 'x'", "Case").references[0]?.key).toBe("Owner:Group.Name");
+    expect(rule("Owner:Queue.QueueEmail = 'x'", "Case").references[0]?.key).toBe("Owner:Group.Email");
+    expect(rule("Owner:User.Name = 'x'").references[0]?.key).toBe("Owner:User.Name");
+    expect(rule("Owner:User.Profile.Name = 'x'", "Case").parentPaths).toEqual([["Owner:User", "Profile"]]);
+    expect(rule("owner:user.email = 'x'", "Case").references[0]?.key).toBe("Owner:User.Email");
     expect(() => rule("IF(ISBLANK(Name), TRUE")).toThrow(/^Syntax error in formula:/);
   });
 

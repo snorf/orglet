@@ -187,8 +187,8 @@ describe("polymorphic lookups", () => {
     const rel = schema.resolveRelationship("Case", "Owner");
     if (!rel) throw new Error("Case.Owner relationship not found");
     expect(matchTargetByPrefix(rel.targets, String(row?.["OwnerId"]))?.name).toBe("Group");
-    // Formula leg is the recorded D-16 gap: colon syntax is UNSUPPORTED, plain traversal is rejected.
-    expect(() => compileFormula("Owner:Group.Name = 'Support Queue'", { schema, objectName: "Case", context: "validation_rule" })).toThrow(/UNSUPPORTED:formula/);
+    // Formula leg: colon syntax compiles (Phase 12); plain traversal stays rejected (D-08).
+    expect(compileFormula("Owner:Group.Name = 'Support Queue'", { schema, objectName: "Case", context: "validation_rule" }).parentPaths).toEqual([["Owner:Group"]]);
     expect(() => compileFormula("Owner.Name = 'Support Queue'", { schema, objectName: "Case", context: "validation_rule" })).toThrow("Field Owner.Name does not exist. Check spelling.");
     expect("warnings" in page).toBe(false);
     expect("diagnostics" in page).toBe(false);

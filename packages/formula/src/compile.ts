@@ -2,7 +2,8 @@
  * Compiles a Salesforce formula against an OrgSchema: parses and type-checks it with sigha,
  * resolves every field reference (including parent paths and `$User`-style globals) to a
  * FieldDef, and rewrites the record-state functions PRIORVALUE, ISCHANGED and ISNEW into
- * synthetic field references that evaluate.ts fills in from the record context. The
+ * synthetic field references that evaluate.ts fills in from the record context. Typed
+ * `Relationship:Object` segments (`Owner:User.Email`) pick one target of a polymorphic lookup. The
  * vendored evaluator is never modified.
  */
 import type { FieldDef, OrgSchema } from "@orglet/metadata";
@@ -93,21 +94,40 @@ function resolvePath(schema: OrgSchema, objectName: string, path: readonly strin
   let current = schema.getObject(objectName);
   if (!current) throw new FormulaCompileError(`Object ${objectName} does not exist`);
   const canonical: string[] = [];
+  let groupHop = false;
   for (let i = 0; i < path.length; i++) {
     const segment = path[i] ?? "";
     const last = i === path.length - 1;
     if (last) {
-      const field = schema.getField(current.name, segment);
+      // Documented examples spell the Group leaves of Owner:Queue as QueueName / QueueEmail (D-10).
+      const lower = segment.toLowerCase();
+      const leaf = groupHop && lower === "queuename" ? "Name" : groupHop && lower === "queueemail" ? "Email" : segment;
+      const field = schema.getField(current.name, leaf);
       if (!field) throw fieldNotFound(path.join("."), { object: current.name, field: segment });
       canonical.push(field.name);
       return { path: canonical, field };
     }
-    const resolved = schema.resolveRelationship(current.name, segment);
+    const colon = segment.indexOf(":");
+    const relName = colon === -1 ? segment : segment.slice(0, colon);
+    const typed = colon === -1 ? undefined : segment.slice(colon + 1);
+    const resolved = schema.resolveRelationship(current.name, relName);
     if (resolved === undefined) throw fieldNotFound(path.join("."), { object: current.name, field: segment });
-    // A polymorphic lookup (Owner: User|Group, What, Who) has no single parent object; Salesforce
-    // formulas reach it only as Owner:User.Field. Plain traversal fails like an unknown field (D-08).
+    if (typed !== undefined) {
+      // Salesforce names the target of a polymorphic owner as Owner:User / Owner:Queue (Help "Tips for Building Cross-Object Formulas"); Queue is a Group row (D-10).
+      const wanted = typed.toLowerCase() === "queue" ? "group" : typed.toLowerCase();
+      const targetName = (resolved.field.referenceTo ?? []).find((t) => t.toLowerCase() === wanted);
+      const target = targetName === undefined ? undefined : schema.getObject(targetName);
+      if (target === undefined) throw fieldNotFound(path.join("."), { object: current.name, field: segment });
+      canonical.push(`${resolved.field.relationshipName ?? relName}:${target.name}`);
+      groupHop = target.name === "Group";
+      current = target;
+      continue;
+    }
+    // A polymorphic lookup (Owner: User|Group, What, Who) has no single parent object; plain
+    // traversal fails like an unknown field (D-08). The typed form above reaches it.
     if ((resolved.field.referenceTo?.length ?? 0) > 1) throw fieldNotFound(path.join("."));
     canonical.push(resolved.field.relationshipName ?? segment);
+    groupHop = false;
     current = resolved.target;
   }
   throw fieldNotFound(path.join("."));
@@ -180,16 +200,6 @@ function rewrite(node: Expr, r: Resolver): Expr {
 export function compileFormula(source: string, options: CompileOptions): CompiledFormula {
   const parsed = parse(source);
   const parseErrors = parsed.diagnostics.filter((d) => d.severity === "error");
-  // sigha cannot lex `Owner:User.Name` yet (D-16): report the polymorphic reference instead of a bare syntax error.
-  const colonRef = parseErrors.some((d) => d.code === "unexpected-character")
-    ? /\b([A-Za-z_]\w*:[A-Za-z_]\w*\.[A-Za-z_]\w*)/.exec(source.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""'))
-    : null;
-  if (colonRef) {
-    throw new FormulaCompileError(
-      `UNSUPPORTED:formula polymorphic reference ${colonRef[1] ?? ""} needs the Relationship:Object.Field syntax, which the vendored sigha formula parser does not support yet`,
-      parseErrors,
-    );
-  }
   if (parseErrors.length > 0) {
     throw new FormulaCompileError(`Syntax error in formula: ${parseErrors.map((d) => d.message).join("; ")}`, parseErrors);
   }
