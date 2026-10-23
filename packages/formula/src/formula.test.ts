@@ -42,7 +42,8 @@ describe("compileFormula", () => {
   it("rejects plain traversal through a polymorphic lookup like a real org and keeps unknown globals explicit", () => {
     expect(() => rule("Owner.Alias = 'x'", "Case")).toThrow("Field Owner.Alias does not exist. Check spelling."); // Case OwnerId is User|Group (D-08, D-15, BASE2-04)
     expect(() => rule("Owner.Name = 'x'", "Case")).toThrow("Field Owner.Name does not exist. Check spelling.");
-    expect(() => rule("$Setup.Foo__c.Bar__c")).toThrow(/UNSUPPORTED:formula-global/);
+    expect(() => rule("$Setup.Foo__c.Bar__c")).toThrow("Field $Setup.Foo__c.Bar__c does not exist. Check spelling.");
+    expect(() => rule("$Permission.Can_Approve")).toThrow(/^UNSUPPORTED:formula-global \$Permission\.Can_Approve is not available: /);
   });
 
   it("Owner fields resolve on objects whose owner is always a User", () => {

@@ -26,7 +26,7 @@ export interface CompileOptions {
   customMetadata?: CustomMetadataValues;
 }
 
-export type ReferenceKind = "field" | "prior" | "changed" | "isNew" | "global" | "label" | "customMetadata";
+export type ReferenceKind = "field" | "prior" | "changed" | "isNew" | "global" | "label" | "customMetadata" | "setup";
 
 export interface FieldReference {
   /** Key used in the evaluator's field map: the rewritten path joined with ".". */
@@ -38,6 +38,8 @@ export interface FieldReference {
   global?: string;
   field?: FieldDef;
   type: SfType;
+  /** setup: API name of the Hierarchy custom setting. */
+  setting?: string;
   /** label / customMetadata: value fixed at compile time (D-17). */
   value?: RecordValue;
 }
@@ -112,6 +114,7 @@ const GLOBAL_OBJECTS: Record<string, string> = {
   $profile: "Profile",
   $organization: "Organization",
   $recordtype: "RecordType",
+  $userrole: "UserRole",
 };
 
 const TIME_FUNCTIONS = new Set(["NOW", "TODAY", "TIMENOW"]);
@@ -242,6 +245,29 @@ function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
         type: sfTypeOf(field),
         value: raw === undefined || typeof raw === "object" ? null : raw,
       });
+    }
+    if (root.toLowerCase() === "$permission") {
+      throw new FormulaCompileError(
+        `UNSUPPORTED:formula-global ${node.path.join(".")} is not available: $Permission needs custom permissions and permission sets, which orglet does not model`,
+      );
+    }
+    if (root.toLowerCase() === "$setup") {
+      // $Setup.Setting__c.Field__c on Hierarchy custom settings only; List settings are accessible only from code
+      // (Apex Developer Guide, Custom Settings). Resolved per transaction from the user/profile/organization rows.
+      const [, settingName = "", fieldName = ""] = node.path;
+      const setting = node.path.length === 3 ? r.schema.getObject(settingName) : undefined;
+      if (node.path.length !== 3) throw fieldNotFound(node.path.join("."), { object: "$Setup", field: node.path.slice(1).join(".") });
+      if (!setting || setting.customSetting === undefined) throw fieldNotFound(node.path.join("."), { object: "$Setup", field: settingName });
+      if (setting.customSetting === "List") {
+        throw new FormulaCompileError(
+          `UNSUPPORTED:formula-global $Setup.${setting.name}.${fieldName} is not available: $Setup is available only for Hierarchy custom settings; List custom settings are accessible only from code`,
+        );
+      }
+      const field = r.schema.getField(setting.name, fieldName);
+      if (!field) throw fieldNotFound(node.path.join("."), { object: setting.name, field: fieldName });
+      r.globals.add("$Setup");
+      r.volatile = true;
+      return register(r, { key: `$Setup.${setting.name}.${field.name}`, kind: "setup", path: [field.name], setting: setting.name, field, type: sfTypeOf(field) });
     }
     const objectName = GLOBAL_OBJECTS[root.toLowerCase()];
     if (!objectName) throw new FormulaCompileError(`UNSUPPORTED:formula-global ${node.path.join(".")} is not available`);

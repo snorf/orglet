@@ -102,3 +102,61 @@ describe("dependencies and warnings", () => {
     expect(f("'x'").warnings).toEqual([]);
   });
 });
+
+describe("$UserRole", () => {
+  it("reads the running user's role field and is blank without a role", () => {
+    const c = f("$UserRole.Name");
+    expect(evaluateCompiled(c, { record: {}, isNew: true, userRole: { Name: "Support Lead" } }).value).toBe("Support Lead");
+    expect(evaluateCompiled(c, { record: {}, isNew: true }).value).toBeNull();
+  });
+
+  it("canonicalises the key and is volatile", () => {
+    const c = f("$userrole.developername");
+    expect(c.references.map((r) => r.key)).toEqual(["$UserRole.DeveloperName"]);
+    expect(c.dependencies.globals).toEqual(["$UserRole"]);
+    expect(c.dependencies.volatile).toBe(true);
+  });
+
+  it("rejects an unknown field", () => {
+    expect(() => f("$UserRole.Nope")).toThrow(/does not exist\. Check spelling\./);
+  });
+});
+
+describe("$Setup", () => {
+  const SETUP = new Map([["app_config__c", { Endpoint__c: "https://x", Feature_Enabled__c: true }]]);
+
+  it("reads the merged Hierarchy setting value and is blank without one", () => {
+    const c = f("$Setup.App_Config__c.Endpoint__c");
+    expect(evaluateCompiled(c, { record: {}, isNew: true, setup: SETUP }).value).toBe("https://x");
+    expect(evaluateCompiled(c, { record: {}, isNew: true }).value).toBeNull();
+    expect(evaluateCompiled(f("$Setup.App_Config__c.Feature_Enabled__c"), { record: {}, isNew: true, setup: SETUP }).value).toBe(true);
+  });
+
+  it("canonicalises the key and is volatile", () => {
+    const c = f("$setup.app_config__c.endpoint__c");
+    expect(c.references.map((r) => r.key)).toEqual(["$Setup.App_Config__c.Endpoint__c"]);
+    expect(c.dependencies.globals).toEqual(["$Setup"]);
+    expect(c.dependencies.volatile).toBe(true);
+  });
+
+  it("states why a List custom setting is unavailable", () => {
+    expect(() => f("$Setup.Region_List__c.Region_Code__c")).toThrow(
+      "UNSUPPORTED:formula-global $Setup.Region_List__c.Region_Code__c is not available: $Setup is available only for Hierarchy custom settings; List custom settings are accessible only from code",
+    );
+  });
+
+  it.each(["$Setup.App_Config__c.Nope__c", "$Setup.Ticket__c.Priority__c", "$Setup.Nope__c.X__c", "$Setup.App_Config__c"])(
+    "rejects %s with the generic missing-field error",
+    (src) => {
+      expect(() => f(src)).toThrow(/does not exist\. Check spelling\./);
+    },
+  );
+});
+
+describe("$Permission", () => {
+  it("states why it is unavailable", () => {
+    expect(() => f("$Permission.Can_Approve")).toThrow(
+      "UNSUPPORTED:formula-global $Permission.Can_Approve is not available: $Permission needs custom permissions and permission sets, which orglet does not model",
+    );
+  });
+});

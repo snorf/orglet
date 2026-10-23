@@ -12,6 +12,9 @@ export interface EvaluationContext {
   profile?: RecordData;
   organization?: RecordData;
   recordType?: RecordData;
+  userRole?: RecordData;
+  /** Merged Hierarchy setting values by lower-cased setting API name. */
+  setup?: ReadonlyMap<string, RecordData>;
   /** Clock for TODAY()/NOW(); defaults to the real clock. */
   now?: Date;
 }
@@ -44,6 +47,8 @@ function globalRecord(ctx: EvaluationContext, global: string): RecordData | unde
       return ctx.organization;
     case "$RecordType":
       return ctx.recordType;
+    case "$UserRole":
+      return ctx.userRole;
     default:
       return undefined;
   }
@@ -63,6 +68,8 @@ function valueFor(ref: FieldReference, ctx: EvaluationContext): SfValue {
       return bool(!recordValuesEqual(lookup(ctx.old, ref.path), lookup(ctx.record, ref.path)));
     case "isNew":
       return bool(ctx.isNew);
+    case "setup":
+      return toSfValue(lookup(ctx.setup?.get((ref.setting ?? "").toLowerCase()), ref.path), ref.type);
     case "label":
     case "customMetadata":
       return toSfValue(ref.value ?? null, ref.type);
