@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 # Vendors the engine layers of sigha (https://github.com/rfaulhaber/sigha, MIT) into
-# packages/sigha/src. Usage: scripts/sync-sigha.sh [<git rev>|<local clone dir>]  (SIGHA_DEST overrides the target dir)
+# packages/sigha/src. Usage: scripts/sync-sigha.sh [<git rev>|<local clone dir>]  (SIGHA_DEST overrides the target dir,
+# SIGHA_REPO=<git url> the clone URL)
+# SIGHA_REPO overrides the clone URL (default: the Repository: line of the existing VENDOR.md, else
+# https://github.com/rfaulhaber/sigha.git); the URL is recorded as Repository: in VENDOR.md so CI can fetch a fork-only pin.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 DEST=${SIGHA_DEST:-packages/sigha}
 mkdir -p "$DEST"
+DEFAULT_REPO=https://github.com/rfaulhaber/sigha.git
+PREV_REPO=""
+if [ -f "$DEST/VENDOR.md" ]; then PREV_REPO=$(sed -n 's/^Repository: //p' "$DEST/VENDOR.md"); fi
+REPO=${SIGHA_REPO:-${PREV_REPO:-$DEFAULT_REPO}}
 SRC=${1:-main}
 CLEANUP=""
 trap 'if [ -n "$CLEANUP" ]; then rm -rf "$CLEANUP"; fi' EXIT
@@ -13,7 +20,7 @@ if [ -d "$SRC" ]; then
 else
   CLONE=$(mktemp -d)
   CLEANUP=$CLONE
-  git clone -q https://github.com/rfaulhaber/sigha.git "$CLONE"
+  git clone -q "$REPO" "$CLONE"
   git -C "$CLONE" checkout -q "$SRC"
 fi
 REV=$(git -C "$CLONE" rev-parse HEAD)
@@ -54,6 +61,7 @@ cat > "$DEST/VENDOR.md" <<MD
 # Vendored: sigha
 
 Source: https://github.com/rfaulhaber/sigha (MIT, see LICENSE and NOTICE)
+Repository: $REPO
 Revision: $REV
 Synced: $(date -u +%Y-%m-%d)
 
@@ -74,4 +82,4 @@ export * from "./engine/index.js";
 // makes \`export *\` drop it; export it explicitly.
 export type { SfType } from "./registry/types.js";
 TS
-echo "synced sigha @ $REV into $DEST"
+echo "synced sigha @ $REV ($REPO) into $DEST"
