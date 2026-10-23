@@ -132,7 +132,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   at compile time from the loaded labels and custom-metadata records; an unknown label, type or field
   is a compile error with Salesforce's wording, and an unknown record evaluates blank with one
   aggregated `UNSUPPORTED:custom-metadata-record` warning.
-- [ ] **FORM-05**: `$Setup.<Setting__c>.<Field__c>` resolves hierarchy custom settings at evaluation
+- [x] **FORM-05**: `$Setup.<Setting__c>.<Field__c>` resolves hierarchy custom settings at evaluation
   time per field in the order user, profile, organization; `$Setup` on a list custom setting and
   `$Permission.<name>` remain explicit `UNSUPPORTED:formula-global` warnings with the reason stated.
 
@@ -250,7 +250,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FORM-02 | Phase 12 | Complete |
 | FORM-03 | Phase 12 | Pending |
 | FORM-04 | Phase 12 | Complete |
-| FORM-05 | Phase 12 | Pending |
+| FORM-05 | Phase 12 | Complete |
 | ROLL2-01 | Phase 13 | Pending |
 | CHECK-01 | Phase 14 | Pending |
 | CHECK-02 | Phase 14 | Pending |
