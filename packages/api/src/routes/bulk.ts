@@ -9,7 +9,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { runQuery, type DmlTransaction, type SaveError, type SaveResult } from "@orglet/engine";
 import { compileSoql } from "@orglet/soql";
 import { withTransaction } from "@orglet/schema";
-import { apiError, sendErrors, session, NOT_FOUND, type ApiContext } from "../server.js";
+import { apiError, sendErrors, session, loginSession, NOT_FOUND, type ApiContext } from "../server.js";
 import { delimiterChar, lineEndingChars, writeCsv, type ColumnDelimiter, type LineEnding } from "../bulk/csv.js";
 import { CLIENT_SETTABLE, DELETABLE, newJobId, type IngestJob, type IngestOperation, type QueryJob } from "../bulk/jobs.js";
 import { BulkStore, type IngestResultRow } from "../bulk/store.js";
@@ -254,7 +254,8 @@ export function registerBulkRoutes(app: FastifyInstance, ctx: ApiContext): void 
     }
     const job = await store.createIngestJob({
       id: newJobId(),
-      session: session(req),
+      // Bulk jobs run after the request and keep no token, so $Api evaluates blank with the D-09 warning.
+      session: loginSession(req),
       operation,
       object: obj.name,
       lineEnding: parseLineEnding(body["lineEnding"]),
@@ -352,7 +353,7 @@ export function registerBulkRoutes(app: FastifyInstance, ctx: ApiContext): void 
     if (violation) return sendErrors(reply, 400, [apiError("FEATURE_NOT_ENABLED", violation.message)]);
     compileSoql(soql, { schema: ctx.engine.schema, orgSchema: ctx.engine.orgSchema, includeDeleted: operation === "queryAll" });
     const apiVersion = version(req);
-    const s = session(req);
+    const s = loginSession(req);
     const job = await store.createQueryJob({
       id: newJobId(),
       session: s,
