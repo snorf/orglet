@@ -24,3 +24,7 @@ targets. Accept `Queue` as an alias of `Group` (real formulas write `Owner:Queue
 `DeveloperName`; orglet models queues as Group rows with Type Queue). Use the canonical path
 segment `Owner:Group`, and make `loadParents` keep only Ids whose `matchTargetByPrefix` result is
 that object (null otherwise). Per D-09, no local pre-processing in `packages/formula`.
+
+## Resolution
+
+Done in Phase 12 (12-02, 12-03): sigha resynced to snorf/sigha integration/phase-12 @ ff6c108786e086168c4e70797d23162fbab7e614; `resolvePath` and `loadParents` accept `Rel:Object` segments, `Queue` aliases `Group` with canonical `Owner:Group`, Ids load only when the key prefix matches the named object. Re-pin to rfaulhaber/sigha is the D-02 quick task.
