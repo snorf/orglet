@@ -26,6 +26,7 @@ export class FormulaRegistry {
   private readonly defaults = new Map<string, CompiledFormula>();
   /** Global roots read by any compiled rule, formula field or default; lets loaders skip globals nothing uses. */
   private readonly globalsUsed = new Set<GlobalRoot>();
+  private readonly settings = new Set<string>();
 
   /** Lower-cased type -> lower-cased DeveloperName -> values, for `$CustomMetadata` references. */
   private readonly customMetadataValues: CustomMetadataValues | undefined;
@@ -69,6 +70,7 @@ export class FormulaRegistry {
     try {
       const compiled = compileFormula(source, { schema: this.schema, objectName: obj.name, context, ...(treatBlanksAs ? { treatBlanksAs } : {}), ...(this.customMetadataValues ? { customMetadata: this.customMetadataValues } : {}) });
       for (const g of compiled.dependencies.globals) this.globalsUsed.add(g);
+      for (const ref of compiled.references) if (ref.kind === "setup" && ref.setting !== undefined) this.settings.add(ref.setting);
       // One structured diagnostic per compile warning keeps warnings == diagnostics.map(formatDiagnostic) (D-15).
       for (const w of compiled.warnings) {
         pushDiagnostic(this, { area: w.area, what, object: obj.name, ...(field !== undefined ? { field } : {}), message: `${what} ${w.message}` } satisfies FormulaFailure);
@@ -116,6 +118,11 @@ export class FormulaRegistry {
   }
 
   /** True when any compiled rule, formula field or default value reads the global root. */
+  /** Canonical API names of the Hierarchy custom settings any compiled formula reads, sorted. */
+  settingsUsed(): string[] {
+    return [...this.settings].sort();
+  }
+
   usesGlobal(root: GlobalRoot): boolean {
     return this.globalsUsed.has(root);
   }

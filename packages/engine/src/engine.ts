@@ -74,6 +74,8 @@ interface Globals {
   user?: RecordData;
   profile?: RecordData;
   organization?: RecordData;
+  userRole?: RecordData;
+  setup?: Map<string, RecordData>;
 }
 
 type ObjectOperation = "insert" | "update" | "upsert" | "delete" | "undelete";
@@ -380,7 +382,37 @@ export class DmlEngine {
     if (profile) globals.profile = profile;
     const organization = await load("Organization", session.organizationId);
     if (organization) globals.organization = organization;
+    // Only formulas that read $UserRole / $Setup pay for these queries (research Pattern 4).
+    if (this.formulas.usesGlobal("$UserRole")) {
+      const roleId = user?.["UserRoleId"];
+      const role = typeof roleId === "string" ? await load("UserRole", roleId) : undefined;
+      if (role) globals.userRole = role;
+    }
+    const settings = this.formulas.settingsUsed();
+    if (settings.length > 0) globals.setup = await this.loadHierarchySettings(client, session, settings);
     return globals;
+  }
+
+  /**
+   * Per-field merge user -> profile -> organization, as Apex `getInstance()` documents for Hierarchy settings.
+   * No read-time fallback to the field's defaultValue (orglet choice, D-16): a field no level defines is blank.
+   */
+  private async loadHierarchySettings(client: PoolClient, session: Session, names: string[]): Promise<Map<string, RecordData>> {
+    const result = new Map<string, RecordData>();
+    for (const name of names) {
+      const obj = this.schema.getObject(name);
+      const owner = this.schema.getField(name, "SetupOwnerId");
+      if (!obj || !owner) continue;
+      const rows: (RecordData | undefined)[] = [];
+      for (const id of [session.userId, session.profileId, session.organizationId]) rows.push((await this.store.findByField(client, obj, owner, id))[0]);
+      const merged: RecordData = {};
+      for (const f of obj.fields) {
+        const hit = rows.find((row) => row?.[f.name] !== null && row?.[f.name] !== undefined);
+        if (hit) merged[f.name] = hit[f.name];
+      }
+      result.set(obj.name.toLowerCase(), merged);
+    }
+    return result;
   }
 
   // ---------------------------------------------------------------------------------------
