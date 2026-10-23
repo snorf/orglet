@@ -3,10 +3,10 @@
  * rows back into Salesforce records (nested parents, child subquery arrays, aggregates).
  */
 import { parseQuery, type FieldType, type Query, type Subquery, type WhereClause, type Condition, type ConditionWithValueQuery, type OrderByClause, type GroupByClause, type HavingClause, type FunctionExp } from "@jetstreamapp/soql-parser-js";
-import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
+import { definitionTarget, hasSoftDelete, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { columnName, quote, tableName } from "@orglet/schema";
 import { dateLiteralRange, dateNLiteralRange, toIsoDate, type DateRange } from "./dates.js";
-import { invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
+import { definitionRelationshipOnly, invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
 import { NAME_OBJECT_FIELDS, pseudoField } from "./polymorphic.js";
 import { TYPEOF_RESTRICTIONS, assertTypeofAllowed, diagnoseTypeofParseError, notATarget, notPolymorphic } from "./typeof.js";
 
@@ -145,6 +145,11 @@ class Compiler {
   // -------------------------------------------------------------------------------------
   // Field resolution
 
+  /** The MetadataRelationship field of `obj` whose `__r` name is `seg` and whose target is EntityDefinition/FieldDefinition (not a modelled object). */
+  private definitionRelationship(obj: SObjectDef, seg: string): FieldDef | undefined {
+    return obj.fields.find((f) => definitionTarget(f) !== undefined && f.relationshipName?.toLowerCase() === seg.toLowerCase());
+  }
+
   /** Resolve a possibly dotted field path within `scope`, adding parent joins as needed. */
   private resolve(scope: Scope, path: string[]): Resolved {
     let obj = scope.obj;
@@ -155,6 +160,12 @@ class Compiler {
       key = key ? `${key}.${seg.toLowerCase()}` : seg.toLowerCase();
       let join = scope.joins.get(key);
       if (!join) {
+        const def = this.definitionRelationship(obj, seg);
+        if (def !== undefined) {
+          const defLeaf = path[path.length - 1] ?? "";
+          if (i !== path.length - 2 || defLeaf.toLowerCase() !== "qualifiedapiname") throw definitionRelationshipOnly(def.relationshipName ?? seg, path.join("."));
+          return { field: pseudoField("QualifiedApiName"), obj, alias, sql: `${alias}.${quote(columnName(def))}` };
+        }
         const resolved = this.options.schema.resolveRelationship(obj.name, seg);
         if (resolved === undefined) throw invalidRelationship(seg, obj.name);
         const { field: rel, target, targets } = resolved;
@@ -290,7 +301,8 @@ class Compiler {
     }
 
     const where = this.compileWhere(scope, query.where, stripAlias);
-    const deletedFilter = this.options.includeDeleted ? undefined : `${scope.alias}.${quote("isdeleted")} = false`;
+    // Custom metadata types have no recycle bin and no IsDeleted column (D-16).
+    const deletedFilter = this.options.includeDeleted || !hasSoftDelete(obj) ? undefined : `${scope.alias}.${quote("isdeleted")} = false`;
     const whereSql = [deletedFilter, where].filter(Boolean).join(" AND ");
     const groupBy = aggregate ? this.compileGroupBy(scope, query.groupBy, stripAlias) : "";
     const having = aggregate ? this.compileHaving(scope, query.having, stripAlias) : "";
@@ -350,6 +362,9 @@ class Compiler {
       let key = "";
       for (const seg of path) {
         key = key ? `${key}.${seg.toLowerCase()}` : seg.toLowerCase();
+        // A definition relationship is never an intermediate hop (D-10).
+        const def = this.definitionRelationship(obj, seg);
+        if (def !== undefined) throw definitionRelationshipOnly(def.relationshipName ?? seg, path.join("."));
         // Resolve through the scope (creates the join) to get the canonical relationship name.
         const resolved = this.options.schema.resolveRelationship(obj.name, seg);
         if (resolved === undefined) throw invalidRelationship(seg, obj.name);
@@ -398,6 +413,20 @@ class Compiler {
             const field = this.options.schema.getField(scope.obj.name, f.field);
             if (!field) throw invalidField(f.field, scope.obj.name);
             addField(shape, scope.alias, scope.obj, field);
+            break;
+          }
+          const last = rels[rels.length - 1] ?? "";
+          const host = rels.length > 1 ? parentShape(rels.slice(0, -1)) : { shape, alias: scope.alias, obj: scope.obj, poly: undefined };
+          const def = host.poly ? undefined : this.definitionRelationship(host.obj, last);
+          if (def !== undefined) {
+            if (f.field.toLowerCase() !== "qualifiedapiname") throw definitionRelationshipOnly(def.relationshipName ?? last, `${rels.join(".")}.${f.field}`);
+            // D-10, orglet choice: the stored qualified API name doubles as the parent's id, so attributes.url is /sobjects/EntityDefinition/<name> and a null value is a null parent.
+            const relName = def.relationshipName ?? last;
+            if (!host.shape.parents.has(relName)) {
+              const col = this.nextColumn();
+              selectItems.push(`${host.alias}.${quote(columnName(def))} AS ${quote(col)}`);
+              host.shape.parents.set(relName, { kind: "sobject", type: definitionTarget(def) ?? "", idAlias: col, fields: [{ name: "QualifiedApiName", alias: col }], computed: [], parents: new Map(), children: new Map() });
+            }
             break;
           }
           const p = parentShape(rels);
@@ -513,7 +542,7 @@ class Compiler {
     const shape = this.compileSObjectSelect(scope, sub.fields ?? [], selectItems, stripAlias);
     if (shape.computed.length > 0) throw unsupported("soql-formula", `formula fields in child subquery ${sub.relationshipName} are not supported yet`);
     const where = this.compileWhere(scope, sub.where, stripAlias);
-    const deleted = this.options.includeDeleted ? "" : ` AND ${scope.alias}.${quote("isdeleted")} = false`;
+    const deleted = this.options.includeDeleted || !hasSoftDelete(scope.obj) ? "" : ` AND ${scope.alias}.${quote("isdeleted")} = false`;
     const orderBy = this.compileOrderBy(scope, sub.orderBy, stripAlias, false);
     const inner =
       `SELECT ${selectItems.join(", ")} FROM ${this.table(child)} ${scope.alias}` +
@@ -675,7 +704,7 @@ class Compiler {
       if (!innerField || innerField.type !== "Field" || (q.fields?.length ?? 0) !== 1) throw malformed("semi-join subquery must select a single Id or lookup field");
       const r = inner.resolve(innerScope, [innerField.field]);
       const where = inner.compileWhere(innerScope, q.where, (n) => n);
-      const deleted = this.options.includeDeleted ? "" : ` AND ${innerScope.alias}.${quote("isdeleted")} = false`;
+      const deleted = this.options.includeDeleted || !hasSoftDelete(innerScope.obj) ? "" : ` AND ${innerScope.alias}.${quote("isdeleted")} = false`;
       const sub = `SELECT ${inner.expr(innerScope.alias, innerObj, r.field)} FROM ${this.table(innerObj)} ${innerScope.alias}` + [...innerScope.joins.values()].map((j) => ` ${j.sql}`).join("") + ` WHERE TRUE${deleted}${where ? ` AND (${where})` : ""}`;
       this.params = inner.params;
       const op = cond.operator === "NOT IN" ? "NOT IN" : "IN";

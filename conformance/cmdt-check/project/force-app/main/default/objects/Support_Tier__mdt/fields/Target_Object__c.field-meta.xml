@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Target_Object__c</fullName>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Target Object</label>
+    <referenceTo>EntityDefinition</referenceTo>
+    <relationshipLabel>Target Objects</relationshipLabel>
+    <relationshipName>Support_Tiers</relationshipName>
+    <required>false</required>
+    <unique>false</unique>
+    <externalId>false</externalId>
+    <type>MetadataRelationship</type>
+</CustomField>

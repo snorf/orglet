@@ -16,6 +16,7 @@ import { dropKeyPrefixes, migrate, quote, reconcileKeyPrefixes, toCaseSafeId, ty
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
+import { planCustomMetadataSeed, seedCustomMetadata } from "./seed.js";
 import type { Session } from "./hooks.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
@@ -37,12 +38,13 @@ const V1_COLUMNS: Record<string, string[]> = {};
 const schemaFrom = async (dir?: string): Promise<OrgSchema> =>
   buildOrgSchema(dir === undefined ? await loadBaseline() : await loadBaseline(dir), await readSourceProject(ACME)).schema;
 
-// Same three calls, in the same order, as cli/src/main.ts up().
+// Same calls, in the same order, as cli/src/main.ts up(): reconcile, migrate, bootstrap, custom-metadata seed (acme has no __mdt, so the seed is a no-op).
 const up = async (schema: OrgSchema) => {
   const prefixes = await reconcileKeyPrefixes(pool, schema, { orgSchema });
   const migration = await migrate(pool, schema, { orgSchema });
   const boot = await bootstrapOrg(pool, schema, { orgSchema });
-  return { prefixes, migration, boot };
+  const seed = await seedCustomMetadata(pool, schema, planCustomMetadataSeed(schema, []), { orgSchema, userId: boot.session.userId });
+  return { prefixes, migration, boot, seed };
 };
 
 const snapshot = async (): Promise<Record<string, unknown[]>> =>
@@ -131,5 +133,10 @@ describe("upgrading a populated v1.0 database with the current code (MIGR-01)", 
     const again = await migrate(pool, await schemaFrom(), { orgSchema });
     expect(again.warnings).toEqual([]);
     expect(again.statements.filter((s) => /^CREATE (UNIQUE )?INDEX|^CREATE SEQUENCE/.test(s))).toEqual([]);
+  });
+
+  it("the custom-metadata seed is a no-op on the acme org (Phase 11)", async () => {
+    const { seed } = await up(await schemaFrom());
+    expect(seed).toEqual({ records: 0, types: 0, added: 0, updated: 0, removed: 0 });
   });
 });

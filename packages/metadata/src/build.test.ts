@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { fileURLToPath } from "node:url";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type FieldType, type SourceField, type SourceFilterItem, type SourceObject, type StandardObjectJson } from "./index.js";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type BuildResult, type CustomLabelDef, type CustomMetadataRecord, type FieldType, type SourceField, type SourceFilterItem, type SourceObject, type StandardObjectJson } from "./index.js";
 import { formatDiagnostic } from "./diagnostics.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
@@ -896,5 +896,213 @@ describe("referenced versus unreferenced unmodelled standard objects (BASE2-08)"
     const v1 = await loadBaseline(V1_BASELINE);
     expect(v1.skippedReferenceTargets).toBeUndefined();
     expect(buildOrgSchema(v1).info.filter((d) => d.area === "reference-target-skipped")).toEqual([]);
+  });
+});
+
+describe("custom metadata types (CMDT-01, CMDT-03)", () => {
+  let baseline: Baseline;
+  beforeAll(async () => {
+    baseline = await loadBaseline();
+  });
+  const record = (type: string, developerName: string, file = `/x/${type}.${developerName}.md-meta.xml`): CustomMetadataRecord => ({
+    type,
+    developerName,
+    label: developerName,
+    protected: false,
+    values: [],
+    file,
+  });
+  const build = (objects: SourceObject[], customMetadata?: CustomMetadataRecord[]): BuildResult =>
+    buildOrgSchema(baseline, {
+      rootDir: "",
+      packageDirectories: [],
+      objects,
+      globalValueSets: [],
+      standardValueSets: [],
+      warnings: [],
+      ...(customMetadata !== undefined ? { customMetadata } : {}),
+    });
+  const foo = (extra: SourceField[] = []): SourceObject => sourceObject("Foo__mdt", [sourceField("Bar__c", "Text", { length: 20 }), ...extra]);
+
+  it("a __mdt type loads as a read-only object with the documented system fields and no object-kind warning (D-15, D-16)", () => {
+    const r = build([foo()]);
+    const o = r.schema.getObject("Foo__mdt");
+    expect(o).toMatchObject({
+      custom: true,
+      customMetadata: true,
+      createable: false,
+      updateable: false,
+      deletable: false,
+      undeletable: false,
+      queryable: true,
+      searchable: false,
+      hasOwner: false,
+      keyPrefix: "m00",
+    });
+    expect(o?.fields.map((f) => f.name)).toEqual([
+      "Id", "DeveloperName", "MasterLabel", "Label", "Language", "NamespacePrefix", "QualifiedApiName", "IsProtected",
+      "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "Bar__c",
+    ]);
+    for (const f of o?.fields ?? []) expect(f, f.name).toMatchObject({ createable: false, updateable: false });
+    expect(r.warnings.filter((w) => w.includes("Foo__mdt"))).toEqual([]);
+  });
+
+  it("Label is an empty unrestricted picklist, Language a string, DeveloperName unique and MasterLabel the name field (orglet choices)", () => {
+    const s = build([foo()]).schema;
+    expect(s.getField("Foo__mdt", "Label")).toMatchObject({ type: "Picklist", picklist: { restricted: false, sorted: false, values: [] } });
+    expect(s.getField("Foo__mdt", "Language")).toMatchObject({ type: "Text", length: 40 });
+    expect(s.getField("Foo__mdt", "DeveloperName")).toMatchObject({ length: 40, unique: true, nillable: false });
+    expect(s.getField("Foo__mdt", "MasterLabel")).toMatchObject({ nameField: true });
+    expect(s.getField("Foo__mdt", "NamespacePrefix")).toMatchObject({ length: 15, nillable: true });
+    expect(s.getField("Foo__mdt", "IsProtected")).toMatchObject({ type: "Checkbox", defaultValue: "false" });
+  });
+
+  it("__mdt types take provisional prefixes from m00 in name order without shifting __c prefixes (D-02)", () => {
+    const s = build([sourceObject("D__c", []), sourceObject("C__mdt", []), sourceObject("B__mdt", []), sourceObject("A__c", [])]).schema;
+    const prefix = (n: string) => s.getObject(n)?.keyPrefix;
+    expect([prefix("A__c"), prefix("D__c"), prefix("B__mdt"), prefix("C__mdt")]).toEqual(["a00", "a01", "m00", "m01"]);
+  });
+
+  it("a MetadataRelationship to another __mdt is Lookup-shaped without a child relationship (D-07)", () => {
+    const r = build([foo([sourceField("Rel__c", "MetadataRelationship", { referenceTo: "Other__mdt" })]), sourceObject("Other__mdt", [])]);
+    const f = r.schema.getField("Foo__mdt", "Rel__c");
+    expect(f).toMatchObject({ type: "MetadataRelationship", referenceTo: ["Other__mdt"], relationshipName: "Rel__r" });
+    expect(f?.childRelationshipName).toBeUndefined();
+    expect(f?.deleteConstraint).toBeUndefined();
+    expect(r.schema.childRelationships("Other__mdt")).toEqual([]);
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:reference-target"))).toEqual([]);
+  });
+
+  it("a MetadataRelationship to a __mdt that is not loaded keeps the reference-target warning", () => {
+    const r = build([foo([sourceField("Rel__c", "MetadataRelationship", { referenceTo: "Missing__mdt" })])]);
+    expect(r.warnings).toContain("UNSUPPORTED:reference-target Missing__mdt is referenced but not defined; lookups to it are unchecked");
+  });
+
+  it("EntityDefinition and FieldDefinition targets are canonicalised and add no reference-target warning (D-08, D-09, Pitfall 5)", () => {
+    const r = build([
+      foo([
+        sourceField("Ent__c", "MetadataRelationship", { referenceTo: "entitydefinition" }),
+        sourceField("Fld__c", "MetadataRelationship", { referenceTo: "FieldDefinition" }),
+      ]),
+    ]);
+    expect(r.schema.getField("Foo__mdt", "Ent__c")?.referenceTo).toEqual(["EntityDefinition"]);
+    expect(r.schema.getField("Foo__mdt", "Fld__c")?.referenceTo).toEqual(["FieldDefinition"]);
+    expect(r.warnings.filter((w) => w.includes("EntityDefinition") || w.includes("FieldDefinition"))).toEqual([]);
+  });
+
+  it("a MetadataRelationship without referenceTo is a load error", () => {
+    expect(() => build([foo([sourceField("Rel__c", "MetadataRelationship")])])).toThrow("Foo__mdt.Rel__c: MetadataRelationship without <referenceTo>");
+  });
+
+  it("record files are matched to loaded __mdt types case-insensitively; an unknown type is skipped with one warning (D-05)", () => {
+    const first = record("foo__MDT", "A");
+    const r = build([foo()], [first, record("Nope__mdt", "B", "/x/Nope.B.md-meta.xml")]);
+    expect(r.customMetadata).toEqual([{ ...first, type: "Foo__mdt" }]);
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:custom-metadata-record"))).toEqual([
+      "UNSUPPORTED:custom-metadata-record /x/Nope.B.md-meta.xml: Nope__mdt is not a custom metadata type in objects/; record B skipped",
+    ]);
+  });
+
+  it("a project without customMetadata or labels fields still builds", () => {
+    const r = build([foo()]);
+    expect(r.customMetadata).toEqual([]);
+    expect(r.schema.labels.size).toBe(0);
+  });
+});
+
+describe("custom settings and labels (CSET-01, CSET-02)", () => {
+  const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
+  let baseline: Baseline;
+  beforeAll(async () => {
+    baseline = await loadBaseline();
+  });
+  const build = (objects: SourceObject[], labels?: CustomLabelDef[]): BuildResult =>
+    buildOrgSchema(baseline, {
+      rootDir: "",
+      packageDirectories: [],
+      objects,
+      globalValueSets: [],
+      standardValueSets: [],
+      warnings: [],
+      ...(labels !== undefined ? { labels } : {}),
+    });
+  const setting = (name: string, kind: "List" | "Hierarchy"): SourceObject => ({
+    ...sourceObject(name, [sourceField("On__c", "Checkbox")]),
+    customSettingsType: kind,
+  });
+  const label = (fullName: string, value: string): CustomLabelDef => ({ fullName, value, language: "en_US", protected: false });
+
+  it("a Hierarchy setting has no OwnerId, an optional Name and a unique, defaulted SetupOwnerId to Organization, Profile and User (D-17..D-19)", () => {
+    const s = build([setting("Cfg__c", "Hierarchy")]).schema;
+    expect(s.getObject("Cfg__c")).toMatchObject({
+      customSetting: "Hierarchy",
+      hasOwner: false,
+      custom: true,
+      createable: true,
+      updateable: true,
+      deletable: true,
+      undeletable: true,
+      queryable: true,
+    });
+    expect(s.getField("Cfg__c", "OwnerId")).toBeUndefined();
+    expect(s.getField("Cfg__c", "Name")).toMatchObject({ nillable: true, unique: false });
+    expect(s.getField("Cfg__c", "SetupOwnerId")).toMatchObject({
+      type: "Lookup",
+      referenceTo: ["Organization", "Profile", "User"],
+      relationshipName: "SetupOwner",
+      unique: true,
+      nillable: false,
+      defaultedOnCreate: true,
+      createable: true,
+    });
+  });
+
+  it("a List setting has no OwnerId and no SetupOwnerId; Name is required and unique", () => {
+    const s = build([setting("Lst__c", "List")]).schema;
+    expect(s.getObject("Lst__c")).toMatchObject({ customSetting: "List", hasOwner: false });
+    expect(s.getField("Lst__c", "OwnerId")).toBeUndefined();
+    expect(s.getField("Lst__c", "SetupOwnerId")).toBeUndefined();
+    expect(s.getField("Lst__c", "Name")).toMatchObject({ nillable: false, unique: true });
+  });
+
+  it("custom settings share the a00..azz pool with custom objects in name order (D-19)", () => {
+    const s = build([setting("Cfg__c", "Hierarchy"), sourceObject("Box__c", [])]).schema;
+    expect([s.getObject("Box__c")?.keyPrefix, s.getObject("Cfg__c")?.keyPrefix]).toEqual(["a00", "a01"]);
+  });
+
+  it("each custom setting is one info item in area custom-setting-no-data, never a warning (D-20)", () => {
+    const r = build([setting("Cfg__c", "Hierarchy")]);
+    expect(r.info).toContainEqual({
+      severity: "info",
+      area: "custom-setting-no-data",
+      object: "Cfg__c",
+      message: "Cfg__c is a Hierarchy custom setting; custom-setting data is not part of a retrieve",
+    });
+    expect(r.warnings.filter((w) => w.includes("Cfg__c"))).toEqual([]);
+  });
+
+  it("labels land on the schema with a case-insensitive lookup; a duplicate fullName keeps the first and warns once (D-21, D-22)", () => {
+    const r = build([], [label("Welcome_Message", "A"), label("Other", "B"), label("welcome_message", "C")]);
+    expect(r.schema.labels.size).toBe(2);
+    expect(r.schema.getLabel("WELCOME_MESSAGE")?.value).toBe("A");
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:custom-label"))).toEqual([
+      "UNSUPPORTED:custom-label welcome_message duplicates Welcome_Message; the first definition is kept",
+    ]);
+  });
+
+  it("the conformance fixture builds to its expected facts", async () => {
+    const r = await loadOrgSchema({ projectDir: CMDT });
+    expect(r.warnings).toHaveLength(2);
+    expect(r.warnings.filter((w) => /^UNSUPPORTED:custom-metadata-record .*Retired_Type\.Old\.md-meta\.xml: Retired_Type__mdt is not a custom metadata type in objects\/; record Old skipped$/.test(w))).toHaveLength(1);
+    expect(r.warnings).toContain("UNSUPPORTED:custom-label welcome_message duplicates Welcome_Message; the first definition is kept");
+    expect(r.warnings).toEqual(r.diagnostics.map(formatDiagnostic));
+    const prefix = (n: string) => r.schema.getObject(n)?.keyPrefix;
+    expect(["App_Config__c", "Region_List__c", "Ticket__c", "Support_Tier__mdt", "Tier_Group__mdt"].map(prefix)).toEqual(["a00", "a01", "a02", "m00", "m01"]);
+    expect(r.customMetadata).toHaveLength(5);
+    expect(r.schema.labels.size).toBe(2);
+    expect(r.schema.getLabel("terms_link_text")?.value).toBe("Terms & Conditions <v2>");
+    const settings = r.info.filter((d) => d.area === "custom-setting-no-data").map((d) => d.object);
+    expect(settings).toEqual(["App_Config__c", "Region_List__c"]);
+    expect(r.schema.getField("Support_Tier__mdt", "Target_Field__c")?.referenceTo).toEqual(["FieldDefinition"]);
   });
 });

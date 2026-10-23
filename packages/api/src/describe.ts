@@ -1,7 +1,7 @@
 /**
  * Global and per-object describe JSON in the shape of the REST API `sobjects` resources.
  */
-import type { FieldDef, OrgSchema, SObjectDef } from "@orglet/metadata";
+import { definitionTarget, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 
 type Json = Record<string, unknown>;
 
@@ -43,6 +43,7 @@ function describeType(f: FieldDef): string {
       return "multipicklist";
     case "Lookup":
     case "MasterDetail":
+    case "MetadataRelationship":
       return "reference";
     case "Address":
       return "address";
@@ -100,14 +101,16 @@ export function describeField(schema: OrgSchema, obj: SObjectDef, f: FieldDef): 
   const type = describeType(f);
   const numeric = f.type === "Number" || f.type === "Currency" || f.type === "Percent";
   const textual = ["string", "textarea", "email", "phone", "url", "picklist", "multipicklist", "encryptedstring"].includes(type);
-  const length = textual ? (f.length ?? 255) : type === "id" || type === "reference" ? 18 : 0;
+  // orglet choice (D-08, 11-RESEARCH Open Question 1): no public source documents the describe of a MetadataRelationship; Lookup spelling, but an EntityDefinition/FieldDefinition value is a name, not an Id.
+  const definition = definitionTarget(f) !== undefined;
+  const length = definition ? 255 : textual ? (f.length ?? 255) : type === "id" || type === "reference" ? 18 : 0;
   const cascade = f.deleteConstraint === "Cascade";
   const child = f.referenceTo ? schema.childRelationships(f.referenceTo[0] ?? "").find((c) => c.childSObject === obj.name && c.field === f.name) : undefined;
   return {
     aggregatable: !["textarea", "address", "location"].includes(type),
     aiPredictionField: false,
     autoNumber: f.type === "AutoNumber",
-    byteLength: textual ? length * 3 : 0,
+    byteLength: textual || definition ? length * 3 : 0,
     calculated: f.formula !== undefined || f.rollup !== undefined,
     calculatedFormula: f.formula ?? null,
     cascadeDelete: cascade,
@@ -154,7 +157,7 @@ export function describeField(schema: OrgSchema, obj: SObjectDef, f: FieldDef): 
     restrictedPicklist: f.picklist?.restricted ?? false,
     scale: numeric ? (f.scale ?? 0) : 0,
     searchPrefilterable: false,
-    soapType: soapType(type),
+    soapType: definition ? "xsd:string" : soapType(type),
     sortable: f.sortable,
     type,
     unique: f.unique,
@@ -179,13 +182,15 @@ function sobjectUrls(obj: SObjectDef, version: string): Json {
 }
 
 function objectSummary(obj: SObjectDef, version: string): Json {
+  const mdt = obj.customMetadata === true;
   return {
     activateable: false,
     associateEntityType: null,
     associateParentEntity: null,
     createable: obj.createable,
     custom: obj.custom,
-    customSetting: false,
+    // D-17; false on __mdt, no public source states otherwise (orglet choice per D-15).
+    customSetting: obj.customSetting !== undefined,
     deepCloneable: false,
     deletable: obj.deletable,
     deprecatedAndHidden: false,
@@ -197,15 +202,15 @@ function objectSummary(obj: SObjectDef, version: string): Json {
     keyPrefix: obj.keyPrefix,
     label: obj.label,
     labelPlural: obj.labelPlural,
-    layoutable: true,
+    layoutable: !mdt,
     mergeable: ["Account", "Contact", "Lead"].includes(obj.name),
-    mruEnabled: true,
+    mruEnabled: !mdt,
     name: obj.name,
     queryable: obj.queryable,
-    replicateable: true,
+    replicateable: !mdt,
     retrieveable: true,
     searchable: obj.searchable,
-    triggerable: true,
+    triggerable: !mdt,
     undeletable: obj.undeletable,
     updateable: obj.updateable,
     urls: sobjectUrls(obj, version),

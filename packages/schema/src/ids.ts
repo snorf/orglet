@@ -3,7 +3,7 @@
  * object's key prefix. The 18-character form appends a 3-character case-safe checksum so
  * the ID survives case-insensitive systems. Both forms identify the same record.
  */
-import { randomInt } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 
 const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const CHECKSUM_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
@@ -97,4 +97,22 @@ export function generateId(keyPrefix: string): string {
     if (counter === 0) lastMillis++;
   }
   return toCaseSafeId(`${keyPrefix}00${base62(lastMillis, 7)}${base62(counter, 3)}`);
+}
+
+/**
+ * Custom-metadata record Ids are derived, not allocated (D-01): key prefix + 12 base-62 characters from a SHA-256 of the
+ * lower-cased type API name and DeveloperName, then the case-safe suffix. The same retrieve yields the same Ids in every
+ * environment and after `orglet reset`, with no state of its own; a record removed and re-added gets its Id back. Collisions
+ * within a type are detected by the seed step and refused there.
+ */
+export function deriveCustomMetadataId(keyPrefix: string, typeName: string, developerName: string): string {
+  if (!/^[0-9A-Za-z]{3}$/.test(keyPrefix)) throw new Error(`invalid key prefix: ${keyPrefix}`);
+  const digest = createHash("sha256").update(`${typeName.toLowerCase()}\0${developerName.toLowerCase()}`).digest();
+  let n = BigInt("0x" + digest.subarray(0, 9).toString("hex")) % 62n ** 12n;
+  let body = "";
+  for (let i = 0; i < 12; i++) {
+    body = BASE62.charAt(Number(n % 62n)) + body;
+    n /= 62n;
+  }
+  return toCaseSafeId(keyPrefix + body);
 }

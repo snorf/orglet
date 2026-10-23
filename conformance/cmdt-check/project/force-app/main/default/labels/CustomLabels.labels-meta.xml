@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Welcome_Message</fullName>
+        <categories>Portal,Onboarding</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Welcome message</shortDescription>
+        <value>Welcome to the support portal</value>
+    </labels>
+    <labels>
+        <fullName>Terms_Link_Text</fullName>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>Terms link</shortDescription>
+        <value>Terms &amp; Conditions &lt;v2&gt;</value>
+    </labels>
+    <labels>
+        <fullName>welcome_message</fullName>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Duplicate</shortDescription>
+        <value>Second definition</value>
+    </labels>
+</CustomLabels>

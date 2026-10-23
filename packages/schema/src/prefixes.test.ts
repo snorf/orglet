@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type Baseline, type OrgSchema, type SourceObject, type SourceProject } from "@orglet/metadata";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, OrgSchemaImpl, readSourceProject, type Baseline, type OrgSchema, type SObjectDef, type SourceObject, type SourceProject } from "@orglet/metadata";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { openTestDb, usingPglite, type TestDb } from "../../../test/db.js";
 import { quote } from "./columns.js";
@@ -446,5 +446,92 @@ describe("dropKeyPrefixes", () => {
     expect((await rows(orgD)).size).toBe(0);
     expect((await rows(orgE)).size).toBe(4);
     expect(await dropKeyPrefixes(pool, orgD)).toBe(0);
+  });
+});
+
+describe("custom metadata key prefixes (D-02)", () => {
+  const obj = (name: string, keyPrefix: string, extra: Partial<SObjectDef> = {}): SObjectDef => ({
+    name,
+    label: name,
+    labelPlural: name,
+    keyPrefix,
+    custom: true,
+    createable: true,
+    updateable: true,
+    deletable: true,
+    undeletable: true,
+    queryable: true,
+    searchable: true,
+    hasOwner: false,
+    fields: [],
+    validationRules: [],
+    recordTypes: [],
+    ...extra,
+  });
+  const schemaOf = (...objects: SObjectDef[]) => new OrgSchemaImpl(new Map(objects.map((o) => [o.name.toLowerCase(), o])), new Map(), new Map());
+  const input = (custom: KeyPrefixPlanInput["custom"], mapping: [string, string][] = []): KeyPrefixPlanInput => ({
+    custom,
+    standard: [],
+    persisted: new Map(),
+    observed: new Map(),
+    mapping: new Map(mapping),
+  });
+  const flat = (i: KeyPrefixPlanInput) => flatten(planKeyPrefixes(i).assignments);
+
+  it("a __mdt takes its provisional m prefix and next-free stays inside the m pool", () => {
+    expect(
+      flat(
+        input([
+          { name: "A__mdt", provisional: "m00", pool: "m" },
+          { name: "B__mdt", provisional: "m00", pool: "m" },
+        ]),
+      ),
+    ).toEqual([
+      ["A__mdt", "m00", "provisional"],
+      ["B__mdt", "m01", "next-free"],
+    ]);
+  });
+
+  it("an entry without pool behaves exactly as before (a pool)", () => {
+    const i = input([{ name: "X__c", provisional: "a00" }]);
+    i.persisted = new Map([["y__c", { name: "Y__c", keyPrefix: "a00" }]]);
+    expect(flat(i)).toEqual([["X__c", "a01", "next-free"]]);
+  });
+
+  it("a mapping or records claim outside the object's pool is a KeyPrefixError naming the object and prefix", () => {
+    expect(() => planKeyPrefixes(input([{ name: "A__mdt", provisional: "m00", pool: "m" }], [["a__mdt", "a05"]]))).toThrow(
+      "key prefix a05 for A__mdt (from --key-prefixes) is outside the custom-metadata range m00..mzz",
+    );
+    expect(() => planKeyPrefixes(input([{ name: "X__c", provisional: "a00" }], [["x__c", "m05"]]))).toThrow(
+      "key prefix m05 for X__c (from --key-prefixes) is in the custom-metadata range m00..mzz; only __mdt types take an m prefix",
+    );
+    const records = input([{ name: "X__c", provisional: "a00" }]);
+    records.observed = new Map([["x__c", ["m07"]]]);
+    expect(() => planKeyPrefixes(records)).toThrow(KeyPrefixError);
+  });
+
+  it("parseKeyPrefixMapping accepts __mdt names in the m range and refuses cross-pool entries", () => {
+    const schema = schemaOf(obj("Foo__mdt", "m00", { customMetadata: true }), obj("Bar__c", "a00"));
+    expect(parseKeyPrefixMapping({ "foo__MDT": "m0A" }, schema)).toEqual({ Foo__mdt: "m0A" });
+    expect(() => parseKeyPrefixMapping({ Foo__mdt: "a0A" }, schema)).toThrow("--key-prefixes: Foo__mdt: a0A is outside the custom-metadata range m00..mzz");
+    expect(() => parseKeyPrefixMapping({ Bar__c: "m0A" }, schema)).toThrow(
+      "--key-prefixes: Bar__c: m0A is in the custom-metadata range m00..mzz; only __mdt types take an m prefix",
+    );
+  });
+
+  it("reconcile persists __mdt prefixes beside custom objects, keeps them on the next run and drops them with dropKeyPrefixes", async () => {
+    const org = freshOrg();
+    const make = () => schemaOf(obj("Bar__c", "a00"), obj("Foo__mdt", "m00", { customMetadata: true }));
+    const r1 = await reconcileKeyPrefixes(pool, make(), { orgSchema: org });
+    expect(flatten(r1.assignments)).toEqual([
+      ["Bar__c", "a00", "provisional"],
+      ["Foo__mdt", "m00", "provisional"],
+    ]);
+    expect((await rows(org)).size).toBe(2);
+    const again = make();
+    const r2 = await reconcileKeyPrefixes(pool, again, { orgSchema: org });
+    expect(r2.assignments).toEqual([]);
+    expect(again.getObject("Foo__mdt")?.keyPrefix).toBe("m00");
+    expect(await dropKeyPrefixes(pool, org)).toBe(2);
   });
 });

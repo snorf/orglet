@@ -1,5 +1,5 @@
 /**
- * Custom-object key prefixes are assigned once per org and persisted in `_orglet.key_prefixes`.
+ * Custom-object and custom-metadata-type key prefixes are assigned once per org and persisted in `_orglet.key_prefixes`.
  * An Id's first three characters identify its object, so a prefix that moved with the object's
  * alphabetical position (which is all buildOrgSchema can offer) would change the meaning of every
  * stored Id the moment a custom object is added or renamed. The planner is pure so every
@@ -31,7 +31,7 @@ export class KeyPrefixError extends Error {
 
 export interface KeyPrefixPlanInput {
   /** Custom objects in the loaded schema, in name order, with the provisional prefix buildOrgSchema gave them. */
-  custom: { name: string; provisional: string }[];
+  custom: { name: string; provisional: string; /** "m" for custom metadata types (D-02); default "a". */ pool?: "a" | "m" }[];
   /** Every standard object's documented prefix (D-03). */
   standard: { name: string; keyPrefix: string }[];
   /** Rows already in _orglet.key_prefixes for this org, keyed by lower-cased object name. */
@@ -82,15 +82,15 @@ function describe(c: KeyPrefixClaim): string {
   }
 }
 
-/** Lowest prefix in a00..azz not yet taken; same order as buildOrgSchema's provisional scheme. */
-function nextFree(taken: Map<string, KeyPrefixClaim>): string {
+/** Lowest prefix in `<pool>00..<pool>zz` not yet taken; same order as buildOrgSchema's provisional scheme, per pool. */
+function nextFree(taken: Map<string, KeyPrefixClaim>, pool: "a" | "m"): string {
   for (const hi of ALPHABET) {
     for (const lo of ALPHABET) {
-      const candidate = `a${hi}${lo}`;
+      const candidate = `${pool}${hi}${lo}`;
       if (!taken.has(candidate)) return candidate;
     }
   }
-  throw new Error("too many custom objects: no free key prefix in a00..azz");
+  throw new Error(`too many ${pool === "m" ? "custom metadata types" : "custom objects"}: no free key prefix in ${pool}00..${pool}zz`);
 }
 
 /**
@@ -115,7 +115,7 @@ export function planKeyPrefixes(input: KeyPrefixPlanInput): KeyPrefixPlan {
   const decided = new Map<string, KeyPrefixAssignment>();
 
   // Pass 1: claims backed by evidence (records on disk, an explicit mapping).
-  for (const { name } of input.custom) {
+  for (const { name, pool } of input.custom) {
     const lower = name.toLowerCase();
     if (input.persisted.has(lower)) continue;
 
@@ -144,6 +144,17 @@ export function planKeyPrefixes(input: KeyPrefixPlanInput): KeyPrefixPlan {
     }
 
     if (claim === undefined) continue;
+    // D-02: __mdt types draw from m00..mzz, everything else from the rest; a claim from either side crossing over is refused.
+    const inMPool = claim.keyPrefix.startsWith("m");
+    if (pool === "m" && !inMPool) {
+      throw new KeyPrefixError(`key prefix ${claim.keyPrefix} for ${name} (from ${sourceLabel(claim.source)}) is outside the custom-metadata range m00..mzz`, [claim]);
+    }
+    if (pool !== "m" && inMPool) {
+      throw new KeyPrefixError(
+        `key prefix ${claim.keyPrefix} for ${name} (from ${sourceLabel(claim.source)}) is in the custom-metadata range m00..mzz; only __mdt types take an m prefix`,
+        [claim],
+      );
+    }
     const other = taken.get(claim.keyPrefix);
     if (other !== undefined) {
       throw new KeyPrefixError(`key prefix ${claim.keyPrefix} for ${name} (from ${sourceLabel(claim.source)}) collides with ${describe(other)}`, [claim, other]);
@@ -165,11 +176,11 @@ export function planKeyPrefixes(input: KeyPrefixPlanInput): KeyPrefixPlan {
   }
 
   // Pass 2: everything still undecided takes its provisional prefix, or the next free one.
-  for (const { name, provisional } of input.custom) {
+  for (const { name, provisional, pool } of input.custom) {
     const lower = name.toLowerCase();
     if (input.persisted.has(lower) || decided.has(lower)) continue;
     const assignment: KeyPrefixAssignment = taken.has(provisional)
-      ? { objectName: name, keyPrefix: nextFree(taken), source: "next-free" }
+      ? { objectName: name, keyPrefix: nextFree(taken, pool ?? "a"), source: "next-free" }
       : { objectName: name, keyPrefix: provisional, source: "provisional" };
     taken.set(assignment.keyPrefix, { ...assignment });
     decided.set(lower, assignment);
@@ -186,7 +197,7 @@ export function planKeyPrefixes(input: KeyPrefixPlanInput): KeyPrefixPlan {
 /** Validate a parsed --key-prefixes JSON document against the loaded schema; keys come back in canonical API-name casing. */
 export function parseKeyPrefixMapping(raw: unknown, schema: OrgSchema): Record<string, string> {
   if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
-    throw new KeyPrefixError("--key-prefixes: expected a JSON object mapping custom object API names to 3-character prefixes");
+    throw new KeyPrefixError("--key-prefixes: expected a JSON object mapping custom object or custom metadata type API names to 3-character prefixes");
   }
   const result: Record<string, string> = {};
   const byPrefix = new Map<string, string>();
@@ -197,6 +208,12 @@ export function parseKeyPrefixMapping(raw: unknown, schema: OrgSchema): Record<s
     const obj = schema.getObject(key);
     if (obj === undefined) throw new KeyPrefixError(`--key-prefixes: ${key} is not an object in the loaded metadata`);
     if (!obj.custom) throw new KeyPrefixError(`--key-prefixes: ${key} is a standard object; only custom objects take a mapped prefix`);
+    if (obj.customMetadata === true && !value.startsWith("m")) {
+      throw new KeyPrefixError(`--key-prefixes: ${obj.name}: ${value} is outside the custom-metadata range m00..mzz`);
+    }
+    if (obj.customMetadata !== true && value.startsWith("m")) {
+      throw new KeyPrefixError(`--key-prefixes: ${obj.name}: ${value} is in the custom-metadata range m00..mzz; only __mdt types take an m prefix`);
+    }
     const firstName = byPrefix.get(value);
     if (firstName !== undefined) {
       throw new KeyPrefixError(`--key-prefixes: ${firstName} and ${obj.name} both map to ${value}`, [
@@ -276,7 +293,7 @@ export async function reconcileKeyPrefixes(pool: Pool, schema: OrgSchema, option
     }
 
     const plan = planKeyPrefixes({
-      custom: customObjects.map((o) => ({ name: o.name, provisional: provisionalPrefix(o) })),
+      custom: customObjects.map((o) => ({ name: o.name, provisional: provisionalPrefix(o), pool: o.customMetadata ? "m" : "a" })),
       standard,
       persisted,
       observed,

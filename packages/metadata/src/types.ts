@@ -30,6 +30,8 @@ export type FieldType =
   | "EncryptedText"
   | "Lookup"
   | "MasterDetail"
+  /** Custom metadata relationship (Metadata API CustomField.type): to another __mdt (stored as that record's Id) or to EntityDefinition/FieldDefinition (stored as the qualified API name, D-06..D-08). Never a Postgres FK. */
+  | "MetadataRelationship"
   | "Address"
   | "Location"
   /** Compound person name (Contact/Lead/User `Name`). Components carry `compoundFieldName: "Name"`. */
@@ -117,7 +119,7 @@ export interface FieldDef {
   idLookup: boolean;
   /** This is the object's `Name` field (or its equivalent, e.g. Case `CaseNumber`). */
   nameField: boolean;
-  /** Present when `type` is Lookup or MasterDetail. */
+  /** Present when `type` is Lookup, MasterDetail or MetadataRelationship. */
   referenceTo?: string[];
   /** Parent-side relationship name used in SOQL, e.g. `Account` for `AccountId`. */
   relationshipName?: string;
@@ -197,6 +199,10 @@ export interface SObjectDef {
   searchable: boolean;
   /** Has `OwnerId` (User and/or Group, see StandardObjectJson.ownerTargets). Master-detail children inherit the parent's owner and have none. */
   hasOwner: boolean;
+  /** Custom metadata type (__mdt, CMDT-01): read-only through the data API; rows come only from customMetadata/ record files. */
+  customMetadata?: true;
+  /** Custom setting (CustomObject.customSettingsType, CSET-01): describe customSetting true, no OwnerId; Hierarchy adds SetupOwnerId. */
+  customSetting?: "List" | "Hierarchy";
   /** Metadata API `sharingModel`; ignored by the engine in phase 0. */
   sharingModel?: string;
   fields: FieldDef[];
@@ -217,6 +223,31 @@ export interface GlobalValueSetDef {
   values: PicklistValue[];
 }
 
+/** One record file customMetadata/<Type>.<DeveloperName>.md-meta.xml (CMDT-02). */
+export interface CustomMetadataRecord {
+  /** Type API name with the __mdt suffix (the file name omits it); canonical casing once buildOrgSchema has matched it. */
+  type: string;
+  developerName: string;
+  /** <label>, which becomes MasterLabel and Label; the DeveloperName when the file has none. */
+  label: string;
+  protected: boolean;
+  /** <values> in file order; value "" means xsi:nil, an empty <value> or no <value> at all, all stored as null (D-05). */
+  values: { field: string; value: string }[];
+  /** The record file's path, for warnings. */
+  file: string;
+}
+
+/** One entry of labels/CustomLabels.labels-meta.xml (CSET-02, D-21). Not an sObject; never in describe. */
+export interface CustomLabelDef {
+  fullName: string;
+  value: string;
+  language: string;
+  /** Comma-separated as written in metadata (Metadata API CustomLabel.categories). */
+  categories?: string;
+  protected: boolean;
+  shortDescription?: string;
+}
+
 /** Derived child relationship, computed from lookup/master-detail fields. */
 export interface ChildRelationship {
   childSObject: string;
@@ -230,6 +261,10 @@ export interface OrgSchema {
   objects: ReadonlyMap<string, SObjectDef>;
   globalValueSets: ReadonlyMap<string, GlobalValueSetDef>;
   standardValueSets: ReadonlyMap<string, StandardValueSetDef>;
+  /** Custom labels keyed by lower-cased fullName (D-21). */
+  labels: ReadonlyMap<string, CustomLabelDef>;
+  /** Case-insensitive label lookup by fullName. */
+  getLabel(fullName: string): CustomLabelDef | undefined;
   /** Lookup helpers, case-insensitive on API names as in Salesforce. */
   getObject(name: string): SObjectDef | undefined;
   getField(objectName: string, fieldName: string): FieldDef | undefined;

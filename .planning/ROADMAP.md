@@ -30,7 +30,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 - [x] **Phase 8: Upgrade Safety Net & Nullable Key Prefixes** - A populated v1.0 database upgrades without data loss; FK violations downgrade to warnings; objects may have no key prefix (completed 2026-10-13)
 - [x] **Phase 9: Baseline Generator, Parity & OwnerId Narrowing** - A deterministic generator reproduces the 35 existing objects, then adds every documented field and per-object OwnerId targets (completed 2026-10-14)
 - [x] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart (completed 2026-10-16)
-- [ ] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load
+- [x] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load (completed 2026-10-21)
 - [ ] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas
 - [ ] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields
 - [ ] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run
@@ -113,7 +113,17 @@ Plans:
   3. A `MetadataRelationship` field to another `__mdt` returns that record's Id, a relationship to an entity or field definition returns its qualified API name and `Rel__r.QualifiedApiName` is selectable, and a dangling target warns and stays null.
   4. A List or Hierarchy custom setting describes as `customSetting: true` with no `OwnerId`; a second hierarchy row for the same `SetupOwnerId` fails with `DUPLICATE_VALUE`; `orglet check` states that custom-setting data is not part of a retrieve.
   5. Custom labels from `CustomLabels.labels-meta.xml` are present on the loaded org schema with name, value, language and category.
-**Plans**: TBD
+**Plans**: 9 plans
+Plans:
+- [x] 11-01-PLAN.md — Wave 0: conformance/cmdt-check fixture + expected facts, jsforce/simple-salesforce legs, seed.test.ts scaffold (CMDT-01..04, CSET-01, CSET-02)
+- [x] 11-02-PLAN.md — type contracts (MetadataRelationship, customMetadata/customSetting, labels) + SFDX reader for records, labels, customSettingsType (CMDT-02, CMDT-03, CSET-01, CSET-02)
+- [x] 11-03-PLAN.md — buildOrgSchema: __mdt objects and m pool, MetadataRelationship fields, record matching, custom-setting shape and info item, labels (CMDT-01, CMDT-03, CSET-01, CSET-02)
+- [x] 11-04-PLAN.md — deriveCustomMetadataId, m00..mzz key-prefix pool, unique-Lookup index and no FK for MetadataRelationship (CMDT-01, CMDT-02, CSET-01)
+- [x] 11-05-PLAN.md — soft-delete filters only where IsDeleted exists; Rel__r.QualifiedApiName and the D-10 rejection in SOQL (CMDT-03, CMDT-04)
+- [x] 11-06-PLAN.md — planCustomMetadataSeed (pure) + seedCustomMetadata full sync + D-04 summary (CMDT-02, CMDT-03)
+- [x] 11-07-PLAN.md — describe flags, DML refusal incl. import mode and Bulk ingest, SetupOwnerId default, HTTP tests (CMDT-01, CMDT-04, CSET-01)
+- [x] 11-08-PLAN.md — CLI: up seeds and reports, check settings info line and counts; upgrade and setting-migration tests (CMDT-02, CSET-01, CSET-02)
+- [x] 11-09-PLAN.md — run-all.sh second server + cmdt-check legs, phase gate on fresh schemas (CMDT-04, CSET-01)
 **Research flag**: YES (`MetadataRelationship` stored value and describe spelling, the `customSetting` flag on `__mdt`, DML error code, `m00` prefix, nil handling).
 
 ### Phase 12: sigha Resync & Formula Globals
@@ -167,7 +177,7 @@ Plans:
 | 8. Upgrade Safety Net & Nullable Key Prefixes | v1.1 | 10/10 | Complete | 2026-10-13 |
 | 9. Baseline Generator, Parity & OwnerId Narrowing | v1.1 | 9/9 | Complete | 2026-10-14 |
 | 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
-| 11. Custom Metadata, Custom Settings & Labels | v1.1 | 0/TBD | Not started | - |
+| 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
 | 12. sigha Resync & Formula Globals | v1.1 | 0/TBD | Not started | - |
 | 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |

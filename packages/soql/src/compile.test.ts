@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { buildOrgSchema, loadBaseline, loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { compileSoql, type CompiledQuery } from "./compile.js";
+import { compileSoql, type CompiledQuery, type SObjectShape } from "./compile.js";
 import { SoqlError } from "./errors.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
@@ -443,5 +443,102 @@ describe("polymorphic lookups with a target that has no key prefix (D-08)", () =
     const q = nullSql("SELECT Id, TYPEOF Subject WHEN User THEN Name END FROM PrefixlessLink");
     expect(q).toContain("WHEN '005' THEN 'User'");
     expect(q).not.toContain("'null'");
+  });
+});
+
+describe("objects without a recycle bin (Pitfall 1)", () => {
+  const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
+  let cmdt: OrgSchema;
+  beforeAll(async () => {
+    cmdt = (await loadOrgSchema({ projectDir: CMDT })).schema;
+  });
+  const compileMdt = (soql: string, includeDeleted = false): CompiledQuery => compileSoql(soql, { schema: cmdt, orgSchema: "org", now, includeDeleted });
+
+  it("a __mdt root query has no isdeleted filter, with or without queryAll", () => {
+    for (const includeDeleted of [false, true]) {
+      expect(compileMdt("SELECT Id, DeveloperName FROM Support_Tier__mdt", includeDeleted).sql).not.toContain("isdeleted");
+    }
+  });
+
+  it("a semi-join into a __mdt has no isdeleted filter", () => {
+    expect(compileMdt("SELECT Id FROM Tier_Group__mdt WHERE Id IN (SELECT Tier_Group__c FROM Support_Tier__mdt)").sql).not.toContain("isdeleted");
+  });
+
+  it("objects with IsDeleted keep the filter", () => {
+    expect(compileMdt("SELECT Id FROM Ticket__c").sql).toContain('t0."isdeleted" = false');
+  });
+});
+
+describe("MetadataRelationship in SOQL (CMDT-03, D-07, D-10)", () => {
+  const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
+  let cmdt: OrgSchema;
+  beforeAll(async () => {
+    cmdt = (await loadOrgSchema({ projectDir: CMDT })).schema;
+  });
+  const compileMdt = (soql: string): CompiledQuery => compileSoql(soql, { schema: cmdt, orgSchema: "org", now });
+  const parentOf = (q: CompiledQuery | SObjectShape, rel: string) => {
+    const shape = "shape" in q ? q.shape : q;
+    if (shape.kind !== "sobject") throw new Error("expected an sobject shape");
+    const p = shape.parents.get(rel);
+    if (p === undefined) throw new Error(`no parent ${rel}`);
+    return p;
+  };
+
+  it("an mdt-to-mdt relationship joins the target table on id", () => {
+    const q = compileMdt("SELECT Tier_Group__r.DeveloperName, Tier_Group__r.QualifiedApiName FROM Support_Tier__mdt");
+    expect(q.sql).toContain('LEFT JOIN "org"."tier_group__mdt" t1 ON t1."id" = t0."tier_group__c"');
+    const p = parentOf(q, "Tier_Group__r");
+    expect(p.type).toBe("Tier_Group__mdt");
+    expect(p.fields.map((f) => f.name)).toEqual(["DeveloperName", "QualifiedApiName"]);
+  });
+
+  it("Rel__r.QualifiedApiName on an EntityDefinition relationship selects the stored string without a join", () => {
+    const q = compileMdt("SELECT Id, Target_Object__r.QualifiedApiName FROM Support_Tier__mdt");
+    expect(q.sql).toContain('t0."target_object__c"');
+    expect(q.sql).not.toContain("LEFT JOIN");
+    const p = parentOf(q, "Target_Object__r");
+    expect(p.type).toBe("EntityDefinition");
+    expect(p.fields).toEqual([{ name: "QualifiedApiName", alias: p.idAlias }]);
+  });
+
+  it("the same on a FieldDefinition relationship", () => {
+    const q = compileMdt("SELECT Target_Field__r.QualifiedApiName FROM Support_Tier__mdt");
+    expect(parentOf(q, "Target_Field__r").type).toBe("FieldDefinition");
+  });
+
+  it("it filters case-insensitively and sorts like a text column", () => {
+    const q = compileMdt("SELECT Id FROM Support_Tier__mdt WHERE Target_Object__r.QualifiedApiName = 'account' ORDER BY Target_Field__r.QualifiedApiName");
+    expect(q.sql).toContain('lower(t0."target_object__c") = lower($1)');
+    expect(q.sql).toContain('ORDER BY lower(t0."target_field__c")'); // sorted exactly like any other text column
+    expect(q.params).toEqual(["account"]);
+  });
+
+  it("the raw field selects the stored string", () => {
+    const q = compileMdt("SELECT Target_Object__c FROM Support_Tier__mdt");
+    expect(q.shape.kind === "sobject" && q.shape.fields.map((f) => f.name)).toContain("Target_Object__c");
+  });
+
+  it.each([
+    "SELECT Target_Object__r.Label FROM Support_Tier__mdt",
+    "SELECT Target_Object__r.DeveloperName FROM Support_Tier__mdt",
+    "SELECT Target_Object__r.Owner.Name FROM Support_Tier__mdt",
+    "SELECT Id FROM Support_Tier__mdt WHERE Target_Field__r.Label = 'x'",
+  ])("any other field through the relationship is INVALID_FIELD with UNSUPPORTED:entity-definition: %s", (soql) => {
+    let thrown: unknown;
+    try {
+      compileMdt(soql);
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(SoqlError);
+    expect(thrown).toMatchObject({ errorCode: "INVALID_FIELD" });
+    expect((thrown as SoqlError).message).toMatch(/^UNSUPPORTED:entity-definition only QualifiedApiName is selectable on Target_/);
+  });
+
+  it("a definition relationship reached through an mdt parent works one hop deep", () => {
+    const q = compileMdt("SELECT Default_Tier__r.Target_Object__r.QualifiedApiName FROM Tier_Group__mdt");
+    expect(q.sql).toContain('"org"."support_tier__mdt"');
+    expect(q.sql).toMatch(/t1\."target_object__c"/);
+    expect(parentOf(parentOf(q, "Default_Tier__r"), "Target_Object__r").type).toBe("EntityDefinition");
   });
 });

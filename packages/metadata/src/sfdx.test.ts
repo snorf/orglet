@@ -174,3 +174,109 @@ describe("readSourceProject", () => {
     await expect(readSourceProject(root)).rejects.toThrow(/Foo__c\.object-meta\.xml: Expected <CustomObject> root element, found: CustomField/);
   });
 });
+
+const NS = 'xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"';
+const record = (body: string) => `<?xml version="1.0" encoding="UTF-8"?><CustomMetadata ${NS}>${body}</CustomMetadata>`;
+const labelsXml = (body: string) => `<?xml version="1.0" encoding="UTF-8"?><CustomLabels ${NS}>${body}</CustomLabels>`;
+const objectXml = (body: string) => `<?xml version="1.0" encoding="UTF-8"?><CustomObject ${NS}>${body}</CustomObject>`;
+
+describe("custom metadata, labels and settings (Phase 11)", () => {
+  it("reads a record file: type from the file name plus __mdt, DeveloperName after the first dot, label and protected", async () => {
+    const root = await project({
+      "customMetadata/Support_Tier.Gold.md-meta.xml": record(
+        '<label>Gold</label><protected>true</protected><values><field>Code__c</field><value xsi:type="xsd:string">007</value></values>',
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.customMetadata).toEqual([
+      { type: "Support_Tier__mdt", developerName: "Gold", label: "Gold", protected: true, values: [{ field: "Code__c", value: "007" }], file: join(root, "customMetadata/Support_Tier.Gold.md-meta.xml") },
+    ]);
+  });
+
+  it("xsi:nil with and without a space, an empty value and a values entry without value all read as an empty string", async () => {
+    const root = await project({
+      "customMetadata/T.R.md-meta.xml": record(
+        '<label>R</label><values><field>A__c</field><value xsi:nil="true"/></values><values><field>B__c</field><value xsi:nil="true" /></values>' +
+          '<values><field>C__c</field><value xsi:type="xsd:string"></value></values><values><field>D__c</field></values>',
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.customMetadata?.[0]?.values).toEqual([
+      { field: "A__c", value: "" },
+      { field: "B__c", value: "" },
+      { field: "C__c", value: "" },
+      { field: "D__c", value: "" },
+    ]);
+  });
+
+  it("a multi-line value element with attributes on their own lines reads its text", async () => {
+    const root = await project({
+      "customMetadata/T.R.md-meta.xml": record('<label>R</label><values><field>A__c</field><value\n    xsi:type="xsd:string"\n>Ticket__c</value></values>'),
+    });
+    const p = await readSourceProject(root);
+    expect(p.customMetadata?.[0]?.values).toEqual([{ field: "A__c", value: "Ticket__c" }]);
+  });
+
+  it("a record without <label> takes its DeveloperName and protected defaults to false", async () => {
+    const root = await project({ "customMetadata/T.Dev_Name.md-meta.xml": record("") });
+    const p = await readSourceProject(root);
+    expect(p.customMetadata?.[0]).toMatchObject({ label: "Dev_Name", protected: false, values: [] });
+  });
+
+  it("a record file name without a dot is skipped with one custom-metadata-record warning", async () => {
+    const root = await project({ "customMetadata/Broken.md-meta.xml": record("<label>x</label>") });
+    const p = await readSourceProject(root);
+    expect(p.customMetadata).toEqual([]);
+    expect(p.warnings).toHaveLength(1);
+    expect(p.warnings[0]).toMatch(/^UNSUPPORTED:custom-metadata-record .*Broken\.md-meta\.xml: file name is not <Type>\.<Record>\.md-meta\.xml; record skipped$/);
+  });
+
+  it("reads a single label as a one-element list and decodes entities", async () => {
+    const root = await project({
+      "labels/CustomLabels.labels-meta.xml": labelsXml(
+        "<labels><fullName>Terms_Link_Text</fullName><language>en_US</language><protected>true</protected><shortDescription>Terms link</shortDescription><value>Terms &amp; Conditions &lt;v2&gt;</value></labels>",
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.labels).toEqual([{ fullName: "Terms_Link_Text", value: "Terms & Conditions <v2>", language: "en_US", protected: true, shortDescription: "Terms link" }]);
+  });
+
+  it("reads several labels in file order with categories; a missing language defaults to en_US", async () => {
+    const root = await project({
+      "labels/CustomLabels.labels-meta.xml": labelsXml(
+        "<labels><fullName>B_One</fullName><value>1</value><categories>a,b</categories><protected>false</protected></labels><labels><fullName>A_Two</fullName><value>2</value><protected>false</protected></labels>",
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.labels).toEqual([
+      { fullName: "B_One", value: "1", language: "en_US", categories: "a,b", protected: false },
+      { fullName: "A_Two", value: "2", language: "en_US", protected: false },
+    ]);
+  });
+
+  it("customSettingsType List and Hierarchy are read; an empty element means Hierarchy; another value warns and loads as an ordinary object", async () => {
+    const root = await project({
+      "objects/L__c/L__c.object-meta.xml": objectXml("<customSettingsType>List</customSettingsType>"),
+      "objects/H__c/H__c.object-meta.xml": objectXml("<customSettingsType>Hierarchy</customSettingsType>"),
+      "objects/E__c/E__c.object-meta.xml": objectXml("<customSettingsType/>"),
+      "objects/Odd__c/Odd__c.object-meta.xml": objectXml("<customSettingsType>Weird</customSettingsType>"),
+    });
+    const p = await readSourceProject(root);
+    const byName = Object.fromEntries(p.objects.map((o) => [o.name, o.customSettingsType]));
+    expect(byName).toEqual({ E__c: "Hierarchy", H__c: "Hierarchy", L__c: "List", Odd__c: undefined });
+    expect(p.warnings).toEqual([
+      `UNSUPPORTED:custom-setting ${join(root, "objects/Odd__c/Odd__c.object-meta.xml")}: customSettingsType Weird is not List or Hierarchy; Odd__c loaded as an ordinary custom object`,
+    ]);
+  });
+
+  it("a MetadataRelationship field loads with its referenceTo and no field-type warning; metadataRelationshipControllingField is ignored", async () => {
+    const root = await project({
+      "objects/T__mdt/fields/F__c.field-meta.xml": field(
+        "<fullName>F__c</fullName><type>MetadataRelationship</type><referenceTo>FieldDefinition</referenceTo><metadataRelationshipControllingField>X__mdt.Y__c</metadataRelationshipControllingField>",
+      ),
+    });
+    const p = await readSourceProject(root);
+    expect(p.objects[0]?.fields).toEqual([{ fullName: "F__c", type: "MetadataRelationship", referenceTo: "FieldDefinition" }]);
+    expect(p.warnings.filter((w) => w.includes("field-type"))).toEqual([]);
+  });
+});

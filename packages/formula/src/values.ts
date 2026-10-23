@@ -6,7 +6,7 @@
  * `YYYY-MM-DDTHH:mm:ss.SSS+0000`, times as `HH:mm:ss.SSSZ`, blanks as null. Parent records
  * are nested under the relationship name (`{ Account: { Name: "Acme" } }`).
  */
-import type { FieldDef } from "@orglet/metadata";
+import { definitionTarget, type FieldDef } from "@orglet/metadata";
 import { blank, bool, dateValue, datetimeValue, Decimal, num, text, timeValue, type SfType, type SfValue } from "@orglet/sigha";
 
 export type RecordValue = string | number | boolean | null;
@@ -38,6 +38,8 @@ export function sfTypeOf(field: FieldDef): SfType {
     case "Lookup":
     case "MasterDetail":
       return "Id";
+    case "MetadataRelationship":
+      return definitionTarget(field) !== undefined ? "Text" : "Id";
     case "Text":
     case "TextArea":
     case "LongTextArea":

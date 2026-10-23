@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: ready-to-plan
-stopped_at: Phase 10 complete and verified (4/4 success criteria); Phase 11 not started
-last_updated: "2026-10-16T21:08:55.374Z"
-last_activity: 2026-10-16
+status: planning
+stopped_at: Phase 11 complete and verified
+last_updated: "2026-10-21T07:01:23.118Z"
+last_activity: 2026-10-21
 progress:
   total_phases: 17
-  completed_phases: 3
-  total_plans: 25
-  completed_plans: 25
+  completed_phases: 4
+  total_plans: 34
+  completed_plans: 34
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 11 — custom-metadata-custom-settings-labels (not started)
+**Current focus:** Phase 12 — sigha-resync-formula-globals (not started)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 11 (Custom Metadata, Custom Settings & Labels)
+Phase: 12 (sigha Resync & Formula Globals)
 Plan: Not started
-Status: Phase 10 complete and verified; Phase 11 ready to plan
-Last activity: 2026-10-16
+Status: Phase 11 complete and verified (5/5 success criteria); Phase 12 ready to discuss/plan
+Last activity: 2026-10-21
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -114,6 +114,15 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 10 P04 | 35min | 3 tasks | 100 files |
 | Phase 10 P05 | 25min | 2 tasks | 9 files |
 | Phase 10 P06 | checkpoint | 3 tasks | 6 files |
+| Phase 11 P01 | 15min | 2 tasks | 33 files |
+| Phase 11 P02 | 10min | 2 tasks | 10 files |
+| Phase 11 P04 | 10min | 2 tasks | 7 files |
+| Phase 11 P03 | 15min | 2 tasks | 2 files |
+| Phase 11 P06 | 20min | 2 tasks | 3 files |
+| Phase 11 P05 | 15min | 2 tasks | 5 files |
+| Phase 11 P08 | 10min | 2 tasks | 4 files |
+| Phase 11 P07 | 20min | 2 tasks | 5 files |
+| Phase 11 P09 | 40min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -211,6 +220,9 @@ Recent decisions affecting current work:
 - [Phase 10]: 10-05: OrderItem.QuoteLineItemId and RelatedOrderItemId overridden nillable:true (sf-skills required flag contradicts its own descriptions; OrderItem was uninsertable); engine/REST behaviour of the 18 proven without production code change
 - [Phase 10]: 10-06 fix: Quote.OpportunityId joins the roll-up lookup allowlist (documented Create/Filter-only, same signature as OpportunityLineItem.OpportunityId); Phase 5 D-08 reversed, a roll-up over an unlisted lookup now degrades with UNSUPPORTED:rollup-relationship instead of failing the load
 - [Phase 10]: 10-06 fix: Quote hasOwner set by override with the author's DE describe as ref; D-21 unchanged (field_reference alone still does not imply an owner)
+- [Phase 11]: Golden derived CMDT Id: deriveCustomMetadataId(m00,Support_Tier__mdt,Gold)=m00dI6W8ONPwAT6Q0N
+- [Phase 11]: 11-03: Hierarchy Name nillable, List Name unique; customKeyPrefix pool parameter keeps metadata self-contained
+- [Phase 11]: Unique reference indexes on soft-delete objects are partial (WHERE isdeleted = false) so deleted Hierarchy setting rows release SetupOwnerId
 
 ### Pending Todos
 
@@ -233,6 +245,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-14T14:38:33.348Z
-Stopped at: Completed 10-06-PLAN.md (all 6 plans done, phase verification pending)
+Last session: 2026-10-21T06:57:29.328Z
+Stopped at: Completed 11-09-PLAN.md
 Resume file: None

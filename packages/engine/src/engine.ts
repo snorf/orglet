@@ -121,10 +121,12 @@ export class DmlEngine {
   /**
    * Object-level createable/updateable/deletable/undeletable flags (the Object Reference's
    * Supported Calls; upsert needs both create and update). Import mode bypasses them, as
-   * coerce.ts bypasses field-level flags, so read-only objects can be migrated (D-08).
+   * coerce.ts bypasses field-level flags, so read-only objects can be migrated (D-08). The exception
+   * is custom metadata, which is refused in import mode too (D-13).
    */
   private refuse(obj: SObjectDef, operation: ObjectOperation, count: number): SaveResult[] | undefined {
-    if (this.importMode) return undefined;
+    // D-13: custom metadata is refused even in import mode, a deliberate deviation from Phase 3 D-08's bypass: the record files are the only source of __mdt rows and the D-03 sync would overwrite imported ones. INVALID_TYPE_FOR_OPERATION is a convention here; no data-API StatusCode for custom-metadata DML is documented (D-12, 11-RESEARCH Open Question 2).
+    if (this.importMode && obj.customMetadata !== true) return undefined;
     const allowed: Record<ObjectOperation, boolean> = {
       insert: obj.createable,
       update: obj.updateable,
@@ -452,6 +454,8 @@ export class DmlEngine {
         for (const [k, v] of Object.entries(audit)) if (!this.importMode || w.changes[k] === undefined) w.next[k] = v;
         w.next["Id"] = w.id;
         if (obj.hasOwner && w.next["OwnerId"] === undefined) w.next["OwnerId"] = session.userId;
+        // D-18: a Hierarchy custom-setting row without SetupOwnerId is the org-level default (Apex Developer Guide, Custom Settings).
+        if (obj.customSetting === "Hierarchy" && w.next["SetupOwnerId"] === undefined) w.next["SetupOwnerId"] = session.organizationId;
       } else {
         const stamps = this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now };
         w.next = { ...(w.old ?? {}), ...w.changes, ...stamps };

@@ -47,6 +47,16 @@ Quote.OpportunityId are allowed and a roll-up over an unlisted lookup degrades w
 8/8 legs green with describe-check 32/32 on both SDKs, DE retrieve check exit 0 with 0 warnings over
 55 objects. Stopgap: ContentVersion.ContentDocumentId is nullable until file upload is done properly
 (backlog 999.10).
+Phase 11 complete 2026-10-21 — custom metadata types load as read-only `__mdt` objects with their
+`customMetadata/` records seeded as rows (Ids derived from a hash of type and DeveloperName, so they are
+stable across restarts and `reset`; full sync per type on every `up`), `MetadataRelationship` fields load
+(mdt-to-mdt as a lookup, EntityDefinition/FieldDefinition as the qualified API name with
+`Rel__r.QualifiedApiName` selectable), DML on `__mdt` is refused everywhere including import mode and Bulk
+ingest, `customSettingsType` objects load as List/Hierarchy settings (`customSetting: true`, no OwnerId,
+unique `SetupOwnerId` defaulting to the org), and `CustomLabels` land on `OrgSchema.labels`. New
+`conformance/cmdt-check` fixture and legs (8/8 on both SDKs), 725 tests on pglite, 727 on Postgres 16,
+10/10 conformance legs green. Test infrastructure: `test/db.ts` filters pglite's premature ReadyForQuery
+(electric-sql/pglite#958) so repeated unique violations no longer desync pg.
 
 ## Current Milestone: v1.1 real-org fidelity
 
@@ -206,6 +216,24 @@ Validated in Phase 10 (v1.1, 2026-10-16):
 - ✓ `orglet check` keeps the warnings of a referenced-but-unmodelled standard object and reports an
   unreferenced one on an informational line that never fails `--strict` — BASE2-08
 
+Validated in Phase 11 (v1.1, 2026-10-21):
+
+- ✓ `__mdt` types load as read-only objects with the documented system fields, `m`-series key prefixes
+  persisted like custom objects, and describe flags that claim only describe, query and retrieve — CMDT-01
+- ✓ `customMetadata/` record files are seeded with hash-derived stable Ids, values coerced by the declared
+  field type (`"007"` stays text, `xsi:nil` is null), removed records disappear on reload, anomalies warn
+  and load — CMDT-02
+- ✓ `MetadataRelationship` loads: mdt target as the record Id with ordinary `Rel__r` traversal,
+  entity/field-definition target as the qualified API name with `Rel__r.QualifiedApiName` selectable,
+  dangling targets null plus one warning — CMDT-03
+- ✓ Describe, SOQL and REST retrieve of `__mdt` work through jsforce and simple-salesforce; insert, update,
+  delete, upsert, composite and Bulk ingest are refused with `INVALID_TYPE_FOR_OPERATION` — CMDT-04
+- ✓ `customSettingsType` objects load as List/Hierarchy settings (`customSetting: true`, no OwnerId,
+  `SetupOwnerId` unique with the org as default, `DUPLICATE_VALUE` on a second row); `orglet check`
+  states that setting data is not part of a retrieve — CSET-01
+- ✓ `CustomLabels.labels-meta.xml` loads onto `OrgSchema.labels` with name, value, language, category,
+  protected and short description — CSET-02
+
 ### Active
 
 Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements are defined in
@@ -316,6 +344,11 @@ on port 8180 with the `devrandom` org schema.
 | Conformance acceptance is measured, dated and reproducible: pinned SDK versions, `run.sh` default run equals the README run (two Jest invocations because Jest's `-t` filter cannot separate identically named v1/v2 tests), `conformance/run-all.sh` shared by CI and local runs | Numbers in a README are only evidence if the command that produced them is fixed and re-runnable (D-04/D-05/D-20) | ✓ Good (Phase 7) |
 | Every excluded upstream test carries a classification and reason; no upstream test files are patched; fidelity bugs the suites expose are fixed only with a documented Salesforce basis (the `sf__Error` separator was; empty-upload semantics were not, so excluded) | Keeps the `UNSUPPORTED`/honesty principle for the conformance record itself (D-02/D-21) | ✓ Good (Phase 7) |
 | `orglet check --strict` exits 1 on any warning; the DE retrieve check is run locally only, recording exit code, warning count and the summary line | Gives users and the acceptance record a machine-checkable gate without putting Level 1 metadata in the repo or CI (D-16/D-17) | ✓ Good (Phase 7) |
+| Custom-metadata record Ids are derived (`m`-prefix + hash of type and DeveloperName), never allocated; reload is a full sync per type | A retrieve is the only source of `__mdt` rows, so the same files must yield the same Ids in every environment and after `reset`, with no new state table (Phase 11 D-01/D-03) | ✓ Good (Phase 11) |
+| `EntityDefinition`/`FieldDefinition` are not modelled; a `MetadataRelationship` to them stores the qualified API name and only `QualifiedApiName` is selectable through `Rel__r` | orglet never points at something it cannot answer for; an unmodelled target is dangling by design, other paths are `INVALID_FIELD` + `UNSUPPORTED:entity-definition` (Phase 11 D-08..D-10) | ✓ Good (Phase 11) |
+| `__mdt` DML refused even in import mode; custom settings share the `a` prefix pool and keep full DML | Record files are the only source of `__mdt` rows and the sync would overwrite imports; the setting prefix series is undocumented, so sharing is orglet's recorded choice (Phase 11 D-13/D-19) | ✓ Good (Phase 11) |
+| Unique reference indexes on soft-delete objects are partial (`WHERE isdeleted = false`) | A deleted custom-setting row is gone for good in Salesforce, so its `SetupOwnerId` must not block a new org default; found by the cmdt-check conformance run | ✓ Good (Phase 11; existing schemas keep the old full index, no migration, phase unreleased) |
+| Test harness filters pglite's premature ReadyForQuery per connection instead of upgrading pglite | electric-sql/pglite#958 is unfixed in released versions (0.5.10 / socket 0.2.13 tried, worse); the filter is test-only and documented for removal | ✓ Good (Phase 11; remove when PR #1144 ships) |
 | CI `conformance` job added but not a required check on `main` yet | New job; promote to required once stable, as an explicit ruleset change (D-14) | — Pending |
 
 ## Evolution
@@ -336,4 +369,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-16 after Phase 10 (business standard objects)*
+*Last updated: 2026-10-21 after Phase 11 (custom metadata, custom settings and labels)*
