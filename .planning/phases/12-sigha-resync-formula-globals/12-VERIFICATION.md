@@ -1,7 +1,7 @@
 ---
 phase: 12-sigha-resync-formula-globals
 verified: 2026-10-23T16:00:00Z
-status: human_needed
+status: passed
 score: 5/5 success criteria verified in code (criterion 1 Linux half pending CI)
 human_verification:
   - test: "Push the branch (Johan's call) and let CI job sigha-sync-check run"
@@ -61,3 +61,8 @@ None blocking. I did not run a repo-wide stub scan beyond the targeted files. On
 ---
 _Verified: 2026-10-23_
 _Verifier: Claude (gsd-verifier)_
+
+
+## Human verification resolved (2026-10-23)
+
+The one human_needed item (success criterion 1, Linux half) was proven after the branch was pushed: CI run 39966103094 job `sigha-sync-check` succeeded on ubuntu (clone of `snorf/sigha` at `ff6c108786e086168c4e70797d23162fbab7e614`, re-sync, empty diff). All other jobs in that run also passed. Johan approved. Status raised to `passed`; see `12-HUMAN-UAT.md`.
