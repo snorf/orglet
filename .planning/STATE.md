@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 13-02-PLAN.md
-last_updated: "2026-10-24T18:17:48.529Z"
+stopped_at: Completed 13-04-PLAN.md
+last_updated: "2026-10-24T18:18:34.692Z"
 last_activity: 2026-10-24
 progress:
   total_phases: 18
   completed_phases: 5
   total_plans: 50
-  completed_plans: 44
+  completed_plans: 45
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 13 (roll-ups-over-formula-fields) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-10-24
 
@@ -133,6 +133,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 12 P08 | n/a | 2 tasks | 3 files |
 | Phase 13 P01 | 15min | 3 tasks | 8 files |
 | Phase 13 P02 | 8min | 2 tasks | 3 files |
+| Phase 13 P04 | 10min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -239,6 +240,7 @@ Recent decisions affecting current work:
 - [Phase 12]: D-08 correction: $Api _<n> suffix is API version times ten (_600 -> 60.0)
 - [Phase 12]: Phase 12 gate passed; Python conformance legs need a non-x86 venv on arm64 (scratch venv used)
 - [Phase 13]: volatileReasons uses canonical display names; formula cycles compile, so admission must detect them
+- [Phase 13]: Formula inputs aliased under column name in unnest derived table so aggregate/filterSql stay unchanged
 
 ### Pending Todos
 
@@ -261,6 +263,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-24T18:17:48.525Z
-Stopped at: Completed 13-02-PLAN.md
+Last session: 2026-10-24T18:18:34.688Z
+Stopped at: Completed 13-04-PLAN.md
 Resume file: None
