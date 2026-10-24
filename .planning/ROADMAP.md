@@ -157,7 +157,17 @@ Plans:
   2. Upgrading a database that already holds children backfills the formula roll-up once, and a second `orglet up` is silent.
   3. A roll-up over a formula with a cross-object path, `NOW`/`TODAY`/`TIMENOW`, or a `$User`, `$Profile`, `$Setup` or `$Api` root loads without failing, logs `UNSUPPORTED:rollup-formula` and skips that field.
   4. A formula-to-roll-up-to-formula cycle is detected and reported rather than looping.
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Wave 0: relax metadata formula gates, add volatileReasons, probes, test scaffolds
+- [ ] 13-02-PLAN.md — formulaInputs / dependencyOrder dependency walk in @orglet/formula
+- [ ] 13-03-PLAN.md — admitFormulaRollups: UNSUPPORTED:rollup-formula / rollup-cycle at load
+- [ ] 13-04-PLAN.md — derived-table SQL (unnest) with scale rounding, isFormulaRollup
+- [ ] 13-05-PLAN.md — _orglet.rollup_backfills marker helpers, migrate pendingBackfills
+- [ ] 13-06-PLAN.md — dependency-ordered formulas, watched sets, recompute over evaluated values
+- [ ] 13-07-PLAN.md — DmlEngine.backfillFormulaRollups (once, chain order, crash-safe)
+- [ ] 13-08-PLAN.md — CLI wiring (check/up/reset), PROJECT.md docs, phase gate
 **Research flag**: YES (return types and restriction set Salesforce allows; rounding to the formula's declared scale before aggregating).
 
 ### Phase 14: Check Report & Enterprise Acceptance
