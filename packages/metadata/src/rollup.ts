@@ -5,6 +5,7 @@
  * FieldDef of the aggregate's type (ROLL-01). Every problem, including a roll-up over a lookup that
  * is neither master-detail nor allowed, degrades with an UNSUPPORTED:rollup-* warning (D-06, D-07;
  * D-08 was reversed in Phase 10 plan 06).
+ * Formula fields pass here on shape and return type alone; @orglet/formula admitFormulaRollups removes the ones Salesforce does not allow (cross-object, NOW/TODAY/TIMENOW, evaluation-time globals) with UNSUPPORTED:rollup-formula.
  */
 import type { FieldDef, FieldType, RollupDef, RollupFilterDef, RollupFilterOperation, RollupOperation, SObjectDef } from "./types.js";
 import { pushDiagnostic, type DiagnosticSink, type SkippedItem } from "./diagnostics.js";
@@ -177,7 +178,6 @@ function tryResolve(objects: Map<string, SObjectDef>, parent: SObjectDef, sf: So
     column = { type: "Number", precision: sf.precision ?? 18, scale: sf.scale ?? 0 };
   } else {
     if (!summarized) return drop("rollup-target", "summarizedField is missing");
-    if (summarized.formula !== undefined) return drop("rollup-type", `${child.name}.${summarized.name} is a formula field`);
     const allowed = NUMERIC.has(summarized.type) || (op !== "SUM" && TEMPORAL.has(summarized.type));
     if (!allowed) return drop("rollup-type", `${op} over ${child.name}.${summarized.name} (${summarized.type}) is not supported`);
     column = NUMERIC.has(summarized.type)
@@ -208,9 +208,9 @@ const DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\
 /** `TODAY`, `LAST_N_DAYS:30`: platform date literals, deferred for roll-up filters. */
 const DATE_LITERAL_RE = /^[A-Za-z_]+(:\d+)?$/;
 
-/** Filterable stored fields only: formulas and roll-ups are not columns a child-side WHERE can see. */
+/** Filterable fields: stored fields and formula fields (family from the formula's declared return type, D-04). Roll-ups are never filterable. Which formulas a roll-up may read is decided after the build by admitFormulaRollups in @orglet/formula (Phase 13 D-07), because this package cannot compile formulas. */
 function familyOf(f: FieldDef): Family | undefined {
-  if (f.formula !== undefined || f.rollup !== undefined) return undefined;
+  if (f.rollup !== undefined) return undefined;
   switch (f.type) {
     case "Number":
     case "Currency":
