@@ -165,7 +165,7 @@ Plans:
 - [x] 13-03-PLAN.md — admitFormulaRollups: UNSUPPORTED:rollup-formula / rollup-cycle at load
 - [x] 13-04-PLAN.md — derived-table SQL (unnest) with scale rounding, isFormulaRollup
 - [x] 13-05-PLAN.md — _orglet.rollup_backfills marker helpers, migrate pendingBackfills
-- [ ] 13-06-PLAN.md — dependency-ordered formulas, watched sets, recompute over evaluated values
+- [x] 13-06-PLAN.md — dependency-ordered formulas, watched sets, recompute over evaluated values
 - [ ] 13-07-PLAN.md — DmlEngine.backfillFormulaRollups (once, chain order, crash-safe)
 - [ ] 13-08-PLAN.md — CLI wiring (check/up/reset), PROJECT.md docs, phase gate
 **Research flag**: YES (return types and restriction set Salesforce allows; rounding to the formula's declared scale before aggregating).
@@ -198,7 +198,7 @@ Plans:
 | 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
-| 13. Roll-Ups over Formula Fields | v1.1 | 5/8 | In Progress|  |
+| 13. Roll-Ups over Formula Fields | v1.1 | 6/8 | In Progress|  |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
 
 ## Backlog
@@ -209,7 +209,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 5/8 plans executed
+**Plans:** 6/8 plans executed
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
