@@ -1,12 +1,14 @@
 /** Phase 13: roll-ups over formula fields recompute in the save pipeline (D-14..D-16) and are backfilled once by the engine (D-10..D-13). Filled by plans 13-06 and 13-07. */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { randomBytes } from "node:crypto";
 import { buildOrgSchema, loadBaseline, type FieldDef, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
-import { migrate, quote, type Pool } from "@orglet/schema";
+import { admitFormulaRollups } from "@orglet/formula";
+import { migrate, quote, type MigrateResult, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
-import type { Session } from "./hooks.js";
+import type { Session, TriggerContext } from "./hooks.js";
+import { runQuery } from "./query.js";
 
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
 
@@ -225,9 +227,128 @@ describe("formula roll-up recompute", () => {
 });
 
 describe("formula roll-up backfill", () => {
-  it.todo("backfills a formula roll-up added to tables with rows once, lower chain levels first, without parent hooks");
-  it.todo("a second backfill runs nothing");
-  it.todo("a missing marker row is redone after a crash");
-  it.todo("backfills in import mode too");
-  it.todo("a roll-up skipped at admission answers INVALID_FIELD in SOQL");
+  const orgB = `test_${randomBytes(4).toString("hex")}`;
+  const markers = async (): Promise<number> => Number((await pool.query(`SELECT count(*) AS n FROM "_orglet"."rollup_backfills" WHERE org_schema = $1`, [orgB])).rows[0]?.n);
+  const parentCol = async (col: string): Promise<number> => Number((await pool.query(`SELECT ${col} AS v FROM ${quote(orgB)}.parent__c`)).rows[0]?.v);
+
+  /** The plan 06 fixture, with (true) or without (false) every roll-up and the formula that reads one; the Age__c / Sum_Age__c pair is inadmissible (TODAY()). */
+  const objectsFor = (withRollups: boolean): SourceObject[] =>
+    objects.map((o) => {
+      const fields = withRollups ? [...o.fields] : o.fields.filter((f) => f.type !== "Summary" && f.fullName !== "Score__c");
+      if (withRollups && o.name === "Child__c") fields.push(formula("Age__c", "Number", "TODAY() - Due__c", { precision: 18, scale: 0 }));
+      if (withRollups && o.name === "Parent__c") fields.push(rollup("Sum_Age__c", "sum", "Age__c"));
+      return { ...o, fields };
+    });
+  const source = (withRollups: boolean) => ({ rootDir: "", packageDirectories: [], objects: objectsFor(withRollups), globalValueSets: [], standardValueSets: [], warnings: [] });
+
+  let full: ReturnType<typeof admitFormulaRollups>;
+  let upgrade: MigrateResult;
+  let engineB: DmlEngine;
+  let sessionB: Session;
+  let hookLog: string[];
+  let firstRun: string[];
+
+  beforeAll(async () => {
+    const before = buildOrgSchema(await loadBaseline(), source(false)).schema;
+    full = admitFormulaRollups(buildOrgSchema(await loadBaseline(), source(true)));
+    await migrate(pool, before, { orgSchema: orgB });
+    sessionB = (await bootstrapOrg(pool, before, { orgSchema: orgB })).session;
+    const seed = new DmlEngine(pool, before, { orgSchema: orgB });
+    const ins = async (sobject: string, input: Record<string, unknown>): Promise<string> => {
+      const [r] = await seed.insert(sessionB, sobject, [input]);
+      expect(r?.errors, JSON.stringify(r?.errors)).toEqual([]);
+      return r?.id as string;
+    };
+    const grand = await ins("Grand__c", { Name: "G" });
+    const parent = await ins("Parent__c", { Name: "P", Grand__c: grand });
+    await ins("Child__c", { Name: "c1", Parent__c: parent, Qty__c: 2, Price__c: 10, Rate__c: 1 });
+    await ins("Child__c", { Name: "c2", Parent__c: parent, Qty__c: 3, Price__c: 5, Rate__c: 1 });
+    const gone = await ins("Child__c", { Name: "c3", Parent__c: parent, Qty__c: 100, Price__c: 1 });
+    expect((await seed.delete(sessionB, "Child__c", [gone]))[0]?.success).toBe(true);
+
+    upgrade = await migrate(pool, full.schema, { orgSchema: orgB });
+    hookLog = [];
+    const logging = {
+      run: (ctx: TriggerContext): Promise<void> => {
+        hookLog.push(`${ctx.sobject.name}.${ctx.operation}.${ctx.timing}`);
+        return Promise.resolve();
+      },
+    };
+    engineB = new DmlEngine(pool, full.schema, { orgSchema: orgB, executors: [logging] });
+  });
+
+  afterAll(async () => {
+    vi.restoreAllMocks();
+    await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgB)} CASCADE`);
+    await pool.query(`DELETE FROM "_orglet"."rollup_backfills" WHERE org_schema = $1`, [orgB]);
+  });
+
+  it("backfills a formula roll-up added to tables with rows once, lower chain levels first, without parent hooks", async () => {
+    expect(upgrade.statements.filter((s) => s.includes('SET "sum_line__c"'))).toEqual([]);
+    expect(upgrade.pendingBackfills).toContainEqual({ object: "Parent__c", field: "Sum_Line__c" });
+
+    firstRun = await engineB.backfillFormulaRollups();
+    expect(firstRun).toContain("Parent__c.Sum_Line__c");
+    expect(firstRun).toContain("Grand__c.Sum_Score__c");
+    expect(firstRun.indexOf("Parent__c.Sum_Line__c")).toBeLessThan(firstRun.indexOf("Grand__c.Sum_Score__c"));
+
+    expect(await parentCol("sum_line__c")).toBe(35);
+    expect(await parentCol("sum_third__c")).toBe(0.66);
+    expect(await parentCol("max_outer__c")).toBe(7);
+    expect(Number((await pool.query(`SELECT sum_score__c AS v FROM ${quote(orgB)}.grand__c`)).rows[0]?.v)).toBe(70);
+    expect(hookLog).toEqual([]);
+    expect(await markers()).toBe(firstRun.length);
+    expect(full.warnings.filter((w) => w.includes("UNSUPPORTED:rollup-formula"))).toEqual(["UNSUPPORTED:rollup-formula Parent__c.Sum_Age__c: Child__c.Age__c uses TODAY(); field skipped"]);
+  });
+
+  it("a second backfill runs nothing", async () => {
+    await pool.query(`UPDATE ${quote(orgB)}.parent__c SET sum_line__c = -1`);
+    expect(await engineB.backfillFormulaRollups()).toEqual([]);
+    expect(await parentCol("sum_line__c")).toBe(-1);
+    await pool.query(`UPDATE ${quote(orgB)}.parent__c SET sum_line__c = 35`);
+  });
+
+  it("a second up on a completed database runs no backfill and no UPDATE", async () => {
+    const count = await markers();
+    const again = await migrate(pool, full.schema, { orgSchema: orgB });
+    expect(again.pendingBackfills).toEqual([]);
+    expect(again.statements.filter((s) => /^UPDATE/i.test(s))).toEqual([]);
+
+    const sqls: string[] = [];
+    const connect = pool.connect.bind(pool) as () => Promise<Awaited<ReturnType<Pool["connect"]>>>;
+    vi.spyOn(pool, "connect").mockImplementation((async () => {
+      const c = await connect();
+      const q = c.query.bind(c) as (...a: unknown[]) => Promise<unknown>;
+      (c as unknown as { query: unknown }).query = (...a: unknown[]) => {
+        if (typeof a[0] === "string") sqls.push(a[0]);
+        return q(...a);
+      };
+      return c;
+    }) as never);
+    const qs = vi.spyOn(pool, "query");
+    expect(await engineB.backfillFormulaRollups()).toEqual([]);
+    const all = [...sqls, ...qs.mock.calls.map((c) => String(c[0]))];
+    vi.restoreAllMocks();
+    expect(all.filter((s) => /^\s*UPDATE/i.test(s))).toEqual([]);
+    expect(await markers()).toBe(count);
+  });
+
+  it("a missing marker row is redone after a crash", async () => {
+    await pool.query(`DELETE FROM "_orglet"."rollup_backfills" WHERE org_schema = $1 AND object_name = 'Parent__c' AND field_name = 'Sum_Line__c'`, [orgB]);
+    await pool.query(`UPDATE ${quote(orgB)}.parent__c SET sum_line__c = -1`);
+    expect(await engineB.backfillFormulaRollups()).toEqual(["Parent__c.Sum_Line__c"]);
+    expect(await parentCol("sum_line__c")).toBe(35);
+  });
+
+  it("backfills in import mode too", async () => {
+    await pool.query(`DELETE FROM "_orglet"."rollup_backfills" WHERE org_schema = $1`, [orgB]);
+    const imp = new DmlEngine(pool, full.schema, { orgSchema: orgB, importMode: true });
+    expect([...(await imp.backfillFormulaRollups())].sort()).toEqual([...firstRun].sort());
+  });
+
+  it("a roll-up skipped at admission answers INVALID_FIELD in SOQL", async () => {
+    const cols = await pool.query(`SELECT 1 FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'parent__c' AND column_name = 'sum_age__c'`, [orgB]);
+    expect(cols.rows).toEqual([]);
+    await expect(runQuery(engineB, sessionB, "SELECT Sum_Age__c FROM Parent__c")).rejects.toMatchObject({ errorCode: "INVALID_FIELD" });
+  });
 });
