@@ -55,6 +55,12 @@ describe("migrate", () => {
     expect(account.get("isdeleted")).toBe("boolean");
   });
 
+  it("reports no pending backfill when no formula roll-up exists", async () => {
+    const { schema } = await loadOrgSchema({ projectDir: ACME });
+    const result = await migrate(pool, schema, { orgSchema });
+    expect(result.pendingBackfills).toEqual([]);
+  });
+
   it("is idempotent: a second run executes no DDL beyond the idempotent statements", async () => {
     const { schema } = await loadOrgSchema({ projectDir: ACME });
     const result = await migrate(pool, schema, { orgSchema });
@@ -242,7 +248,9 @@ describe("roll-up backfill", () => {
       rootDir: "",
       packageDirectories: [],
       objects: [
-        sourceObject("Grand__c", [summary("Grand_Total__c", "sum", "Parent__c.Grand__c", "Parent__c.Total__c")]),
+        sourceObject("Grand__c", [summary("Grand_Total__c", "sum", "Parent__c.Grand__c", "Parent__c.Total__c"),
+          summary("Grand_Double__c", "sum", "Parent__c.Grand__c", "Parent__c.Double_Total__c"),
+        ]),
         sourceObject("Parent__c", [
           sourceField("Grand__c", "MasterDetail", { referenceTo: "Grand__c", relationshipName: "Parents" }),
           summary("Child_Count__c", "count", "Child__c.Parent__c"),
@@ -252,10 +260,12 @@ describe("roll-up backfill", () => {
           summary("Slipped__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Due__c", "greaterThan", "", "Child__c.Planned__c")]),
           summary("Not_Alpha__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Tag__c", "notEqual", "alpha")]),
           summary("Latest_Due__c", "max", "Child__c.Parent__c", "Child__c.Due__c"),
+          summary("Double_Total__c", "sum", "Child__c.Parent__c", "Child__c.Double__c"),
         ]),
         sourceObject("Child__c", [
           sourceField("Parent__c", "MasterDetail", { referenceTo: "Parent__c", relationshipName: "Children" }),
           sourceField("Amount__c", "Currency", { precision: 16, scale: 2 }),
+          sourceField("Double__c", "Number", { precision: 18, scale: 2, formula: "Amount__c * 2" }),
           sourceField("Done__c", "Checkbox"),
           sourceField("Tag__c", "Text", { length: 40 }),
           sourceField("Due__c", "Date"),
@@ -291,6 +301,13 @@ describe("roll-up backfill", () => {
     expect(up.warnings).toEqual([]);
     const updates = up.statements.filter((s) => s.startsWith(`UPDATE "${rollupSchema}"."`));
     expect(updates).toHaveLength(8);
+    expect(up.statements.some((s) => s.includes('SET "double_total__c"') || s.includes('SET "grand_double__c"'))).toBe(false);
+    expect(up.pendingBackfills).toEqual([
+      { object: "Parent__c", field: "Double_Total__c" },
+      { object: "Grand__c", field: "Grand_Double__c" },
+    ]);
+    const doubled = await pool.query<{ double_total__c: unknown }>(`SELECT double_total__c FROM ${quote(rollupSchema)}."parent__c" WHERE id = $1`, [p1]);
+    expect(doubled.rows[0]?.double_total__c).toBeNull();
     expect(up.statements.findIndex((s) => s.includes(`SET "grand_total__c"`))).toBeGreaterThan(up.statements.findIndex((s) => s.includes(`SET "total__c"`)));
 
     const parents = await pool.query<Record<string, unknown>>(
@@ -307,6 +324,7 @@ describe("roll-up backfill", () => {
     const again = await migrate(pool, full3, { orgSchema: rollupSchema });
     expect(again.warnings).toEqual([]);
     expect(again.statements.filter((s) => s.startsWith("UPDATE"))).toEqual([]);
+    expect(again.pendingBackfills).toEqual([]);
   });
 });
 
