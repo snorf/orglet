@@ -19,3 +19,4 @@ export { asString, formatDate, formatDatetime, formatTime, fromSfValue, recordVa
 export type { RecordData, RecordValue } from "./values.js";
 export { dependencyOrder, formulaInputs } from "./rollup-inputs.js";
 export type { FormulaInputs, FormulaLookup, OrderableFormula } from "./rollup-inputs.js";
+export { admitFormulaRollups } from "./rollup-admission.js";
