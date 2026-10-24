@@ -229,6 +229,9 @@ importers:
       '@orglet/engine':
         specifier: workspace:*
         version: link:../engine
+      '@orglet/formula':
+        specifier: workspace:*
+        version: link:../formula
       '@orglet/metadata':
         specifier: workspace:*
         version: link:../metadata
