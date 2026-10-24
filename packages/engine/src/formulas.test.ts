@@ -157,3 +157,53 @@ describe("custom metadata and labels in the registry", () => {
     expect(new FormulaRegistry(built.schema, planCustomMetadataSeed(built.schema, built.customMetadata)).diagnostics).toEqual([]);
   });
 });
+
+describe("formula evaluation order", () => {
+  async function withFormulas(extra: { name: string; formula: string }[]) {
+    const { schema } = await loadOrgSchema({ projectDir: ACME });
+    const account = schema.getObject("Account") as SObjectDef;
+    const template = account.fields.find((f) => f.name === "Name") as FieldDef;
+    const obj: SObjectDef = {
+      ...account,
+      fields: [...account.fields, ...extra.map((e) => ({ ...template, name: e.name, label: e.name, type: "Number" as const, formula: e.formula }))],
+    };
+    const objects = new Map(schema.objects);
+    objects.set("account", obj);
+    return { obj, registry: new FormulaRegistry(new OrgSchemaImpl(objects, schema.globalValueSets, schema.standardValueSets, schema.labels)) };
+  }
+
+  it("a formula declared before the formula it reads evaluates against the fresh value", async () => {
+    const { obj, registry } = await withFormulas([
+      { name: "Plus_One__c", formula: "Doubled__c + 1" },
+      { name: "Doubled__c", formula: "NumberOfEmployees * 2" },
+    ]);
+    const names = registry.formulaFields(obj).map((c) => c.field.name);
+    expect(names.indexOf("Doubled__c")).toBeLessThan(names.indexOf("Plus_One__c"));
+    const record: Record<string, unknown> = { NumberOfEmployees: 3 };
+    applyFormulaFields(registry, obj, record as never, {});
+    expect(record["Doubled__c"]).toBe(6);
+    expect(record["Plus_One__c"]).toBe(7);
+  });
+
+  it("evaluates only the requested formula fields when a subset is given", async () => {
+    const { obj, registry } = await withFormulas([
+      { name: "Plus_One__c", formula: "Doubled__c + 1" },
+      { name: "Doubled__c", formula: "NumberOfEmployees * 2" },
+    ]);
+    const record: Record<string, unknown> = { NumberOfEmployees: 3 };
+    applyFormulaFields(registry, obj, record as never, {}, new Set(["doubled__c"]));
+    expect(record["Doubled__c"]).toBe(6);
+    expect("Plus_One__c" in record).toBe(false);
+  });
+
+  it("formula fields that read each other do not hang the registry", async () => {
+    const { obj, registry } = await withFormulas([
+      { name: "Loop_A__c", formula: "Loop_B__c + 1" },
+      { name: "Loop_B__c", formula: "Loop_A__c + 1" },
+      { name: "Fine__c", formula: "NumberOfEmployees + 1" },
+    ]);
+    const names = registry.formulaFields(obj).map((c) => c.field.name);
+    expect(names).toContain("Fine__c");
+    for (const n of ["Loop_A__c", "Loop_B__c"]) if (names.includes(n)) expect(names.indexOf(n)).toBeGreaterThan(names.indexOf("Fine__c"));
+  });
+});

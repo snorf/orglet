@@ -3,7 +3,7 @@
  * once, and computes read-time projections (formula and compound fields) on rows.
  */
 import { formatDiagnostic, pushDiagnostic, type FieldDef, type FormulaFailure, type OrgSchema, type SObjectDef, type ValidationRuleDef } from "@orglet/metadata";
-import { compileFormula, evaluateCompiled, FormulaCompileError, type CompiledFormula, type CustomMetadataValues, type EvaluationContext, type FormulaDependencies, type FormulaResult, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
+import { compileFormula, dependencyOrder, evaluateCompiled, FormulaCompileError, type CompiledFormula, type CustomMetadataValues, type EvaluationContext, type FormulaDependencies, type FormulaResult, type GlobalRoot, type RecordData, type RecordValue } from "@orglet/formula";
 
 import type { CustomMetadataPlan } from "./seed.js";
 
@@ -51,14 +51,17 @@ export class FormulaRegistry {
             return compiled ? [{ rule, compiled }] : [];
           }),
       );
+      // D-02: evaluate in dependency order; evaluateCompiled reads referenced values from the record, so a formula must run after the formulas it reads (declaration order was wrong for formula-on-formula).
       this.fields.set(
         key,
-        obj.fields
-          .filter((f) => f.formula !== undefined)
-          .flatMap((field) => {
-            const compiled = this.tryCompile(field.formula ?? "", obj, "formula_field", `formula field ${obj.name}.${field.name}`, field.name, field.formulaTreatBlanksAs);
-            return compiled ? [{ field, compiled }] : [];
-          }),
+        dependencyOrder(
+          obj.fields
+            .filter((f) => f.formula !== undefined)
+            .flatMap((field) => {
+              const compiled = this.tryCompile(field.formula ?? "", obj, "formula_field", `formula field ${obj.name}.${field.name}`, field.name, field.formulaTreatBlanksAs);
+              return compiled ? [{ field, compiled }] : [];
+            }),
+        ),
       );
       for (const field of obj.fields) {
         if (field.defaultValue === undefined || field.formula !== undefined) continue;
@@ -157,9 +160,10 @@ export class FormulaRegistry {
   }
 }
 
-/** Compute formula fields onto `record` (parents must already be attached). */
-export function applyFormulaFields(registry: FormulaRegistry, obj: SObjectDef, record: RecordData, ctx: Omit<EvaluationContext, "record" | "isNew">): void {
+/** Compute formula fields onto `record` (parents must already be attached), in dependency order. `only`: lower-cased field names to compute, e.g. the formulas a roll-up reads (Phase 13 D-15); the caller includes inner formulas. */
+export function applyFormulaFields(registry: FormulaRegistry, obj: SObjectDef, record: RecordData, ctx: Omit<EvaluationContext, "record" | "isNew">, only?: ReadonlySet<string>): void {
   for (const { field, compiled } of registry.formulaFields(obj)) {
+    if (only !== undefined && !only.has(field.name.toLowerCase())) continue;
     record[field.name] = registry.evaluate(compiled, { ...ctx, record, isNew: false }).value;
   }
 }
