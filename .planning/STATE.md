@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: verifying
-stopped_at: Phase 13 context gathered
-last_updated: "2026-10-24T17:25:32.696Z"
-last_activity: 2026-10-23
+status: executing
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-10-24T18:15:54.760Z"
+last_activity: 2026-10-24
 progress:
   total_phases: 18
   completed_phases: 5
-  total_plans: 42
-  completed_plans: 42
+  total_plans: 50
+  completed_plans: 43
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 13 — roll-ups-over-formula-fields (not started)
+**Current focus:** Phase 13 — roll-ups-over-formula-fields
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 13 (Roll-Ups over Formula Fields)
-Plan: Not started
-Status: Phase 12 complete and verified (5/5 success criteria, CI green on Linux); Phase 13 ready to discuss/plan
-Last activity: 2026-10-23
+Phase: 13 (roll-ups-over-formula-fields) — EXECUTING
+Plan: 2 of 8
+Status: Ready to execute
+Last activity: 2026-10-24
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -131,6 +131,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 12 P06 | 15min | 2 tasks | 7 files |
 | Phase 12 P07 | 15min | 3 tasks | 10 files |
 | Phase 12 P08 | n/a | 2 tasks | 3 files |
+| Phase 13 P01 | 15min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -236,6 +237,7 @@ Recent decisions affecting current work:
 - [Phase 12]: Hierarchy $Setup merges per field user->profile->organization with no read-time defaultValue fallback; $UserRole/$Setup loaded only when formulas use them
 - [Phase 12]: D-08 correction: $Api _<n> suffix is API version times ten (_600 -> 60.0)
 - [Phase 12]: Phase 12 gate passed; Python conformance legs need a non-x86 venv on arm64 (scratch venv used)
+- [Phase 13]: volatileReasons uses canonical display names; formula cycles compile, so admission must detect them
 
 ### Pending Todos
 
@@ -258,6 +260,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-24T17:25:32.692Z
-Stopped at: Phase 13 context gathered
-Resume file: .planning/phases/13-roll-ups-over-formula-fields/13-CONTEXT.md
+Last session: 2026-10-24T18:15:54.756Z
+Stopped at: Completed 13-01-PLAN.md
+Resume file: None

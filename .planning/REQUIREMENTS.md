@@ -138,7 +138,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Roll-ups over formula fields
 
-- [ ] **ROLL2-01**: A roll-up (COUNT, SUM, MIN, MAX) whose summarized field or filter field is a
+- [x] **ROLL2-01**: A roll-up (COUNT, SUM, MIN, MAX) whose summarized field or filter field is a
   same-object, non-volatile formula (no cross-object path, no `NOW`/`TODAY`/`TIMENOW`, no `$User`,
   `$Profile`, `$Setup`, `$Api` roots; `$Label` and `$CustomMetadata` are compile-time constants and allowed) loads, recomputes in the save pipeline exactly as a
   stored-field roll-up does, and is backfilled once at upgrade; a roll-up over a formula outside that
@@ -251,7 +251,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FORM-03 | Phase 12 | Complete |
 | FORM-04 | Phase 12 | Complete |
 | FORM-05 | Phase 12 | Complete |
-| ROLL2-01 | Phase 13 | Pending |
+| ROLL2-01 | Phase 13 | Complete |
 | CHECK-01 | Phase 14 | Pending |
 | CHECK-02 | Phase 14 | Pending |
 | ACC2-01 | Phase 14 | Pending |
