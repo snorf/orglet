@@ -1,6 +1,9 @@
-import { beforeAll, describe, expect, it } from "vitest";
-import { buildOrgSchema, loadBaseline, type Baseline, type FieldDef, type FieldType, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
-import { rollupBackfillSql, rollupDepth, rollupSelectSql } from "./rollup.js";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { buildOrgSchema, loadBaseline, OrgSchemaImpl, type Baseline, type FieldDef, type FieldType, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
+import { openTestDb } from "../../../test/db.js";
+import { migrate } from "./migrate.js";
+import { quote } from "./columns.js";
+import { isFormulaRollup, rollupBackfillSql, rollupDepth, rollupSelectSql, type VirtualChildren } from "./rollup.js";
 
 // Same in-memory Parent__c/Child__c shape as packages/metadata/src/build.test.ts (test files are not imported across packages).
 const sourceField = (fullName: string, type: FieldType, extra: Partial<SourceField> = {}): SourceField => ({ fullName, label: fullName, type, ...extra });
@@ -198,5 +201,150 @@ describe("rollupDepth", () => {
     expect(rollupDepth(s, s.getField("Parent__c", "Child_Count__c") as FieldDef)).toBe(1);
     expect(rollupDepth(s, s.getField("Parent__c", "Total__c") as FieldDef)).toBe(1);
     expect(rollupDepth(s, s.getField("Grand__c", "Total__c") as FieldDef)).toBe(2);
+  });
+});
+
+describe("formula inputs (Phase 13 D-15)", () => {
+  const formulaChild = (): SourceField[] => [
+    ...childFields(),
+    sourceField("Third__c", "Number", { precision: 18, scale: 2, formula: "Qty__c / 3" }),
+    sourceField("Big__c", "Checkbox", { formula: "Qty__c > 10" }),
+    sourceField("Due_Plus__c", "Date", { formula: "Due__c + 1" }),
+    sourceField("Upper__c", "Text", { length: 40, formula: "UPPER(Tag__c)" }),
+  ];
+  const formulaParent: SourceField[] = [
+    summary("Total__c", "sum", "Child__c.Parent__c", "Child__c.Amount__c"),
+    summary("Child_Count__c", "count", "Child__c.Parent__c"),
+    summary("Sum_Third__c", "sum", "Child__c.Parent__c", "Child__c.Third__c"),
+    summary("Big_Count__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Big__c", "equals", "True")]),
+    summary("Max_Due_Plus__c", "max", "Child__c.Parent__c", "Child__c.Due_Plus__c"),
+    summary("Late_Count__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Due_Plus__c", "greaterThan", "", "Child__c.Planned__c")]),
+    summary("Upper_Count__c", "count", "Child__c.Parent__c", undefined, [filter("Child__c.Upper__c", "equals", "ALPHA, beta")]),
+  ];
+  let fs: OrgSchema;
+  let fp: SObjectDef;
+  const ff = (name: string): FieldDef => {
+    const f = fs.getField("Parent__c", name);
+    if (!f) throw new Error(`missing ${name}`);
+    return f;
+  };
+  const virtual: VirtualChildren = new Map([["child__c", { ids: ["c1", "c2"], values: new Map([["third__c", [0.3333, null]]]) }]]);
+
+  beforeAll(async () => {
+    const r = buildOrgSchema(await loadBaseline(), {
+      rootDir: "",
+      packageDirectories: [],
+      objects: [sourceObject("Parent__c", formulaParent), sourceObject("Child__c", formulaChild())],
+      globalValueSets: [],
+      standardValueSets: [],
+      warnings: [],
+    });
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:rollup"))).toEqual([]);
+    fs = r.schema;
+    fp = fs.getObject("Parent__c") as SObjectDef;
+  });
+
+  it("stored-field roll-ups produce the same SQL with or without virtual rows", () => {
+    const a = rollupSelectSql("org", fs, fp, [ff("Total__c")], ["p1"]);
+    expect(rollupSelectSql("org", fs, fp, [ff("Total__c")], ["p1"], virtual)).toEqual(a);
+  });
+
+  it("a formula input reads from an unnest derived table keyed by child id", () => {
+    const { sql, params } = rollupSelectSql("org", fs, fp, [ff("Sum_Third__c")], ["p1"], virtual);
+    expect(sql).toContain(`JOIN unnest($2::char(18)[], $3::numeric[]) AS v("_orglet_id", "third__c") ON v."_orglet_id" = c0."id") c`);
+    expect(sql).toContain(`SUM(c."third__c")`);
+    expect(params).toEqual([["p1"], ["c1", "c2"], [0.3333, null]]);
+  });
+
+  it("number formula values are rounded to the formula's declared scale before aggregation", () => {
+    expect(rollupSelectSql("org", fs, fp, [ff("Sum_Third__c")], ["p1"], virtual).sql).toContain(`round(v."third__c", 2) AS "third__c"`);
+  });
+
+  it("filters and valueFields on formula columns reuse the stored-field filter SQL", () => {
+    const rows = (name: string, vals: Array<string | number | boolean | null>): VirtualChildren => new Map([["child__c", { ids: ["c1"], values: new Map([[name, vals]]) }]]);
+    const big = rollupSelectSql("org", fs, fp, [ff("Big_Count__c")], ["p1"], rows("big__c", [true]));
+    expect(big.sql).toContain(`c."big__c" = $`);
+    expect(big.sql).toContain("::boolean");
+    expect(rollupSelectSql("org", fs, fp, [ff("Late_Count__c")], ["p1"], rows("due_plus__c", ["2026-01-02"])).sql).toContain(`c."due_plus__c" > c."planned__c"`);
+    const upper = rollupSelectSql("org", fs, fp, [ff("Upper_Count__c")], ["p1"], rows("upper__c", ["ALPHA"]));
+    expect(upper.sql).toContain(`lower(c."upper__c") = ANY(`);
+    expect(upper.params).toContainEqual(["alpha", "beta"]);
+  });
+
+  it("a formula input without evaluated values is a programming error", () => {
+    expect(() => rollupSelectSql("org", fs, fp, [ff("Sum_Third__c")], ["p1"])).toThrow(/Sum_Third__c: formula values for Child__c were not supplied/);
+  });
+
+  it("rollupBackfillSql binds the same derived table", () => {
+    const { sql, params } = rollupBackfillSql("org", fs, fp, ff("Sum_Third__c"), virtual);
+    expect(sql.startsWith(`UPDATE "org"."parent__c" AS p SET "sum_third__c" = COALESCE((SELECT SUM(c."third__c") FROM (SELECT c0.*`)).toBe(true);
+    expect(params).toEqual([["c1", "c2"], [0.3333, null]]);
+  });
+
+  it("isFormulaRollup is true for a direct formula input and for a roll-up over such a roll-up", async () => {
+    expect(isFormulaRollup(fs, ff("Sum_Third__c"))).toBe(true);
+    expect(isFormulaRollup(fs, ff("Big_Count__c"))).toBe(true);
+    expect(isFormulaRollup(fs, ff("Late_Count__c"))).toBe(true);
+    expect(isFormulaRollup(fs, ff("Total__c"))).toBe(false);
+    expect(isFormulaRollup(fs, ff("Child_Count__c"))).toBe(false);
+
+    const grandSchema = (summarized: string): OrgSchema =>
+      buildOrgSchema(loadedBaseline, {
+        rootDir: "",
+        packageDirectories: [],
+        objects: [
+          sourceObject("Grand__c", [summary("Grand__c_Sum", "sum", "Parent__c.Grand__c", `Parent__c.${summarized}`)]),
+          sourceObject("Parent__c", [sourceField("Grand__c", "MasterDetail", { referenceTo: "Grand__c", relationshipName: "Parents" }), ...formulaParent]),
+          sourceObject("Child__c", formulaChild()),
+        ],
+        globalValueSets: [],
+        standardValueSets: [],
+        warnings: [],
+      }).schema;
+    const loadedBaseline = await loadBaseline();
+    const viaFormula = grandSchema("Sum_Third__c");
+    const viaStored = grandSchema("Total__c");
+    expect(isFormulaRollup(viaFormula, viaFormula.getField("Grand__c", "Grand__c_Sum") as FieldDef)).toBe(true);
+    expect(isFormulaRollup(viaStored, viaStored.getField("Grand__c", "Grand__c_Sum") as FieldDef)).toBe(false);
+  });
+
+  describe("on a database", () => {
+    let db: Awaited<ReturnType<typeof openTestDb>>;
+    const org = `test_rollup_${Math.random().toString(16).slice(2, 10)}`;
+    beforeAll(async () => {
+      db = await openTestDb();
+    });
+    afterAll(async () => {
+      await db.pool.query(`DROP SCHEMA IF EXISTS ${quote(org)} CASCADE`);
+      await db.close();
+    });
+
+    it("the derived table executes and rounds before summing", async () => {
+      // Only the two custom objects, without roll-ups or formulas: migrate() must not backfill formula roll-ups itself.
+      const slim = new OrgSchemaImpl(
+        new Map(
+          ["parent__c", "child__c"].map((n) => {
+            const o = fs.objects.get(n) as SObjectDef;
+            return [n, { ...o, fields: o.fields.filter((f) => f.rollup === undefined && f.formula === undefined) }];
+          }),
+        ),
+        fs.globalValueSets,
+        fs.standardValueSets,
+      );
+      await migrate(db.pool, slim, { orgSchema: org });
+      const insert = async (table: string, id: string, extra: Record<string, unknown> = {}): Promise<void> => {
+        const cols = ["id", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", ...Object.keys(extra)];
+        const vals = ["$1", "false", "now()", "$2", "now()", "$2", "now()", ...Object.keys(extra).map((_, i) => `$${i + 3}`)];
+        await db.pool.query(`INSERT INTO ${quote(org)}.${quote(table)} (${cols.map(quote).join(", ")}) VALUES (${vals.join(", ")})`, [id, "005000000000001AAA", ...Object.values(extra)]);
+      };
+      const p = "a00000000000001AAA";
+      const kids = ["a01000000000001AAA", "a01000000000002AAA", "a01000000000003AAA"];
+      await insert("parent__c", p);
+      for (const k of kids) await insert("child__c", k, { parent__c: p, qty__c: 1 });
+      const v: VirtualChildren = new Map([["child__c", { ids: kids, values: new Map([["third__c", [0.3333, 0.3333, 0.3333]]]) }]]);
+      const { sql, params } = rollupSelectSql(org, fs, fp, [ff("Sum_Third__c")], [p], v);
+      const res = await db.pool.query<Record<string, unknown>>(sql, params);
+      expect(Number(res.rows[0]?.["Sum_Third__c"])).toBe(0.99);
+    });
   });
 });
