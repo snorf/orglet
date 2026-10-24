@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: executing
-stopped_at: Completed 13-07-PLAN.md
-last_updated: "2026-10-24T18:49:38.227Z"
+status: verifying
+stopped_at: Completed 13-08-PLAN.md
+last_updated: "2026-10-24T19:02:53.100Z"
 last_activity: 2026-10-24
 progress:
   total_phases: 18
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 50
-  completed_plans: 49
+  completed_plans: 50
   percent: 14
 ---
 
@@ -30,7 +30,7 @@ rather than faked.
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 13 (roll-ups-over-formula-fields) — EXECUTING
 Plan: 8 of 8
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-24
 
 Progress: [█░░░░░░░░░] 14%
@@ -138,6 +138,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 13 P03 | 15min | 2 tasks | 3 files |
 | Phase 13 P06 | 25min | 3 tasks | 5 files |
 | Phase 13 P07 | 30min | 2 tasks | 4 files |
+| Phase 13 P08 | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -247,6 +248,7 @@ Recent decisions affecting current work:
 - [Phase 13]: Formula inputs aliased under column name in unnest derived table so aggregate/filterSql stay unchanged
 - [Phase 13]: 13-06: stored-field roll-ups keep the pure SQL path; only formula-backed fields load and evaluate children
 - [Phase 13]: Formula roll-up backfill gated solely by the _orglet marker row; one transaction per column with its marker (13-07)
+- [Phase 13]: Backfill errors printed as error: <engine message> (already prefixed with roll-up backfill of Parent.Field failed)
 
 ### Pending Todos
 
@@ -269,6 +271,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-24T18:49:38.220Z
-Stopped at: Completed 13-07-PLAN.md
+Last session: 2026-10-24T19:02:53.090Z
+Stopped at: Completed 13-08-PLAN.md
 Resume file: None
