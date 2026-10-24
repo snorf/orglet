@@ -70,10 +70,16 @@ stays as is), the `orglet check` report redesign (Phase 14).
 - **D-08:** The warning names the rule and the offending field, e.g.
   `UNSUPPORTED:rollup-formula Account.Total_Score__c: Child__c.Score__c reads Account__r.Rating (cross-object)`
   or `... uses TODAY()`; for a chain, the inner formula that breaks the rule is named.
+  Decided 2026-10-24 (plan review): `FormulaDependencies` gains an optional `volatileReasons: string[]`
+  (e.g. `["TODAY()"]`) filled by the compiler so the warning can name the function; additive change in
+  `@orglet/formula`, `dependencies.test.ts` assertions updated.
 - **D-09:** A formula -> roll-up -> formula cycle detected at load is reported as
   `UNSUPPORTED:rollup-cycle` with the full cycle path in the message; every roll-up on the cycle is
-  skipped (D-06), the formulas stay. `--strict` fails on it as on any warning. No hard load failure
-  (Phase 5 D-08 stays reserved for roll-ups over a disallowed lookup).
+  skipped (D-06). Formulas that do not read a skipped roll-up stay; a formula that reads a skipped
+  roll-up fails compile as usual and gets its own `UNSUPPORTED:formula` warning, emitted after the
+  cycle diagnostic so the order reads cause-then-effect (decided 2026-10-24, plan review). `--strict`
+  fails on it as on any warning. No hard load failure (Phase 5 D-08 stays reserved for roll-ups over
+  a disallowed lookup).
 
 ### Backfill on upgrade
 - **D-10:** Formula-dependent roll-ups are not backfilled inside the migrate transaction. `migrate()`
