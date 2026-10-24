@@ -140,7 +140,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 - [ ] **ROLL2-01**: A roll-up (COUNT, SUM, MIN, MAX) whose summarized field or filter field is a
   same-object, non-volatile formula (no cross-object path, no `NOW`/`TODAY`/`TIMENOW`, no `$User`,
-  `$Profile`, `$Setup`, `$Api`, `$Label` roots) loads, recomputes in the save pipeline exactly as a
+  `$Profile`, `$Setup`, `$Api` roots; `$Label` and `$CustomMetadata` are compile-time constants and allowed) loads, recomputes in the save pipeline exactly as a
   stored-field roll-up does, and is backfilled once at upgrade; a roll-up over a formula outside that
   set warns `UNSUPPORTED:rollup-formula` and skips the field instead of failing the load.
 

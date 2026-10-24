@@ -155,7 +155,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A COUNT, SUM, MIN or MAX roll-up whose summarized or filter field is a same-object, non-volatile formula loads, and inserting, updating, deleting or undeleting child rows changes the parent value exactly as for a stored-field roll-up (including when a field the formula reads changes).
   2. Upgrading a database that already holds children backfills the formula roll-up once, and a second `orglet up` is silent.
-  3. A roll-up over a formula with a cross-object path, `NOW`/`TODAY`/`TIMENOW`, or a `$User`, `$Profile`, `$Setup`, `$Api` or `$Label` root loads without failing, logs `UNSUPPORTED:rollup-formula` and skips that field.
+  3. A roll-up over a formula with a cross-object path, `NOW`/`TODAY`/`TIMENOW`, or a `$User`, `$Profile`, `$Setup` or `$Api` root loads without failing, logs `UNSUPPORTED:rollup-formula` and skips that field.
   4. A formula-to-roll-up-to-formula cycle is detected and reported rather than looping.
 **Plans**: TBD
 **Research flag**: YES (return types and restriction set Salesforce allows; rounding to the formula's declared scale before aggregating).
