@@ -55,13 +55,14 @@ completed: 2026-10-24
 | `pnpm test` (pglite) | NOT fully green on first run: 866 passed, 2 failed, both 30 s timeouts: `seed.test.ts` (reset/second schema Ids) and `upgrade-owner.test.ts`. Rerun in isolation of `seed.test.ts`, `upgrade.test.ts`, `upgrade-owner.test.ts`: 3 files, 23/23 passed. Treated as the known CPU-load timeouts; no code failure observed |
 | `ORGLET_DATABASE_URL=postgres://orglet:orglet@localhost:5433/orglet pnpm test` (Postgres 16) | NOT fully green on first run: 869 passed, 1 failed, 1 skipped; the failure was a 30 s timeout in `upgrade-owner.test.ts`. Isolated rerun on Postgres: 2/2 passed (15.7 s) |
 | `bash conformance/run-all.sh` | **Partially run, exit 1 (environment failure).** All five jsforce legs PASS (jsforce-subset 32/32, describe-check, poly-check 4/4 or equivalent, rollup-check, cmdt-check 8/8). All five Python legs (simple-salesforce, describe-check-python, poly-check-python, rollup-check-python, cmdt-check-python) did NOT run: `env: conformance/python/.venv/bin/python: Bad CPU type in executable` (venv built for a different CPU architecture). Not repaired, per instructions. Python-leg result is therefore unknown, not a pass |
+| `bash conformance/run-all.sh` (orchestrator re-run) | **All 10 legs PASS.** Re-run by the phase orchestrator after the executor finished, with `PYTHON` pointed at a freshly built arm64 venv (python 3.12, `conformance/python/requirements.txt`) outside the repo, `ORGLET_DATABASE_URL` on the local Postgres 16 container and a fresh `ORG_SCHEMA`. jsforce-subset, simple-salesforce (8/8), describe-check (both), poly-check (both), rollup-check (both), cmdt-check (both) all PASS; `git status --porcelain examples/ conformance/` empty afterwards. The committed `conformance/python/.venv` is still x86_64 and needs rebuilding on this machine |
 | `git status --porcelain examples/ conformance/` | empty (acme and conformance unchanged) |
 
 Note the Python legs would have exercised pre-existing and Phase 13 rollup behaviour through simple-salesforce; the jsforce rollup-check leg covers the same Phase 13 surface and passed.
 
 ## Deviations from Plan
 
-None - plan executed as written. The only unmet gate item is the Python conformance legs (environment failure, above).
+None - plan executed as written. The Python conformance legs could not run from the executor's environment (x86_64 venv) but passed in the orchestrator's re-run with an arm64 venv (gate table above).
 
 ## Known Stubs
 
