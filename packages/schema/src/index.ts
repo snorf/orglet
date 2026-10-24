@@ -21,6 +21,7 @@ export { isWidening, migrate } from "./migrate.js";
 export type { MigrateOptions, MigrateResult } from "./migrate.js";
 export { isFormulaRollup, rollupBackfillSql, rollupDepth, rollupSelectSql } from "./rollup.js";
 export type { RollupStatement, VirtualChildren, VirtualRows } from "./rollup.js";
+export { completedRollupBackfills, dropRollupBackfills, ensureRollupBackfillTable, markRollupBackfilled, rollupBackfillKey } from "./backfills.js";
 export { ensureInternalSchema } from "./internal.js";
 export { KeyPrefixError, planKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, dropKeyPrefixes } from "./prefixes.js";
 export type { KeyPrefixSource, KeyPrefixClaim, KeyPrefixAssignment, KeyPrefixPlanInput, KeyPrefixPlan, ReconcileKeyPrefixesOptions, ReconcileKeyPrefixesResult } from "./prefixes.js";
