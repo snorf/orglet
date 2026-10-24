@@ -2,17 +2,24 @@
  * Which roll-up summary parents a child DML touches. The registry indexes every roll-up by its child
  * object once per OrgSchema; affectedParents turns a batch of child work items into the parent ids to
  * recompute and, per parent, every child in the batch that points at it (the D-03 blame set).
+ * Roll-ups over formula fields watch the stored fields those formulas read (Phase 13 D-14).
  */
 import type { FieldDef, OrgSchema, RollupDef, SObjectDef } from "@orglet/metadata";
-import type { RecordData } from "@orglet/formula";
+import { formulaInputs, type FormulaLookup, type RecordData } from "@orglet/formula";
+
+import type { FormulaRegistry } from "./formulas.js";
 
 export interface RollupBinding {
   parent: SObjectDef;
   field: FieldDef;
   rollup: RollupDef;
   child: SObjectDef;
-  /** Fields whose change can move this roll-up: FK, summarized field, filter fields and valueFields. */
+  /** Fields whose change can move this roll-up: FK, summarized field, filter fields and valueFields, and for a formula among them the stored same-object fields it reads, transitively (D-14). */
   watched: ReadonlySet<string>;
+  /** True when the summarized field, a filter field or a valueField is a formula on the child: recomputed over TS-evaluated values (Phase 13 D-15). */
+  formulaBacked: boolean;
+  /** Child formula fields to evaluate for this roll-up, inner first (empty unless formulaBacked). */
+  formulas: string[];
 }
 
 export type RollupKind = "insert" | "update" | "delete" | "undelete";
@@ -36,7 +43,13 @@ export interface ParentGroup<W> {
 export class RollupRegistry {
   private readonly byChild = new Map<string, RollupBinding[]>();
 
-  constructor(schema: OrgSchema) {
+  private readonly byField = new Map<FieldDef, RollupBinding>();
+
+  constructor(schema: OrgSchema, formulas?: Pick<FormulaRegistry, "fieldDependencies">) {
+    const lookup: FormulaLookup = (o, f) => {
+      const obj = schema.getObject(o);
+      return obj && formulas ? formulas.fieldDependencies(obj, f) : undefined;
+    };
     for (const parent of schema.objects.values()) {
       for (const field of parent.fields) {
         const rollup = field.rollup;
@@ -44,15 +57,31 @@ export class RollupRegistry {
         const child = schema.getObject(rollup.childObject);
         if (!child) continue;
         const watched = new Set<string>([rollup.foreignKey]);
-        if (rollup.summarizedField !== undefined) watched.add(rollup.summarizedField);
-        for (const f of rollup.filters) {
-          watched.add(f.field);
-          if (f.valueField !== undefined) watched.add(f.valueField);
+        const formulaNames: string[] = [];
+        let formulaBacked = false;
+        const inputs = [rollup.summarizedField, ...rollup.filters.flatMap((x) => [x.field, x.valueField])];
+        for (const name of inputs) {
+          if (name === undefined) continue;
+          const def = schema.getField(child.name, name);
+          if (def?.formula !== undefined) {
+            const walked = formulaInputs(schema, lookup, child.name, def.name);
+            for (const s of walked.stored) watched.add(s);
+            for (const f of walked.formulas) if (!formulaNames.some((n) => n.toLowerCase() === f.toLowerCase())) formulaNames.push(f);
+            formulaBacked = true;
+          } else {
+            watched.add(name);
+          }
         }
+        const binding: RollupBinding = { parent, field, rollup, child, watched, formulaBacked, formulas: formulaNames };
         const key = child.name.toLowerCase();
-        this.byChild.set(key, [...(this.byChild.get(key) ?? []), { parent, field, rollup, child, watched }]);
+        this.byChild.set(key, [...(this.byChild.get(key) ?? []), binding]);
+        this.byField.set(field, binding);
       }
     }
+  }
+
+  binding(field: FieldDef): RollupBinding | undefined {
+    return this.byField.get(field);
   }
 
   forChild(child: SObjectDef): RollupBinding[] {
