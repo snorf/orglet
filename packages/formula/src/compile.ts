@@ -65,6 +65,8 @@ export interface FormulaDependencies {
   globals: GlobalRoot[];
   /** NOW/TODAY/TIMENOW or an evaluation-time global: the value can change without the record changing. */
   volatile: boolean;
+  /** Present only when volatile: what makes it so, e.g. `TODAY()`, `$User`; sorted, unique. Lets UNSUPPORTED:rollup-formula say "uses TODAY()" (Phase 13 D-08). */
+  volatileReasons?: string[];
 }
 
 /** A formula that compiles but is degraded; message is relative to the formula (the registry prefixes what). */
@@ -136,6 +138,7 @@ interface Resolver {
   fields: Map<string, ObjectFieldDependency>;
   globals: Set<GlobalRoot>;
   volatile: boolean;
+  volatileReasons: Set<string>;
   customMetadata?: CustomMetadataValues;
   /** `Type__mdt.DeveloperName` of every $CustomMetadata record that was not loaded. */
   unknownRecords: Set<string>;
@@ -267,6 +270,7 @@ function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
       } else throw notFound();
       r.globals.add("$Api");
       r.volatile = true;
+      r.volatileReasons.add("$Api");
       return register(r, ref);
     }
     if (root.toLowerCase() === "$permission") {
@@ -290,6 +294,7 @@ function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
       if (!field) throw fieldNotFound(node.path.join("."), { object: setting.name, field: fieldName });
       r.globals.add("$Setup");
       r.volatile = true;
+      r.volatileReasons.add("$Setup");
       return register(r, { key: `$Setup.${setting.name}.${field.name}`, kind: "setup", path: [field.name], setting: setting.name, field, type: sfTypeOf(field) });
     }
     const objectName = GLOBAL_OBJECTS[root.toLowerCase()];
@@ -297,7 +302,10 @@ function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
     const resolved = resolvePath(r.schema, objectName, node.path.slice(1));
     const globalName = `$${objectName}` as GlobalRoot;
     r.globals.add(globalName);
-    if (EVALUATION_TIME_GLOBALS.has(globalName)) r.volatile = true;
+    if (EVALUATION_TIME_GLOBALS.has(globalName)) {
+      r.volatile = true;
+      r.volatileReasons.add(globalName);
+    }
     const key = [globalName, ...resolved.path].join(".");
     return register(r, { key, kind: "global", path: resolved.path, global: globalName, field: resolved.field, type: sfTypeOf(resolved.field) });
   }
@@ -331,7 +339,10 @@ function rewriteCall(node: FunctionCall, r: Resolver): Expr {
     r.usesRecordState = true;
     return register(r, { key: "$Record.IsNew", kind: "isNew", path: [], type: "Boolean" });
   }
-  if (TIME_FUNCTIONS.has(name)) r.volatile = true;
+  if (TIME_FUNCTIONS.has(name)) {
+    r.volatile = true;
+    r.volatileReasons.add(`${name}()`);
+  }
   return { ...node, args: node.args.map((a) => rewrite(a, r)) };
 }
 
@@ -366,7 +377,7 @@ export function compileFormula(source: string, options: CompileOptions): Compile
     throw new FormulaCompileError(`Error in formula: ${analysisErrors.map((d) => d.message).join("; ")}`, analysisErrors);
   }
 
-  const resolver: Resolver = { schema: options.schema, objectName: options.objectName, references: new Map(), usesRecordState: false, fields: new Map(), globals: new Set(), volatile: false, unknownRecords: new Set(), ...(options.customMetadata ? { customMetadata: options.customMetadata } : {}) };
+  const resolver: Resolver = { schema: options.schema, objectName: options.objectName, references: new Map(), usesRecordState: false, fields: new Map(), globals: new Set(), volatile: false, volatileReasons: new Set(), unknownRecords: new Set(), ...(options.customMetadata ? { customMetadata: options.customMetadata } : {}) };
   const ast = rewrite(parsed.ast, resolver);
   const references = [...resolver.references.values()];
   const parentPaths = new Map<string, string[]>();
@@ -392,6 +403,7 @@ export function compileFormula(source: string, options: CompileOptions): Compile
         .sort((a, b) => a.path.length - b.path.length || (a.path.join(".") < b.path.join(".") ? -1 : a.path.join(".") > b.path.join(".") ? 1 : 0)),
       globals: [...resolver.globals].sort(),
       volatile: resolver.volatile,
+      ...(resolver.volatile ? { volatileReasons: [...resolver.volatileReasons].sort() } : {}),
     },
     warnings:
       resolver.unknownRecords.size > 0
