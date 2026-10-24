@@ -45,7 +45,16 @@ export class RollupRegistry {
 
   private readonly byField = new Map<FieldDef, RollupBinding>();
 
-  constructor(schema: OrgSchema, formulas?: Pick<FormulaRegistry, "fieldDependencies">) {
+  private readonly bindings: RollupBinding[] = [];
+
+  private readonly levels = new Map<FieldDef, number>();
+
+  private readonly visiting = new Set<FieldDef>();
+
+  constructor(
+    private readonly schema: OrgSchema,
+    formulas?: Pick<FormulaRegistry, "fieldDependencies">,
+  ) {
     const lookup: FormulaLookup = (o, f) => {
       const obj = schema.getObject(o);
       return obj && formulas ? formulas.fieldDependencies(obj, f) : undefined;
@@ -76,12 +85,36 @@ export class RollupRegistry {
         const key = child.name.toLowerCase();
         this.byChild.set(key, [...(this.byChild.get(key) ?? []), binding]);
         this.byField.set(field, binding);
+        this.bindings.push(binding);
       }
     }
   }
 
   binding(field: FieldDef): RollupBinding | undefined {
     return this.byField.get(field);
+  }
+
+  /** Every binding in construction order. */
+  all(): RollupBinding[] {
+    return this.bindings;
+  }
+
+  /** Chain level for backfill order: 1 for a roll-up whose watched inputs are all non-roll-up fields, otherwise 1 + the highest level among the roll-up columns it watches (summarized roll-ups and roll-ups its formulas read, D-03). */
+  level(field: FieldDef): number {
+    const known = this.levels.get(field);
+    if (known !== undefined) return known;
+    const b = this.byField.get(field);
+    if (!b || this.visiting.has(field)) return 1;
+    this.visiting.add(field);
+    const inner = [...b.watched].map((n) => {
+      const d = this.schema.getField(b.child.name, n);
+      const nested = d?.rollup ? this.binding(d) : undefined;
+      return nested ? this.level(nested.field) : 0;
+    });
+    this.visiting.delete(field);
+    const level = 1 + Math.max(0, ...inner);
+    this.levels.set(field, level);
+    return level;
   }
 
   forChild(child: SObjectDef): RollupBinding[] {

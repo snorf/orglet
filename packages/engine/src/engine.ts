@@ -9,7 +9,21 @@
  * children that point at it.
  */
 import type { FieldDef, FormulaFailure, OrgSchema, SObjectDef } from "@orglet/metadata";
-import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchLookupTarget, rollupSelectSql, type Pool, type PoolClient, type VirtualChildren, type VirtualRows } from "@orglet/schema";
+import {
+  completedRollupBackfills,
+  DEFAULT_ORG_SCHEMA,
+  ensureRollupBackfillTable,
+  formatSalesforceDatetime,
+  generateId,
+  isFormulaRollup,
+  keyPrefixOf,
+  markRollupBackfilled,
+  matchLookupTarget,
+  rollupBackfillKey,
+  rollupBackfillSql,
+  rollupSelectSql,
+  withTransaction,
+  type Pool, type PoolClient, type VirtualChildren, type VirtualRows } from "@orglet/schema";
 import { asString, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
@@ -657,17 +671,56 @@ export class DmlEngine {
     for (const [key, { child, fks, only }] of byChild) {
       const rows = new Map<string, RecordData>();
       for (const fk of fks) for (const r of await this.store.childrenOf(client, child, fk, parentIds)) rows.set(asString(r["Id"]), r);
-      const list = [...rows.values()];
-      // Empty context: admitted formulas read only the record and compile-time constants (D-01).
-      for (const row of list) applyFormulaFields(this.formulas, child, row, {}, only);
-      const values = new Map<string, ReadonlyArray<string | number | boolean | null>>();
-      for (const name of only) {
-        const def = this.schema.getField(child.name, name);
-        if (def) values.set(name, list.map((r) => sqlValue(r[def.name], def)));
-      }
-      out.set(key, { ids: list.map((r) => asString(r["Id"])), values });
+      out.set(key, this.virtualRows(child, [...rows.values()], [...only]));
     }
     return out;
+  }
+
+  /** Evaluate `formulas` (and nothing else) on each row in place and shape the result as the derived-table input of a formula roll-up. */
+  private virtualRows(child: SObjectDef, list: RecordData[], formulas: Iterable<string>): VirtualRows {
+    const only = new Set([...formulas].map((n) => n.toLowerCase()));
+    // Empty context: admitted formulas read only the record and compile-time constants (D-01).
+    for (const row of list) applyFormulaFields(this.formulas, child, row, {}, only);
+    const values = new Map<string, ReadonlyArray<string | number | boolean | null>>();
+    for (const name of only) {
+      const def = this.schema.getField(child.name, name);
+      if (def) values.set(name, list.map((r) => sqlValue(r[def.name], def)));
+    }
+    return { ids: list.map((r) => asString(r["Id"])), values };
+  }
+
+  /**
+   * Backfill every roll-up that reads a formula field (isFormulaRollup) and has no _orglet.rollup_backfills row for this org
+   * (Phase 13 D-10, D-11): lower chain levels first, each column in its own transaction together with its marker row, so a
+   * crash leaves the column to be redone by the next call. A data load, not a save: no parent rules, hooks, audit stamps or
+   * change events (D-12); runs in import mode too (D-13). Called by orglet up after migrate() committed (never inside its
+   * transaction, Phase 8: pending FK trigger events block later DDL). Returns the `Object.Field` names it computed; a later
+   * `orglet rollup --recompute` (ROLLX-01) can reuse it.
+   */
+  async backfillFormulaRollups(): Promise<string[]> {
+    await ensureRollupBackfillTable(this.pool);
+    const done = await completedRollupBackfills(this.pool, this.orgSchema);
+    const todo = this.rollups
+      .all()
+      .filter((b) => isFormulaRollup(this.schema, b.field) && !done.has(rollupBackfillKey(b.parent.name, b.field.name)))
+      .sort((a, b) => this.rollups.level(a.field) - this.rollups.level(b.field));
+    for (const b of todo) {
+      try {
+        await withTransaction(this.pool, async (client) => {
+          let virtual: VirtualChildren | undefined;
+          if (b.formulaBacked) {
+            const rows = await this.store.liveRows(client, b.child);
+            virtual = new Map([[b.child.name.toLowerCase(), this.virtualRows(b.child, rows, b.formulas)]]);
+          }
+          const { sql, params } = rollupBackfillSql(this.orgSchema, this.schema, b.parent, b.field, virtual);
+          await client.query(sql, params);
+          await markRollupBackfilled(client, this.orgSchema, b.parent.name, b.field.name);
+        });
+      } catch (err) {
+        throw new Error(`roll-up backfill of ${b.parent.name}.${b.field.name} failed: ${(err as Error).message}`, { cause: err });
+      }
+    }
+    return todo.map((b) => `${b.parent.name}.${b.field.name}`);
   }
 
   /** The parent's save procedure for a roll-up change (D-01, D-02): before-hooks, its rules, the UPDATE, after-hooks. No audit stamps. */

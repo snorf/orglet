@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { randomBytes } from "node:crypto";
 import { buildOrgSchema, loadBaseline, type FieldDef, type OrgSchema, type SObjectDef, type SourceField, type SourceFilterItem, type SourceObject } from "@orglet/metadata";
 import { admitFormulaRollups } from "@orglet/formula";
-import { migrate, quote, type MigrateResult, type Pool } from "@orglet/schema";
+import { migrate, quote, type MigrateResult, type Pool, type PoolClient } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
 import { DmlEngine } from "./engine.js";
@@ -228,8 +228,8 @@ describe("formula roll-up recompute", () => {
 
 describe("formula roll-up backfill", () => {
   const orgB = `test_${randomBytes(4).toString("hex")}`;
-  const markers = async (): Promise<number> => Number((await pool.query(`SELECT count(*) AS n FROM "_orglet"."rollup_backfills" WHERE org_schema = $1`, [orgB])).rows[0]?.n);
-  const parentCol = async (col: string): Promise<number> => Number((await pool.query(`SELECT ${col} AS v FROM ${quote(orgB)}.parent__c`)).rows[0]?.v);
+  const markers = async (): Promise<number> => Number((await pool.query<{ n: string }>(`SELECT count(*) AS n FROM "_orglet"."rollup_backfills" WHERE org_schema = $1`, [orgB])).rows[0]?.n);
+  const parentCol = async (col: string): Promise<number> => Number((await pool.query<{ v: string }>(`SELECT ${col} AS v FROM ${quote(orgB)}.parent__c`)).rows[0]?.v);
 
   /** The plan 06 fixture, with (true) or without (false) every roll-up and the formula that reads one; the Age__c / Sum_Age__c pair is inadmissible (TODAY()). */
   const objectsFor = (withRollups: boolean): SourceObject[] =>
@@ -295,7 +295,7 @@ describe("formula roll-up backfill", () => {
     expect(await parentCol("sum_line__c")).toBe(35);
     expect(await parentCol("sum_third__c")).toBe(0.66);
     expect(await parentCol("max_outer__c")).toBe(7);
-    expect(Number((await pool.query(`SELECT sum_score__c AS v FROM ${quote(orgB)}.grand__c`)).rows[0]?.v)).toBe(70);
+    expect(Number((await pool.query<{ v: string }>(`SELECT sum_score__c AS v FROM ${quote(orgB)}.grand__c`)).rows[0]?.v)).toBe(70);
     expect(hookLog).toEqual([]);
     expect(await markers()).toBe(firstRun.length);
     expect(full.warnings.filter((w) => w.includes("UNSUPPORTED:rollup-formula"))).toEqual(["UNSUPPORTED:rollup-formula Parent__c.Sum_Age__c: Child__c.Age__c uses TODAY(); field skipped"]);
@@ -315,16 +315,21 @@ describe("formula roll-up backfill", () => {
     expect(again.statements.filter((s) => /^UPDATE/i.test(s))).toEqual([]);
 
     const sqls: string[] = [];
-    const connect = pool.connect.bind(pool) as () => Promise<Awaited<ReturnType<Pool["connect"]>>>;
-    vi.spyOn(pool, "connect").mockImplementation((async () => {
-      const c = await connect();
+    const connect = pool.connect.bind(pool) as unknown as (...a: unknown[]) => Promise<PoolClient>;
+    vi.spyOn(pool, "connect").mockImplementation(((...args: unknown[]) => {
+      // pool.query() calls connect(callback) internally: pass those through untouched.
+      if (args.length > 0) return connect(...args);
+      return wrap(connect());
+    }) as never);
+    const wrap = async (pending: Promise<PoolClient>) => {
+      const c = await pending;
       const q = c.query.bind(c) as (...a: unknown[]) => Promise<unknown>;
       (c as unknown as { query: unknown }).query = (...a: unknown[]) => {
         if (typeof a[0] === "string") sqls.push(a[0]);
         return q(...a);
       };
       return c;
-    }) as never);
+    };
     const qs = vi.spyOn(pool, "query");
     expect(await engineB.backfillFormulaRollups()).toEqual([]);
     const all = [...sqls, ...qs.mock.calls.map((c) => String(c[0]))];

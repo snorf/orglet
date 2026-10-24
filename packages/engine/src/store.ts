@@ -35,6 +35,12 @@ export class Store {
     return new Map(res.rows.map((r) => [r["Id"] as string, r]));
   }
 
+  /** Every live row of `obj`: the input of a formula roll-up backfill (Phase 13 D-15), which evaluates child formulas in TS. */
+  async liveRows(client: Queryable, obj: SObjectDef): Promise<RecordData[]> {
+    const res = await client.query<RecordData>(`SELECT ${this.selectList(obj)} FROM ${this.table(obj)}${hasSoftDelete(obj) ? ` WHERE ${quote("isdeleted")} = false` : ""}`);
+    return res.rows;
+  }
+
   async findByField(client: Queryable, obj: SObjectDef, field: FieldDef, value: RecordValue): Promise<RecordData[]> {
     const col = quote(columnName(field));
     const where = field.caseSensitive || typeof value !== "string" ? `${col} = $1` : `lower(${col}) = lower($1)`;
