@@ -164,7 +164,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   formulas, a roll-up over a formula field, lookups to the 18 business objects, OwnerId on User-only
   and queue-enabled objects) and runs in CI with `orglet check --strict` exiting 0 and the full
   conformance set green against it.
-- [ ] **ACC2-02**: `conformance/describe-check`, `poly-check` and `rollup-check` are extended for the
+- [x] **ACC2-02**: `conformance/describe-check`, `poly-check` and `rollup-check` are extended for the
   new objects and `__mdt`/custom-setting describe through both SDKs, run by `conformance/run-all.sh`,
   and both existing SDK suites stay green with every exclusion still classified.
 - [ ] **ACC2-03**: The author's Developer Edition retrieve still loads with `orglet check --strict`
@@ -255,7 +255,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHECK-01 | Phase 14 | Complete |
 | CHECK-02 | Phase 14 | Complete |
 | ACC2-01 | Phase 14 | Complete |
-| ACC2-02 | Phase 14 | Pending |
+| ACC2-02 | Phase 14 | Complete |
 | ACC2-03 | Phase 14 | Pending |
 
 **Coverage:**
