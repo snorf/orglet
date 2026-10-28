@@ -5,6 +5,7 @@
     "Entitlement.LocationID -> LocationId",
     "ExternalDataSource.isWritable -> IsWritable",
     "Lead.DandBCompanyId -> DandbCompanyId",
+    "Opportunity.SyncedQuoteID -> SyncedQuoteId",
     "OpportunityTeamMember.PhotoURL -> PhotoUrl",
     "OrderItem.RelatedOrderItemID -> RelatedOrderItemId"
   ],
@@ -372,14 +373,14 @@
     "Opportunity": {
       "docOnly": 0,
       "featureGated": 1,
-      "fields": 46,
+      "fields": 47,
       "guessed": 15,
-      "override": 1,
-      "sdkOnly": 44,
+      "override": 3,
+      "sdkOnly": 45,
       "skippedFieldType": 0,
-      "skippedReferenceTarget": 7,
+      "skippedReferenceTarget": 6,
       "v1": 31,
-      "verified": 146
+      "verified": 147
     },
     "OpportunityContactRole": {
       "docOnly": 0,
@@ -5808,6 +5809,11 @@
         "StageName": {
           "label": "sdk-only",
           "standardValueSet": "v1.0"
+        },
+        "SyncedQuoteId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "TotalOpportunityQuantity": {
           "label": "sdk-only",
@@ -16486,7 +16492,6 @@
       "Opportunity.ConnectionReceivedId -> (none stated)",
       "Opportunity.ConnectionSentId -> (none stated)",
       "Opportunity.PricebookId -> (none stated)",
-      "Opportunity.SyncedQuoteId -> (none stated)",
       "Opportunity.Territory2Id -> (none stated)",
       "OpportunityLineItem.ConnectionReceivedId -> (none stated)",
       "OpportunityLineItem.ConnectionSentId -> (none stated)",

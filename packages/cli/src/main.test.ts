@@ -76,6 +76,19 @@ describe("check", () => {
     expect(logs).toEqual([]);
   });
 
+  it("a validation rule traversing Opportunity.SyncedQuote compiles without a warning", async () => {
+    const root = await project({
+      "objects/Opportunity/validationRules/Synced_Quote_Accepted.validationRule-meta.xml":
+        `<?xml version="1.0" encoding="UTF-8"?><ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Synced_Quote_Accepted</fullName><active>true</active><errorConditionFormula>ISPICKVAL(SyncedQuote.Status, 'Denied')</errorConditionFormula><errorMessage>Denied quote</errorMessage></ValidationRule>`,
+    });
+    try {
+      expect(await main(["check", "--strict", "--project", root])).toBe(0);
+      expect(warns).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("prints nothing with --quiet", async () => {
     expect(await main(["check", "--project", ACME, "--quiet"])).toBe(0);
     expect(logs).toEqual([]);

@@ -64,6 +64,11 @@ describe("standard baseline alone", () => {
     result = await loadOrgSchema();
   });
 
+  it("Opportunity.SyncedQuoteId is a lookup to Quote reachable as SyncedQuote", () => {
+    expect(result.schema.getField("Opportunity", "SyncedQuoteId")?.referenceTo).toEqual(["Quote"]);
+    expect(result.schema.resolveRelationship("Opportunity", "SyncedQuote")?.target.name).toBe("Quote");
+  });
+
   it("loads the phase-0 standard objects with their key prefixes", () => {
     const prefixes = Object.fromEntries(result.schema.list().map((o) => [o.name, o.keyPrefix]));
     expect(prefixes).toMatchObject({

@@ -835,6 +835,15 @@
             ]
           },
           "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+        },
+        "SyncedQuoteId": {
+          "set": {
+            "referenceTo": [
+              "Quote"
+            ],
+            "relationshipName": "SyncedQuote"
+          },
+          "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object Quote; sf-skills lists it in field_reference only and neither source states Refers To; relationshipName from the Object Reference Opportunity SyncedQuoteId description (Phase 14, todo 2026-10-16)"
         }
       }
     },

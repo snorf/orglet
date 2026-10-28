@@ -432,6 +432,15 @@
       "standardValueSet": "OpportunityStage"
     },
     {
+      "name": "SyncedQuoteId",
+      "label": "Quote ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Quote"
+      ],
+      "relationshipName": "SyncedQuote"
+    },
+    {
       "name": "TotalOpportunityQuantity",
       "label": "Quantity",
       "type": "Number",
