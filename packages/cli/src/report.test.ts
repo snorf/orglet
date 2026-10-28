@@ -247,9 +247,9 @@ describe("summary and formatters", () => {
       }),
     ).toEqual([
       "areas:",
-      "  UNSUPPORTED:field-type              1",
-      "  UNSUPPORTED:formula                 2  (2 dependents)",
-      "  info:standard-object-unmodelled    39",
+      "  UNSUPPORTED:field-type            1",
+      "  UNSUPPORTED:formula               2  (2 dependents)",
+      "  info:standard-object-unmodelled  39",
     ]);
     expect(formatAreas({ areas: [] })).toEqual([]);
   });
