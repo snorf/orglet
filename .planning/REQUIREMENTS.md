@@ -146,12 +146,12 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### `orglet check` report
 
-- [ ] **CHECK-01**: `orglet check` prints a census (objects, fields, custom and standard counts), a
+- [x] **CHECK-01**: `orglet check` prints a census (objects, fields, custom and standard counts), a
   one-line verdict, a per-area table keyed by the `UNSUPPORTED:<area>` token, and groups cascaded
   formula failures under their root cause (a field or object skipped upstream) while keeping every
   dependent listed and both counts stated; ordering is deterministic and covered by a snapshot test on
   `examples/acme`; the `warning:` line format from v1.0 is unchanged.
-- [ ] **CHECK-02**: `orglet check --summary` prints only the census, the verdict and per-area counts
+- [x] **CHECK-02**: `orglet check --summary` prints only the census, the verdict and per-area counts
   (no object, field or rule names), and `orglet check --json` emits the same report as structured
   JSON including the informational category; `--strict` exits 1 on any warning and 0 on
   informational entries alone.
@@ -252,8 +252,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FORM-04 | Phase 12 | Complete |
 | FORM-05 | Phase 12 | Complete |
 | ROLL2-01 | Phase 13 | Complete |
-| CHECK-01 | Phase 14 | Pending |
-| CHECK-02 | Phase 14 | Pending |
+| CHECK-01 | Phase 14 | Complete |
+| CHECK-02 | Phase 14 | Complete |
 | ACC2-01 | Phase 14 | Pending |
 | ACC2-02 | Phase 14 | Pending |
 | ACC2-03 | Phase 14 | Pending |

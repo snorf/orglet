@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: verifying
-stopped_at: Completed 13-08-PLAN.md
-last_updated: "2026-10-24T19:07:38.517Z"
-last_activity: 2026-10-24
+status: executing
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-10-28T16:06:39.799Z"
+last_activity: 2026-10-28
 progress:
   total_phases: 18
   completed_phases: 6
-  total_plans: 50
-  completed_plans: 50
+  total_plans: 57
+  completed_plans: 52
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 14 — check-report-enterprise-acceptance (next; Phase 13 verified 2026-10-24)
+**Current focus:** Phase 14 — check-report-enterprise-acceptance
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 14 (check-report-enterprise-acceptance)
-Plan: Not started
-Status: Phase 13 complete and verified — ready to plan Phase 14
-Last activity: 2026-10-24
+Phase: 14 (check-report-enterprise-acceptance) — EXECUTING
+Plan: 2 of 7
+Status: Ready to execute
+Last activity: 2026-10-28
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -139,6 +139,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 13 P06 | 25min | 3 tasks | 5 files |
 | Phase 13 P07 | 30min | 2 tasks | 4 files |
 | Phase 13 P08 | 25min | 2 tasks | 6 files |
+| Phase 14 P01 | 15min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -249,6 +250,7 @@ Recent decisions affecting current work:
 - [Phase 13]: 13-06: stored-field roll-ups keep the pure SQL path; only formula-backed fields load and evaluate children
 - [Phase 13]: Formula roll-up backfill gated solely by the _orglet marker row; one transaction per column with its marker (13-07)
 - [Phase 13]: Backfill errors printed as error: <engine message> (already prefixed with roll-up backfill of Parent.Field failed)
+- [Phase 14]: 14-01: cause cycles resolve to the member sorting first by warning text; report ordering uses a code-point comparator, never localeCompare
 
 ### Pending Todos
 
@@ -271,6 +273,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-24T19:02:53.090Z
-Stopped at: Completed 13-08-PLAN.md
+Last session: 2026-10-28T16:06:39.795Z
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
