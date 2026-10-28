@@ -158,7 +158,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
 
 ### Acceptance
 
-- [ ] **ACC2-01**: A public fixture `examples/enterprise`, authored from the feature documentation
+- [x] **ACC2-01**: A public fixture `examples/enterprise`, authored from the feature documentation
   under generic names, exercises every v1.1 category (custom metadata with relationships, hierarchy
   and list custom settings with a seed script, custom labels, the new globals, colon-syntax and `!`
   formulas, a roll-up over a formula field, lookups to the 18 business objects, OwnerId on User-only
@@ -254,7 +254,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROLL2-01 | Phase 13 | Complete |
 | CHECK-01 | Phase 14 | Complete |
 | CHECK-02 | Phase 14 | Complete |
-| ACC2-01 | Phase 14 | Pending |
+| ACC2-01 | Phase 14 | Complete |
 | ACC2-02 | Phase 14 | Pending |
 | ACC2-03 | Phase 14 | Pending |
 
