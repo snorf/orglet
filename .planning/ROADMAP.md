@@ -179,7 +179,15 @@ Plans:
   2. `orglet check --summary` prints only census, verdict and per-area counts with no object, field or rule names; `--json` emits the same report including the informational category; `--strict` exits 1 on any warning and 0 when only informational entries exist.
   3. `examples/enterprise`, authored from the feature documentation under generic names and covering every v1.1 category, passes `orglet check --strict` with exit 0 in CI, and `conformance/run-all.sh` (describe-check, poly-check, rollup-check and both SDK suites, every exclusion still classified) is green against it.
   4. The author's Developer Edition retrieve still loads with `orglet check --strict` exiting 0, and the author's large real-org retrieve (local only) reports zero warnings for everything it references, recorded in `conformance/README.md` as counts per area, never names.
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 14-01-PLAN.md — report core: field-type diagnostic gets its object, pure buildCheckReport (root-cause grouping, counts, code-point order), summary redaction and formatters (CHECK-01, CHECK-02)
+- [ ] 14-02-PLAN.md — examples/enterprise fixture (acme superset, every v1.1 category, generic names) + category-coverage and --strict test (ACC2-01)
+- [ ] 14-03-PLAN.md — close the standard-field-gaps todo: SyncedQuoteId lookup, reasoned overrides, DE-describe checkpoint, regenerate, exclusions as counts (ACC2-03)
+- [ ] 14-04-PLAN.md — wire the report into orglet check: --summary/--json, locked flag interplay, acme snapshots, byte-identical warning lines (CHECK-01, CHECK-02)
+- [ ] 14-05-PLAN.md — run-all.sh PROJECT/FIXTURE, enterprise seed script, describe-check enterprise objects, CI check --strict step and conformance matrix (ACC2-01, ACC2-02)
+- [ ] 14-06-PLAN.md — poly-check (OwnerId narrowing, colon syntax) and rollup-check (roll-up over formula) extensions through both SDKs (ACC2-02)
+- [ ] 14-07-PLAN.md — acceptance: full gate on both fixtures and backends, checkpoint for the author's DE and large retrieves, counts per area, ticks (ACC2-01..03, CHECK-01/02)
 **Research flag**: none.
 
 ## Progress
