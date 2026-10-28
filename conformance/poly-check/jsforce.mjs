@@ -4,7 +4,11 @@
 // rejection of an invalid TYPEOF through jsforce. One PASS/FAIL line per check; exit 1 on any
 // FAIL, 2 when the jsforce build is missing. The records are deleted again at the end.
 //
-// Usage: BASE_URL=http://localhost:8082 node jsforce.mjs
+// Also checks OwnerId narrowing (Account [User], Case [Group, User]) on every fixture. With
+// FIXTURE=enterprise it adds owner-colon-formula (Owner:User.Email / Owner:Queue.Name formulas on
+// Case), so the expected total is 6 instead of 5.
+//
+// Usage: BASE_URL=http://localhost:8082 [FIXTURE=enterprise] node jsforce.mjs
 // Env: BASE_URL (default http://localhost:8081), ORGLET_USERNAME (admin@orglet.local),
 //      ORGLET_PASSWORD (x), API_VERSION (59.0). Needs Node 22 and the jsforce build that
 //      ../jsforce/run.sh leaves in ../jsforce/.cache/jsforce.
@@ -18,6 +22,8 @@ const BASE = process.env.BASE_URL || 'http://localhost:8081';
 const USERNAME = process.env.ORGLET_USERNAME || 'admin@orglet.local';
 const PASSWORD = process.env.ORGLET_PASSWORD || 'x';
 const API_VERSION = process.env.API_VERSION || '59.0';
+const ENTERPRISE = (process.env.FIXTURE || 'acme') === 'enterprise';
+const EXPECTED = ENTERPRISE ? 6 : 5;
 const JSFORCE = join(HERE, '..', 'jsforce', '.cache', 'jsforce');
 
 if (!existsSync(join(JSFORCE, 'package.json'))) {
@@ -91,6 +97,26 @@ try {
     return [ok, { group: keysOf(grp?.Owner ?? {}), groupType: grp?.Owner?.Type, user: keysOf(usr?.Owner ?? {}) }];
   });
 
+  await check('owner-narrowed', async () => {
+    const acct = (await conn.sobject('Account').describe()).fields.find((f) => f.name === 'OwnerId')?.referenceTo ?? [];
+    const kase = [...((await conn.sobject('Case').describe()).fields.find((f) => f.name === 'OwnerId')?.referenceTo ?? [])].sort();
+    return [same(acct, ['User']) && same(kase, ['Group', 'User']), { account: acct, case: kase }];
+  });
+
+  if (ENTERPRISE) {
+    await check('owner-colon-formula', async () => {
+      const admin = (await conn.query(`SELECT Email FROM User WHERE Username = '${USERNAME}'`)).records[0]?.Email;
+      const r = await conn.query(`SELECT Id, Owner_User_Email__c, Owner_Queue_Name__c FROM Case WHERE Id IN ('${gc.id}', '${uc.id}')`);
+      const grp = r.records.find((x) => x.Id === gc.id);
+      const usr = r.records.find((x) => x.Id === uc.id);
+      const blank = (v) => v === null || v === undefined || v === '';
+      const ok = r.records.length === 2 && Boolean(admin)
+        && usr.Owner_User_Email__c === admin && blank(usr.Owner_Queue_Name__c)
+        && grp.Owner_Queue_Name__c === groupName && blank(grp.Owner_User_Email__c);
+      return [ok, { admin, user: usr, queue: grp }];
+    });
+  }
+
   await check('typeof-invalid', async () => {
     try {
       await conn.query('SELECT COUNT(), TYPEOF Owner WHEN User THEN Name END FROM Case');
@@ -109,5 +135,5 @@ try {
 }
 
 const passed = results.filter(Boolean).length;
-console.log(`jsforce: ${passed}/4 passed`);
-process.exit(passed === 4 && results.length === 4 ? 0 : 1);
+console.log(`jsforce: ${passed}/${EXPECTED} passed`);
+process.exit(passed === EXPECTED && results.length === EXPECTED ? 0 : 1);
