@@ -28,6 +28,29 @@ afterAll(async () => {
 });
 
 describe("backend compatibility", () => {
+  it("binds typed arrays through unnest as the roll-up derived table does, including the +0000 datetime offset and NULL elements", async () => {
+    const res = await pool.query(
+      `SELECT v.id, round(v.n, 2)::text AS n, v.d::text AS d, to_char(v.t AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS') AS t, v.b, v.s
+         FROM unnest($1::char(18)[], $2::numeric[], $3::date[], $4::timestamptz[], $5::boolean[], $6::text[]) AS v(id, n, d, t, b, s)
+        ORDER BY v.id`,
+      [
+        ["a00000000000001AAA", "a00000000000002AAA"],
+        [0.3333, null],
+        ["2026-01-02", null],
+        ["2026-01-02T03:04:05.000+0000", null],
+        [true, null],
+        ["x", null],
+      ],
+    );
+    expect(res.rows).toEqual([
+      { id: "a00000000000001AAA", n: "0.33", d: "2026-01-02", t: "2026-01-02T03:04:05", b: true, s: "x" },
+      { id: "a00000000000002AAA", n: null, d: null, t: null, b: null, s: null },
+    ]);
+    // D-05: values are rounded to the formula's scale before they are summed.
+    const sum = await pool.query(`SELECT sum(round(x, 2))::text AS s FROM unnest($1::numeric[]) x`, [[0.3333, 0.3333, 0.3333]]);
+    expect(sum.rows).toEqual([{ s: "0.99" }]);
+  });
+
   it("describes columns through information_schema.columns exactly as migrate.ts reads them", async () => {
     const res = await pool.query<{ table_name: string; column_name: string; data_type: string; character_maximum_length: number | null; numeric_precision: number | null; numeric_scale: number | null }>(
       `SELECT table_name, column_name, data_type, character_maximum_length, numeric_precision, numeric_scale

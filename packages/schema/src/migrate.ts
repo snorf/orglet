@@ -5,7 +5,7 @@
  * reported as an `UNSUPPORTED:schema-*` warning, so a reload never loses data by accident.
  * A foreign key that existing rows would violate is skipped with an `UNSUPPORTED:schema-fk` warning
  * and retried on the next run.
- * Newly added roll-up summary columns are backfilled once.
+ * Newly added roll-up summary columns over stored fields are backfilled once, last in the transaction; roll-ups that read a formula field are reported as pendingBackfills for the engine (Phase 13 D-10).
  */
 import { pushDiagnostic, type Diagnostic, type DiagnosticSink, type FieldDef, type OrgSchema } from "@orglet/metadata";
 import { DEFAULT_ORG_SCHEMA, columnName, quote, type ColumnSpec } from "./columns.js";
@@ -21,7 +21,7 @@ import {
 } from "./ddl.js";
 import type { Pool, PoolClient } from "./db.js";
 import { withTransaction } from "./db.js";
-import { rollupBackfillSql, rollupDepth } from "./rollup.js";
+import { isFormulaRollup, rollupBackfillSql, rollupDepth } from "./rollup.js";
 
 export interface MigrateOptions {
   orgSchema?: string;
@@ -35,6 +35,8 @@ export interface MigrateResult {
   warnings: string[];
   /** Structured form of `warnings`, same order (D-15). */
   diagnostics: Diagnostic[];
+  /** Roll-up columns added in this run that read a formula field (directly or through a roll-up chain): migrate() cannot compute them, the engine backfills them (Phase 13 D-10). Lower chain levels first. Informational: the engine decides by the _orglet.rollup_backfills marker, not by this list. */
+  pendingBackfills: { object: string; field: string }[];
 }
 
 interface ExistingColumn {
@@ -115,6 +117,7 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
   const plans = planSchema(schema);
   const statements: string[] = [];
   const sink: DiagnosticSink = { warnings: [], diagnostics: [] };
+  const pending: { plan: TablePlan; field: FieldDef }[] = [];
 
   await withTransaction(pool, async (client) => {
     const run = async (sql: string, params?: unknown[]) => {
@@ -144,7 +147,7 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
         if (!current) {
           await run(addColumnSql(orgSchema, plan.table, column));
           const field = plan.object.fields.find((f) => f.rollup !== undefined && columnName(f) === column.name);
-          if (field) backfills.push({ plan, field });
+          if (field) (isFormulaRollup(schema, field) ? pending : backfills).push({ plan, field });
         } else if (current.sqlType !== column.sqlType) {
           await reconcileType(plan, column, current, force, run, sink, orgSchema);
         }
@@ -216,6 +219,7 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
     // Tables created in this run are empty and need nothing. This must stay the last step: updating a row a
     // second time in one transaction queues a deferred foreign-key check on it, and Postgres then refuses
     // DDL on that table ("has pending trigger events") until commit.
+    // Phase 13 D-10: roll-ups that read a formula field are not computed here (no formula engine in this package); they are returned as pendingBackfills and orglet up backfills them through the engine after this transaction commits.
     backfills.sort((a, b) => rollupDepth(schema, a.field) - rollupDepth(schema, b.field));
     for (const { plan, field } of backfills) {
       const { sql, params } = rollupBackfillSql(orgSchema, schema, plan.object, field);
@@ -223,7 +227,13 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
     }
   });
 
-  return { statements, warnings: sink.warnings, diagnostics: sink.diagnostics };
+  pending.sort((a, b) => rollupDepth(schema, a.field) - rollupDepth(schema, b.field));
+  return {
+    statements,
+    warnings: sink.warnings,
+    diagnostics: sink.diagnostics,
+    pendingBackfills: pending.map(({ plan, field }) => ({ object: plan.object.name, field: field.name })),
+  };
 }
 
 /** API name of the stored field behind a column, when there is one (system columns have none). */

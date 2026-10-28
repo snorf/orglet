@@ -259,3 +259,78 @@ describe("usage", () => {
     expect(usage).toContain("orglet reset [--db <postgres-url>] [--org-schema <name>] [--drop-prefixes]");
   });
 });
+
+const summary = (name: string, target: string, fk: string, op = "sum") =>
+  field(`<fullName>${name}</fullName><label>${name}</label><type>Summary</type><summaryForeignKey>${fk}</summaryForeignKey><summaryOperation>${op}</summaryOperation><summarizedField>${target}</summarizedField>`);
+const masterDetail = (name: string, ref: string, rel: string) =>
+  field(`<fullName>${name}</fullName><label>${name}</label><type>MasterDetail</type><referenceTo>${ref}</referenceTo><relationshipName>${rel}</relationshipName><relationshipLabel>${rel}</relationshipLabel><reprioritizeMasterDetail>false</reprioritizeMasterDetail><writeRequiresMasterRead>false</writeRequiresMasterRead>`);
+const formulaField = (name: string, type: string, precision: number, scale: number, formula: string) =>
+  field(`<fullName>${name}</fullName><label>${name}</label><type>${type}</type><precision>${precision}</precision><scale>${scale}</scale><formula>${formula}</formula>`);
+const numberField = (name: string, type: string, precision: number, scale: number) =>
+  field(`<fullName>${name}</fullName><label>${name}</label><type>${type}</type><precision>${precision}</precision><scale>${scale}</scale>`);
+const rollupBase = (): Record<string, string> => ({
+  "objects/Child__c/fields/Parent__c.field-meta.xml": masterDetail("Parent__c", "Parent__c", "Children"),
+  "objects/Child__c/fields/Qty__c.field-meta.xml": numberField("Qty__c", "Number", 10, 0),
+  "objects/Child__c/fields/Price__c.field-meta.xml": numberField("Price__c", "Currency", 16, 2),
+  "objects/Child__c/fields/Due__c.field-meta.xml": field("<fullName>Due__c</fullName><label>Due</label><type>Date</type>"),
+  "objects/Child__c/fields/Line__c.field-meta.xml": formulaField("Line__c", "Currency", 18, 2, "Qty__c * Price__c"),
+  "objects/Parent__c/fields/Sum_Line__c.field-meta.xml": summary("Sum_Line__c", "Child__c.Line__c", "Child__c.Parent__c"),
+});
+
+describe("check with roll-ups over formula fields", () => {
+  it("check reports a roll-up over a volatile formula as UNSUPPORTED:rollup-formula and --strict fails", async () => {
+    const root = await project({
+      ...rollupBase(),
+      "objects/Child__c/fields/Age__c.field-meta.xml": formulaField("Age__c", "Number", 18, 0, "TODAY() - Due__c"),
+      "objects/Parent__c/fields/Sum_Age__c.field-meta.xml": summary("Sum_Age__c", "Child__c.Age__c", "Child__c.Parent__c"),
+    });
+    try {
+      expect(await main(["check", "--project", root])).toBe(0);
+      expect(warns.filter((w) => w.includes("rollup"))).toEqual(["warning: UNSUPPORTED:rollup-formula Parent__c.Sum_Age__c: Child__c.Age__c uses TODAY(); field skipped"]);
+      warns = [];
+      expect(await main(["check", "--strict", "--project", root])).toBe(1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("check accepts a roll-up over a same-object formula without a warning", async () => {
+    const root = await project(rollupBase());
+    try {
+      expect(await main(["check", "--project", root])).toBe(0);
+      expect(warns).toEqual([]);
+      expect(await main(["check", "--strict", "--project", root])).toBe(0);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("check reports a formula -> roll-up -> formula cycle first and the formulas that read a skipped roll-up after it", async () => {
+    const root = await project({
+      "objects/A__c/fields/B__c.field-meta.xml": masterDetail("B__c", "B__c", "As"),
+      "objects/A__c/fields/R__c.field-meta.xml": summary("R__c", "B__c.F__c", "B__c.A__c"),
+      "objects/A__c/fields/G__c.field-meta.xml": formulaField("G__c", "Number", 18, 0, "R__c * 1"),
+      "objects/B__c/fields/A__c.field-meta.xml": masterDetail("A__c", "A__c", "Bs"),
+      "objects/B__c/fields/R2__c.field-meta.xml": summary("R2__c", "A__c.G__c", "A__c.B__c"),
+      "objects/B__c/fields/F__c.field-meta.xml": formulaField("F__c", "Number", 18, 0, "R2__c * 1"),
+    });
+    try {
+      expect(await main(["check", "--project", root])).toBe(0);
+      const cycle = [
+        "warning: UNSUPPORTED:rollup-cycle A__c.R__c: roll-up summaries and formula fields read each other in a cycle (A__c.R__c -> B__c.F__c -> B__c.R2__c -> A__c.G__c -> A__c.R__c); field skipped",
+        "warning: UNSUPPORTED:rollup-cycle B__c.R2__c: roll-up summaries and formula fields read each other in a cycle (B__c.R2__c -> A__c.G__c -> A__c.R__c -> B__c.F__c -> B__c.R2__c); field skipped",
+      ];
+      const formulas = [
+        "warning: UNSUPPORTED:formula formula field A__c.G__c skipped: Field R__c does not exist. Check spelling.",
+        "warning: UNSUPPORTED:formula formula field B__c.F__c skipped: Field R2__c does not exist. Check spelling.",
+      ];
+      expect([...warns].sort()).toEqual([...cycle, ...formulas].sort());
+      const lastCycle = Math.max(...cycle.map((w) => warns.indexOf(w)));
+      for (const w of formulas) expect(warns.indexOf(w)).toBeGreaterThan(lastCycle);
+      warns = [];
+      expect(await main(["check", "--strict", "--project", root])).toBe(1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});

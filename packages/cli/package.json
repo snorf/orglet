@@ -19,6 +19,7 @@
   "dependencies": {
     "@orglet/metadata": "workspace:*",
     "@orglet/schema": "workspace:*",
+    "@orglet/formula": "workspace:*",
     "@orglet/engine": "workspace:*",
     "@orglet/api": "workspace:*"
   },

@@ -7,6 +7,9 @@
  * equals/contains/startsWith OR their tokens; notEqual and notContain count NULL as "not equal"; a blank
  * value means NULL (text: NULL or ''); range operators never match NULL; field-to-field equals is `=`
  * (NULL never matches) and notEqual is IS DISTINCT FROM.
+ *
+ * Formula fields have no column: for a roll-up that reads one, the caller passes the evaluated values
+ * (VirtualChildren) and the child relation becomes a derived table over unnest() arrays (Phase 13 D-15).
  */
 import type { FieldDef, OrgSchema, RollupFilterDef, SObjectDef } from "@orglet/metadata";
 import { columnName, quote, tableName } from "./columns.js";
@@ -16,22 +19,33 @@ export interface RollupStatement {
   params: unknown[];
 }
 
+/** Evaluated formula values for one child object's rows (Phase 13 D-15): the engine computes them, this module only binds them. */
+export interface VirtualRows {
+  /** Child record Ids, aligned with every array in `values`. */
+  ids: readonly string[];
+  /** Lower-cased child formula field API name -> one value per id; null for blank. DateTime values as ISO strings. */
+  values: ReadonlyMap<string, ReadonlyArray<string | number | boolean | null>>;
+}
+
+/** Lower-cased child object API name -> its evaluated rows. */
+export type VirtualChildren = ReadonlyMap<string, VirtualRows>;
+
 type Family = "numeric" | "date" | "timestamptz" | "boolean" | "text";
 
 const RANGE: Record<string, string> = { lessThan: "<", greaterThan: ">", lessOrEqual: "<=", greaterOrEqual: ">=" };
 
 /** `SELECT p."id" AS "Id", <aggregate> AS "<Field>", ... FROM <parent> p WHERE p."id" = ANY($1) AND p."isdeleted" = false`. */
-export function rollupSelectSql(orgSchema: string, schema: OrgSchema, parent: SObjectDef, fields: FieldDef[], parentIds: string[]): RollupStatement {
+export function rollupSelectSql(orgSchema: string, schema: OrgSchema, parent: SObjectDef, fields: FieldDef[], parentIds: string[], virtual?: VirtualChildren): RollupStatement {
   const params: unknown[] = [parentIds];
-  const columns = fields.map((f) => `${aggregate(orgSchema, schema, f, params)} AS ${quote(f.name)}`);
+  const columns = fields.map((f) => `${aggregate(orgSchema, schema, f, params, virtual)} AS ${quote(f.name)}`);
   const sql = `SELECT p."id" AS "Id", ${columns.join(", ")} FROM ${table(orgSchema, parent)} p WHERE p."id" = ANY($1) AND p."isdeleted" = false`;
   return { sql, params };
 }
 
 /** `UPDATE <parent> AS p SET "<col>" = <aggregate>` over every row (D-10 backfill). */
-export function rollupBackfillSql(orgSchema: string, schema: OrgSchema, parent: SObjectDef, field: FieldDef): RollupStatement {
+export function rollupBackfillSql(orgSchema: string, schema: OrgSchema, parent: SObjectDef, field: FieldDef, virtual?: VirtualChildren): RollupStatement {
   const params: unknown[] = [];
-  const sql = `UPDATE ${table(orgSchema, parent)} AS p SET ${quote(columnName(field))} = ${aggregate(orgSchema, schema, field, params)}`;
+  const sql = `UPDATE ${table(orgSchema, parent)} AS p SET ${quote(columnName(field))} = ${aggregate(orgSchema, schema, field, params, virtual)}`;
   return { sql, params };
 }
 
@@ -47,13 +61,33 @@ function table(orgSchema: string, obj: SObjectDef): string {
   return `${quote(orgSchema)}.${quote(tableName(obj))}`;
 }
 
-function aggregate(orgSchema: string, schema: OrgSchema, field: FieldDef, params: unknown[]): string {
+function aggregate(orgSchema: string, schema: OrgSchema, field: FieldDef, params: unknown[], virtual?: VirtualChildren): string {
   const r = field.rollup;
   if (!r) throw new Error(`${field.name}: not a roll-up summary field`);
   const child = schema.getObject(r.childObject);
   if (!child) throw new Error(`${field.name}: child object ${r.childObject} is not defined`);
   const fk = schema.getField(child.name, r.foreignKey);
   if (!fk) throw new Error(`${field.name}: foreign key ${child.name}.${r.foreignKey} is not defined`);
+
+  // Formula inputs are bound first so their parameters precede the filter parameters.
+  const formulaInputs = rollupInputs(schema, field).filter((f) => f.formula !== undefined);
+  let source = table(orgSchema, child);
+  if (formulaInputs.length > 0) {
+    const rows = virtual?.get(child.name.toLowerCase());
+    if (!rows) throw new Error(`${field.name}: formula values for ${child.name} were not supplied`);
+    params.push(rows.ids);
+    const idParam = params.length;
+    const cols = formulaInputs.map((f) => {
+      const vals = rows.values.get(f.name.toLowerCase());
+      if (!vals) throw new Error(`${field.name}: formula values for ${child.name}.${f.name} were not supplied`);
+      params.push(vals);
+      return { f, n: params.length };
+    });
+    const select = cols.map(({ f }) => `${scaled(f, `v.${quote(columnName(f))}`)} AS ${quote(columnName(f))}`).join(", ");
+    const types = cols.map(({ f, n }) => `$${n}::${familyOf(f)}[]`).join(", ");
+    const names = cols.map(({ f }) => quote(columnName(f))).join(", ");
+    source = `(SELECT c0.*, ${select} FROM ${table(orgSchema, child)} c0 JOIN unnest($${idParam}::char(18)[], ${types}) AS v("_orglet_id", ${names}) ON v."_orglet_id" = c0."id")`;
+  }
 
   let fn: string;
   if (r.operation === "COUNT") {
@@ -73,8 +107,38 @@ function aggregate(orgSchema: string, schema: OrgSchema, field: FieldDef, params
     where.push(filterSql(field, f, filter, other, params));
   }
 
-  const subquery = `(SELECT ${fn} FROM ${table(orgSchema, child)} c WHERE ${where.join(" AND ")})`;
+  const subquery = `(SELECT ${fn} FROM ${source} c WHERE ${where.join(" AND ")})`;
   return r.operation === "SUM" ? `COALESCE(${subquery}, 0)` : subquery;
+}
+
+// D-05 (orglet choice, no public statement found): round to the formula's declared scale before aggregating, so a parent total equals the sum of the values readers see on the children. Postgres round(numeric, int) rounds half away from zero; scale comes from metadata and is checked to be an integer before it is inlined.
+function scaled(f: FieldDef, expr: string): string {
+  return familyOf(f) === "numeric" && f.scale !== undefined && Number.isInteger(f.scale) && f.scale >= 0 ? `round(${expr}, ${f.scale})` : expr;
+}
+
+/** The child fields a roll-up reads: summarized field, then each filter field and valueField, de-duplicated by name. */
+function rollupInputs(schema: OrgSchema, field: FieldDef): FieldDef[] {
+  const r = field.rollup;
+  if (!r) return [];
+  const names = [r.summarizedField, ...r.filters.flatMap((f) => [f.field, f.valueField])];
+  const out: FieldDef[] = [];
+  for (const n of names) {
+    if (n === undefined) continue;
+    const f = schema.getField(r.childObject, n);
+    if (f && !out.includes(f)) out.push(f);
+  }
+  return out;
+}
+
+/** True when the roll-up reads a formula field (summarized, filter or valueField), directly or by summarising/filtering on a roll-up that does. Such columns are backfilled by the engine, not by migrate() (Phase 13 D-10). Structural: compiles nothing. */
+export function isFormulaRollup(schema: OrgSchema, field: FieldDef): boolean {
+  return readsFormula(schema, field, new Set());
+}
+
+function readsFormula(schema: OrgSchema, field: FieldDef, seen: Set<FieldDef>): boolean {
+  if (seen.has(field)) return false;
+  seen.add(field);
+  return rollupInputs(schema, field).some((f) => f.formula !== undefined || (f.rollup !== undefined && readsFormula(schema, f, seen)));
 }
 
 function filterSql(rollupField: FieldDef, childField: FieldDef, filter: RollupFilterDef, other: FieldDef | undefined, params: unknown[]): string {

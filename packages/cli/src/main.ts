@@ -9,7 +9,8 @@ import { parseArgs } from "node:util";
 import { resolve } from "node:path";
 import { readFile } from "node:fs/promises";
 import { loadOrgSchema } from "@orglet/metadata";
-import { createPool, databaseUrlFromEnv, migrate, quote, DEFAULT_ORG_SCHEMA, KeyPrefixError, dropKeyPrefixes, parseKeyPrefixMapping, reconcileKeyPrefixes, type ReconcileKeyPrefixesResult } from "@orglet/schema";
+import { admitFormulaRollups } from "@orglet/formula";
+import { createPool, databaseUrlFromEnv, migrate, quote, DEFAULT_ORG_SCHEMA, KeyPrefixError, dropKeyPrefixes, dropRollupBackfills, parseKeyPrefixMapping, reconcileKeyPrefixes, type ReconcileKeyPrefixesResult } from "@orglet/schema";
 import { bootstrapOrg, customMetadataSummary, DmlEngine, FormulaRegistry, planCustomMetadataSeed, seedCustomMetadata } from "@orglet/engine";
 import { createApiServer, prepareBulk, dropBulkJobs, type AuthConfig } from "@orglet/api";
 
@@ -71,7 +72,8 @@ function sourceSuffix(source: ReconcileKeyPrefixesResult["assignments"][number][
 }
 
 async function check(c: Common, strict: boolean): Promise<number> {
-  const result = await loadOrgSchema(c.project ? { projectDir: c.project } : {});
+  // Phase 13 D-07: roll-ups over formula fields are admitted here, after the build and before anything is planned.
+  const result = admitFormulaRollups(await loadOrgSchema(c.project ? { projectDir: c.project } : {}));
   const objects = result.schema.list();
   log(c, `${objects.length} objects (${objects.filter((o) => o.custom).length} custom), ${objects.reduce((n, o) => n + o.fields.length, 0)} fields`);
   // D-10: the featureGated tag is visible here and in the baseline JSON, never as a describe key.
@@ -99,7 +101,8 @@ async function check(c: Common, strict: boolean): Promise<number> {
 }
 
 async function up(c: Common, port: number, force: boolean, auth: AuthConfig, importMode: boolean, keyPrefixesFile: string | undefined): Promise<number> {
-  const loaded = await loadOrgSchema(c.project ? { projectDir: c.project } : {});
+  // Phase 13 D-06/D-07: a rejected formula roll-up is removed before warnings, prefixes and DDL, so it never gets a column.
+  const loaded = admitFormulaRollups(await loadOrgSchema(c.project ? { projectDir: c.project } : {}));
   for (const w of loaded.warnings) console.warn(`warning: ${w}`);
   let mapping: Record<string, string> | undefined;
   if (keyPrefixesFile !== undefined) {
@@ -156,6 +159,15 @@ async function up(c: Common, port: number, force: boolean, auth: AuthConfig, imp
   if (bulk.purged > 0) log(c, `bulk: purged ${bulk.purged} job(s) older than 7 days`);
   const engine = new DmlEngine(pool, loaded.schema, { orgSchema: c.orgSchema, importMode, customMetadata: cmdt });
   for (const w of engine.warnings) console.warn(`warning: ${w}`);
+  // Phase 13 D-10..D-13: roll-ups over formula fields are backfilled by the engine (migrate has no formula engine), once per
+  // column, recorded in _orglet.rollup_backfills; --import does not skip it. A failure stops startup before the server listens.
+  try {
+    const backfilled = await engine.backfillFormulaRollups();
+    if (backfilled.length > 0) log(c, `roll-up backfill: computed ${backfilled.length} formula roll-up field(s): ${backfilled.join(", ")}`);
+  } catch (err) {
+    console.error(`error: ${(err as Error).message}`);
+    return 1;
+  }
   if (importMode) console.warn("import mode: Ids and audit fields are accepted; lookups, validation rules and hooks are not enforced");
   engine.bus.subscribe((events) => {
     if (process.env["ORGLET_EVENTS"] === "stdout") for (const e of events) console.log(JSON.stringify({ event: "change", ...e }));
@@ -186,6 +198,8 @@ async function reset(c: Common, dropPrefixes: boolean): Promise<number> {
     log(c, `dropped schema "${c.orgSchema}"`);
     const jobs = await dropBulkJobs(pool, c.orgSchema);
     log(c, `dropped ${jobs} bulk job(s) for schema "${c.orgSchema}"`);
+    const markers = await dropRollupBackfills(pool, c.orgSchema);
+    log(c, `dropped ${markers} roll-up backfill marker(s) for schema "${c.orgSchema}"`);
     if (dropPrefixes) {
       const n = await dropKeyPrefixes(pool, c.orgSchema);
       log(c, `dropped ${n} key prefix assignment(s) for schema "${c.orgSchema}"`);

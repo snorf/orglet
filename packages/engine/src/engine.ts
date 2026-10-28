@@ -9,7 +9,21 @@
  * children that point at it.
  */
 import type { FieldDef, FormulaFailure, OrgSchema, SObjectDef } from "@orglet/metadata";
-import { DEFAULT_ORG_SCHEMA, formatSalesforceDatetime, generateId, keyPrefixOf, matchLookupTarget, rollupSelectSql, type Pool, type PoolClient } from "@orglet/schema";
+import {
+  completedRollupBackfills,
+  DEFAULT_ORG_SCHEMA,
+  ensureRollupBackfillTable,
+  formatSalesforceDatetime,
+  generateId,
+  isFormulaRollup,
+  keyPrefixOf,
+  markRollupBackfilled,
+  matchLookupTarget,
+  rollupBackfillKey,
+  rollupBackfillSql,
+  rollupSelectSql,
+  withTransaction,
+  type Pool, type PoolClient, type VirtualChildren, type VirtualRows } from "@orglet/schema";
 import { asString, type EvaluationContext, type RecordData } from "@orglet/formula";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
@@ -106,7 +120,7 @@ export class DmlEngine {
     this.orgSchema = options.orgSchema ?? DEFAULT_ORG_SCHEMA;
     this.store = new Store(schema, this.orgSchema);
     this.formulas = new FormulaRegistry(schema, options.customMetadata);
-    this.rollups = new RollupRegistry(schema);
+    this.rollups = new RollupRegistry(schema, this.formulas);
     this.executors = options.executors ?? [];
     this.importMode = options.importMode ?? false;
   }
@@ -589,8 +603,7 @@ export class DmlEngine {
       const written = new Map<SObjectDef, Work[]>();
       for (const group of level) {
         const ids = [...group.ids.keys()];
-        const { sql, params } = rollupSelectSql(this.orgSchema, this.schema, group.parent, group.fields, ids);
-        const fresh = new Map((await client.query<RecordData>(sql, params)).rows.map((r) => [asString(r["Id"]), r]));
+        const fresh = await this.computeRollups(client, group.parent, group.fields, ids);
         const current = await this.store.loadByIds(client, group.parent, ids);
         for (const id of ids) {
           const computed = fresh.get(id);
@@ -621,6 +634,93 @@ export class DmlEngine {
       level = next;
     }
     return newlyFailed();
+  }
+
+  /** Fresh roll-up values per parent id. Roll-ups over stored fields: one SQL statement exactly as before (D-16). Roll-ups over formula fields: the live children of these parents are loaded, their formulas evaluated in TS and handed to the same SQL aggregate as a derived table (D-15); cost is O(children of the affected parents). */
+  private async computeRollups(client: PoolClient, parent: SObjectDef, fields: FieldDef[], ids: string[]): Promise<Map<string, RecordData>> {
+    const viaFormula = fields.filter((f) => this.rollups.binding(f)?.formulaBacked === true);
+    const sqlOnly = fields.filter((f) => !viaFormula.includes(f));
+    const fresh = new Map<string, RecordData>();
+    const run = async (subset: FieldDef[], virtual?: VirtualChildren): Promise<void> => {
+      if (subset.length === 0) return;
+      const { sql, params } = rollupSelectSql(this.orgSchema, this.schema, parent, subset, ids, virtual);
+      for (const r of (await client.query<RecordData>(sql, params)).rows) {
+        const id = asString(r["Id"]);
+        fresh.set(id, { ...fresh.get(id), ...r });
+      }
+    };
+    await run(sqlOnly);
+    if (viaFormula.length > 0) await run(viaFormula, await this.evaluateChildren(client, viaFormula, ids));
+    return fresh;
+  }
+
+  /** Evaluated formula values of the live children of `parentIds`, per child object, for the formula-backed roll-ups in `fields`. */
+  private async evaluateChildren(client: PoolClient, fields: FieldDef[], parentIds: string[]): Promise<VirtualChildren> {
+    const byChild = new Map<string, { child: SObjectDef; fks: FieldDef[]; only: Set<string> }>();
+    for (const f of fields) {
+      const binding = this.rollups.binding(f);
+      if (!binding) continue;
+      const key = binding.child.name.toLowerCase();
+      const entry = byChild.get(key) ?? { child: binding.child, fks: [], only: new Set<string>() };
+      const fk = this.schema.getField(binding.child.name, binding.rollup.foreignKey);
+      if (fk && !entry.fks.includes(fk)) entry.fks.push(fk);
+      for (const name of binding.formulas) entry.only.add(name.toLowerCase());
+      byChild.set(key, entry);
+    }
+    const out = new Map<string, VirtualRows>();
+    for (const [key, { child, fks, only }] of byChild) {
+      const rows = new Map<string, RecordData>();
+      for (const fk of fks) for (const r of await this.store.childrenOf(client, child, fk, parentIds)) rows.set(asString(r["Id"]), r);
+      out.set(key, this.virtualRows(child, [...rows.values()], [...only]));
+    }
+    return out;
+  }
+
+  /** Evaluate `formulas` (and nothing else) on each row in place and shape the result as the derived-table input of a formula roll-up. */
+  private virtualRows(child: SObjectDef, list: RecordData[], formulas: Iterable<string>): VirtualRows {
+    const only = new Set([...formulas].map((n) => n.toLowerCase()));
+    // Empty context: admitted formulas read only the record and compile-time constants (D-01).
+    for (const row of list) applyFormulaFields(this.formulas, child, row, {}, only);
+    const values = new Map<string, ReadonlyArray<string | number | boolean | null>>();
+    for (const name of only) {
+      const def = this.schema.getField(child.name, name);
+      if (def) values.set(name, list.map((r) => sqlValue(r[def.name], def)));
+    }
+    return { ids: list.map((r) => asString(r["Id"])), values };
+  }
+
+  /**
+   * Backfill every roll-up that reads a formula field (isFormulaRollup) and has no _orglet.rollup_backfills row for this org
+   * (Phase 13 D-10, D-11): lower chain levels first, each column in its own transaction together with its marker row, so a
+   * crash leaves the column to be redone by the next call. A data load, not a save: no parent rules, hooks, audit stamps or
+   * change events (D-12); runs in import mode too (D-13). Called by orglet up after migrate() committed (never inside its
+   * transaction, Phase 8: pending FK trigger events block later DDL). Returns the `Object.Field` names it computed; a later
+   * `orglet rollup --recompute` (ROLLX-01) can reuse it.
+   */
+  async backfillFormulaRollups(): Promise<string[]> {
+    await ensureRollupBackfillTable(this.pool);
+    const done = await completedRollupBackfills(this.pool, this.orgSchema);
+    const todo = this.rollups
+      .all()
+      .filter((b) => isFormulaRollup(this.schema, b.field) && !done.has(rollupBackfillKey(b.parent.name, b.field.name)))
+      .sort((a, b) => this.rollups.level(a.field) - this.rollups.level(b.field));
+    for (const b of todo) {
+      try {
+        await withTransaction(this.pool, async (client) => {
+          let virtual: VirtualChildren | undefined;
+          if (b.formulaBacked) {
+            const rows = await this.store.liveRows(client, b.child);
+            virtual = new Map([[b.child.name.toLowerCase(), this.virtualRows(b.child, rows, b.formulas)]]);
+          }
+          const { sql, params } = rollupBackfillSql(this.orgSchema, this.schema, b.parent, b.field, virtual);
+          await client.query(sql, params);
+          await markRollupBackfilled(client, this.orgSchema, b.parent.name, b.field.name);
+        });
+      } catch (err) {
+        throw new Error(`roll-up backfill of ${b.parent.name}.${b.field.name} failed: ${(err as Error).message}`, { cause: err });
+      }
+    }
+    return todo.map((b) => `${b.parent.name}.${b.field.name}`);
   }
 
   /** The parent's save procedure for a roll-up change (D-01, D-02): before-hooks, its rules, the UPDATE, after-hooks. No audit stamps. */
@@ -855,4 +955,11 @@ export class DmlEngine {
     };
     for (const executor of this.executors) await executor.run(ctx);
   }
+}
+
+function sqlValue(v: unknown, field: FieldDef): string | number | boolean | null {
+  if (v === null || v === undefined || typeof v === "object") return null;
+  // Formula datetimes are formatted with a +0000 offset; Z binds the same instant on both pglite and Postgres (13-01 probe).
+  if (field.type === "DateTime" && typeof v === "string") return v.replace(/\+0000$/, "Z");
+  return typeof v === "string" || typeof v === "number" || typeof v === "boolean" ? v : null;
 }

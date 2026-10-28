@@ -70,6 +70,13 @@ and `$Api` (`Partner_Server_URL_<n>`, `Enterprise_Server_URL_<n>` with version n
 optional `Session.request` that only REST requests carry; `$Permission` and `$Setup` on List settings stay
 `UNSUPPORTED:formula-global` with the reason stated. 805 tests on pglite, 807 on Postgres 16, 10/10
 conformance legs, CI green on Linux including `sigha-sync-check`.
+Phase 13 complete 2026-10-24 — roll-ups over same-object, non-volatile formula fields: metadata admits them,
+`admitFormulaRollups` in `@orglet/formula` removes the ones Salesforce forbids or orglet cannot keep consistent
+(cross-object reads, NOW/TODAY and evaluation-time globals, formula cycles) with `UNSUPPORTED:rollup-formula` /
+`rollup-cycle` / `rollup-target` diagnostics, the engine recomputes them over TypeScript-evaluated child values
+bound as an `unnest` derived table (stored-field roll-ups keep the pure SQL path), and `orglet up` backfills
+each formula roll-up once behind an `_orglet.rollup_backfills` marker so a second `up` is silent. 866 tests
+on pglite, 869 on Postgres 16, 10/10 conformance legs.
 
 ## Current Milestone: v1.1 real-org fidelity
 
@@ -307,6 +314,7 @@ Docker-only tests (phase 1), in-memory Bulk jobs (phase 6). Still open:
 - Default auth is permissive (any password); session tokens in-memory and unbounded; `sharingModel` unused
 - Formula evaluation is per row after fetch; polymorphic formula references need sigha colon syntax (D-16)
 - Roll-ups: no re-backfill on definition change, no date-literal filters, no parent row locking
+- Roll-ups over formula fields (Phase 13): recompute loads and evaluates in TS every live child of each affected parent (O(children of affected parents), no cap); the one-time backfill reads all live rows of the child object into memory for a single UPDATE (D-15). Formula values are rounded to the formula's scale before aggregation as an orglet choice (no public statement found, D-05). Admission is stricter than the documented minimum: evaluation-time globals ($User, $Profile, $Organization, $RecordType, $UserRole, $Setup, $Api) are rejected like NOW/TODAY (D-01)
 
 **Verified baseline 2026-09-29.** `orglet check` against Johan's Developer Edition retrieve
 (`~/Development.nosync/devrandom-metadata`, Level 1 data): 23 objects (2 custom), 861 fields,
@@ -383,6 +391,9 @@ on port 8180 with the `devrandom` org schema.
 | `CompiledFormula.dependencies {fields, globals, volatile}` is the registry's structured surface; graph, reverse index and cycle detection belong to Phase 13 | Phase 13 roll-up rules need roots and volatility, not a full graph; keeps Phase 12 bounded | ✓ Good |
 | `$Setup` falls through per field user → profile → organization and then to blank, never to the field's `defaultValue`; `$Api` version suffix is API version × 10 | No public doc describes a default-value fall-through (orglet choice); `_600` = 60.0 is documented, superseding the discuss-phase guess | ✓ Good |
 | CI `conformance` job added but not a required check on `main` yet | New job; promote to required once stable, as an explicit ruleset change (D-14) | — Pending |
+| Roll-ups over formula fields are admitted after the build by `admitFormulaRollups` in @orglet/formula; rejected ones are removed with `UNSUPPORTED:rollup-formula` / `rollup-cycle` | metadata cannot compile formulas and compileFormula needs the finished schema; the field must be gone before DDL (D-06, D-07) | ✓ Good |
+| Roll-ups over formula fields recompute over TS-evaluated child values bound as an `unnest` derived table; stored-field roll-ups keep the pure SQL path | one implementation of aggregate/filter semantics and one of formula semantics; no formula-to-SQL translation (D-15, D-16) | ✓ Good |
+| Formula roll-up columns are backfilled by the engine after migrate, gated by `_orglet.rollup_backfills` (a formula roll-up with no marker row is backfilled; reset deletes the org's rows) | migrate has no formula engine; the marker makes the step crash-safe and a second up silent (D-10, D-11) | ✓ Good |
 
 ## Evolution
 
@@ -402,4 +413,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-23 after Phase 12 (sigha resync and formula globals)*
+*Last updated: 2026-10-24 after Phase 13 (roll-ups over formula fields)*

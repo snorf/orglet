@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
-status: planning
-stopped_at: Phase 12 complete and verified
-last_updated: "2026-10-23T14:04:57.369Z"
-last_activity: 2026-10-23
+status: verifying
+stopped_at: Completed 13-08-PLAN.md
+last_updated: "2026-10-24T19:07:38.517Z"
+last_activity: 2026-10-24
 progress:
   total_phases: 18
-  completed_phases: 5
-  total_plans: 42
-  completed_plans: 42
+  completed_phases: 6
+  total_plans: 50
+  completed_plans: 50
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-10-12)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 13 — roll-ups-over-formula-fields (not started)
+**Current focus:** Phase 14 — check-report-enterprise-acceptance (next; Phase 13 verified 2026-10-24)
 
 ## Current Position
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
-Phase: 13 (Roll-Ups over Formula Fields)
+Phase: 14 (check-report-enterprise-acceptance)
 Plan: Not started
-Status: Phase 12 complete and verified (5/5 success criteria, CI green on Linux); Phase 13 ready to discuss/plan
-Last activity: 2026-10-23
+Status: Phase 13 complete and verified — ready to plan Phase 14
+Last activity: 2026-10-24
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -131,6 +131,14 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 12 P06 | 15min | 2 tasks | 7 files |
 | Phase 12 P07 | 15min | 3 tasks | 10 files |
 | Phase 12 P08 | n/a | 2 tasks | 3 files |
+| Phase 13 P01 | 15min | 3 tasks | 8 files |
+| Phase 13 P02 | 8min | 2 tasks | 3 files |
+| Phase 13 P04 | 10min | 1 tasks | 3 files |
+| Phase 13 P05 | 10min | 2 tasks | 5 files |
+| Phase 13 P03 | 15min | 2 tasks | 3 files |
+| Phase 13 P06 | 25min | 3 tasks | 5 files |
+| Phase 13 P07 | 30min | 2 tasks | 4 files |
+| Phase 13 P08 | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -236,6 +244,11 @@ Recent decisions affecting current work:
 - [Phase 12]: Hierarchy $Setup merges per field user->profile->organization with no read-time defaultValue fallback; $UserRole/$Setup loaded only when formulas use them
 - [Phase 12]: D-08 correction: $Api _<n> suffix is API version times ten (_600 -> 60.0)
 - [Phase 12]: Phase 12 gate passed; Python conformance legs need a non-x86 venv on arm64 (scratch venv used)
+- [Phase 13]: volatileReasons uses canonical display names; formula cycles compile, so admission must detect them
+- [Phase 13]: Formula inputs aliased under column name in unnest derived table so aggregate/filterSql stay unchanged
+- [Phase 13]: 13-06: stored-field roll-ups keep the pure SQL path; only formula-backed fields load and evaluate children
+- [Phase 13]: Formula roll-up backfill gated solely by the _orglet marker row; one transaction per column with its marker (13-07)
+- [Phase 13]: Backfill errors printed as error: <engine message> (already prefixed with roll-up backfill of Parent.Field failed)
 
 ### Pending Todos
 
@@ -258,6 +271,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-23T13:56:39.545Z
-Stopped at: Completed 12-08-PLAN.md
+Last session: 2026-10-24T19:02:53.090Z
+Stopped at: Completed 13-08-PLAN.md
 Resume file: None

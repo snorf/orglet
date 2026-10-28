@@ -32,7 +32,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 - [x] **Phase 10: Business Standard Objects** - The 18 sales/service objects exist with documented DML flags; referenced-versus-unreferenced objects are told apart (completed 2026-10-16)
 - [x] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load (completed 2026-10-21)
 - [x] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas (completed 2026-10-23)
-- [ ] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields
+- [x] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields (completed 2026-10-24)
 - [ ] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run
 
 ## Phase Details
@@ -155,9 +155,19 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A COUNT, SUM, MIN or MAX roll-up whose summarized or filter field is a same-object, non-volatile formula loads, and inserting, updating, deleting or undeleting child rows changes the parent value exactly as for a stored-field roll-up (including when a field the formula reads changes).
   2. Upgrading a database that already holds children backfills the formula roll-up once, and a second `orglet up` is silent.
-  3. A roll-up over a formula with a cross-object path, `NOW`/`TODAY`/`TIMENOW`, or a `$User`, `$Profile`, `$Setup`, `$Api` or `$Label` root loads without failing, logs `UNSUPPORTED:rollup-formula` and skips that field.
+  3. A roll-up over a formula with a cross-object path, `NOW`/`TODAY`/`TIMENOW`, or a `$User`, `$Profile`, `$Setup` or `$Api` root loads without failing, logs `UNSUPPORTED:rollup-formula` and skips that field.
   4. A formula-to-roll-up-to-formula cycle is detected and reported rather than looping.
-**Plans**: TBD
+**Plans**: 8 plans
+
+Plans:
+- [x] 13-01-PLAN.md — Wave 0: relax metadata formula gates, add volatileReasons, probes, test scaffolds
+- [x] 13-02-PLAN.md — formulaInputs / dependencyOrder dependency walk in @orglet/formula
+- [x] 13-03-PLAN.md — admitFormulaRollups: UNSUPPORTED:rollup-formula / rollup-cycle at load
+- [x] 13-04-PLAN.md — derived-table SQL (unnest) with scale rounding, isFormulaRollup
+- [x] 13-05-PLAN.md — _orglet.rollup_backfills marker helpers, migrate pendingBackfills
+- [x] 13-06-PLAN.md — dependency-ordered formulas, watched sets, recompute over evaluated values
+- [x] 13-07-PLAN.md — DmlEngine.backfillFormulaRollups (once, chain order, crash-safe)
+- [x] 13-08-PLAN.md — CLI wiring (check/up/reset), PROJECT.md docs, phase gate
 **Research flag**: YES (return types and restriction set Salesforce allows; rounding to the formula's declared scale before aggregating).
 
 ### Phase 14: Check Report & Enterprise Acceptance
@@ -188,7 +198,7 @@ Plans:
 | 10. Business Standard Objects | v1.1 | 6/6 | Complete    | 2026-10-16 |
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
-| 13. Roll-Ups over Formula Fields | v1.1 | 0/TBD | Not started | - |
+| 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
 
 ## Backlog
@@ -199,7 +209,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 0 plans
+**Plans:** 8/8 plans complete
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)

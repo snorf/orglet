@@ -572,17 +572,35 @@ describe("roll-up summary resolution", () => {
         summary("No_Op__c", undefined, "Child__c.Parent__c", "Child__c.Amount__c"),
         summary("Sum_Date__c", "sum", "Child__c.Parent__c", "Child__c.Due__c"),
         summary("Max_Text__c", "max", "Child__c.Parent__c", "Child__c.Tag__c"),
-        summary("Sum_Formula__c", "sum", "Child__c.Parent__c", "Child__c.Calc__c"),
         summary("Min_Nothing__c", "min", "Child__c.Parent__c"),
       ]),
     );
-    for (const name of ["Avg__c", "No_Op__c", "Sum_Date__c", "Max_Text__c", "Sum_Formula__c", "Min_Nothing__c"]) expect(r.schema.getField("Parent__c", name), name).toBeUndefined();
+    for (const name of ["Avg__c", "No_Op__c", "Sum_Date__c", "Max_Text__c", "Min_Nothing__c"]) expect(r.schema.getField("Parent__c", name), name).toBeUndefined();
     const warnings = rollupWarnings(r);
-    expect(warnings).toHaveLength(6);
-    for (const name of ["Avg__c", "No_Op__c", "Sum_Date__c", "Max_Text__c", "Sum_Formula__c"]) {
+    expect(warnings).toHaveLength(5);
+    for (const name of ["Avg__c", "No_Op__c", "Sum_Date__c", "Max_Text__c"]) {
       expect(warnings.filter((w) => w.startsWith(`UNSUPPORTED:rollup-type Parent__c.${name}: `)), name).toHaveLength(1);
     }
     expect(warnings.filter((w) => w.startsWith("UNSUPPORTED:rollup-target Parent__c.Min_Nothing__c: "))).toHaveLength(1);
+  });
+
+  it("a roll-up over a same-object formula is admitted on shape and takes the formula's return type", () => {
+    const r = build([
+      sourceObject("Parent__c", [
+        summary("Sum_Formula__c", "sum", "Child__c.Parent__c", "Child__c.Calc__c"),
+        summary("Sum_Money__c", "sum", "Child__c.Parent__c", "Child__c.Money__c"),
+        summary("Max_Text_Formula__c", "max", "Child__c.Parent__c", "Child__c.Upper_Tag__c"),
+      ]),
+      sourceObject("Child__c", [
+        ...childFields(),
+        sourceField("Money__c", "Currency", { precision: 18, scale: 2, formula: "Amount__c * 2" }),
+        sourceField("Upper_Tag__c", "Text", { length: 40, formula: "UPPER(Tag__c)" }),
+      ]),
+    ]);
+    expect(r.schema.getField("Parent__c", "Sum_Formula__c")).toMatchObject({ type: "Number", precision: 18, scale: 0, rollup: { summarizedField: "Calc__c" } });
+    expect(r.schema.getField("Parent__c", "Sum_Money__c")).toMatchObject({ type: "Currency", precision: 18, scale: 2 });
+    expect(r.schema.getField("Parent__c", "Max_Text_Formula__c")).toBeUndefined();
+    expect(rollupWarnings(r)).toEqual([expect.stringMatching(/^UNSUPPORTED:rollup-type Parent__c\.Max_Text_Formula__c: /)]);
   });
 
   it("a roll-up over another roll-up resolves regardless of declaration order", () => {
@@ -648,6 +666,13 @@ describe("roll-up summary filters", () => {
     expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:"))).toEqual([]);
   });
 
+  it("a filter on a formula field resolves with the family of the formula's return type", () => {
+    const r = counted(filter("Child__c.Calc__c", "equals", "2"), filter("Child__c.Calc__c", "greaterThan", "", "Child__c.Qty__c"));
+    expect(r.schema.getField("Parent__c", "F0__c")?.rollup?.filters).toEqual([{ field: "Calc__c", operation: "equals", values: ["2"] }]);
+    expect(r.schema.getField("Parent__c", "F1__c")?.rollup?.filters).toEqual([{ field: "Calc__c", operation: "greaterThan", values: [], valueField: "Qty__c" }]);
+    expect(r.warnings.filter((w) => w.startsWith("UNSUPPORTED:"))).toEqual([]);
+  });
+
   it("unsupported filters drop the whole field with rollup-filter, never the filter alone", () => {
     const cases: [SourceFilterItem, RegExp?][] = [
       [filter("Child__c.Status__c", "includes", "Open")],
@@ -655,7 +680,6 @@ describe("roll-up summary filters", () => {
       [filter("Child__c.Tag__c", "lessThan", "m")],
       [filter("Child__c.Qty__c", "contains", "1")],
       [filter("Child__c.Notes__c", "equals", "x")],
-      [filter("Child__c.Calc__c", "equals", "2")],
       [filter("Child__c.Ref__c", "equals", "a00")],
       [filter("Child__c.Done__c", "equals", "Yes")],
       [filter("Child__c.Done__c", "equals", "True, False")],

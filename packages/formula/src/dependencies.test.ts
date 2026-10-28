@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
-import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
+import { loadOrgSchema, OrgSchemaImpl, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { compileFormula } from "./compile.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
@@ -54,6 +54,7 @@ describe("formula dependencies", () => {
       fields: [{ object: "Opportunity", path: [], fields: ["CloseDate"] }],
       globals: [],
       volatile: true,
+      volatileReasons: ["TODAY()"],
     });
   });
 
@@ -62,6 +63,7 @@ describe("formula dependencies", () => {
       fields: [{ object: "Account", path: [], fields: ["Name"] }],
       globals: ["$User"],
       volatile: true,
+      volatileReasons: ["$User"],
     });
   });
 
@@ -77,5 +79,26 @@ describe("formula dependencies", () => {
 
   it("lists a field read twice once", () => {
     expect(rule("Name = 'a' || Name = 'b'").fields).toEqual([{ object: "Account", path: [], fields: ["Name"] }]);
+  });
+
+  it("names every reason a formula is volatile, sorted and unique", () => {
+    expect(rule("NOW() > CreatedDate && TODAY() > DATEVALUE(CreatedDate) && $Profile.Name = 'x' && TODAY() = TODAY()").volatileReasons).toEqual(["$Profile", "NOW()", "TODAY()"]);
+  });
+
+  it("a non-volatile formula has no volatileReasons key", () => {
+    expect("volatileReasons" in rule("Name = 'a'")).toBe(false);
+  });
+
+  it("two formula fields that read each other compile (Phase 13 probe: they do, each lists the other as a read)", () => {
+    const account = schema.getObject("Account") as SObjectDef;
+    const template = account.fields.find((f) => f.name === "Name") as FieldDef;
+    const loop = (name: string, formula: string): FieldDef => ({ ...template, name, label: name, type: "Number", precision: 18, scale: 0, formula });
+    const objects = new Map(schema.objects);
+    objects.set("account", { ...account, fields: [...account.fields, loop("Loop_A__c", "Loop_B__c + 1"), loop("Loop_B__c", "Loop_A__c + 1")] });
+    const extended = new OrgSchemaImpl(objects, schema.globalValueSets, schema.standardValueSets);
+    const compile = (source: string) => compileFormula(source, { schema: extended, objectName: "Account", context: "formula_field", treatBlanksAs: "BlankAsBlank" });
+    // Observed: compiling never follows a formula field into its own formula, so a cycle compiles and each side lists the other as a read.
+    expect(compile("Loop_B__c + 1").dependencies.fields).toEqual([{ object: "Account", path: [], fields: ["Loop_B__c"] }]);
+    expect(compile("Loop_A__c + 1").dependencies.fields).toEqual([{ object: "Account", path: [], fields: ["Loop_A__c"] }]);
   });
 });
