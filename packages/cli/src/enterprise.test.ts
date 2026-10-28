@@ -27,11 +27,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const field = (object: string, name: string): FieldDef | undefined => result.schema.get(object)?.fields.find((f) => f.name === name);
+const field = (object: string, name: string): FieldDef | undefined => result.schema.getObject(object)?.fields.find((f) => f.name === name);
 
 function allFormulas(): string {
   const parts: string[] = [];
-  for (const o of result.schema.list()) {
+  for (const o of [...result.schema.objects.values()]) {
     for (const f of o.fields) if (f.formula !== undefined) parts.push(f.formula);
     for (const r of o.validationRules) parts.push(r.errorConditionFormula);
   }
@@ -40,22 +40,22 @@ function allFormulas(): string {
 
 describe("enterprise fixture", () => {
   it("enterprise contains every acme custom object and acme's Account.Customer_Number__c unchanged", () => {
-    for (const name of ["BigTable__c", "UpsertTable__c", "Project__c", "Milestone__c"]) expect(result.schema.get(name), name).toBeDefined();
+    for (const name of ["BigTable__c", "UpsertTable__c", "Project__c", "Milestone__c"]) expect(result.schema.getObject(name), name).toBeDefined();
     expect(field("Account", "Customer_Number__c")).toBeDefined();
   });
 
   it("enterprise has two custom metadata types, one relating to the other and to EntityDefinition/FieldDefinition, with records", () => {
-    const level = result.schema.get("Service_Level__mdt");
+    const level = result.schema.getObject("Service_Level__mdt");
     expect(level?.customMetadata).toBe(true);
-    expect(result.schema.get("Service_Region__mdt")?.customMetadata).toBe(true);
+    expect(result.schema.getObject("Service_Region__mdt")?.customMetadata).toBe(true);
     const refs = (level?.fields ?? []).flatMap((f) => f.referenceTo ?? []);
     expect(refs).toEqual(expect.arrayContaining(["Service_Region__mdt", "EntityDefinition", "FieldDefinition"]));
     expect(result.customMetadata.length).toBeGreaterThanOrEqual(3);
   });
 
   it("enterprise has one Hierarchy and one List custom setting", () => {
-    expect(result.schema.get("Org_Defaults__c")?.customSetting).toBe("Hierarchy");
-    expect(result.schema.get("Country_Code__c")?.customSetting).toBe("List");
+    expect(result.schema.getObject("Org_Defaults__c")?.customSetting).toBe("Hierarchy");
+    expect(result.schema.getObject("Country_Code__c")?.customSetting).toBe("List");
   });
 
   it("enterprise defines custom labels", () => {
@@ -78,13 +78,13 @@ describe("enterprise fixture", () => {
   });
 
   it("enterprise looks up at least four of the 18 business objects", () => {
-    const targets = new Set(result.schema.list().filter((o) => o.custom).flatMap((o) => o.fields).flatMap((f) => f.referenceTo ?? []));
+    const targets = new Set([...result.schema.objects.values()].filter((o) => o.custom).flatMap((o) => o.fields).flatMap((f) => f.referenceTo ?? []));
     for (const t of ["Quote", "Order", "OrderItem", "Location"]) expect(targets.has(t), t).toBe(true);
   });
 
   it("enterprise reads Owner on a User-only object and uses colon syntax on a queue-enabled one", () => {
-    const account = result.schema.get("Account");
-    const caseObj = result.schema.get("Case");
+    const account = result.schema.getObject("Account");
+    const caseObj = result.schema.getObject("Case");
     expect(account?.fields.some((f) => f.custom && f.formula?.includes("Owner.") === true)).toBe(true);
     expect(account?.hasOwner).toBe(true);
     expect(caseObj?.fields.some((f) => f.custom && f.formula?.includes("Owner:User.") === true)).toBe(true);
@@ -92,7 +92,7 @@ describe("enterprise fixture", () => {
   });
 
   it("enterprise references a feature-gated standard field in a formula", () => {
-    const hit = result.schema.list().some((o) => {
+    const hit = [...result.schema.objects.values()].some((o) => {
       const gated = o.fields.filter((f) => f.featureGated === true).map((f) => f.name);
       return o.fields.some((f) => f.custom && f.formula !== undefined && gated.some((g) => new RegExp(`\\b${g}\\b`).test(f.formula ?? "")));
     });
