@@ -117,7 +117,7 @@ describe("readSourceProject", () => {
     });
     const p = await readSourceProject(root);
     expect(p.diagnostics).toEqual([
-      { area: "field-type", kind: "field", field: "Ext__c", message: expect.stringContaining("field type ExternalLookup is not supported yet; field skipped") as string },
+      { area: "field-type", kind: "field", object: "Foo__c", field: "Ext__c", message: expect.stringContaining("field type ExternalLookup is not supported yet; field skipped") as string },
     ]);
     expect(p.warnings).toEqual((p.diagnostics ?? []).map(formatDiagnostic));
   });

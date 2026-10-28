@@ -189,7 +189,7 @@ function readFilterItems(node: XmlNode): SourceFilterItem[] {
 }
 
 /** Parse one field; unsupported field types are reported in the sink and skipped (undefined). */
-function parseField(node: XmlNode, file: string, sink: DiagnosticSink): SourceField | undefined {
+function parseField(node: XmlNode, file: string, sink: DiagnosticSink, object: string): SourceField | undefined {
   const fullName = str(node, "fullName");
   if (!fullName) throw new Error(`${file}: <fullName> missing`);
   const f: SourceField = { fullName };
@@ -197,7 +197,7 @@ function parseField(node: XmlNode, file: string, sink: DiagnosticSink): SourceFi
   if (type !== undefined) {
     if (!CUSTOM_FIELD_TYPES.has(type)) throw new Error(`${file}: unknown field type ${type}`);
     if (type === "ExternalLookup" || type === "IndirectLookup") {
-      pushDiagnostic(sink, { area: "field-type", kind: "field", field: fullName, message: `${file}: field type ${type} is not supported yet; field skipped` } satisfies SkippedItem);
+      pushDiagnostic(sink, { area: "field-type", kind: "field", object, field: fullName, message: `${file}: field type ${type} is not supported yet; field skipped` } satisfies SkippedItem);
       return undefined;
     }
     // Hierarchy is a self-referencing lookup (Account.ParentId, User.ManagerId).
@@ -329,7 +329,7 @@ async function readObjectDir(dir: string, sink: DiagnosticSink): Promise<SourceO
     }
     // Metadata-format style: fields/validationRules/recordTypes inlined in the object file.
     for (const f of list(node, "fields")) {
-      const parsed = parseField(f, objFile, sink);
+      const parsed = parseField(f, objFile, sink, name);
       if (parsed) obj.fields.push(parsed);
     }
     for (const r of list(node, "validationRules")) obj.validationRules.push(parseValidationRule(r, objFile));
@@ -339,7 +339,7 @@ async function readObjectDir(dir: string, sink: DiagnosticSink): Promise<SourceO
   }
 
   for (const file of await filesWithSuffix(join(dir, "fields"), ".field-meta.xml")) {
-    const parsed = parseField(parseMetadataXml(await readFile(file, "utf8"), "CustomField"), file, sink);
+    const parsed = parseField(parseMetadataXml(await readFile(file, "utf8"), "CustomField"), file, sink, name);
     if (parsed) obj.fields.push(parsed);
   }
   for (const file of await filesWithSuffix(join(dir, "validationRules"), ".validationRule-meta.xml")) {
