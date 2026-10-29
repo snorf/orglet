@@ -37,7 +37,14 @@ orglet check --strict --project examples/enterprise   # exit 0, no warning: line
   `UNSUPPORTED:formula-global ... $Api values are blank` once at runtime. `orglet check` never evaluates formulas, so check
   stays clean.
 - Custom-setting data is not part of a retrieve, so `check` prints an `info:` line (not a warning) for the two settings.
-  Seeding them is done by a separate script (plan 14-05).
+  Seeding them is done by `seed.mjs`.
+
+## Seed data
+
+`seed.mjs` creates the custom-setting data over REST (env `BASE_URL`, `TOKEN`, `API_VERSION`): an org-default and an admin-user
+row of `Org_Defaults__c`, two `Country_Code__c` rows, then proves that `Service_Order__c.Default_Region__c`
+(`$Setup.Org_Defaults__c.Default_Region__c`) reads the user-level value. `conformance/run-all.sh` runs it as the
+`enterprise-seed` leg when `PROJECT=examples/enterprise`.
 
 ## Authored from public documentation
 

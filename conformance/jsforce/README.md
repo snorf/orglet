@@ -108,6 +108,16 @@ reports as skipped; run 1 includes the Bulk v1 copies re-registered by the impor
 |---|---|---|---|---|---|---|
 | 2026-10-12 | 9bae14e (3.10.26) | 492c66a | v22.23.3 | 12 | 0 | 5 |
 
+### Run 1 against `examples/enterprise` (Phase 14, `PROJECT=examples/enterprise conformance/run-all.sh`)
+
+Core files: 50 passed / 1 failed / 60 excluded (acme: 51 / 0 / 60); Bulk 2.0: 12 / 0 / 5 (unchanged). The one difference is
+`sobject.test.ts` "should select records with asterisk and return records": `Opportunity.select('*, Account.*, Owner.Name')`
+expands `Account.*` to every Account field, and the enterprise fixture adds formula fields to Account (`Gated_Check__c`,
+`Owner_Email__c`). orglet refuses a formula field selected through a parent relationship
+(`UNSUPPORTED:soql-formula formula field Account.Gated_Check__c on a parent relationship cannot be selected yet`,
+`packages/soql/src/compile.ts`). Classification: known orglet gap (formula field on a parent relationship in SOQL), exposed
+by the enterprise fixture, not a regression on acme.
+
 ## Exclusions
 
 Every alternative in `CORE_FILTER` and `BULK2_FILTER` in run.sh has a row here.
