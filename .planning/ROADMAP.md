@@ -187,7 +187,7 @@ Plans:
 - [x] 14-04-PLAN.md — wire the report into orglet check: --summary/--json, locked flag interplay, acme snapshots, byte-identical warning lines (CHECK-01, CHECK-02)
 - [x] 14-05-PLAN.md — run-all.sh PROJECT/FIXTURE, enterprise seed script, describe-check enterprise objects, CI check --strict step and conformance matrix (ACC2-01, ACC2-02)
 - [x] 14-06-PLAN.md — poly-check (OwnerId narrowing, colon syntax) and rollup-check (roll-up over formula) extensions through both SDKs (ACC2-02)
-- [ ] 14-07-PLAN.md — acceptance: full gate on both fixtures and backends, checkpoint for the author's DE and large retrieves, counts per area, ticks (ACC2-01..03, CHECK-01/02)
+- [x] 14-07-PLAN.md — acceptance: full gate on both fixtures and backends, checkpoint for the author's DE and large retrieves, counts per area, ticks (ACC2-01..03, CHECK-01/02)
 **Research flag**: none.
 
 ## Progress
@@ -207,7 +207,7 @@ Plans:
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
-| 14. Check Report & Enterprise Acceptance | v1.1 | 6/7 | In Progress|  |
+| 14. Check Report & Enterprise Acceptance | v1.1 | 7/7 | In Progress|  |
 
 ## Backlog
 
@@ -217,7 +217,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans complete
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
