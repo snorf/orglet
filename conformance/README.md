@@ -53,3 +53,14 @@ lines and the summary line are recorded.
 | 2026-10-09 | 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-12 | exit 0, 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-16 | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced |
+
+## Accepted standard-field exclusions
+
+Standard fields that a real retrieve can reference but the baseline does not model stay `UNSUPPORTED:standard-field`
+(Phase 14, closing todo 2026-10-16). They are recorded as counts per reason, never as names.
+
+| Reason | Count |
+|---|---|
+| Reference target outside the baseline | 8 |
+| Field type not modelled (geolocation compound) | 1 |
+| No public source and not in the author's DE describe | 10 |
