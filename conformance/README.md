@@ -17,7 +17,7 @@ real-world metadata retrieved from the author's own Developer Edition.
 | rollup-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5 | [rollup-check/README.md](rollup-check/README.md) |
 | cmdt-check | 2026-10-21 | 7660878 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
 
-Every row except the DE retrieve check and cmdt-check runs against `examples/acme` on a fresh schema; cmdt-check runs
+Every row except the DE retrieve check and cmdt-check runs against `examples/acme` on a fresh schema and, in CI, also against `examples/enterprise`; cmdt-check runs
 against `conformance/cmdt-check/project` on its own server and schema.
 
 ## Running everything
@@ -26,6 +26,16 @@ against `conformance/cmdt-check/project` on its own server and schema.
 pnpm build
 PORT=8094 ORG_SCHEMA=final7 PYTHON=conformance/describe-check/.venv/bin/python conformance/run-all.sh
 ```
+
+To run against the enterprise fixture instead:
+
+```sh
+PROJECT=examples/enterprise PORT=8096 ORG_SCHEMA=ent_run PYTHON=conformance/describe-check/.venv/bin/python conformance/run-all.sh
+```
+
+With `PROJECT=examples/enterprise` the script also seeds the enterprise custom settings (`examples/enterprise/seed.mjs`),
+runs describe-check over `describe-check/objects-enterprise.txt` as well, and passes `FIXTURE=enterprise` to poly-check
+and rollup-check; CI runs both projects as a matrix in the `conformance` job.
 
 `run-all.sh` starts its own server against `examples/acme` plus a second one against `conformance/cmdt-check/project`
 (port `CMDT_PORT`, default `PORT`+1; schema `CMDT_SCHEMA`, default `<ORG_SCHEMA>_cmdt`, also fresh), runs every leg
