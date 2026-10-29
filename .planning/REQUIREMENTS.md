@@ -171,6 +171,7 @@ orglet or a Salesforce client (`jsforce`, `simple-salesforce`, curl) talking to 
   exiting 0, and the author's large real-org retrieve, run locally only, reports zero warnings for
   everything it references; its result is recorded in `conformance/README.md` as counts per area
   only, never as names.
+  *Open 2026-10-29: DE leg met (exit 0, 0 warnings); large-retrieve leg not met (150 warnings, 37 standard-field against 19 accepted exclusions, four other non-zero areas); counts in conformance/README.md; gap-closure follow-up pending.*
 
 ## v2 Requirements
 
@@ -256,7 +257,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHECK-02 | Phase 14 | Complete |
 | ACC2-01 | Phase 14 | Complete |
 | ACC2-02 | Phase 14 | Complete |
-| ACC2-03 | Phase 14 | Pending |
+| ACC2-03 | Phase 14 | Partial: not met at Phase 14 acceptance (DE retrieve exit 0 with 0 warnings; large retrieve 150 warnings) |
 
 **Coverage:**
 - v1 requirements: 29 total

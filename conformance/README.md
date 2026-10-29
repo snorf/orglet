@@ -8,7 +8,7 @@ real-world metadata retrieved from the author's own Developer Edition.
 
 | Check | Date | orglet commit | SDK | Result | Details |
 |---|---|---|---|---|---|
-| DE retrieve check (`orglet check --strict`) | 2026-10-16 | 00354b4 | n/a | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced | [DE retrieve check](#de-retrieve-check) |
+| DE retrieve check (`orglet check --strict`) | 2026-10-29 | 05ddbe9 | n/a | exit 0, 0 warnings, 55 objects (2 custom), 3625 fields; info: 39 unreferenced | [DE retrieve check](#de-retrieve-check) |
 | enterprise fixture check (`orglet check --strict --project examples/enterprise`) | 2026-10-29 | 05ddbe9 | n/a | exit 0, 0 warnings, 63 objects (10 custom, 53 standard), 3737 fields (57 custom, 3680 standard); info: 41 | [examples/enterprise/README.md](../examples/enterprise/README.md) |
 | jsforce e2e subset: core | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
 | jsforce e2e subset: Bulk API 2.0 | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
@@ -65,6 +65,21 @@ lines and the summary line are recorded.
 | 2026-10-09 | 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-12 | exit 0, 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-16 | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced |
+| 2026-10-29 | exit 0, 0 warnings, 55 objects (2 custom), 3625 fields; info: 39 unreferenced |
+
+## Large real-org retrieve
+
+ACC2-03: a large retrieve from a real org, run locally by the author only (never stored in this repository, never
+used in CI, no org contacted by orglet, no behaviour compared). Recorded from `orglet check --summary`, which prints
+counts only. Accepted standard-field exclusions are counted in the section above.
+
+| Date | Census | Verdict | Areas (count) |
+|---|---|---|---|
+| 2026-10-29 | 181 objects (128 custom, 53 standard), 6702 fields (1907 custom, 4795 standard); 146 feature-gated standard fields included; custom metadata: 127 records in 22 types; 716 custom labels | 150 warnings to review (root causes: 150, dependents: 0, informational: 311) | UNSUPPORTED:custom-metadata-record 24; UNSUPPORTED:formula 28; UNSUPPORTED:object-kind 11; UNSUPPORTED:reference-target 50; UNSUPPORTED:standard-field 37; info:custom-setting-no-data 20; info:reference-target-skipped 36; info:standard-object-unmodelled 255 |
+
+The ACC2-03 criterion (zero warnings for everything the retrieve references) is not met at commit 05ddbe9:
+`UNSUPPORTED:standard-field` is 37 against 19 accepted exclusions, and four other warning areas are non-zero. The
+warnings are being triaged into generic Salesforce areas for a follow-up gap-closure plan.
 
 ## Accepted standard-field exclusions
 
