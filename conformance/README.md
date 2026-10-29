@@ -9,15 +9,16 @@ real-world metadata retrieved from the author's own Developer Edition.
 | Check | Date | orglet commit | SDK | Result | Details |
 |---|---|---|---|---|---|
 | DE retrieve check (`orglet check --strict`) | 2026-10-16 | 00354b4 | n/a | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced | [DE retrieve check](#de-retrieve-check) |
-| jsforce e2e subset: core | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
-| jsforce e2e subset: Bulk API 2.0 | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
-| simple-salesforce script | 2026-10-14 | fb9c397 | simple-salesforce 1.12.10 | 29/29 passed | [python/README.md](python/README.md) |
-| describe-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32 | [describe-check/README.md](describe-check/README.md) |
-| poly-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 4/4, simple-salesforce 4/4 | [poly-check/README.md](poly-check/README.md) |
-| rollup-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5 | [rollup-check/README.md](rollup-check/README.md) |
-| cmdt-check | 2026-10-21 | 7660878 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
+| enterprise fixture check (`orglet check --strict --project examples/enterprise`) | 2026-10-29 | 05ddbe9 | n/a | exit 0, 0 warnings, 63 objects (10 custom, 53 standard), 3737 fields (57 custom, 3680 standard); info: 41 | [examples/enterprise/README.md](../examples/enterprise/README.md) |
+| jsforce e2e subset: core | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
+| jsforce e2e subset: Bulk API 2.0 | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
+| simple-salesforce script | 2026-10-29 | 05ddbe9 | simple-salesforce 1.12.10 | 29/29 passed | [python/README.md](python/README.md) |
+| describe-check | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32; enterprise 38/38 each | [describe-check/README.md](describe-check/README.md) |
+| poly-check | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5; enterprise 6/6 each | [poly-check/README.md](poly-check/README.md) |
+| rollup-check | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5; enterprise 6/6 each | [rollup-check/README.md](rollup-check/README.md) |
+| cmdt-check | 2026-10-29 | 05ddbe9 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
 
-Every row except the DE retrieve check and cmdt-check runs against `examples/acme` on a fresh schema and, in CI, also against `examples/enterprise`; cmdt-check runs
+Every row except the two fixture checks (DE retrieve, enterprise) and cmdt-check runs against `examples/acme` on a fresh schema and, in CI, also against `examples/enterprise`; cmdt-check runs
 against `conformance/cmdt-check/project` on its own server and schema. On enterprise the jsforce core subset is 50 passed / 0 failed / 61 excluded (one
 enterprise-only classified exclusion, see [jsforce/README.md](jsforce/README.md)); the table above is the acme run.
 
