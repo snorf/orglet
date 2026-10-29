@@ -93,3 +93,7 @@ done
 None.
 
 ## Self-Check: PASSED
+
+## Deviation after completion
+
+Johan chose option (c) for the jsforce asterisk failure. `conformance/jsforce/run.sh` now reads an optional `FIXTURE` env var and, only when `FIXTURE=enterprise`, appends `with asterisk and return records` to `CORE_FILTER`; `conformance/run-all.sh` passes `FIXTURE` to the jsforce leg. Classified in `conformance/jsforce/README.md` as an orglet gap (formula field through a parent relationship in SOQL, `UNSUPPORTED:soql-formula`, enterprise fixture only). Acme is unchanged. Verified: `PROJECT=examples/enterprise conformance/run-all.sh` exits 0 with jsforce core 50 passed / 0 failed / 61 skipped and Bulk 2.0 12 / 0 / 5; the default acme run exits 0 with 51 / 0 / 60 and 12 / 0 / 5. The SOQL feature itself is tracked in the backlog.

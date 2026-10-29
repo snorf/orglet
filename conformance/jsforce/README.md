@@ -110,17 +110,13 @@ reports as skipped; run 1 includes the Bulk v1 copies re-registered by the impor
 
 ### Run 1 against `examples/enterprise` (Phase 14, `PROJECT=examples/enterprise conformance/run-all.sh`)
 
-Core files: 50 passed / 1 failed / 60 excluded (acme: 51 / 0 / 60); Bulk 2.0: 12 / 0 / 5 (unchanged). The one difference is
-`sobject.test.ts` "should select records with asterisk and return records": `Opportunity.select('*, Account.*, Owner.Name')`
-expands `Account.*` to every Account field, and the enterprise fixture adds formula fields to Account (`Gated_Check__c`,
-`Owner_Email__c`). orglet refuses a formula field selected through a parent relationship
-(`UNSUPPORTED:soql-formula formula field Account.Gated_Check__c on a parent relationship cannot be selected yet`,
-`packages/soql/src/compile.ts`). Classification: known orglet gap (formula field on a parent relationship in SOQL), exposed
-by the enterprise fixture, not a regression on acme.
+Core files: 50 passed / 0 failed / 61 excluded (acme: 51 / 0 / 60); Bulk 2.0: 12 / 0 / 5 (unchanged). The one extra
+exclusion is `sobject.test.ts` "should select records with asterisk and return records", applied only when `FIXTURE=enterprise`
+(see Exclusions). run-all.sh passes `FIXTURE` to run.sh; run.sh run standalone without `FIXTURE` keeps the acme filter.
 
 ## Exclusions
 
-Every alternative in `CORE_FILTER` and `BULK2_FILTER` in run.sh has a row here.
+Every alternative in `CORE_FILTER` and `BULK2_FILTER` in run.sh has a row here, including the one that run.sh appends to `CORE_FILTER` only when `FIXTURE=enterprise`.
 
 | Pattern / test | Run | Classification | Reason |
 |---|---|---|---|
@@ -132,6 +128,7 @@ Every alternative in `CORE_FILTER` and `BULK2_FILTER` in run.sh has a row here.
 | `identity information` | 1 | plain-http | asserts an `https://` identity URL; orglet serves plain HTTP locally |
 | `already existing` | 1 | test-defect | asserts `ret.id` on a 204 upsert-update, which jsforce's own `_upsertParallel` never populates; unsatisfiable by any spec-compliant server |
 | `randomly-waiting` | 1 | timeout | streams with random per-record delays and exceeds the Jest timeout; not investigated |
+| `with asterisk and return records` (enterprise fixture only, `FIXTURE=enterprise`) | 1 | orglet-gap | formula field through a parent relationship in SOQL (`UNSUPPORTED:soql-formula`): `Opportunity.select('*, Account.*, Owner.Name')` expands `Account.*` to the Account formula fields the enterprise fixture adds (`Gated_Check__c`, `Owner_Email__c`), and orglet refuses them on a parent relationship (`packages/soql/src/compile.ts`). Passes on acme, so it is not excluded there |
 | `with empty input and not raise client input error` (bulk update and bulk delete, 2 tests) | 2 | not-implemented | jsforce PUTs a 0-byte body; orglet marks the job Failed ("InvalidBatch : the uploaded CSV had no header row"); Salesforce behaviour for an empty upload is undocumented, so no change |
 | `bulk insert from file and return inserted results` (2 tests with this name) | 2 | not-implemented | every row fails INVALID_FIELD on `JIGSAWCOMPANYID`; the Account baseline lacks the deprecated Data.com Jigsaw* fields |
 | `bulk upsert from CSV file using backquote as a delimiter` | 2 | test-defect | the CSV has no Id column while `externalIdFieldName` is `Id`; every row fails REQUIRED_FIELD_MISSING [Id] on any server |

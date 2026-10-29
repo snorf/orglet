@@ -54,7 +54,7 @@ leg() {
   echo "=== $name ==="
   if "$@"; then SUMMARY+=("PASS $name"); else SUMMARY+=("FAIL $name"); rc=1; fi
 }
-leg jsforce-subset conformance/jsforce/run.sh "$BASE" "$TOKEN" --seed
+leg jsforce-subset env FIXTURE="$FIXTURE" conformance/jsforce/run.sh "$BASE" "$TOKEN" --seed
 leg simple-salesforce env BASE_URL="$BASE" "$PYTHON" conformance/python/run.py
 if [ "$FIXTURE" = enterprise ]; then
   leg enterprise-seed env BASE_URL="$BASE" TOKEN="$TOKEN" node examples/enterprise/seed.mjs

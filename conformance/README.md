@@ -18,7 +18,8 @@ real-world metadata retrieved from the author's own Developer Edition.
 | cmdt-check | 2026-10-21 | 7660878 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
 
 Every row except the DE retrieve check and cmdt-check runs against `examples/acme` on a fresh schema and, in CI, also against `examples/enterprise`; cmdt-check runs
-against `conformance/cmdt-check/project` on its own server and schema.
+against `conformance/cmdt-check/project` on its own server and schema. On enterprise the jsforce core subset is 50 passed / 0 failed / 61 excluded (one
+enterprise-only classified exclusion, see [jsforce/README.md](jsforce/README.md)); the table above is the acme run.
 
 ## Running everything
 
