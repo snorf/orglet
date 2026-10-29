@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 14-03-PLAN.md
-last_updated: "2026-10-29T10:49:37.923Z"
+stopped_at: Completed 14-04-PLAN.md
+last_updated: "2026-10-29T10:54:51.699Z"
 last_activity: 2026-10-29
 progress:
   total_phases: 18
   completed_phases: 6
   total_plans: 57
-  completed_plans: 54
+  completed_plans: 55
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 14 (check-report-enterprise-acceptance) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-10-29
 
@@ -143,6 +143,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 14 P02 | 20min | 2 tasks | 60 files |
 | Phase 14 P06 | 15min | 2 tasks | 6 files |
 | Phase 14 P03 | split | 3 tasks | 6 files |
+| Phase 14 P04 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -255,6 +256,7 @@ Recent decisions affecting current work:
 - [Phase 13]: Backfill errors printed as error: <engine message> (already prefixed with roll-up backfill of Parent.Field failed)
 - [Phase 14]: 14-01: cause cycles resolve to the member sorting first by warning text; report ordering uses a code-point comparator, never localeCompare
 - [Phase 14]: 14-02: enterprise fixture reuses acme via a second packageDirectories entry; feature-gated field is Account.FirstName
+- [Phase 14]: check exit code derives from warnings.length only; --summary/--json suppress warning: lines, --json prints even with --quiet
 
 ### Pending Todos
 
@@ -277,6 +279,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-29T10:49:37.919Z
-Stopped at: Completed 14-03-PLAN.md
+Last session: 2026-10-29T10:54:51.694Z
+Stopped at: Completed 14-04-PLAN.md
 Resume file: None
