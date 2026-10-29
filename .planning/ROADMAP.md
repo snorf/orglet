@@ -311,3 +311,12 @@ Plans:
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.12: Formula fields through parent relationships in SOQL (BACKLOG)
+
+**Goal:** Selecting a formula field through a parent relationship (`Parent__r.Formula__c`, or a `Parent.*` expansion that includes formula fields) currently throws `UNSUPPORTED:soql-formula` in `packages/soql/src/compile.ts`; the same area also refuses formula fields in WHERE, ORDER BY and GROUP BY and in child subqueries. Formulas are evaluated app-side over the root record today, so a parent-context evaluation needs the parent row (and its own parent traversals) loaded or pushed into SQL. Found by the enterprise fixture in Phase 14 through jsforce's `Opportunity.select('*, Account.*, Owner.Name')`, where `Account.*` expands to the fixture's Account formula fields; excluded enterprise-only in conformance/jsforce until implemented. Raised 2026-10-29.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
