@@ -1,7 +1,8 @@
 /**
  * orglet check report: turns the structured diagnostics behind the `warning:` lines into a census, a verdict, per-area
  * counts and root-cause groups. Pure (no console, no fs) so every rule is unit-tested; the `warning:` lines themselves
- * are printed by main.ts from the strings and never change.
+ * are printed by main.ts from the strings and never change. An implied standard-field root stands in when only formulas
+ * name a standard field outside the baseline.
  */
 import { formatDiagnostic, type Diagnostic, type FormulaFailure, type InfoDiagnostic, type OrgSchema } from "@orglet/metadata";
 
@@ -43,6 +44,8 @@ export interface AreaCount {
 export interface RootCauseGroup {
   root: Diagnostic;
   dependents: Diagnostic[];
+  /** The root is inferred, not one of the warnings: a standard field outside the baseline that only formulas name (rule 5). */
+  implied?: true;
 }
 export interface CheckReport {
   version: 1;
@@ -98,6 +101,32 @@ function groupByRoot(inputs: CheckInputs): { groups: RootCauseGroup[]; dependent
     }
   }
 
+  // Spell an implied root by the code-point-smallest casing seen, so the report does not depend on input order.
+  const spelling = new Map<string, string>();
+  for (const d of ds) {
+    const m = "missing" in d ? (d as FormulaFailure).missing : undefined;
+    if (!m) continue;
+    const k = `${m.object}.${m.field}`.toLowerCase();
+    const prev = spelling.get(k);
+    if (prev === undefined || cmp(m.field, prev) < 0) spelling.set(k, m.field);
+  }
+  const implied = new Map<string, Diagnostic>();
+  // (5) a standard-shaped name on a modelled standard object that resolves to no field: a standard field outside the
+  // baseline that the retrieve has no field file for, so build.ts emitted no standard-field diagnostic to group under.
+  const impliedRoot = (missing: { object: string; field: string }): Diagnostic | undefined => {
+    const obj = inputs.schema.objects.get(missing.object.toLowerCase());
+    if (!obj || obj.custom || !/^[A-Za-z][A-Za-z0-9_]*$/.test(missing.field) || missing.field.includes("__")) return undefined;
+    if (fieldCandidates(missing.field).some((n) => inputs.schema.getField(obj.name, n) !== undefined)) return undefined;
+    const key = `${obj.name}.${missing.field}`.toLowerCase();
+    let root = implied.get(key);
+    if (!root) {
+      const field = spelling.get(`${missing.object}.${missing.field}`.toLowerCase()) ?? missing.field;
+      root = { area: "standard-field", object: obj.name, field, message: `${obj.name}.${field} is not in the baseline; referenced by formulas, no field file in the retrieve` };
+      implied.set(key, root);
+    }
+    return root;
+  };
+
   const parentOf = (d: Diagnostic): Diagnostic | undefined => {
     // (1) an explicit cause key written by roll-up admission
     if (d.cause !== undefined) {
@@ -120,6 +149,8 @@ function groupByRoot(inputs: CheckInputs): { groups: RootCauseGroup[]; dependent
           if (p) return p;
         }
       }
+      const p = impliedRoot(missing);
+      if (p) return p;
     }
     // (4) "X is referenced but not defined" follows from the skip of X itself
     if (d.area === "reference-target" && d.field === undefined && d.object !== undefined) {
@@ -156,8 +187,10 @@ function groupByRoot(inputs: CheckInputs): { groups: RootCauseGroup[]; dependent
     if (list) list.push(d);
     else grouped.set(root, [d]);
   }
-  const groups = [...grouped.entries()].map(([root, deps]) => ({
+  const impliedRoots = new Set(implied.values());
+  const groups: RootCauseGroup[] = [...grouped.entries()].map(([root, deps]) => ({
     root,
+    ...(impliedRoots.has(root) ? { implied: true as const } : {}),
     dependents: deps.sort((a, b) => cmp(formatDiagnostic(a), formatDiagnostic(b)) || (index.get(a) ?? 0) - (index.get(b) ?? 0)),
   }));
   groups.sort((a, b) => cmp(formatDiagnostic(a.root), formatDiagnostic(b.root)));
@@ -225,6 +258,6 @@ export function formatGroups(r: Pick<CheckReport, "groups">): string[] {
   if (r.groups.length === 0) return [];
   return [
     "root causes with dependents:",
-    ...r.groups.flatMap((g) => [`  ${formatDiagnostic(g.root)}  [${g.dependents.length} dependents]`, ...g.dependents.map((d) => `    ${formatDiagnostic(d)}`)]),
+    ...r.groups.flatMap((g) => [`  ${formatDiagnostic(g.root)}  [${g.implied ? "implied, " : ""}${g.dependents.length} dependents]`, ...g.dependents.map((d) => `    ${formatDiagnostic(d)}`)]),
   ];
 }

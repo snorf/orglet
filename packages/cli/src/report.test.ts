@@ -59,6 +59,13 @@ const FIXTURES: Record<string, CheckInputs> = {
     { area: "standard-field", object: "Opportunity", field: "SyncedQuoteId", message: "Opportunity.SyncedQuoteId skipped" },
     failure("formula field Opportunity.F__c", "Opportunity", "F__c", { object: "Opportunity", field: "SyncedQuote" }),
   ]),
+  impliedStandard: inputs(
+    [
+      failure("formula field OpportunityLineItem.F__c", "OpportunityLineItem", "F__c", { object: "OpportunityLineItem", field: "QuoteLineItemId" }),
+      failure("validation rule OpportunityLineItem.R", "OpportunityLineItem", "R", { object: "OpportunityLineItem", field: "quotelineitemid" }),
+    ],
+    { schema: stubSchema([{ name: "OpportunityLineItem", fields: [{ name: "Quantity" }] }]) },
+  ),
   object: inputs(
     [
       { area: "reference-target", object: "WorkOrder", message: "WorkOrder is referenced but not defined; lookups to it are unchecked" },
@@ -125,6 +132,53 @@ describe("root-cause grouping", () => {
     const r = buildCheckReport(inputs([rollup("rollup-target", "P__c", "A__c", "rollup-formula:Nope__c.X__c"), failure("formula field Q__c.F__c", "Q__c", "F__c", { object: "Q__c", field: "Gone__c" }), failure("formula field Q__c.G__c", "Q__c", "G__c")]));
     expect(r.groups).toEqual([]);
     expect(r.verdict).toMatchObject({ warnings: 3, rootCauses: 3, dependents: 0 });
+  });
+
+  it("a formula on a standard field outside the baseline is grouped under an implied standard-field root cause", () => {
+    const r = buildCheckReport(FIXTURES.impliedStandard as CheckInputs);
+    expect(r.groups).toHaveLength(1);
+    expect(r.groups[0]?.implied).toBe(true);
+    expect(r.groups[0]?.root).toMatchObject({ area: "standard-field", object: "OpportunityLineItem", field: "QuoteLineItemId" });
+    expect(r.groups[0]?.dependents).toHaveLength(2);
+    expect(r.verdict).toMatchObject({ warnings: 2, rootCauses: 0, dependents: 2 });
+    expect(r.areas).toEqual([{ key: "UNSUPPORTED:formula", area: "formula", severity: "warning", count: 2, dependents: 2 }]);
+    expect(r.diagnostics).not.toContain(r.groups[0]?.root);
+  });
+
+  it("a missing name that is custom, namespaced, a global, colon-typed, or on a custom or unmodelled object gets no implied root", () => {
+    const miss = (object: string, field: string, k: number) => failure(`formula field X.F${k}__c`, "OpportunityLineItem", `F${k}__c`, { object, field });
+    const r = buildCheckReport(
+      inputs(
+        [
+          miss("OpportunityLineItem", "Gone__c", 1),
+          miss("OpportunityLineItem", "ns__Thing__c", 2),
+          miss("OpportunityLineItem", "Owner:Queue", 3),
+          miss("$Permission", "X", 4),
+          miss("Bar__c", "Thing", 5),
+          miss("WorkOrder", "Thing", 6),
+        ],
+        { schema: stubSchema([{ name: "OpportunityLineItem" }, { name: "Bar__c", custom: true }]) },
+      ),
+    );
+    expect(r.groups).toEqual([]);
+  });
+
+  it("a broken relationship on a field the baseline models is not reclassified", () => {
+    const r = buildCheckReport(
+      inputs([failure("formula field CampaignMember.F__c", "CampaignMember", "F__c", { object: "CampaignMember", field: "Account" })], {
+        schema: stubSchema([{ name: "CampaignMember", fields: [{ name: "AccountId", referenceTo: ["Account"] }] }]),
+      }),
+    );
+    expect(r.groups).toEqual([]);
+  });
+
+  it("a real standard-field warning for the same field still wins over the implied root", () => {
+    const real: Diagnostic = { area: "standard-field", object: "OpportunityLineItem", field: "QuoteLineItemId", message: "OpportunityLineItem.QuoteLineItemId is not in the baseline and was skipped" };
+    const base = FIXTURES.impliedStandard as CheckInputs;
+    const r = buildCheckReport({ ...base, diagnostics: [real, ...base.diagnostics] });
+    expect(r.groups).toHaveLength(1);
+    expect(r.groups[0]?.implied).toBeUndefined();
+    expect(r.groups[0]?.root).toBe(real);
   });
 
   it("warnings always equal root causes plus dependents", () => {
@@ -219,7 +273,7 @@ describe("summary and formatters", () => {
       const s = summariseCheckReport(buildCheckReport(i));
       expect(Object.keys(s).sort()).toEqual(["areas", "census", "verdict", "version"]);
       const text = JSON.stringify(s);
-      for (const name of ["Foo__c", "Ext__c", "WorkOrder", "SyncedQuote", "Bar__c"]) expect(text).not.toContain(name);
+      for (const name of ["Foo__c", "Ext__c", "WorkOrder", "SyncedQuote", "Bar__c", "OpportunityLineItem", "QuoteLineItem"]) expect(text).not.toContain(name);
     }
   });
 
@@ -259,5 +313,11 @@ describe("summary and formatters", () => {
     const dep = failure("formula field Foo__c.F__c", "Foo__c", "F__c");
     expect(formatGroups({ groups: [{ root, dependents: [dep] }] })).toEqual(["root causes with dependents:", `  ${formatDiagnostic(root)}  [1 dependents]`, `    ${formatDiagnostic(dep)}`]);
     expect(formatGroups({ groups: [] })).toEqual([]);
+  });
+
+  it("an implied root is printed with an implied marker", () => {
+    expect(formatGroups(buildCheckReport(FIXTURES.impliedStandard as CheckInputs))[1]).toBe(
+      "  UNSUPPORTED:standard-field OpportunityLineItem.QuoteLineItemId is not in the baseline; referenced by formulas, no field file in the retrieve  [implied, 2 dependents]",
+    );
   });
 });
