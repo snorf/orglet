@@ -265,6 +265,27 @@ describe("a real project", () => {
     expect(r.verdict).toMatchObject({ warnings: 3, rootCauses: 1, dependents: 2 });
     expect(r.groups[0]?.root.area).toBe("field-type");
   });
+  it("a formula reading QuoteLineItemId on OpportunityLineItem is a dependent of an implied standard-field root and its warning line is unchanged", async () => {
+    const root = await mkdtemp(join(tmpdir(), "orglet-report-"));
+    roots.push(root);
+    const p = join(root, "objects/OpportunityLineItem/fields/Quote_Line__c.field-meta.xml");
+    await mkdir(join(p, ".."), { recursive: true });
+    await writeFile(p, field("<fullName>Quote_Line__c</fullName><type>Text</type><length>50</length><formula>QuoteLineItemId</formula>"));
+    const result = admitFormulaRollups(await loadOrgSchema({ projectDir: root }));
+    const cmdt = planCustomMetadataSeed(result.schema, result.customMetadata);
+    const registry = new FormulaRegistry(result.schema, cmdt);
+    const diagnostics = [...result.diagnostics, ...cmdt.diagnostics, ...registry.diagnostics];
+    const warnings = [...result.warnings, ...cmdt.warnings, ...registry.warnings];
+    expect(diagnostics.map(formatDiagnostic)).toEqual(warnings);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/^UNSUPPORTED:formula .*OpportunityLineItem\.Quote_Line__c skipped: Field QuoteLineItemId does not exist/);
+    const r = buildCheckReport({ schema: result.schema, diagnostics, info: result.info, customMetadata: { types: cmdt.types.length, records: cmdt.records } });
+    expect(r.verdict).toMatchObject({ warnings: 1, rootCauses: 0, dependents: 1 });
+    expect(r.groups).toHaveLength(1);
+    expect(r.groups[0]?.implied).toBe(true);
+    expect(r.groups[0]?.root).toMatchObject({ area: "standard-field", object: "OpportunityLineItem", field: "QuoteLineItemId" });
+    console.log(warnings[0]);
+  });
 });
 
 describe("summary and formatters", () => {
