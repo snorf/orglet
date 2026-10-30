@@ -44,6 +44,8 @@ export interface SourceField {
   referenceTo?: string;
   relationshipName?: string;
   relationshipLabel?: string;
+  /** Raw <metadataRelationshipControllingField>, e.g. Type__mdt.Field__c. */
+  metadataRelationshipControllingField?: string;
   deleteConstraint?: DeleteConstraint;
   relationshipOrder?: number;
   reparentableMasterDetail?: boolean;
@@ -214,10 +216,11 @@ function parseField(node: XmlNode, file: string, sink: DiagnosticSink, object: s
   set("unique", bool(node, "unique"));
   set("externalId", bool(node, "externalId"));
   set("caseSensitive", bool(node, "caseSensitive"));
-  // MetadataRelationship (D-06): referenceTo names another __mdt, EntityDefinition or FieldDefinition. <metadataRelationshipControllingField> is a Setup-UI filter, not data, and is ignored (D-11).
+  // MetadataRelationship (D-06): referenceTo names another __mdt, EntityDefinition or FieldDefinition. <metadataRelationshipControllingField> names the EntityDefinition field that qualifies a bare FieldDefinition value (Phase 14 gap closure; supersedes Phase 11 D-11).
   const refs: unknown = node["referenceTo"];
   const firstRef: unknown = Array.isArray(refs) ? refs[0] : refs;
   if (typeof firstRef === "string") set("referenceTo", firstRef);
+  set("metadataRelationshipControllingField", str(node, "metadataRelationshipControllingField"));
   set("relationshipName", str(node, "relationshipName"));
   set("relationshipLabel", str(node, "relationshipLabel"));
   set("deleteConstraint", str(node, "deleteConstraint") as DeleteConstraint | undefined);

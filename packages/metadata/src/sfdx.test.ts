@@ -269,14 +269,14 @@ describe("custom metadata, labels and settings (Phase 11)", () => {
     ]);
   });
 
-  it("a MetadataRelationship field loads with its referenceTo and no field-type warning; metadataRelationshipControllingField is ignored", async () => {
+  it("a MetadataRelationship field loads with its referenceTo and its metadataRelationshipControllingField as written, and no field-type warning", async () => {
     const root = await project({
       "objects/T__mdt/fields/F__c.field-meta.xml": field(
         "<fullName>F__c</fullName><type>MetadataRelationship</type><referenceTo>FieldDefinition</referenceTo><metadataRelationshipControllingField>X__mdt.Y__c</metadataRelationshipControllingField>",
       ),
     });
     const p = await readSourceProject(root);
-    expect(p.objects[0]?.fields).toEqual([{ fullName: "F__c", type: "MetadataRelationship", referenceTo: "FieldDefinition" }]);
+    expect(p.objects[0]?.fields).toEqual([{ fullName: "F__c", type: "MetadataRelationship", referenceTo: "FieldDefinition", metadataRelationshipControllingField: "X__mdt.Y__c" }]);
     expect(p.warnings.filter((w) => w.includes("field-type"))).toEqual([]);
   });
 });
