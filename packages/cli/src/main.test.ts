@@ -92,6 +92,19 @@ describe("check", () => {
     }
   });
 
+  it("formulas traversing CampaignMember.Account and Entitlement.ServiceContract compile without a warning", async () => {
+    const root = await project({
+      "objects/CampaignMember/fields/Account_Name__c.field-meta.xml": field("<fullName>Account_Name__c</fullName><label>Account Name</label><type>Text</type><formula>Account.Name</formula>"),
+      "objects/Entitlement/fields/Contract_Name__c.field-meta.xml": field("<fullName>Contract_Name__c</fullName><label>Contract Name</label><type>Text</type><formula>ServiceContract.Name</formula>"),
+    });
+    try {
+      expect(await main(["check", "--strict", "--project", root])).toBe(0);
+      expect(warns).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("prints nothing with --quiet", async () => {
     expect(await main(["check", "--project", ACME, "--quiet"])).toBe(0);
     expect(logs).toEqual([]);

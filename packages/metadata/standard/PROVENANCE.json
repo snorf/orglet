@@ -15,7 +15,7 @@
       "featureGated": 45,
       "fields": 123,
       "guessed": 36,
-      "override": 2,
+      "override": 4,
       "sdkOnly": 180,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 5,
@@ -75,7 +75,7 @@
       "featureGated": 0,
       "fields": 20,
       "guessed": 1,
-      "override": 1,
+      "override": 2,
       "sdkOnly": 20,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 0,
@@ -123,8 +123,8 @@
       "featureGated": 1,
       "fields": 31,
       "guessed": 2,
-      "override": 0,
-      "sdkOnly": 40,
+      "override": 1,
+      "sdkOnly": 39,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 1,
       "v1": 14,
@@ -255,7 +255,7 @@
       "featureGated": 0,
       "fields": 19,
       "guessed": 8,
-      "override": 8,
+      "override": 12,
       "sdkOnly": 23,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 4,
@@ -339,7 +339,7 @@
       "featureGated": 3,
       "fields": 69,
       "guessed": 15,
-      "override": 1,
+      "override": 2,
       "sdkOnly": 73,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 7,
@@ -375,7 +375,7 @@
       "featureGated": 1,
       "fields": 47,
       "guessed": 15,
-      "override": 3,
+      "override": 4,
       "sdkOnly": 45,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 6,
@@ -507,7 +507,7 @@
       "featureGated": 2,
       "fields": 47,
       "guessed": 6,
-      "override": 1,
+      "override": 2,
       "sdkOnly": 90,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 6,
@@ -579,7 +579,7 @@
       "featureGated": 0,
       "fields": 46,
       "guessed": 20,
-      "override": 5,
+      "override": 8,
       "sdkOnly": 63,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 2,
@@ -1310,7 +1310,8 @@
         },
         "PersonContactId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "PersonDepartment": {
           "featureGated": "sdk-only",
@@ -1352,7 +1353,8 @@
         },
         "PersonIndividualId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "PersonLastCURequestDate": {
           "createable": "sdk-only",
@@ -2093,7 +2095,8 @@
       "fields": {
         "BusinessHoursId": {
           "label": "guessed",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "FridayEndTime": {
           "label": "sdk-only"
@@ -2500,7 +2503,7 @@
       "fields": {
         "AccountId": {
           "label": "guessed",
-          "relationshipName": "sdk-only"
+          "relationshipName": "override"
         },
         "CampaignId": {
           "childRelationshipName": "v1.0",
@@ -4405,15 +4408,18 @@
       "fields": {
         "AccountId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "AssetId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "BusinessHoursId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "CasesPerEntitlement": {
           "label": "sdk-only",
@@ -4467,7 +4473,8 @@
         },
         "ServiceContractId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "StartDate": {
           "label": "sdk-only"
@@ -5223,7 +5230,8 @@
         },
         "PartnerAccountId": {
           "label": "guessed",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "Phone": {
           "label": "sdk-only"
@@ -5778,7 +5786,8 @@
         },
         "PartnerAccountId": {
           "label": "guessed",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "Pricebook2Id": {
           "childRelationshipName": "v1.0",
@@ -7476,6 +7485,7 @@
           "createable": "sdk-only",
           "label": "sdk-only",
           "referenceTo": "override",
+          "relationshipName": "override",
           "type": "sdk-only",
           "updateable": "sdk-only"
         },
@@ -14784,7 +14794,8 @@
       "fields": {
         "AccountId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "ActivationDate": {
           "label": "sdk-only"
@@ -14842,7 +14853,8 @@
         },
         "ContactId": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "ContractNumber": {
           "label": "sdk-only",
@@ -14887,7 +14899,8 @@
         },
         "Pricebook2Id": {
           "label": "sdk-only",
-          "referenceTo": "override"
+          "referenceTo": "override",
+          "relationshipName": "override"
         },
         "ShippingAddress": {
           "label": "sdk-only"

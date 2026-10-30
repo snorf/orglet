@@ -19,7 +19,8 @@
       "updateable": false,
       "referenceTo": [
         "Account"
-      ]
+      ],
+      "relationshipName": "Account"
     },
     {
       "name": "ActivationDate",
@@ -139,7 +140,8 @@
       "updateable": false,
       "referenceTo": [
         "Contact"
-      ]
+      ],
+      "relationshipName": "Contact"
     },
     {
       "name": "ContractNumber",
@@ -226,7 +228,8 @@
       "type": "Lookup",
       "referenceTo": [
         "Pricebook2"
-      ]
+      ],
+      "relationshipName": "Pricebook2"
     },
     {
       "name": "ShippingAddress",

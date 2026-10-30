@@ -377,6 +377,7 @@
       "referenceTo": [
         "Account"
       ],
+      "relationshipName": "PartnerAccount",
       "featureGated": true
     },
     {

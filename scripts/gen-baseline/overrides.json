@@ -11,17 +11,19 @@
           "set": {
             "referenceTo": [
               "Contact"
-            ]
+            ],
+            "relationshipName": "PersonContact"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Contact; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Contact; neither source states Refers To; relationshipName PersonContact by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "PersonIndividualId": {
           "set": {
             "referenceTo": [
               "Individual"
-            ]
+            ],
+            "relationshipName": "PersonIndividual"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Individual; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Individual; neither source states Refers To; relationshipName PersonIndividual by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "Tier": {
           "keep": true,
@@ -150,9 +152,10 @@
           "set": {
             "referenceTo": [
               "BusinessHours"
-            ]
+            ],
+            "relationshipName": "BusinessHours"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object BusinessHours; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object BusinessHours; neither source states Refers To; relationshipName BusinessHours by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         }
       }
     },
@@ -178,6 +181,14 @@
       "keyPrefix": {
         "value": "00v",
         "source": "unverified"
+      },
+      "fields": {
+        "AccountId": {
+          "set": {
+            "relationshipName": "Account"
+          },
+          "reason": "sf-skills relationship_name \"Related Record ID\" is the field label, not an API name; relationshipName Account by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
+        }
       }
     },
     "Case": {
@@ -572,25 +583,28 @@
           "set": {
             "referenceTo": [
               "Account"
-            ]
+            ],
+            "relationshipName": "Account"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To; relationshipName Account by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "AssetId": {
           "set": {
             "referenceTo": [
               "Asset"
-            ]
+            ],
+            "relationshipName": "Asset"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Asset; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Asset; neither source states Refers To; relationshipName Asset by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "BusinessHoursId": {
           "set": {
             "referenceTo": [
               "BusinessHours"
-            ]
+            ],
+            "relationshipName": "BusinessHours"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object BusinessHours; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object BusinessHours; neither source states Refers To; relationshipName BusinessHours by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "ContractLineItemId": {
           "set": {
@@ -614,9 +628,10 @@
           "set": {
             "referenceTo": [
               "ServiceContract"
-            ]
+            ],
+            "relationshipName": "ServiceContract"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object ServiceContract; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object ServiceContract; neither source states Refers To; relationshipName ServiceContract by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         }
       }
     },
@@ -754,9 +769,10 @@
           "set": {
             "referenceTo": [
               "Account"
-            ]
+            ],
+            "relationshipName": "PartnerAccount"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To; relationshipName PartnerAccount by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         }
       }
     },
@@ -832,9 +848,10 @@
           "set": {
             "referenceTo": [
               "Account"
-            ]
+            ],
+            "relationshipName": "PartnerAccount"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To; relationshipName PartnerAccount by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "SyncedQuoteId": {
           "set": {
@@ -1089,9 +1106,10 @@
           "set": {
             "referenceTo": [
               "RecordType"
-            ]
+            ],
+            "relationshipName": "RecordType"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object RecordType; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object RecordType; neither source states Refers To; relationshipName RecordType by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "SellerId": {
           "keep": true,
@@ -1342,9 +1360,10 @@
           "set": {
             "referenceTo": [
               "Account"
-            ]
+            ],
+            "relationshipName": "Account"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Account; neither source states Refers To; relationshipName Account by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "BillingCountry": {
           "set": {
@@ -1362,17 +1381,19 @@
           "set": {
             "referenceTo": [
               "Contact"
-            ]
+            ],
+            "relationshipName": "Contact"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Contact; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Contact; neither source states Refers To; relationshipName Contact by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         },
         "Pricebook2Id": {
           "set": {
             "referenceTo": [
               "Pricebook2"
-            ]
+            ],
+            "relationshipName": "Pricebook2"
           },
-          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Pricebook2; neither source states Refers To"
+          "reason": "settle-conflicts rule (09-06 checkpoint): field name names modelled object Pricebook2; neither source states Refers To; relationshipName Pricebook2 by the name rule (09-06 checkpoint, extended in Phase 10 D-19): field name minus Id (Phase 14 gap closure: single-target lookups need an identifier relationshipName)"
         }
       }
     },

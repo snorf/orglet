@@ -18,7 +18,8 @@
       "updateable": false,
       "referenceTo": [
         "Account"
-      ]
+      ],
+      "relationshipName": "Account"
     },
     {
       "name": "AssetId",
@@ -28,7 +29,8 @@
       "updateable": false,
       "referenceTo": [
         "Asset"
-      ]
+      ],
+      "relationshipName": "Asset"
     },
     {
       "name": "BusinessHoursId",
@@ -38,7 +40,8 @@
       "updateable": false,
       "referenceTo": [
         "BusinessHours"
-      ]
+      ],
+      "relationshipName": "BusinessHours"
     },
     {
       "name": "CasesPerEntitlement",
@@ -131,7 +134,8 @@
       "type": "Lookup",
       "referenceTo": [
         "ServiceContract"
-      ]
+      ],
+      "relationshipName": "ServiceContract"
     },
     {
       "name": "StartDate",

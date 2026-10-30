@@ -455,6 +455,7 @@
       "referenceTo": [
         "Contact"
       ],
+      "relationshipName": "PersonContact",
       "featureGated": true
     },
     {
@@ -523,7 +524,8 @@
       "type": "Lookup",
       "referenceTo": [
         "Individual"
-      ]
+      ],
+      "relationshipName": "PersonIndividual"
     },
     {
       "name": "PersonLastCURequestDate",
