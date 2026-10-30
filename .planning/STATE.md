@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 14-09-PLAN.md
-last_updated: "2026-10-30T08:35:20.496Z"
+stopped_at: Completed 14-08-PLAN.md
+last_updated: "2026-10-30T08:35:31.454Z"
 last_activity: 2026-10-30
 progress:
   total_phases: 19
   completed_phases: 6
   total_plans: 62
-  completed_plans: 59
+  completed_plans: 60
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 14 (check-report-enterprise-acceptance) — EXECUTING
-Plan: 2 of 12
+Plan: 3 of 12
 Status: Ready to execute
 Last activity: 2026-10-30
 
@@ -147,6 +147,8 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 14 P05 | 40min | 2 tasks | 10 files |
 | Phase 14 P07 | n/a | 3 tasks | 2 files |
 | Phase 14 P09 | 15min | 2 tasks | 14 files |
+| Phase 14 P10 | 15min | 2 tasks | 2 files |
+| Phase 14 P08 | 10min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -262,6 +264,7 @@ Recent decisions affecting current work:
 - [Phase 14]: check exit code derives from warnings.length only; --summary/--json suppress warning: lines, --json prints even with --quiet
 - [Phase 14]: 14-05: describe-check exempts __mdt from IsDeleted (no recycle bin, D-16); jsforce core 50/51 on enterprise is an orglet parent-formula SOQL gap, classified, decision pending
 - [Phase 14]: ACC2-03 not met at Phase 14 acceptance: large real-org retrieve reports 150 warnings (37 standard-field vs 19 accepted exclusions, four other non-zero areas); gap-closure follow-up after local triage
+- [Phase 14]: 14-08: Phase 11 D-11 superseded; bare FieldDefinition values resolve via metadataRelationshipControllingField
 
 ### Pending Todos
 
@@ -284,6 +287,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-30T08:35:20.482Z
-Stopped at: Completed 14-09-PLAN.md
+Last session: 2026-10-30T08:35:31.449Z
+Stopped at: Completed 14-08-PLAN.md
 Resume file: None
