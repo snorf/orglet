@@ -284,7 +284,6 @@ describe("a real project", () => {
     expect(r.groups).toHaveLength(1);
     expect(r.groups[0]?.implied).toBe(true);
     expect(r.groups[0]?.root).toMatchObject({ area: "standard-field", object: "OpportunityLineItem", field: "QuoteLineItemId" });
-    console.log(warnings[0]);
   });
 });
 
