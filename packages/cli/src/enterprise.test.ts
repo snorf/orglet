@@ -104,6 +104,14 @@ describe("enterprise fixture", () => {
     expect(warns).toEqual([]);
   });
 
+  it("enterprise has a FieldDefinition value given as a bare field name qualified by its controlling EntityDefinition field, stored without a warning", () => {
+    const plan = planCustomMetadataSeed(result.schema, result.customMetadata);
+    const silver = plan.types.find((t) => t.object.name === "Service_Level__mdt")?.rows.find((r) => r.developerName === "Silver");
+    expect(silver?.values["Target_Object__c"]).toBe("Case");
+    expect(silver?.values["Target_Field__c"]).toBe("Status");
+    expect(plan.warnings).toEqual([]);
+  });
+
   it("enterprise loads with warnings and diagnostics one to one and none of them", () => {
     expect(result.warnings).toEqual([]);
     expect(result.diagnostics).toEqual([]);

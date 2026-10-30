@@ -140,6 +140,41 @@ describe("planCustomMetadataSeed", () => {
     for (const w of SEED_WARNINGS.filter((s) => s.startsWith("UNSUPPORTED:reference-target"))) expect(plan.warnings.filter((x) => x === w)).toHaveLength(1);
   });
 
+  it("a bare FieldDefinition value resolves against the object named by the controlling EntityDefinition field on the same record, in any value order", () => {
+    const built = withRecords([
+      rec("Support_Tier__mdt", "Bare", [
+        { field: "Target_Object__c", value: "Account" },
+        { field: "Target_Field__c", value: "Industry" },
+      ]),
+      rec("Support_Tier__mdt", "Reversed", [
+        { field: "Target_Field__c", value: "Industry" },
+        { field: "Target_Object__c", value: "account" },
+      ]),
+    ]);
+    const plan = planCustomMetadataSeed(built.schema, built.customMetadata);
+    expect(rowOf(plan, "Support_Tier__mdt", "Bare").values["Target_Field__c"]).toBe("Industry");
+    expect(rowOf(plan, "Support_Tier__mdt", "Reversed").values["Target_Field__c"]).toBe("Industry");
+    expect(plan.warnings).toEqual([]);
+    expect(built.schema.getField("Support_Tier__mdt", "Target_Field__c")?.metadataRelationshipControllingField).toBe("Target_Object__c");
+  });
+
+  it("a bare FieldDefinition value without a controlling value, or naming a field the controlling object lacks, is stored null with one reference-target warning", () => {
+    const built = withRecords([
+      rec("Support_Tier__mdt", "NoEntity", [{ field: "Target_Field__c", value: "Industry" }]),
+      rec("Support_Tier__mdt", "WrongField", [
+        { field: "Target_Object__c", value: "Account" },
+        { field: "Target_Field__c", value: "No_Such_Field__c" },
+      ]),
+    ]);
+    const plan = planCustomMetadataSeed(built.schema, built.customMetadata);
+    expect(rowOf(plan, "Support_Tier__mdt", "NoEntity").values["Target_Field__c"]).toBeNull();
+    expect(rowOf(plan, "Support_Tier__mdt", "WrongField").values["Target_Field__c"]).toBeNull();
+    expect([...plan.warnings].sort()).toEqual([
+      "UNSUPPORTED:reference-target Support_Tier__mdt.Target_Field__c: FieldDefinition target Industry is not modelled by orglet; stored as null (records: NoEntity)",
+      "UNSUPPORTED:reference-target Support_Tier__mdt.Target_Field__c: FieldDefinition target No_Such_Field__c is not modelled by orglet; stored as null (records: WrongField)",
+    ]);
+  });
+
   it("nulls an mdt target record that does not exist with one custom-metadata-record warning", async () => {
     const built = await fixture();
     const plan = planCustomMetadataSeed(built.schema, built.customMetadata);

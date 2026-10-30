@@ -18,7 +18,7 @@ orglet check --strict --project examples/enterprise   # exit 0, no warning: line
 
 | v1.1 category | Artefact | Phase |
 |---|---|---|
-| Custom metadata types with MetadataRelationship, EntityDefinition, FieldDefinition | `Service_Level__mdt` (Region__c, Target_Object__c, Target_Field__c), `Service_Region__mdt`, 4 records in `customMetadata/` (one with `xsi:nil`) | 11 |
+| Custom metadata types with MetadataRelationship, EntityDefinition, FieldDefinition | `Service_Level__mdt` (Region__c, Target_Object__c, Target_Field__c), `Service_Region__mdt`, 4 records in `customMetadata/` (one with `xsi:nil`; Gold writes FieldDefinition qualified, Silver bare and qualified by the controlling Target_Object__c) | 11 |
 | Hierarchy custom setting | `Org_Defaults__c` | 11 |
 | List custom setting | `Country_Code__c` | 11 |
 | Custom labels | `labels/CustomLabels.labels-meta.xml` (`Service_Greeting`, `Support_Hours`) | 11 |

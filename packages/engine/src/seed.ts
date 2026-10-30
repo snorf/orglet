@@ -19,6 +19,14 @@ export interface CustomMetadataPlan extends DiagnosticSink {
   records: number;
 }
 
+/** The object a bare FieldDefinition value belongs to: the record's own value of the controlling EntityDefinition field (Metadata API metadataRelationshipControllingField), or undefined. */
+function controllingEntity(f: FieldDef, r: CustomMetadataRecord): string | undefined {
+  const c = f.metadataRelationshipControllingField?.toLowerCase();
+  if (c === undefined) return undefined;
+  const raw = r.values.find((v) => v.field.toLowerCase() === c)?.value;
+  return raw === undefined || raw === "" ? undefined : raw;
+}
+
 type IssueKind = "unknown" | "coercion" | "mdt-target" | "definition";
 
 interface Issue {
@@ -111,9 +119,12 @@ export function planCustomMetadataSeed(schema: OrgSchema, records: readonly Cust
             stored = null;
           }
         } else if (def === "FieldDefinition") {
+          // D-08 qualified form Object.Field, or a bare field name qualified by the controlling field on the same record (real retrieves write bare names).
           const dot = value.indexOf(".");
+          const entity = dot > 0 ? value.slice(0, dot) : controllingEntity(f, r);
+          const fieldName = dot > 0 ? value.slice(dot + 1) : value;
           if (value === "") stored = null;
-          else if (dot > 0 && schema.getObject(value.slice(0, dot)) && schema.getField(value.slice(0, dot), value.slice(dot + 1))) stored = value;
+          else if (entity !== undefined && schema.getObject(entity) && schema.getField(entity, fieldName)) stored = value;
           else {
             note("definition", obj.name, f.name, value, f, r.developerName);
             stored = null;
