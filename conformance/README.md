@@ -84,10 +84,13 @@ warnings are being triaged into generic Salesforce areas for a follow-up gap-clo
 ## Accepted standard-field exclusions
 
 Standard fields that a real retrieve can reference but the baseline does not model stay `UNSUPPORTED:standard-field`
-(Phase 14, closing todo 2026-10-16). They are recorded as counts per reason, never as names.
+(Phase 14, closing todo 2026-10-16, and the Phase 14 gap closure (round 2)). They are recorded as counts per reason, never as names.
 
-| Reason | Count |
-|---|---|
-| Reference target outside the baseline | 8 |
-| Field type not modelled (geolocation compound) | 1 |
-| No public source and not in the author's DE describe | 10 |
+| Reason | Round 1 (todo 2026-10-16) | Round 2 (gap closure) | Total |
+|---|---|---|---|
+| Reference target outside the baseline | 8 | 8 | 16 |
+| Field type not modelled (geolocation compound) | 1 | 0 | 1 |
+| Field type not modelled (other) | 0 | 0 | 0 |
+| No public source and not in the author's DE describe | 10 | 6 | 16 |
+
+Round 2 added 5 fields to the baseline from public sources; the large real-org retrieve referenced 18 of the round-1 exclusions in field files (1 more only through a formula, grouped under an implied standard-field root by `orglet check`).
