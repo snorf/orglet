@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: real-org fidelity
 status: executing
-stopped_at: Completed 14-08-PLAN.md
-last_updated: "2026-10-30T08:35:31.454Z"
-last_activity: 2026-10-30
+stopped_at: Completed 14-11-PLAN.md
+last_updated: "2026-10-31T12:35:46.867Z"
+last_activity: 2026-10-31
 progress:
   total_phases: 19
   completed_phases: 6
   total_plans: 62
-  completed_plans: 60
+  completed_plans: 61
   percent: 14
 ---
 
@@ -29,9 +29,9 @@ rather than faked.
 
 Milestone: v1.1 "real-org fidelity" (started 2026-10-12)
 Phase: 14 (check-report-enterprise-acceptance) — EXECUTING
-Plan: 10 of 12
+Plan: 11 of 12
 Status: Ready to execute
-Last activity: 2026-10-30
+Last activity: 2026-10-31
 
 Progress: [█░░░░░░░░░] 14%
 
@@ -149,6 +149,7 @@ Progress: [█░░░░░░░░░] 14%
 | Phase 14 P09 | 15min | 2 tasks | 14 files |
 | Phase 14 P10 | 15min | 2 tasks | 2 files |
 | Phase 14 P08 | 10min | 2 tasks | 9 files |
+| Phase 14 P11 | 20min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -265,6 +266,7 @@ Recent decisions affecting current work:
 - [Phase 14]: 14-05: describe-check exempts __mdt from IsDeleted (no recycle bin, D-16); jsforce core 50/51 on enterprise is an orglet parent-formula SOQL gap, classified, decision pending
 - [Phase 14]: ACC2-03 not met at Phase 14 acceptance: large real-org retrieve reports 150 warnings (37 standard-field vs 19 accepted exclusions, four other non-zero areas); gap-closure follow-up after local triage
 - [Phase 14]: 14-08: Phase 11 D-11 superseded; bare FieldDefinition values resolve via metadataRelationshipControllingField
+- [Phase 14-11]: Round-2 standard fields in neither pinned source are modelled from de-describe (2026-10-31); lookups to targets outside objects.json stay accepted exclusions (5 added, 14 excluded)
 
 ### Pending Todos
 
@@ -287,6 +289,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-30T08:35:31.449Z
-Stopped at: Completed 14-08-PLAN.md
+Last session: 2026-10-31T12:35:46.862Z
+Stopped at: Completed 14-11-PLAN.md
 Resume file: None
