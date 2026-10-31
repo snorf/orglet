@@ -265,9 +265,9 @@
     "Event": {
       "docOnly": 0,
       "featureGated": 1,
-      "fields": 52,
+      "fields": 53,
       "guessed": 16,
-      "override": 0,
+      "override": 5,
       "sdkOnly": 36,
       "skippedFieldType": 4,
       "skippedReferenceTarget": 0,
@@ -373,9 +373,9 @@
     "Opportunity": {
       "docOnly": 0,
       "featureGated": 1,
-      "fields": 47,
+      "fields": 48,
       "guessed": 15,
-      "override": 4,
+      "override": 8,
       "sdkOnly": 45,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 6,
@@ -409,9 +409,9 @@
     "OpportunityLineItem": {
       "docOnly": 0,
       "featureGated": 0,
-      "fields": 24,
+      "fields": 25,
       "guessed": 6,
-      "override": 0,
+      "override": 4,
       "sdkOnly": 21,
       "skippedFieldType": 0,
       "skippedReferenceTarget": 2,
@@ -577,14 +577,14 @@
     "ServiceContract": {
       "docOnly": 0,
       "featureGated": 0,
-      "fields": 46,
+      "fields": 48,
       "guessed": 20,
-      "override": 8,
-      "sdkOnly": 63,
+      "override": 12,
+      "sdkOnly": 65,
       "skippedFieldType": 0,
-      "skippedReferenceTarget": 2,
+      "skippedReferenceTarget": 0,
       "v1": 1,
-      "verified": 125
+      "verified": 129
     },
     "SocialPost": {
       "docOnly": 0,
@@ -4594,6 +4594,13 @@
           "label": "sdk-only",
           "length": "sdk-only"
         },
+        "MeetingUrl": {
+          "createable": "override",
+          "label": "override",
+          "length": "override",
+          "type": "override",
+          "updateable": "override"
+        },
         "Phone": {
           "createable": "v1.0",
           "label": "v1.0",
@@ -5770,6 +5777,12 @@
           "precision": "guessed",
           "scale": "guessed"
         },
+        "LastSyncTime": {
+          "createable": "override",
+          "label": "override",
+          "type": "override",
+          "updateable": "override"
+        },
         "LastViewedDate": {
           "label": "sdk-only"
         },
@@ -5932,6 +5945,12 @@
         },
         "LastReferencedDate": {
           "label": "sdk-only"
+        },
+        "LastSyncTime": {
+          "createable": "override",
+          "label": "override",
+          "type": "override",
+          "updateable": "override"
         },
         "LastViewedDate": {
           "label": "sdk-only"
@@ -14897,7 +14916,17 @@
           "length": "sdk-only",
           "nameField": "v1.0"
         },
+        "ParentServiceContractId": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
         "Pricebook2Id": {
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "RootServiceContractId": {
           "label": "sdk-only",
           "referenceTo": "override",
           "relationshipName": "override"
@@ -16571,8 +16600,6 @@
       "ServiceAppointment.ReceiptOrderId -> (none stated)",
       "ServiceAppointment.ServiceTerritoryId -> ServiceTerritory",
       "ServiceAppointment.WorkTypeId -> WorkType",
-      "ServiceContract.ParentServiceContractId -> (none stated)",
-      "ServiceContract.RootServiceContractId -> (none stated)",
       "SocialPost.OutboundSocialAccountId -> ExternalSocialAccount",
       "SocialPost.PersonaId -> SocialPersona",
       "Task.ActionCadenceStepTrackerId -> (none stated)",
