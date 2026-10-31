@@ -33,7 +33,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 - [x] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load (completed 2026-10-21)
 - [x] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas (completed 2026-10-23)
 - [x] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields (completed 2026-10-24)
-- [ ] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run
+- [x] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run (completed 2026-10-31)
 
 ## Phase Details
 
@@ -192,7 +192,7 @@ Plans:
 - [x] 14-09-PLAN.md — gap closure: baseline relationshipName for 14 single-target lookups via overrides.json, generator guard for identifier-shaped relationship names (ACC2-03)
 - [x] 14-10-PLAN.md — gap closure: report groups a formula on a standard field outside the baseline under an implied standard-field root (ACC2-03, CHECK-01)
 - [x] 14-11-PLAN.md — gap closure: standard-field round 2, author checkpoint for the 19 public field names, overrides or counted exclusions (ACC2-03)
-- [ ] 14-12-PLAN.md — gap closure: full gate, author re-run of DE and large retrieves with per-category counts, counted exclusions in conformance/README.md, ACC2-03 tick if met (ACC2-03)
+- [x] 14-12-PLAN.md — gap closure: full gate, author re-run of DE and large retrieves with per-category counts, counted exclusions in conformance/README.md, ACC2-03 tick if met (ACC2-03)
 **Research flag**: none.
 
 ## Progress
@@ -212,7 +212,7 @@ Plans:
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
-| 14. Check Report & Enterprise Acceptance | v1.1 | 11/12 | In Progress|  |
+| 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete   | 2026-10-31 |
 
 ## Backlog
 
@@ -222,7 +222,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 11/12 plans executed
+**Plans:** 12/12 plans complete
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
