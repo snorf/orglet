@@ -212,7 +212,7 @@ Plans:
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
-| 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete   | 2026-10-31 |
+| 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete    | 2026-10-31 |
 
 ## Backlog
 
