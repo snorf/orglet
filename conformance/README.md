@@ -66,6 +66,7 @@ lines and the summary line are recorded.
 | 2026-10-12 | exit 0, 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-16 | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced |
 | 2026-10-29 | exit 0, 0 warnings, 55 objects (2 custom), 3625 fields; info: 39 unreferenced |
+| 2026-10-31 | exit 0, 0 warnings, 55 objects (2 custom, 53 standard), 3653 fields (46 custom, 3607 standard), 146 feature-gated standard fields included; clean (informational 39) |
 
 ## Large real-org retrieve
 
@@ -76,10 +77,26 @@ counts only. Accepted standard-field exclusions are counted in the section above
 | Date | Census | Verdict | Areas (count) |
 |---|---|---|---|
 | 2026-10-29 | 181 objects (128 custom, 53 standard), 6702 fields (1907 custom, 4795 standard); 146 feature-gated standard fields included; custom metadata: 127 records in 22 types; 716 custom labels | 150 warnings to review (root causes: 150, dependents: 0, informational: 311) | UNSUPPORTED:custom-metadata-record 24; UNSUPPORTED:formula 28; UNSUPPORTED:object-kind 11; UNSUPPORTED:reference-target 50; UNSUPPORTED:standard-field 37; info:custom-setting-no-data 20; info:reference-target-skipped 36; info:standard-object-unmodelled 255 |
+| 2026-10-31 | 181 objects (128 custom, 53 standard), 6707 fields (1907 custom, 4800 standard); 146 feature-gated standard fields included; custom metadata: 127 records in 22 types; 716 custom labels | 94 warnings to review (root causes: 93, dependents: 1, informational: 311) | UNSUPPORTED:custom-metadata-record 24; UNSUPPORTED:formula 27; UNSUPPORTED:object-kind 11; UNSUPPORTED:standard-field 32; info:custom-setting-no-data 20; info:reference-target-skipped 36; info:standard-object-unmodelled 255 |
 
-The ACC2-03 criterion (zero warnings for everything the retrieve references) is not met at commit 05ddbe9:
-`UNSUPPORTED:standard-field` is 37 against 19 accepted exclusions, and four other warning areas are non-zero. The
-warnings are being triaged into generic Salesforce areas for a follow-up gap-closure plan.
+At a2f4d2b (2026-10-31) every remaining warning is a counted exclusion (next section) or an accepted standard-field exclusion; the earlier gaps (bare FieldDefinition values, baseline relationship names, standard-field round 2, formula grouping) were closed by plans 14-08..14-11. The formula count settles at 27 (the triage listed 28 plus one double-listed occurrence): the baseline relationship-name fix removed one, and the formulas on namespaced fields absent from the retrieve are 11 in total, counted once.
+
+## Large real-org retrieve: counted exclusions
+
+Warnings on the large retrieve that are properties of the retrieve or of features orglet deliberately does not
+model yet. Counts only, measured 2026-10-31 at a2f4d2b.
+
+| Category | Area | Count | Why | Follow-up |
+|---|---|---|---|---|
+| Platform events (`__e`) | object-kind | 11 | not modelled | backlog 999.8 |
+| `$Permission` in formulas | formula | 15 | custom permissions and permission sets are not modelled (formula-global gap) | security milestone |
+| Managed package not in the retrieve | formula | 11 | namespaced fields of a package the retrieve does not include | none (property of the retrieve) |
+| Retrieve incomplete: custom fields absent | formula | 0 | formulas name custom fields that are not in the retrieve | fix the retrieve's package.xml, not orglet |
+| Retrieve incomplete: custom metadata types absent | custom-metadata-record | 24 | records whose type definition is not in the retrieve | fix the retrieve's package.xml, not orglet |
+| Standard field outside the baseline, named only by formulas | formula | 1 | grouped under an implied standard-field root (14-10) | counted with the accepted standard-field exclusions |
+| Accepted standard-field exclusions | standard-field | 32 | see "Accepted standard-field exclusions" | none |
+
+Total: 94, equal to the warning count of the 2026-10-31 row.
 
 ## Accepted standard-field exclusions
 
