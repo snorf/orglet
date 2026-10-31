@@ -3,7 +3,9 @@
 Runs a small roll-up summary check through the real SDKs (jsforce and simple-salesforce)
 against a running orglet: the describe flags of a roll-up field (`calculated`, not createable,
 not updateable), the live recompute on insert, a SOQL filter and sort over a roll-up column, the
-rejection of a direct write (`INVALID_FIELD_FOR_INSERT_UPDATE`) and the recompute on delete. Each
+rejection of a direct write (`INVALID_FIELD_FOR_INSERT_UPDATE`) and the recompute on delete. With `FIXTURE=enterprise` it also runs `formula-rollup`: a `Service_Order__c`
+with two `Service_Order_Line__c` rows, where `Total_Lines__c` (SUM over the formula `Line_Total__c`)
+must read 35 after insert and 25 after an update, with `Line_Count__c` 2 throughout. Each
 script creates an Account, a `Project__c` and two `Milestone__c` with a run tag in the names, and
 deletes the Account (which cascades the rest) when done.
 
@@ -33,7 +35,9 @@ Stop the server and remove the throwaway schema afterwards:
 node packages/cli/dist/index.js reset --org-schema rollup_check --drop-prefixes
 ```
 
-Expected output: five PASS lines, a total, and exit code 0.
+Set `FIXTURE=enterprise` (and start orglet with `--project examples/enterprise`) to add the
+formula roll-up check. Each script exits non-zero unless exactly the expected number of checks ran
+and passed: `5/5` on acme (the default), `6/6` on enterprise.
 
 ```
 PASS describe-flags ...
@@ -41,7 +45,8 @@ PASS recompute-insert ...
 PASS soql-filter-sort ...
 PASS write-rejected ...
 PASS recompute-delete ...
-jsforce: 5/5 passed
+PASS formula-rollup ...   (FIXTURE=enterprise only)
+jsforce: 6/6 passed       (5/5 on acme)
 ```
 
 A failing check prints `FAIL <check> <reason>` and the script exits 1.

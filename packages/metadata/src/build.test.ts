@@ -64,6 +64,25 @@ describe("standard baseline alone", () => {
     result = await loadOrgSchema();
   });
 
+  it("Opportunity.SyncedQuoteId is a lookup to Quote reachable as SyncedQuote", () => {
+    expect(result.schema.getField("Opportunity", "SyncedQuoteId")?.referenceTo).toEqual(["Quote"]);
+    expect(result.schema.resolveRelationship("Opportunity", "SyncedQuote")?.target.name).toBe("Quote");
+  });
+
+  it("standard-field round 2: every added field is in the default baseline with its stated type", () => {
+    const added: [string, string, string][] = [
+      ["Event", "MeetingUrl", "Url"],
+      ["Opportunity", "LastSyncTime", "DateTime"],
+      ["OpportunityLineItem", "LastSyncTime", "DateTime"],
+    ];
+    for (const [object, field, type] of added) expect(result.schema.getField(object, field)?.type, `${object}.${field}`).toBe(type);
+    expect(result.schema.getField("Event", "MeetingUrl")?.updateable).toBe(false);
+    for (const [field, rel] of [["ParentServiceContractId", "ParentServiceContract"], ["RootServiceContractId", "RootServiceContract"]] as const) {
+      expect(result.schema.getField("ServiceContract", field)?.referenceTo).toEqual(["ServiceContract"]);
+      expect(result.schema.resolveRelationship("ServiceContract", rel)?.target.name).toBe("ServiceContract");
+    }
+  });
+
   it("loads the phase-0 standard objects with their key prefixes", () => {
     const prefixes = Object.fromEntries(result.schema.list().map((o) => [o.name, o.keyPrefix]));
     expect(prefixes).toMatchObject({

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Discount_Within_Cap</fullName>
+    <active>true</active>
+    <errorConditionFormula>!ISBLANK(Discount__c) &amp;&amp; Discount__c &gt; $Setup.Org_Defaults__c.Discount_Cap__c</errorConditionFormula>
+    <errorDisplayField>Discount__c</errorDisplayField>
+    <errorMessage>Discount exceeds the cap</errorMessage>
+</ValidationRule>

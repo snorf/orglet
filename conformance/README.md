@@ -8,17 +8,19 @@ real-world metadata retrieved from the author's own Developer Edition.
 
 | Check | Date | orglet commit | SDK | Result | Details |
 |---|---|---|---|---|---|
-| DE retrieve check (`orglet check --strict`) | 2026-10-16 | 00354b4 | n/a | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced | [DE retrieve check](#de-retrieve-check) |
-| jsforce e2e subset: core | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
-| jsforce e2e subset: Bulk API 2.0 | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
-| simple-salesforce script | 2026-10-14 | fb9c397 | simple-salesforce 1.12.10 | 29/29 passed | [python/README.md](python/README.md) |
-| describe-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32 | [describe-check/README.md](describe-check/README.md) |
-| poly-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 4/4, simple-salesforce 4/4 | [poly-check/README.md](poly-check/README.md) |
-| rollup-check | 2026-10-14 | fb9c397 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5 | [rollup-check/README.md](rollup-check/README.md) |
-| cmdt-check | 2026-10-21 | 7660878 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
+| DE retrieve check (`orglet check --strict`) | 2026-10-29 | 05ddbe9 | n/a | exit 0, 0 warnings, 55 objects (2 custom), 3625 fields; info: 39 unreferenced | [DE retrieve check](#de-retrieve-check) |
+| enterprise fixture check (`orglet check --strict --project examples/enterprise`) | 2026-10-31 | 7cacd50 | n/a | exit 0, 0 warnings, 63 objects (10 custom, 53 standard), 3742 fields (57 custom, 3685 standard); info: 41 | [examples/enterprise/README.md](../examples/enterprise/README.md) |
+| jsforce e2e subset: core | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
+| jsforce e2e subset: Bulk API 2.0 | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
+| simple-salesforce script | 2026-10-31 | 7cacd50 | simple-salesforce 1.12.10 | 29/29 passed | [python/README.md](python/README.md) |
+| describe-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32; enterprise 38/38 each | [describe-check/README.md](describe-check/README.md) |
+| poly-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5; enterprise 6/6 each | [poly-check/README.md](poly-check/README.md) |
+| rollup-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5; enterprise 6/6 each | [rollup-check/README.md](rollup-check/README.md) |
+| cmdt-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
 
-Every row except the DE retrieve check and cmdt-check runs against `examples/acme` on a fresh schema; cmdt-check runs
-against `conformance/cmdt-check/project` on its own server and schema.
+Every row except the two fixture checks (DE retrieve, enterprise) and cmdt-check runs against `examples/acme` on a fresh schema and, in CI, also against `examples/enterprise`; cmdt-check runs
+against `conformance/cmdt-check/project` on its own server and schema. On enterprise the jsforce core subset is 50 passed / 0 failed / 61 excluded (one
+enterprise-only classified exclusion, see [jsforce/README.md](jsforce/README.md)); the table above is the acme run.
 
 ## Running everything
 
@@ -26,6 +28,16 @@ against `conformance/cmdt-check/project` on its own server and schema.
 pnpm build
 PORT=8094 ORG_SCHEMA=final7 PYTHON=conformance/describe-check/.venv/bin/python conformance/run-all.sh
 ```
+
+To run against the enterprise fixture instead:
+
+```sh
+PROJECT=examples/enterprise PORT=8096 ORG_SCHEMA=ent_run PYTHON=conformance/describe-check/.venv/bin/python conformance/run-all.sh
+```
+
+With `PROJECT=examples/enterprise` the script also seeds the enterprise custom settings (`examples/enterprise/seed.mjs`),
+runs describe-check over `describe-check/objects-enterprise.txt` as well, and passes `FIXTURE=enterprise` to poly-check
+and rollup-check; CI runs both projects as a matrix in the `conformance` job.
 
 `run-all.sh` starts its own server against `examples/acme` plus a second one against `conformance/cmdt-check/project`
 (port `CMDT_PORT`, default `PORT`+1; schema `CMDT_SCHEMA`, default `<ORG_SCHEMA>_cmdt`, also fresh), runs every leg
@@ -53,3 +65,49 @@ lines and the summary line are recorded.
 | 2026-10-09 | 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-12 | exit 0, 0 warnings, 37 objects (2 custom), 983 fields |
 | 2026-10-16 | exit 0, 0 warnings, 55 objects (2 custom), 3647 fields; info: 39 unreferenced |
+| 2026-10-29 | exit 0, 0 warnings, 55 objects (2 custom), 3625 fields; info: 39 unreferenced |
+| 2026-10-31 | exit 0, 0 warnings, 55 objects (2 custom, 53 standard), 3653 fields (46 custom, 3607 standard), 146 feature-gated standard fields included; clean (informational 39) |
+
+## Large real-org retrieve
+
+ACC2-03: a large retrieve from a real org, run locally by the author only (never stored in this repository, never
+used in CI, no org contacted by orglet, no behaviour compared). Recorded from `orglet check --summary`, which prints
+counts only. Accepted standard-field exclusions are counted in the section above.
+
+| Date | Census | Verdict | Areas (count) |
+|---|---|---|---|
+| 2026-10-29 | 181 objects (128 custom, 53 standard), 6702 fields (1907 custom, 4795 standard); 146 feature-gated standard fields included; custom metadata: 127 records in 22 types; 716 custom labels | 150 warnings to review (root causes: 150, dependents: 0, informational: 311) | UNSUPPORTED:custom-metadata-record 24; UNSUPPORTED:formula 28; UNSUPPORTED:object-kind 11; UNSUPPORTED:reference-target 50; UNSUPPORTED:standard-field 37; info:custom-setting-no-data 20; info:reference-target-skipped 36; info:standard-object-unmodelled 255 |
+| 2026-10-31 | 181 objects (128 custom, 53 standard), 6707 fields (1907 custom, 4800 standard); 146 feature-gated standard fields included; custom metadata: 127 records in 22 types; 716 custom labels | 94 warnings to review (root causes: 93, dependents: 1, informational: 311) | UNSUPPORTED:custom-metadata-record 24; UNSUPPORTED:formula 27; UNSUPPORTED:object-kind 11; UNSUPPORTED:standard-field 32; info:custom-setting-no-data 20; info:reference-target-skipped 36; info:standard-object-unmodelled 255 |
+
+At a2f4d2b (2026-10-31) every remaining warning is a counted exclusion (next section) or an accepted standard-field exclusion; the earlier gaps (bare FieldDefinition values, baseline relationship names, standard-field round 2, formula grouping) were closed by plans 14-08..14-11. The formula count settles at 27 (the triage listed 28 plus one double-listed occurrence): the baseline relationship-name fix removed one, and the formulas on namespaced fields absent from the retrieve are 11 in total, counted once.
+
+## Large real-org retrieve: counted exclusions
+
+Warnings on the large retrieve that are properties of the retrieve or of features orglet deliberately does not
+model yet. Counts only, measured 2026-10-31 at a2f4d2b.
+
+| Category | Area | Count | Why | Follow-up |
+|---|---|---|---|---|
+| Platform events (`__e`) | object-kind | 11 | not modelled | backlog 999.8 |
+| `$Permission` in formulas | formula | 15 | custom permissions and permission sets are not modelled (formula-global gap) | security milestone |
+| Managed package not in the retrieve | formula | 11 | namespaced fields of a package the retrieve does not include | none (property of the retrieve) |
+| Retrieve incomplete: custom fields absent | formula | 0 | formulas name custom fields that are not in the retrieve | fix the retrieve's package.xml, not orglet |
+| Retrieve incomplete: custom metadata types absent | custom-metadata-record | 24 | records whose type definition is not in the retrieve | fix the retrieve's package.xml, not orglet |
+| Standard field outside the baseline, named only by formulas | formula | 1 | grouped under an implied standard-field root (14-10) | counted with the accepted standard-field exclusions |
+| Accepted standard-field exclusions | standard-field | 32 | see "Accepted standard-field exclusions" | none |
+
+Total: 94, equal to the warning count of the 2026-10-31 row.
+
+## Accepted standard-field exclusions
+
+Standard fields that a real retrieve can reference but the baseline does not model stay `UNSUPPORTED:standard-field`
+(Phase 14, closing todo 2026-10-16, and the Phase 14 gap closure (round 2)). They are recorded as counts per reason, never as names.
+
+| Reason | Round 1 (todo 2026-10-16) | Round 2 (gap closure) | Total |
+|---|---|---|---|
+| Reference target outside the baseline | 8 | 8 | 16 |
+| Field type not modelled (geolocation compound) | 1 | 0 | 1 |
+| Field type not modelled (other) | 0 | 0 | 0 |
+| No public source and not in the author's DE describe | 10 | 6 | 16 |
+
+Round 2 added 5 fields to the baseline from public sources; the large real-org retrieve referenced 18 of the round-1 exclusions in field files (1 more only through a formula, grouped under an implied standard-field root by `orglet check`).

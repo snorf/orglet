@@ -285,7 +285,8 @@
       "updateable": false,
       "referenceTo": [
         "RecordType"
-      ]
+      ],
+      "relationshipName": "RecordType"
     },
     {
       "name": "RevenueInstallmentPeriod",

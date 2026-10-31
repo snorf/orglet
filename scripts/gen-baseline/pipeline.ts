@@ -624,3 +624,22 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
   }
   return { files, report };
 }
+
+const RELATIONSHIP_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+/**
+ * Formula and SOQL traversal find a parent by relationshipName, so a single-target lookup without one, or with a
+ * label in its place (an sf-skills irregularity), makes every `Rel.Field` path fail. Polymorphic lookups are exempt:
+ * plain traversal over them fails by design (Phase 4 D-08). Phase 14 gap closure.
+ */
+export function relationshipNameProblems(objects: readonly StandardObjectJson[]): string[] {
+  const out: string[] = [];
+  for (const o of objects) {
+    for (const f of o.fields) {
+      if ((f.type !== "Lookup" && f.type !== "MasterDetail") || f.referenceTo?.length !== 1) continue;
+      if (typeof f.relationshipName === "string" && RELATIONSHIP_NAME.test(f.relationshipName)) continue;
+      out.push(`${o.name}.${f.name}: single-target ${f.type} to ${f.referenceTo[0]} has no identifier-shaped relationshipName (${JSON.stringify(f.relationshipName ?? null)}); set one in overrides.json with a reason`);
+    }
+  }
+  return out.sort(codeUnit);
+}

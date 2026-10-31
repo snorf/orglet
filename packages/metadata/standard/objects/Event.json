@@ -240,6 +240,14 @@
       "length": 255
     },
     {
+      "name": "MeetingUrl",
+      "label": "Meeting URL",
+      "type": "Url",
+      "length": 2048,
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "Phone",
       "label": "Phone",
       "type": "Phone",

@@ -19,7 +19,8 @@
       "updateable": false,
       "referenceTo": [
         "Account"
-      ]
+      ],
+      "relationshipName": "Account"
     },
     {
       "name": "ActivationDate",
@@ -139,7 +140,8 @@
       "updateable": false,
       "referenceTo": [
         "Contact"
-      ]
+      ],
+      "relationshipName": "Contact"
     },
     {
       "name": "ContractNumber",
@@ -221,12 +223,33 @@
       "nameField": true
     },
     {
+      "name": "ParentServiceContractId",
+      "label": "Parent Service Contract ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "ServiceContract"
+      ],
+      "relationshipName": "ParentServiceContract"
+    },
+    {
       "name": "Pricebook2Id",
       "label": "Price Book ID",
       "type": "Lookup",
       "referenceTo": [
         "Pricebook2"
-      ]
+      ],
+      "relationshipName": "Pricebook2"
+    },
+    {
+      "name": "RootServiceContractId",
+      "label": "Root Service Contract ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "ServiceContract"
+      ],
+      "relationshipName": "RootServiceContract"
     },
     {
       "name": "ShippingAddress",

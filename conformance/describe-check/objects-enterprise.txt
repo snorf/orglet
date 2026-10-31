@@ -1,0 +1,8 @@
+# Extra objects describe-check runs when run-all.sh has PROJECT=examples/enterprise: custom metadata types, custom settings and custom objects of the enterprise fixture.
+# One API name per line; '#' starts a comment.
+Service_Level__mdt
+Service_Region__mdt
+Org_Defaults__c
+Country_Code__c
+Service_Order__c
+Service_Order_Line__c

@@ -16,6 +16,10 @@ checks that every property the SDKs declare is present. It complements the CI te
 Both scripts read `contract.json` and `objects.txt` from this directory; object names given as
 arguments override `objects.txt`.
 
+`objects-enterprise.txt` lists the extra objects of the enterprise fixture (custom metadata types, custom settings and custom
+objects). `conformance/run-all.sh` appends them to `objects.txt` and passes the combined list as arguments when
+`PROJECT=examples/enterprise`; the expected total for that run is `38/38` (32 + 6) for each SDK. Both legs skip the `IsDeleted` system-field requirement for `__mdt` objects: custom metadata types have no recycle bin (Phase 11 D-16), and orglet does not fake the field.
+
 ## Prerequisites
 
 - Node 22 and the jsforce build that `../jsforce/run.sh` leaves in `../jsforce/.cache/jsforce`.

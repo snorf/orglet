@@ -77,6 +77,19 @@ Phase 13 complete 2026-10-24 — roll-ups over same-object, non-volatile formula
 bound as an `unnest` derived table (stored-field roll-ups keep the pure SQL path), and `orglet up` backfills
 each formula roll-up once behind an `_orglet.rollup_backfills` marker so a second `up` is silent. 866 tests
 on pglite, 869 on Postgres 16, 10/10 conformance legs.
+Phase 14 complete 2026-10-31 — `orglet check` is a report: census line, verdict, per-area table and
+root-cause groups (dependents folded under the diagnostic that caused them, including an implied
+`standard-field` root for formulas on baseline-excluded standard fields), `--summary` redacted to counts and
+area tokens, `--json` for tooling, `warning:` lines unchanged. Public enterprise-shaped fixture
+`examples/enterprise` (63 objects, 3 742 fields, custom metadata, custom settings, labels, roll-ups,
+polymorphic lookups) passes `check --strict` and the full conformance set (11/11 legs) beside acme (10/10).
+Gap closure after the first acceptance: bare FieldDefinition values resolve through the controlling
+EntityDefinition field, 14 baseline lookups gained relationshipNames behind a generator guard, and a second
+standard-field round modelled 5 more fields and accepted 14 exclusions (16 + 1 + 16 counted exclusions in
+total, names never recorded). Author's DE retrieve: exit 0, 0 warnings. Large real-org retrieve: 94 warnings,
+every one inside a counted exclusion category documented in `conformance/README.md` (platform events,
+`$Permission`, managed package not retrieved, retrieve incomplete, accepted standard fields). 922 tests on
+pglite, 924 on Postgres 16.
 
 ## Current Milestone: v1.1 real-org fidelity
 
@@ -270,6 +283,20 @@ Validated in Phase 12 (v1.1, 2026-10-23):
 - ✓ Hierarchy `$Setup` merged per field user → profile → organization → blank, queried only when a formula
   uses it; List `$Setup` and `$Permission` stay `UNSUPPORTED:formula-global` with the reason — FORM-05
 
+Validated in Phase 14 (v1.1, 2026-10-31):
+
+- ✓ `orglet check` prints census, verdict, per-area table and root-cause groups; deterministic output,
+  `warning:` lines byte-identical to before — CHECK-01
+- ✓ `--summary` carries counts and area tokens only, `--json` is the machine form, `--strict` exit code
+  unchanged — CHECK-02
+- ✓ `examples/enterprise` is a public enterprise-shaped fixture that passes `check --strict` with the full
+  conformance set green against it — ACC2-01
+- ✓ poly-check and rollup-check cover the v1.1 features (OwnerId narrowing, typed Owner traversal, formula
+  roll-ups) on both SDKs — ACC2-02
+- ✓ DE retrieve loads with exit 0 and 0 warnings; the large retrieve's 94 warnings are all counted exclusions
+  documented by category in `conformance/README.md` (relaxation from literal zero recorded in
+  REQUIREMENTS.md) — ACC2-03
+
 ### Active
 
 Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements are defined in
@@ -413,4 +440,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-24 after Phase 13 (roll-ups over formula fields)*
+*Last updated: 2026-10-31 after Phase 14 (check report and enterprise acceptance)*

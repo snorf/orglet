@@ -41,7 +41,8 @@ function problemsFor(name, globalEntry, d) {
   p.push(...missing(d.urls, contract.urlKeys).map((k) => `urls.${k}`));
   const fields = Array.isArray(d.fields) ? d.fields : [];
   for (const f of fields) p.push(...missing(f, contract.fieldKeys).map((k) => `fields.${f.name}.${k}`));
-  for (const s of contract.systemFields) if (fields.filter((f) => f.name === s).length !== 1) p.push(`system field ${s}`);
+  // Custom metadata types have no recycle bin, so no IsDeleted (Phase 11 D-16).
+  for (const s of contract.systemFields.filter((f) => !(name.endsWith('__mdt') && f === 'IsDeleted'))) if (fields.filter((f) => f.name === s).length !== 1) p.push(`system field ${s}`);
   const nameFields = fields.filter((f) => f.nameField === true);
   if (nameFields.length > 1) p.push(`${nameFields.length} nameField fields`);
   for (const c of Array.isArray(d.childRelationships) ? d.childRelationships : []) p.push(...missing(c, contract.childRelationshipKeys).map((k) => `childRelationships.${c.childSObject}.${k}`));

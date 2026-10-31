@@ -81,6 +81,13 @@
       "updateable": false
     },
     {
+      "name": "LastSyncTime",
+      "label": "Last Sync Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "LastViewedDate",
       "label": "Last Viewed Date",
       "type": "DateTime",

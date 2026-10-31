@@ -5,7 +5,11 @@
 // jsforce. One PASS/FAIL line per check; exit 1 on any FAIL, 2 when the jsforce build is missing.
 // The records are deleted again at the end.
 //
-// Usage: BASE_URL=http://localhost:8083 node jsforce.mjs
+// With FIXTURE=enterprise it adds formula-rollup: a roll-up over a formula field
+// (Service_Order__c.Total_Lines__c over Service_Order_Line__c.Line_Total__c) recomputed on insert
+// and update, so the expected total is 6 instead of 5.
+//
+// Usage: BASE_URL=http://localhost:8083 [FIXTURE=enterprise] node jsforce.mjs
 // Env: BASE_URL (default http://localhost:8081), ORGLET_USERNAME (admin@orglet.local),
 //      ORGLET_PASSWORD (x), API_VERSION (59.0). Needs Node 22 and the jsforce build that
 //      ../jsforce/run.sh leaves in ../jsforce/.cache/jsforce.
@@ -19,6 +23,8 @@ const BASE = process.env.BASE_URL || 'http://localhost:8081';
 const USERNAME = process.env.ORGLET_USERNAME || 'admin@orglet.local';
 const PASSWORD = process.env.ORGLET_PASSWORD || 'x';
 const API_VERSION = process.env.API_VERSION || '59.0';
+const ENTERPRISE = (process.env.FIXTURE || 'acme') === 'enterprise';
+const EXPECTED = ENTERPRISE ? 6 : 5;
 const JSFORCE = join(HERE, '..', 'jsforce', '.cache', 'jsforce');
 
 if (!existsSync(join(JSFORCE, 'package.json'))) {
@@ -59,6 +65,7 @@ const must = (r, what) => {
 };
 
 let acct = null;
+let order = null;
 try {
   acct = must(await conn.sobject('Account').create({ Name: `RollupCheck ${tag}` }), 'Account create');
   const proj = must(await conn.sobject('Project__c').create({ Name: `RC Project ${tag}`, Account__c: acct, Budget__c: 120, Status__c: 'Active' }), 'Project__c create');
@@ -105,13 +112,28 @@ try {
     const p = await projCounts();
     return [p.Milestone_Count__c === 1 && p.Open_Milestones__c === 0, { Milestone_Count__c: p.Milestone_Count__c, Open_Milestones__c: p.Open_Milestones__c }];
   });
+
+  if (ENTERPRISE) {
+    await check('formula-rollup', async () => {
+      order = must(await conn.sobject('Service_Order__c').create({ Name: `RC Order ${tag}` }), 'Service_Order__c create');
+      must(await conn.sobject('Service_Order_Line__c').create({ Service_Order__c: order, Quantity__c: 2, Unit_Price__c: 10 }), 'Service_Order_Line__c create');
+      const second = must(await conn.sobject('Service_Order_Line__c').create({ Service_Order__c: order, Quantity__c: 3, Unit_Price__c: 5 }), 'Service_Order_Line__c create');
+      const read = async () => (await conn.query(`SELECT Total_Lines__c, Line_Count__c FROM Service_Order__c WHERE Id = '${order}'`)).records[0];
+      const a = await read();
+      must(await conn.sobject('Service_Order_Line__c').update({ Id: second, Quantity__c: 1 }), 'Service_Order_Line__c update');
+      const b = await read();
+      const pick = (r) => ({ Total_Lines__c: r.Total_Lines__c, Line_Count__c: r.Line_Count__c });
+      return [a.Total_Lines__c === 35 && a.Line_Count__c === 2 && b.Total_Lines__c === 25 && b.Line_Count__c === 2, { afterInsert: pick(a), afterUpdate: pick(b) }];
+    });
+  }
 } catch (err) {
   console.log(`FAIL setup ${err?.name ?? 'Error'}: ${err?.message ?? String(err)}`);
   results.push(false);
 } finally {
   if (acct) await conn.sobject('Account').destroy(acct).catch(() => {});
+  if (order) await conn.sobject('Service_Order__c').destroy(order).catch(() => {});
 }
 
 const passed = results.filter(Boolean).length;
-console.log(`jsforce: ${passed}/5 passed`);
-process.exit(passed === 5 && results.length === 5 ? 0 : 1);
+console.log(`jsforce: ${passed}/${EXPECTED} passed`);
+process.exit(passed === EXPECTED && results.length === EXPECTED ? 0 : 1);
