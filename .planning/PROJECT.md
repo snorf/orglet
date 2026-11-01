@@ -17,13 +17,33 @@ support, and anything it does not support is logged as `UNSUPPORTED:<area>` rath
 
 ## Current State
 
-**Shipped:** v1.0 "hardening" on 2026-10-12 (phases 1-7, 37 plans, PRs #1-#7; archive in
-`.planning/milestones/`). The headless Salesforce-compatible API on Postgres loads Johan's Developer
-Edition retrieve with zero `UNSUPPORTED` warnings under `orglet check --strict`, runs its 431-test suite
-on embedded pglite without Docker, and is verified by pinned jsforce and simple-salesforce conformance
-runs executed in CI on every push. After v1.0 a large real enterprise-org retrieve was loaded locally:
-it loads (141 objects, ~3 600 fields) but with several hundred warnings in a handful of areas, which
-define the next milestone.
+**Shipped:** v1.1 "real-org fidelity" on 2026-11-01 (phases 8-14, 62 plans, PRs #11-#17; archive in
+`.planning/milestones/`), on top of v1.0 "hardening" (2026-10-12, phases 1-7, 37 plans). orglet is a
+headless Salesforce-compatible REST API on Postgres (pglite for tests) that loads an SFDX retrieve and:
+
+- carries a generated standard-object baseline of 53 objects (the 35 v1.0 objects at field parity with the
+  Object Reference, 2 536 fields, plus 18 business objects) with confirmed-or-null key prefixes and
+  per-object OwnerId targets, and upgrades a populated v1.0 database to it without data loss;
+- loads custom metadata types with their records, custom settings and custom labels, and evaluates
+  `$Label`, `$CustomMetadata`, `$UserRole`, `$Api` and hierarchy `$Setup` plus `Owner:User.X` and unary `!`
+  in formulas on a sigha pinned to a fork commit;
+- recomputes roll-ups over same-object, non-volatile formula fields;
+- prints `orglet check` as a root-cause report with `--summary` and `--json`.
+
+**Acceptance (2026-10-31):** `examples/enterprise` (63 objects, 3 742 fields) and `examples/acme` pass
+`check --strict` and the full conformance set (11/11 and 10/10 legs, jsforce + simple-salesforce) in CI;
+the author's Developer Edition retrieve: exit 0, 0 warnings; the large real-org retrieve: 94 warnings, all
+in counted exclusion categories documented in `conformance/README.md`. 922 tests on pglite, 924 on
+Postgres 16, 55 files; CI jobs `test-pglite`, `test-postgres`, `conformance`, `sigha-sync-check`,
+`baseline-gen-check`.
+
+**Known gaps carried forward:** upstream sigha PRs not opened (orglet pinned to the fork); ContentVersion
+upload is a stopgap (backlog 999.10); formula fields through parent relationships in SOQL (999.12);
+platform events (999.8); `$Permission` and List `$Setup` stay `UNSUPPORTED:formula-global`; `conformance`
+is not a required CI check. Full list: `milestones/v1.1-MILESTONE-AUDIT.md`.
+
+<details>
+<summary>v1.1 phase-by-phase progress notes (as recorded during the milestone)</summary>
 
 **v1.1 progress:** Phase 8 complete 2026-10-13 — upgrade safety net (populated v1.0 upgrade test on
 pglite and Postgres 16, `UNSUPPORTED:schema-fk`, idempotent second `up`), nullable key prefixes end to
@@ -91,35 +111,15 @@ every one inside a counted exclusion category documented in `conformance/README.
 `$Permission`, managed package not retrieved, retrieve incomplete, accepted standard fields). 922 tests on
 pglite, 924 on Postgres 16.
 
-## Current Milestone: v1.1 real-org fidelity
+</details>
 
-**Goal:** A large, real enterprise-org retrieve loads with zero warnings for everything it itself
-references: every object and field that a lookup, formula, roll-up or validation rule points at exists,
-is described correctly and behaves as in Salesforce. Standard objects nothing references are reported
-in a quiet informational category, not as warnings.
+## Next Milestone
 
-**Target features:**
-- Standard-object baseline v2 generated from the public Object Reference: field parity for the
-  existing 35 objects (incl. the thin phase-3 ones) and the business objects a typical sales/service org
-  references (Quote, QuoteLineItem, Order,
-  OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole,
-  OpportunitySplit, ContractLineItem, CaseContactRole, CaseMilestone, EmailMessage, ContentDocument/ContentVersion,
-  FeedItem, Location/Address).
-- Formula coverage: `$UserRole`, `$Api`, `$Setup`, `$Label`, `$CustomMetadata` globals; OwnerId
-  `referenceTo` narrowed per object so plain `Owner.X` compiles; `Relationship:Object.Field` colon
-  syntax and the `!` operator fixed upstream in sigha and resynced. `$Permission` stays an explicit
-  `UNSUPPORTED:formula-global` until the security milestone.
-- Custom metadata types as read-only objects with rows from `customMetadata/` in the retrieve,
-  `MetadataRelationship` fields; list/hierarchy custom settings with `$Setup` semantics.
-- Roll-up summary over formula fields where Salesforce allows it.
-- `orglet check` report quality: root-cause reporting for cascaded formula failures, a quiet category for
-  unreferenced system objects, per-area summary counts.
-
-**Acceptance:** a public fixture (an extended `examples/acme` or a new `examples/enterprise`, all custom
-metadata under generic names) covers every category and runs in CI with `--strict`; Johan's Developer
-Edition retrieve keeps loading clean; the large org is run only locally and reported, if at all, as
-warning counts per area. Backlog items promoted: 999.1-999.7. Left in backlog: 999.8 platform events,
-999.9 Heimdall end-to-end.
+Not yet defined. Run `/gsd:new-milestone`. Candidates from the backlog in `ROADMAP.md`: 999.8 platform
+events as publish-only objects, 999.9 Heimdall end-to-end backup run, 999.10 ContentVersion file upload done
+properly, 999.11 archive mode (read-only replica from a Heimdall backup), 999.12 formula fields through
+parent relationships in SOQL; plus the v2 items parked in `milestones/v1.1-REQUIREMENTS.md` (FILE, EVT, SEC,
+FLOW, APEX, UI, HEAD, CHECK-03, CMDT-05, CSET-03, ROLLX, BULKX, HEIM).
 
 ## Requirements
 
@@ -239,6 +239,19 @@ Validated in Phase 8 (v1.1, 2026-10-13):
 - ✓ Standard objects without a confirmed key prefix load with `keyPrefix: null` plus a source label,
   describe correctly and never take part in prefix-based polymorphic matching — BASE2-05
 
+Validated in Phase 9 (v1.1, 2026-10-14):
+
+- ✓ The baseline is produced by a deterministic generator (`scripts/gen-baseline`) from a pinned sf-skills
+  snapshot and a facts-only Object Reference extraction with `overrides.json`, re-run and diffed in CI
+  (`baseline-gen-check`) — BASE2-01
+- ✓ The 35 v1.0 objects regenerate with their v1.0 fields byte-identical (v1 pins) and grow from 659 to
+  2 536 documented fields; a v1-vs-v2 diff gate fails on a disappearing or narrowing v1.0 field without an
+  allowlisted reason, and a new MasterDetail on a v1.0 object is refused — BASE2-02, MIGR-03
+- ✓ Feature-gated fields are included and tagged `featureGated` (135 fields); skips are listed in
+  `PROVENANCE.json` under an accepted documented skip ratio of 0.103 — BASE2-03
+- ✓ `OwnerId` targets per object (`ownerTargets`): eight User-only objects, eight polymorphic, so plain
+  `Owner.X` compiles in formulas and SOQL on Account, Contact, Opportunity, Contract, Asset and Campaign — BASE2-04
+
 Validated in Phase 10 (v1.1, 2026-10-16):
 
 - ✓ The 18 business objects exist as generated baseline objects with documented key prefix, name
@@ -283,6 +296,13 @@ Validated in Phase 12 (v1.1, 2026-10-23):
 - ✓ Hierarchy `$Setup` merged per field user → profile → organization → blank, queried only when a formula
   uses it; List `$Setup` and `$Permission` stay `UNSUPPORTED:formula-global` with the reason — FORM-05
 
+Validated in Phase 13 (v1.1, 2026-10-24):
+
+- ✓ COUNT/SUM/MIN/MAX roll-ups whose summarized or filter field is a same-object, non-volatile formula load,
+  recompute in the save pipeline over TypeScript-evaluated child values and are backfilled once by
+  `orglet up`; cross-object, volatile and cyclic formulas are removed with `UNSUPPORTED:rollup-formula` /
+  `rollup-cycle` / `rollup-target` instead of failing the load — ROLL2-01
+
 Validated in Phase 14 (v1.1, 2026-10-31):
 
 - ✓ `orglet check` prints census, verdict, per-area table and root-cause groups; deterministic output,
@@ -295,12 +315,12 @@ Validated in Phase 14 (v1.1, 2026-10-31):
   roll-ups) on both SDKs — ACC2-02
 - ✓ DE retrieve loads with exit 0 and 0 warnings; the large retrieve's 94 warnings are all counted exclusions
   documented by category in `conformance/README.md` (relaxation from literal zero recorded in
-  REQUIREMENTS.md) — ACC2-03
+  `milestones/v1.1-REQUIREMENTS.md`) — ACC2-03
 
 ### Active
 
-Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements are defined in
-`.planning/REQUIREMENTS.md` and mapped to phases 8+ in `.planning/ROADMAP.md`.
+No active milestone (v1.1 shipped 2026-11-01). The next milestone's requirements are defined by
+`/gsd:new-milestone`; see "Next Milestone" above and the backlog in `.planning/ROADMAP.md`.
 
 ### Out of Scope
 
@@ -321,32 +341,41 @@ Milestone v1.1 "real-org fidelity" (see Current Milestone above). Requirements a
 
 ## Context
 
-**Codebase (after v1.0).** pnpm monorepo, TypeScript strict, Node 22, ESM. Layered packages
+**Codebase (after v1.1).** pnpm monorepo, TypeScript strict, Node 22, ESM. Layered packages
 `metadata → schema → {formula, soql} → engine → api → cli`, plus the vendored `sigha` formula
-engine synced by `scripts/sync-sigha.sh` and never hand-edited. ~14 600 lines of source (excl. sigha),
-427 tests in 25 files (vitest) running on embedded pglite by default and on Postgres 16 when
-`ORGLET_DATABASE_URL` is set. CI: `test-pglite`, `test-postgres`, `conformance`. Conformance harnesses
-under `conformance/` (jsforce pinned to `9bae14e`, `simple-salesforce==1.12.10`, describe/poly/rollup
+engine synced by `scripts/sync-sigha.sh` (pinned to a `snorf/sigha` fork commit) and never hand-edited,
+and `scripts/gen-baseline` (~2 100 lines) that produces `packages/metadata/standard`. ~10 900 lines of
+source (excl. sigha, tests and scripts), 922 tests in 55 files (vitest) on embedded pglite by default and
+924 on Postgres 16 when `ORGLET_DATABASE_URL` is set. CI: `test-pglite`, `test-postgres`, `conformance`
+(acme + enterprise matrix), `sigha-sync-check`, `baseline-gen-check`. Conformance harnesses under
+`conformance/` (jsforce pinned to `9bae14e`, `simple-salesforce==1.12.10`, describe/poly/rollup/cmdt
 checks, `run-all.sh`). Full map in `.planning/codebase/` (STACK, INTEGRATIONS, ARCHITECTURE, STRUCTURE,
-CONVENTIONS, TESTING, CONCERNS); the codebase map predates v1.0 in places.
+CONVENTIONS, TESTING, CONCERNS); the map predates v1.0 in places and should be refreshed with
+`/gsd:map-codebase` before the next milestone is planned.
 
-**Known gaps (updated after v1.0).** Closed in v1.0: polymorphic first-target resolution (phase 4),
+**Known gaps (updated after v1.1).** Closed in v1.0: polymorphic first-target resolution (phase 4),
 `Summary` fields skipped at load (phase 5), alphabetical key-prefix recomputation (phase 2), no CI /
-Docker-only tests (phase 1), in-memory Bulk jobs (phase 6). Still open:
-- `ExternalLookup`, `IndirectLookup`, `MetadataRelationship` field types are skipped at load
-  (`UNSUPPORTED:field-type`)
+Docker-only tests (phase 1), in-memory Bulk jobs (phase 6). Closed in v1.1: `MetadataRelationship`,
+`__mdt`, custom settings and labels skipped at load (phase 11), polymorphic formula references and `!`
+(phase 12), OwnerId `[User, Group]` on every object (phase 9), roll-ups over formula fields (phase 13),
+hand-curated baseline (phases 9-10). Still open:
+- `ExternalLookup` and `IndirectLookup` field types are skipped at load (`UNSUPPORTED:field-type`);
+  ContentVersion `VersionData` and other blob fields are omitted (backlog 999.10)
+- Platform events (`__e`) are `UNSUPPORTED:object-kind` (backlog 999.8); formula fields through parent
+  relationships in SOQL are `UNSUPPORTED:soql-formula` (backlog 999.12); `$Permission` and List `$Setup`
+  are `UNSUPPORTED:formula-global`
 - ID counter is process-local (monotonic logical clock since phase 2, still unsynchronised across processes)
 - `/composite` with `allOrNone` does not roll back earlier committed subrequests (`UNSUPPORTED:composite-rollback`)
 - Bulk jobs are processed synchronously inside the request (no worker); CSV and results buffered in full
 - Default auth is permissive (any password); session tokens in-memory and unbounded; `sharingModel` unused
-- Formula evaluation is per row after fetch; polymorphic formula references need sigha colon syntax (D-16)
+- Formula evaluation is per row after fetch; no parent-context evaluation (see backlog 999.12)
 - Roll-ups: no re-backfill on definition change, no date-literal filters, no parent row locking
 - Roll-ups over formula fields (Phase 13): recompute loads and evaluates in TS every live child of each affected parent (O(children of affected parents), no cap); the one-time backfill reads all live rows of the child object into memory for a single UPDATE (D-15). Formula values are rounded to the formula's scale before aggregation as an orglet choice (no public statement found, D-05). Admission is stricter than the documented minimum: evaluation-time globals ($User, $Profile, $Organization, $RecordType, $UserRole, $Setup, $Api) are rejected like NOW/TODAY (D-01)
 
-**Verified baseline 2026-09-29.** `orglet check` against Johan's Developer Edition retrieve
-(`~/Development.nosync/devrandom-metadata`, Level 1 data): 23 objects (2 custom), 861 fields,
-15 warnings — one `UNSUPPORTED:field-type` for a Summary field and 14
-`UNSUPPORTED:reference-target` for the missing standard objects listed above.
+**Verified acceptance 2026-10-31.** `orglet check --strict` against Johan's Developer Edition retrieve
+(`~/Development.nosync/devrandom-metadata`, Level 1 data): exit 0, 0 warnings over 55 objects (baseline
+2026-09-29: 23 objects, 861 fields, 15 warnings). The large real-org retrieve (private, counts only): 94
+warnings in counted exclusion categories (`conformance/README.md`), down from several hundred after v1.0.
 
 **Prior art.** Nimbus (Go, closed source, freemium) and aer (proprietary). No open-source
 Salesforce emulator, SOQL→SQL translator or Flow executor exists.
@@ -408,6 +437,12 @@ on port 8180 with the `devrandom` org schema.
 | Conformance acceptance is measured, dated and reproducible: pinned SDK versions, `run.sh` default run equals the README run (two Jest invocations because Jest's `-t` filter cannot separate identically named v1/v2 tests), `conformance/run-all.sh` shared by CI and local runs | Numbers in a README are only evidence if the command that produced them is fixed and re-runnable (D-04/D-05/D-20) | ✓ Good (Phase 7) |
 | Every excluded upstream test carries a classification and reason; no upstream test files are patched; fidelity bugs the suites expose are fixed only with a documented Salesforce basis (the `sf__Error` separator was; empty-upload semantics were not, so excluded) | Keeps the `UNSUPPORTED`/honesty principle for the conformance record itself (D-02/D-21) | ✓ Good (Phase 7) |
 | `orglet check --strict` exits 1 on any warning; the DE retrieve check is run locally only, recording exit code, warning count and the summary line | Gives users and the acceptance record a machine-checkable gate without putting Level 1 metadata in the repo or CI (D-16/D-17) | ✓ Good (Phase 7) |
+| A foreign key that existing rows would violate is skipped with one `UNSUPPORTED:schema-fk` warning per column; `migrate()` never deletes or rewrites data and re-evaluates the skip on every run | An upgrade must complete on a populated database; correcting the data is the user's call (Phase 8 MIGR-02) | ✓ Good (Phase 8) |
+| Standard-object key prefixes are confirmed by two sources or `null` with a source label; a null-prefix object takes no part in prefix-based polymorphic matching | A guessed prefix would make Ids lie; honesty over coverage (Phase 8 BASE2-05) | ✓ Good (Phase 8) |
+| Structured diagnostics (`Diagnostic`/`SkippedItem`/`FormulaFailure`) beside the unchanged warning strings; the `check` exit code stays derived from the strings | The report can group by root cause without changing any `warning:` line a user or CI depends on | ✓ Good (Phases 8, 14) |
+| Baseline JSON is generator output from a pinned sf-skills snapshot plus a facts-only Object Reference extraction, with `overrides.json` for hand facts, v1 pins for byte-identical v1.0 fields, a MasterDetail refusal and a v1-vs-v2 diff gate, checked in CI | Field parity must be systematic and reproducible, and an upgrade must never leave permanent `schema-drop`/`schema-narrow` warnings (Phase 9 D-19, MIGR-03) | ✓ Good (Phases 9-10) |
+| `ownerTargets` written per object only when narrower than `[Group, User]`; a target outside User/Group without an override aborts generation | Plain `Owner.X` must compile where Salesforce allows it; an unmodelled owner type is a metadata error, not a silent drop (Phase 9) | ✓ Good (Phase 9) |
+| Unreferenced unmodelled standard objects are one quiet `info:` line in `check`, never a warning or a `--strict` failure | A retrieve lists hundreds of setup objects nothing points at; only referenced gaps are the user's problem (Phase 10 BASE2-08) | ✓ Good (Phase 10) |
 | Custom-metadata record Ids are derived (`m`-prefix + hash of type and DeveloperName), never allocated; reload is a full sync per type | A retrieve is the only source of `__mdt` rows, so the same files must yield the same Ids in every environment and after `reset`, with no new state table (Phase 11 D-01/D-03) | ✓ Good (Phase 11) |
 | `EntityDefinition`/`FieldDefinition` are not modelled; a `MetadataRelationship` to them stores the qualified API name and only `QualifiedApiName` is selectable through `Rel__r` | orglet never points at something it cannot answer for; an unmodelled target is dangling by design, other paths are `INVALID_FIELD` + `UNSUPPORTED:entity-definition` (Phase 11 D-08..D-10) | ✓ Good (Phase 11) |
 | `__mdt` DML refused even in import mode; custom settings share the `a` prefix pool and keep full DML | Record files are the only source of `__mdt` rows and the sync would overwrite imports; the setting prefix series is undocumented, so sharing is orglet's recorded choice (Phase 11 D-13/D-19) | ✓ Good (Phase 11) |
@@ -421,6 +456,8 @@ on port 8180 with the `devrandom` org schema.
 | Roll-ups over formula fields are admitted after the build by `admitFormulaRollups` in @orglet/formula; rejected ones are removed with `UNSUPPORTED:rollup-formula` / `rollup-cycle` | metadata cannot compile formulas and compileFormula needs the finished schema; the field must be gone before DDL (D-06, D-07) | ✓ Good |
 | Roll-ups over formula fields recompute over TS-evaluated child values bound as an `unnest` derived table; stored-field roll-ups keep the pure SQL path | one implementation of aggregate/filter semantics and one of formula semantics; no formula-to-SQL translation (D-15, D-16) | ✓ Good |
 | Formula roll-up columns are backfilled by the engine after migrate, gated by `_orglet.rollup_backfills` (a formula roll-up with no marker row is backfilled; reset deletes the org's rows) | migrate has no formula engine; the marker makes the step crash-safe and a second up silent (D-10, D-11) | ✓ Good |
+| The `check` report folds dependents under the diagnostic that caused them, with an implied `standard-field` root for formulas on baseline-excluded standard fields; `--summary` is redacted to counts and area tokens | A 400-line report must read in ten, and the summary must be safe to paste from a private retrieve (Phase 14 CHECK-01/02) | ✓ Good (Phase 14) |
+| ACC2-03 accepted with counted exclusions: the large retrieve's remaining warnings are documented by category and count in `conformance/README.md`, names never recorded | Platform events, `$Permission`, an unretrieved managed package and an incomplete retrieve are outside the milestone; an honest count beats a fixture-only zero | ✓ Good (Phase 14; 94 warnings on 2026-10-31) |
 
 ## Evolution
 
@@ -440,4 +477,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-31 after Phase 14 (check report and enterprise acceptance)*
+*Last updated: 2026-11-01 after v1.1 milestone*
