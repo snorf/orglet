@@ -32,6 +32,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# FIXTURE (optional, set by run-all.sh to the basename of PROJECT) selects fixture-specific classified exclusions.
+FIXTURE="${FIXTURE:-}"
+
 # Pinned jsforce commit (jsforce 3.10.26, 2026-09-22). CI keys its cache on this value.
 JSFORCE_SHA=9bae14ea0f1b9dff3b0cb0862a3e5f525f25a29f
 
@@ -40,6 +43,13 @@ CORE_FILES=(test/connection-crud.test.ts test/connection-meta.test.ts test/sobje
 # Query#update/destroy tests whose setup calls Bulk v1 insertAccounts, SOSL, UI API, and the
 # documented test defects. Every pattern is explained in README.md "Exclusions".
 CORE_FILTER='^(?!.*(bulk|Bulk|layout|list view|listup list|search records|tabs list|theme information|identity information|already existing|randomly-waiting|allowBulk|recently accessed|Query#update and return updated records|Query#destroy and return deleted status)).*'
+
+# Enterprise fixture only: Opportunity.select('*, Account.*, ...') expands to Account formula fields that the
+# enterprise fixture adds, which orglet refuses through a parent relationship (UNSUPPORTED:soql-formula).
+# Never applied to acme. Explained in README.md "Exclusions".
+if [ "$FIXTURE" = enterprise ]; then
+  CORE_FILTER="${CORE_FILTER/Query#destroy and return deleted status)/Query#destroy and return deleted status|with asterisk and return records)}"
+fi
 
 BULK2_FILES=(test/bulk2.test.ts)
 # Classified exclusions for bulk2.test.ts; each is explained in README.md "Exclusions".

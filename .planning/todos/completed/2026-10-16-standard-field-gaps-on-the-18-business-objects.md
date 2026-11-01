@@ -29,3 +29,11 @@ D-21 evidence rule, or the author's own DE describe recorded as `de-describe` wi
 reasoned `overrides.json` entry; Opportunity.SyncedQuoteId -> `referenceTo: [Quote]`,
 relationshipName `SyncedQuote`, same additive pattern as the D-19 lookups. Fields with no public
 source stay `UNSUPPORTED:standard-field`.
+
+## Resolution
+
+Closed 2026-10-29 in Phase 14 plan 03 (commit db57aed plus the closing commit of this plan).
+
+- Added to the baseline: 1 field, Opportunity.SyncedQuoteId as a lookup to Quote (relationshipName SyncedQuote), same additive pattern as the D-19 lookups.
+- Accepted exclusions, counted per reason in conformance/README.md: 8 reference target outside the baseline, 1 field type not modelled (geolocation compound), 10 with no public source and absent from the author's own Developer Edition describe (`de-describe`, 2026-10-29).
+- No public Object Reference section text added any further field.

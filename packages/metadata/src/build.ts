@@ -379,6 +379,10 @@ function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): 
       const target = lower === "entitydefinition" ? "EntityDefinition" : lower === "fielddefinition" ? "FieldDefinition" : sf.referenceTo;
       f.referenceTo = [target];
       f.relationshipName = sf.fullName.replace(/__c$/i, "__r");
+      if (target === "FieldDefinition" && sf.metadataRelationshipControllingField !== undefined) {
+        const c = sf.metadataRelationshipControllingField;
+        f.metadataRelationshipControllingField = c.slice(c.lastIndexOf(".") + 1);
+      }
       if (sf.relationshipLabel !== undefined) f.relationshipLabel = sf.relationshipLabel;
       break;
     }

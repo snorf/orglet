@@ -5,13 +5,14 @@
  * one-off maintenance mode that derives v1-pins.json and the overrides.json keep entries from the frozen v1.0 fixture;
  * it is the only mode that reads the fixture. `--report` runs full mode (every documented field) in memory with
  * `collectConflicts` and prints the report as sorted JSON without writing anything: the step-B review input (09-06).
+ * Both gen and `--check` refuse to proceed while a single-target lookup lacks an identifier-shaped relationshipName.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import type { StandardObjectJson } from "@orglet/metadata";
-import { CLI_OPTIONS, deriveFromSources, FIELD_KEY_ORDER, generate, GeneratorError, OBJECT_KEY_ORDER, orderKeys, serialise, sortKeysDeep, type GeneratorReport } from "./pipeline.js";
+import { CLI_OPTIONS, deriveFromSources, FIELD_KEY_ORDER, generate, GeneratorError, OBJECT_KEY_ORDER, orderKeys, relationshipNameProblems, serialise, sortKeysDeep, type GeneratorReport } from "./pipeline.js";
 import { codeUnit, loadInputs, type FieldOverride, type GeneratorInputs, type ObjectPins, type Overrides, type Pins } from "./sources.js";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -38,6 +39,12 @@ function committedObjectFiles(): string[] {
 
 function writeOrCheck(inputs: GeneratorInputs, check: boolean): number {
   const { files, report } = generate(inputs, CLI_OPTIONS);
+  const guard = relationshipNameProblems([...files].filter(([rel]) => rel.startsWith("objects/")).map(([, text]) => JSON.parse(text) as StandardObjectJson));
+  if (guard.length > 0) {
+    for (const g of guard) console.error(g);
+    console.error("relationshipName guard failed: nothing written; add overrides.json entries");
+    return 1;
+  }
   const problems: string[] = [];
   for (const [rel, text] of files) {
     const path = join(STANDARD_DIR, rel);

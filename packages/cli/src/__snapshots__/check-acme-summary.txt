@@ -1,0 +1,5 @@
+57 objects (4 custom, 53 standard), 3649 fields (24 custom, 3625 standard)
+146 feature-gated standard fields included (nullable; present in an org only when the feature is enabled)
+verdict: clean (warnings: 0, informational: 39)
+areas:
+  info:reference-target-skipped  39

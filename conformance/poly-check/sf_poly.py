@@ -5,7 +5,11 @@ Case in a running orglet, then checks a Name-object query, an Owner.Type filter,
 and the rejection of an invalid TYPEOF through simple-salesforce. One PASS/FAIL line per check;
 exit 1 on any FAIL. The records are deleted again at the end.
 
-Usage: BASE_URL=http://localhost:8082 python sf_poly.py
+Also checks OwnerId narrowing (Account [User], Case [Group, User]) on every fixture. With
+FIXTURE=enterprise it adds owner-colon-formula (Owner:User.Email / Owner:Queue.Name formulas on
+Case), so the expected total is 6 instead of 5.
+
+Usage: BASE_URL=http://localhost:8082 [FIXTURE=enterprise] python sf_poly.py
 Env: BASE_URL (default http://localhost:8081), ORGLET_USERNAME (admin@orglet.local),
      ORGLET_PASSWORD (x), API_VERSION (59.0).
 """
@@ -22,6 +26,8 @@ BASE_URL = os.environ.get("BASE_URL", "http://localhost:8081")
 USERNAME = os.environ.get("ORGLET_USERNAME", "admin@orglet.local")
 PASSWORD = os.environ.get("ORGLET_PASSWORD", "x")
 API_VERSION = os.environ.get("API_VERSION", "59.0")
+ENTERPRISE = os.environ.get("FIXTURE", "acme") == "enterprise"
+EXPECTED = 6 if ENTERPRISE else 5
 
 
 class HttpRewriteSession(requests.Session):
@@ -60,7 +66,8 @@ def main():
         created_group = sf.Group.create({"Name": group_name, "DeveloperName": f"PolyCheck_{millis}", "Type": "Queue"})["id"]
         group_case = sf.Case.create({"Subject": f"group {tag}", "OwnerId": created_group})["id"]
         created_cases.append(group_case)
-        created_cases.append(sf.Case.create({"Subject": f"user {tag}"})["id"])
+        user_case = sf.Case.create({"Subject": f"user {tag}"})["id"]
+        created_cases.append(user_case)
 
         def name_object():
             r = sf.query(f"SELECT Subject, Owner.Name, Owner.Email, Owner.Type FROM Case WHERE Subject LIKE '%{tag}' ORDER BY Subject")["records"]
@@ -91,9 +98,30 @@ def main():
                 return ok, {"errorCode": content.get("errorCode"), "message": content.get("message")}
             return False, "query was accepted"
 
+        def owner_narrowed():
+            def refs(sobject):
+                fields = getattr(sf, sobject).describe()["fields"]
+                return next(f for f in fields if f["name"] == "OwnerId")["referenceTo"]
+            acct, kase = refs("Account"), sorted(refs("Case"))
+            return acct == ["User"] and kase == ["Group", "User"], {"account": acct, "case": kase}
+
+        def owner_colon_formula():
+            admin = sf.query(f"SELECT Email FROM User WHERE Username = '{USERNAME}'")["records"][0]["Email"]
+            r = sf.query(f"SELECT Id, Owner_User_Email__c, Owner_Queue_Name__c FROM Case WHERE Id IN ('{group_case}', '{user_case}')")["records"]
+            by_id = {x["Id"]: x for x in r}
+            grp, usr = by_id.get(group_case), by_id.get(user_case)
+            blank = lambda v: v is None or v == ""  # noqa: E731
+            ok = (len(r) == 2 and bool(admin)
+                  and usr["Owner_User_Email__c"] == admin and blank(usr["Owner_Queue_Name__c"])
+                  and grp["Owner_Queue_Name__c"] == group_name and blank(grp["Owner_User_Email__c"]))
+            return ok, {"admin": admin, "user": usr, "queue": grp}
+
         check("name-object", name_object)
         check("type-filter", type_filter)
         check("typeof", typeof)
+        check("owner-narrowed", owner_narrowed)
+        if ENTERPRISE:
+            check("owner-colon-formula", owner_colon_formula)
         check("typeof-invalid", typeof_invalid)
     except Exception as exc:  # noqa: BLE001
         results.append(False)
@@ -111,8 +139,8 @@ def main():
                 pass
 
     passed = sum(1 for r in results if r)
-    print(f"simple-salesforce: {passed}/4 passed")
-    sys.exit(0 if passed == 4 and len(results) == 4 else 1)
+    print(f"simple-salesforce: {passed}/{EXPECTED} passed")
+    sys.exit(0 if passed == EXPECTED and len(results) == EXPECTED else 1)
 
 
 if __name__ == "__main__":

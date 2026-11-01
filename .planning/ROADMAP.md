@@ -33,7 +33,7 @@ Audit: [milestones/v1.0-MILESTONE-AUDIT.md](milestones/v1.0-MILESTONE-AUDIT.md).
 - [x] **Phase 11: Custom Metadata, Custom Settings & Labels** - `__mdt` types and records, `MetadataRelationship`, custom settings and custom labels load (completed 2026-10-21)
 - [x] **Phase 12: sigha Resync & Formula Globals** - `!`, colon syntax, `$UserRole`, `$Api`, `$Label`, `$CustomMetadata` and hierarchy `$Setup` work in formulas (completed 2026-10-23)
 - [x] **Phase 13: Roll-Ups over Formula Fields** - COUNT/SUM/MIN/MAX over same-object non-volatile formula fields (completed 2026-10-24)
-- [ ] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run
+- [x] **Phase 14: Check Report & Enterprise Acceptance** - A root-cause `orglet check` report, `--summary`/`--json`, the `examples/enterprise` fixture and the real-org acceptance run (completed 2026-10-31)
 
 ## Phase Details
 
@@ -179,7 +179,20 @@ Plans:
   2. `orglet check --summary` prints only census, verdict and per-area counts with no object, field or rule names; `--json` emits the same report including the informational category; `--strict` exits 1 on any warning and 0 when only informational entries exist.
   3. `examples/enterprise`, authored from the feature documentation under generic names and covering every v1.1 category, passes `orglet check --strict` with exit 0 in CI, and `conformance/run-all.sh` (describe-check, poly-check, rollup-check and both SDK suites, every exclusion still classified) is green against it.
   4. The author's Developer Edition retrieve still loads with `orglet check --strict` exiting 0, and the author's large real-org retrieve (local only) reports zero warnings for everything it references, recorded in `conformance/README.md` as counts per area, never names.
-**Plans**: TBD
+**Plans**: 12 plans (7 executed, 5 gap closure)
+Plans:
+- [x] 14-01-PLAN.md — report core: field-type diagnostic gets its object, pure buildCheckReport (root-cause grouping, counts, code-point order), summary redaction and formatters (CHECK-01, CHECK-02)
+- [x] 14-02-PLAN.md — examples/enterprise fixture (acme superset, every v1.1 category, generic names) + category-coverage and --strict test (ACC2-01)
+- [x] 14-03-PLAN.md — close the standard-field-gaps todo: SyncedQuoteId lookup, reasoned overrides, DE-describe checkpoint, regenerate, exclusions as counts (ACC2-03)
+- [x] 14-04-PLAN.md — wire the report into orglet check: --summary/--json, locked flag interplay, acme snapshots, byte-identical warning lines (CHECK-01, CHECK-02)
+- [x] 14-05-PLAN.md — run-all.sh PROJECT/FIXTURE, enterprise seed script, describe-check enterprise objects, CI check --strict step and conformance matrix (ACC2-01, ACC2-02)
+- [x] 14-06-PLAN.md — poly-check (OwnerId narrowing, colon syntax) and rollup-check (roll-up over formula) extensions through both SDKs (ACC2-02)
+- [x] 14-07-PLAN.md — acceptance: full gate on both fixtures and backends, checkpoint for the author's DE and large retrieves, counts per area, ticks (ACC2-01..03, CHECK-01/02)
+- [x] 14-08-PLAN.md — gap closure: bare FieldDefinition values resolved through metadataRelationshipControllingField (supersedes Phase 11 D-11), enterprise fixture case (ACC2-03)
+- [x] 14-09-PLAN.md — gap closure: baseline relationshipName for 14 single-target lookups via overrides.json, generator guard for identifier-shaped relationship names (ACC2-03)
+- [x] 14-10-PLAN.md — gap closure: report groups a formula on a standard field outside the baseline under an implied standard-field root (ACC2-03, CHECK-01)
+- [x] 14-11-PLAN.md — gap closure: standard-field round 2, author checkpoint for the 19 public field names, overrides or counted exclusions (ACC2-03)
+- [x] 14-12-PLAN.md — gap closure: full gate, author re-run of DE and large retrieves with per-category counts, counted exclusions in conformance/README.md, ACC2-03 tick if met (ACC2-03)
 **Research flag**: none.
 
 ## Progress
@@ -199,7 +212,7 @@ Plans:
 | 11. Custom Metadata, Custom Settings & Labels | v1.1 | 9/9 | Complete    | 2026-10-21 |
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
-| 14. Check Report & Enterprise Acceptance | v1.1 | 0/TBD | Not started | - |
+| 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete    | 2026-10-31 |
 
 ## Backlog
 
@@ -209,7 +222,7 @@ Unsequenced ideas captured for a later milestone. Source: gaps observed when loa
 
 **Goal:** OwnerId is User-only on objects that cannot be queue-owned (Account, Opportunity, Contract, Contact, ...) and User|Group only where Salesforce allows queues (Case, Lead, custom objects with queues), so plain Owner.X formula traversal and Owner.X SOQL compile as in a real org. Folds the pending todo 2026-10-08-narrow-baseline-ownerid-per-object; the largest single source of formula warnings on a real retrieve.
 **Requirements:** TBD
-**Plans:** 8/8 plans complete
+**Plans:** 12/12 plans complete
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
@@ -298,6 +311,15 @@ Plans:
 ### Phase 999.11: Archive mode: read-only replica served from a Heimdall backup (BACKLOG)
 
 **Goal:** Run orglet as a read-only replica of a former Salesforce org without copying the data into orglet's own tables: orglet loads the retrieve for schema, describe, SOQL and REST exactly as today, but record data is served from a Heimdall backup store (Heimdall owns the data, orglet owns the configuration). The schema layer emits views or foreign tables over the backup instead of tables; formula and roll-up fields are exposed as the stored values the org computed, never recomputed with `$User`/`NOW()`; every DML is refused with `INVALID_TYPE_FOR_OPERATION` except an explicit erasure path for GDPR deletes; SOSL-style search over names and emails covers the first question an archive gets. Heimdall keeps a central Postgres with metadata about every record and the record rows themselves as Bulk 2.0 query CSV in S3. Two candidate shapes to decide at discuss time: (a) serve straight from S3 (a query engine over CSV behind the SOQL compiler, no copy, no indexes, every query a scan), or (b) treat orglet's Postgres as a rebuildable cache: an `orglet archive load` streams the CSVs from S3 with `COPY` into tables driven by the Heimdall inventory, reusing the Bulk 2.0 CSV parsing and import-mode coercion, with FK checks deferred so lookup cycles need no ordering; SOQL, indexes, search and related lists then work unchanged. Open before planning: that choice, coverage of history, activity and file objects (needs 999.10 for ContentVersion), and real authentication plus an audit log for non-developer readers. Raised 2026-10-23; real-org data stays with the author, orglet is built and tested against public fixtures only.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.12: Formula fields through parent relationships in SOQL (BACKLOG)
+
+**Goal:** Selecting a formula field through a parent relationship (`Parent__r.Formula__c`, or a `Parent.*` expansion that includes formula fields) currently throws `UNSUPPORTED:soql-formula` in `packages/soql/src/compile.ts`; the same area also refuses formula fields in WHERE, ORDER BY and GROUP BY and in child subqueries. Formulas are evaluated app-side over the root record today, so a parent-context evaluation needs the parent row (and its own parent traversals) loaded or pushed into SQL. Found by the enterprise fixture in Phase 14 through jsforce's `Opportunity.select('*, Account.*, Owner.Name')`, where `Account.*` expands to the fixture's Account formula fields; excluded enterprise-only in conformance/jsforce until implemented. Raised 2026-10-29.
 **Requirements:** TBD
 **Plans:** 0 plans
 

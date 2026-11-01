@@ -341,6 +341,13 @@
       "updateable": false
     },
     {
+      "name": "LastSyncTime",
+      "label": "Last Sync Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
       "name": "LastViewedDate",
       "label": "Last Viewed Date",
       "type": "DateTime",
@@ -377,6 +384,7 @@
       "referenceTo": [
         "Account"
       ],
+      "relationshipName": "PartnerAccount",
       "featureGated": true
     },
     {
@@ -430,6 +438,15 @@
       "type": "Picklist",
       "nillable": false,
       "standardValueSet": "OpportunityStage"
+    },
+    {
+      "name": "SyncedQuoteId",
+      "label": "Quote ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Quote"
+      ],
+      "relationshipName": "SyncedQuote"
     },
     {
       "name": "TotalOpportunityQuantity",

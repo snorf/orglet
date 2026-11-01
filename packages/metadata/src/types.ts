@@ -126,6 +126,8 @@ export interface FieldDef {
   /** Child-side relationship name on the parent, e.g. `Contacts`. */
   childRelationshipName?: string;
   relationshipLabel?: string;
+  /** FieldDefinition MetadataRelationship only: the EntityDefinition field on the same custom metadata type whose value names the object of a bare field value (Metadata API metadataRelationshipControllingField, type prefix removed). Never in describe. */
+  metadataRelationshipControllingField?: string;
   deleteConstraint?: DeleteConstraint;
   /** MasterDetail only: 0 or 1. */
   relationshipOrder?: number;

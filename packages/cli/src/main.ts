@@ -3,7 +3,7 @@
  *
  *   orglet up [--project <dir>] [--port 8080] [--db <url>] [--org-schema org] [--force] [--permissive|--users user:pass,...] [--key-prefixes <file>]
  *   orglet reset [--db <url>] [--org-schema org] [--drop-prefixes]
- *   orglet check [--project <dir>] [--strict]
+ *   orglet check [--project <dir>] [--strict] [--summary] [--json]
  */
 import { parseArgs } from "node:util";
 import { resolve } from "node:path";
@@ -13,12 +13,13 @@ import { admitFormulaRollups } from "@orglet/formula";
 import { createPool, databaseUrlFromEnv, migrate, quote, DEFAULT_ORG_SCHEMA, KeyPrefixError, dropKeyPrefixes, dropRollupBackfills, parseKeyPrefixMapping, reconcileKeyPrefixes, type ReconcileKeyPrefixesResult } from "@orglet/schema";
 import { bootstrapOrg, customMetadataSummary, DmlEngine, FormulaRegistry, planCustomMetadataSeed, seedCustomMetadata } from "@orglet/engine";
 import { createApiServer, prepareBulk, dropBulkJobs, type AuthConfig } from "@orglet/api";
+import { buildCheckReport, formatAreas, formatCensus, formatGroups, formatVerdict, summariseCheckReport } from "./report.js";
 
 const USAGE = `orglet - a self-hosted, Salesforce-compatible org
 
 Usage:
   orglet up [--project <sfdx-dir>] [--port <n>] [--db <postgres-url>] [--org-schema <name>] [--force] [--users u:p,...] [--key-prefixes <file>]
-  orglet check [--project <sfdx-dir>] [--strict]
+  orglet check [--project <sfdx-dir>] [--strict] [--summary] [--json]
   orglet reset [--db <postgres-url>] [--org-schema <name>] [--drop-prefixes]
 
 Options:
@@ -35,6 +36,8 @@ Options:
                   (for example your own org's keyPrefix values); never overrides a persisted assignment
   --drop-prefixes With reset: also forget the org's persisted custom-object and custom-metadata key prefixes
   --strict      With check: exit 1 if any warning was printed (default: always exit 0); info lines never count
+  --summary     With check: only the census, the verdict and per-area counts; no object, field or rule names and no warning: lines
+  --json        With check: the report as one JSON document on stdout (the summary only with --summary); no warning: lines; printed even with --quiet
   --quiet       Only print errors
 `;
 
@@ -71,33 +74,53 @@ function sourceSuffix(source: ReconcileKeyPrefixesResult["assignments"][number][
   }
 }
 
-async function check(c: Common, strict: boolean): Promise<number> {
+async function check(c: Common, flags: { strict: boolean; summary: boolean; json: boolean }): Promise<number> {
   // Phase 13 D-07: roll-ups over formula fields are admitted here, after the build and before anything is planned.
   const result = admitFormulaRollups(await loadOrgSchema(c.project ? { projectDir: c.project } : {}));
-  const objects = result.schema.list();
-  log(c, `${objects.length} objects (${objects.filter((o) => o.custom).length} custom), ${objects.reduce((n, o) => n + o.fields.length, 0)} fields`);
-  // D-10: the featureGated tag is visible here and in the baseline JSON, never as a describe key.
-  const gated = objects.reduce((n, o) => n + o.fields.filter((f) => f.featureGated === true).length, 0);
-  if (gated > 0) log(c, `${gated} feature-gated standard fields included (nullable; present in an org only when the feature is enabled)`);
-  // Without a database the prefixes are only the name-order scheme; `orglet up` persists the real ones.
-  const custom = objects.filter((o) => o.custom);
-  for (const o of custom) log(c, `  ${o.name}  ${o.keyPrefix}  (provisional)`);
-  if (custom.length > 0) log(c, "custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter");
   const cmdt = planCustomMetadataSeed(result.schema, result.customMetadata);
+  const registry = new FormulaRegistry(result.schema, cmdt);
+  // D-05: seed-plan warnings count under --strict like every other warning.
+  const warnings = [...result.warnings, ...cmdt.warnings, ...registry.warnings];
+  const report = buildCheckReport({
+    schema: result.schema,
+    diagnostics: [...result.diagnostics, ...cmdt.diagnostics, ...registry.diagnostics],
+    info: result.info,
+    customMetadata: { types: cmdt.types.length, records: cmdt.records },
+  });
+  // --strict turns any warning (UNSUPPORTED:* or otherwise) into a failing exit code, for acceptance runs and CI.
+  // The warning strings are the single source of the exit code, never the report.
+  const exit = flags.strict && warnings.length > 0 ? 1 : 0;
+  if (flags.json) {
+    console.log(JSON.stringify(flags.summary ? summariseCheckReport(report) : report, null, 2));
+    return exit;
+  }
+  log(c, formatCensus(report));
+  // D-10: the featureGated tag is visible here and in the baseline JSON, never as a describe key.
+  const gated = report.census.featureGatedFields;
+  if (gated > 0) log(c, `${gated} feature-gated standard fields included (nullable; present in an org only when the feature is enabled)`);
+  if (!flags.summary) {
+    // Without a database the prefixes are only the name-order scheme; `orglet up` persists the real ones.
+    const custom = result.schema.list().filter((o) => o.custom);
+    for (const o of custom) log(c, `  ${o.name}  ${o.keyPrefix}  (provisional)`);
+    if (custom.length > 0) log(c, "custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter");
+  }
   if (cmdt.types.length > 0) log(c, `custom metadata: ${cmdt.records} records in ${cmdt.types.length} types`);
   if (result.schema.labels.size > 0) log(c, `${result.schema.labels.size} custom labels`);
-  // D-05: seed-plan warnings count under --strict like every other warning.
-  const warnings = [...result.warnings, ...cmdt.warnings, ...new FormulaRegistry(result.schema, cmdt).warnings];
-  for (const w of warnings) console.warn(`warning: ${w}`);
-  // BASE2-08 (D-08): unmodelled standard objects nothing references are informational: one sorted stdout line after the
-  // warnings, quiet-gated like every log line, never prefixed "warning:" and never counted by --strict.
-  const unreferenced = [...new Set(result.info.filter((d) => d.area === "standard-object-unmodelled" || d.area === "reference-target-skipped").map((d) => d.object).filter((n): n is string => n !== undefined))].sort();
-  if (unreferenced.length > 0) log(c, `info: ${unreferenced.length} standard objects not modelled and unreferenced: ${unreferenced.join(", ")}`);
-  // D-20: a fact about the retrieve format, not an orglet gap: no UNSUPPORTED, never counted by --strict.
-  const settings = result.info.filter((d) => d.area === "custom-setting-no-data").map((d) => d.object).filter((n): n is string => n !== undefined).sort();
-  if (settings.length > 0) log(c, `info: ${settings.length} custom settings loaded without data (custom-setting data is not part of a retrieve): ${settings.join(", ")}`);
-  // --strict turns any warning (UNSUPPORTED:* or otherwise) into a failing exit code, for acceptance runs and CI.
-  return strict && warnings.length > 0 ? 1 : 0;
+  // Default mode only: summary mode must not leak names through stderr. Never quiet-gated.
+  if (!flags.summary) for (const w of warnings) console.warn(`warning: ${w}`);
+  log(c, formatVerdict(report));
+  for (const l of formatAreas(report)) log(c, l);
+  if (!flags.summary) {
+    for (const l of formatGroups(report)) log(c, l);
+    // BASE2-08 (D-08): unmodelled standard objects nothing references are informational: one sorted stdout line after the
+    // warnings, quiet-gated like every log line, never prefixed "warning:" and never counted by --strict.
+    const unreferenced = [...new Set(result.info.filter((d) => d.area === "standard-object-unmodelled" || d.area === "reference-target-skipped").map((d) => d.object).filter((n): n is string => n !== undefined))].sort();
+    if (unreferenced.length > 0) log(c, `info: ${unreferenced.length} standard objects not modelled and unreferenced: ${unreferenced.join(", ")}`);
+    // D-20: a fact about the retrieve format, not an orglet gap: no UNSUPPORTED, never counted by --strict.
+    const settings = result.info.filter((d) => d.area === "custom-setting-no-data").map((d) => d.object).filter((n): n is string => n !== undefined).sort();
+    if (settings.length > 0) log(c, `info: ${settings.length} custom settings loaded without data (custom-setting data is not part of a retrieve): ${settings.join(", ")}`);
+  }
+  return exit;
 }
 
 async function up(c: Common, port: number, force: boolean, auth: AuthConfig, importMode: boolean, keyPrefixesFile: string | undefined): Promise<number> {
@@ -226,6 +249,8 @@ export async function main(argv: string[]): Promise<number> {
       "drop-prefixes": { type: "boolean" },
       quiet: { type: "boolean" },
       strict: { type: "boolean" },
+      summary: { type: "boolean" },
+      json: { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -244,7 +269,7 @@ export async function main(argv: string[]): Promise<number> {
       return up(c, port, values.force === true, auth, values.import === true, typeof values["key-prefixes"] === "string" ? resolve(values["key-prefixes"]) : undefined);
     }
     case "check":
-      return check(c, values.strict === true);
+      return check(c, { strict: values.strict === true, summary: values.summary === true, json: values.json === true });
     case "reset":
       return reset(c, values["drop-prefixes"] === true);
     default:

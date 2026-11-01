@@ -54,6 +54,9 @@ def problems_for(name, global_entry, d, contract):
     for f in fields:
         p += [f"fields.{f.get('name')}.{k}" for k in missing(f, contract["fieldKeys"])]
     for s in contract["systemFields"]:
+        # Custom metadata types have no recycle bin, so no IsDeleted (Phase 11 D-16).
+        if s == "IsDeleted" and name.endswith("__mdt"):
+            continue
         if sum(1 for f in fields if f.get("name") == s) != 1:
             p.append(f"system field {s}")
     name_fields = [f for f in fields if f.get("nameField") is True]

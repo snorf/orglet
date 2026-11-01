@@ -14,7 +14,7 @@
       "referenceTo": [
         "Account"
       ],
-      "relationshipName": "Related Record ID",
+      "relationshipName": "Account",
       "featureGated": true
     },
     {

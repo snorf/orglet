@@ -2,7 +2,11 @@
 
 Runs a small polymorphic-lookup check through the real SDKs (jsforce and simple-salesforce)
 against a running orglet: a `Name`-object query on `Case.Owner`, an `Owner.Type` filter, a
-`TYPEOF Owner` query and the rejection of an invalid `TYPEOF`. Each script creates a Queue
+`TYPEOF Owner` query and the rejection of an invalid `TYPEOF`, plus `owner-narrowed` (`Account.OwnerId` describes `[User]`,
+`Case.OwnerId` describes `[Group, User]`) on every fixture. With `FIXTURE=enterprise` it also runs
+`owner-colon-formula`: the Case formulas `Owner_User_Email__c` (`Owner:User.Email`) and
+`Owner_Queue_Name__c` (`Owner:Queue.Name`) read on a User-owned and a Queue-owned Case (the
+segment that does not match the owner's type is blank). Each script creates a Queue
 (Group), a Group-owned Case and a User-owned Case with a run tag in the names, and deletes them
 again when done.
 
@@ -32,14 +36,18 @@ Stop the server and remove the throwaway schema afterwards:
 node packages/cli/dist/index.js reset --org-schema poly_check --drop-prefixes
 ```
 
-Expected output: four PASS lines, a total, and exit code 0.
+Set `FIXTURE=enterprise` (and start orglet with `--project examples/enterprise`) to add the colon
+check. Each script exits non-zero unless exactly the expected number of checks ran and passed:
+`5/5` on acme (the default), `6/6` on enterprise.
 
 ```
 PASS name-object ...
 PASS type-filter ...
 PASS typeof ...
+PASS owner-narrowed ...
+PASS owner-colon-formula ...   (FIXTURE=enterprise only)
 PASS typeof-invalid ...
-jsforce: 4/4 passed
+jsforce: 6/6 passed            (5/5 on acme)
 ```
 
 A failing check prints `FAIL <check> <reason>` and the script exits 1.

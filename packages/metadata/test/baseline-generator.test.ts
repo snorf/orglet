@@ -8,7 +8,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { StandardObjectJson } from "@orglet/metadata";
-import { CLI_OPTIONS, flagsFromCalls, generate, type GenerateResult } from "../../../scripts/gen-baseline/pipeline.js";
+import { CLI_OPTIONS, flagsFromCalls, generate, relationshipNameProblems, type GenerateResult } from "../../../scripts/gen-baseline/pipeline.js";
 import { loadInputs, type GeneratorInputs } from "../../../scripts/gen-baseline/sources.js";
 
 const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
@@ -357,5 +357,32 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
       expect(objects.get(name)!.label, name).toBe(labels.label);
       expect(objects.get(name)!.labelPlural, name).toBe(labels.labelPlural);
     }
+  });
+});
+
+describe("relationshipName guard (Phase 14 gap closure)", () => {
+  it("a single-target lookup without a relationshipName, or with a label-shaped one, is reported by object and field", () => {
+    const objects = [
+      {
+        name: "A",
+        fields: [
+          { name: "BId", label: "B ID", type: "Lookup", referenceTo: ["B"] },
+          { name: "CId", label: "C ID", type: "Lookup", referenceTo: ["C"], relationshipName: "Related Record ID" },
+          { name: "DId", label: "D ID", type: "MasterDetail", referenceTo: ["D"], relationshipName: "D" },
+          { name: "WhoId", label: "Who", type: "Lookup", referenceTo: ["Contact", "Lead"] },
+          { name: "Name", label: "Name", type: "Text" },
+        ],
+      },
+    ] as unknown as StandardObjectJson[];
+    expect(relationshipNameProblems(objects)).toEqual([
+      "A.BId: single-target Lookup to B has no identifier-shaped relationshipName (null); set one in overrides.json with a reason",
+      'A.CId: single-target Lookup to C has no identifier-shaped relationshipName ("Related Record ID"); set one in overrides.json with a reason',
+    ]);
+  });
+
+  it("every single-target lookup in the committed baseline has an identifier-shaped relationshipName", () => {
+    const dir = `${STANDARD_DIR}objects/`;
+    const objects = readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => JSON.parse(readFileSync(`${dir}${f}`, "utf8")) as StandardObjectJson);
+    expect(relationshipNameProblems(objects)).toEqual([]);
   });
 });

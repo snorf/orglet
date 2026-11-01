@@ -7,6 +7,9 @@ import { fileURLToPath } from "node:url";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { admitFormulaRollups } from "@orglet/formula";
+import { loadOrgSchema } from "@orglet/metadata";
+import { FormulaRegistry, planCustomMetadataSeed } from "@orglet/engine";
 import { main } from "./main.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
@@ -51,7 +54,7 @@ afterEach(() => {
 describe("check", () => {
   it("lists every custom object's provisional prefix and says they are provisional", async () => {
     expect(await main(["check", "--project", ACME])).toBe(0);
-    expect(logs[0]).toMatch(/^\d+ objects \(4 custom\), \d+ fields$/);
+    expect(logs[0]).toMatch(/^\d+ objects \(4 custom, \d+ standard\), \d+ fields \(\d+ custom, \d+ standard\)$/);
     expect(logs).toContain("  BigTable__c  a00  (provisional)");
     expect(logs).toContain("  Milestone__c  a01  (provisional)");
     expect(logs).toContain("  Project__c  a02  (provisional)");
@@ -74,6 +77,32 @@ describe("check", () => {
     logs = [];
     expect(await main(["check", "--quiet"])).toBe(0);
     expect(logs).toEqual([]);
+  });
+
+  it("a validation rule traversing Opportunity.SyncedQuote compiles without a warning", async () => {
+    const root = await project({
+      "objects/Opportunity/validationRules/Synced_Quote_Accepted.validationRule-meta.xml":
+        `<?xml version="1.0" encoding="UTF-8"?><ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Synced_Quote_Accepted</fullName><active>true</active><errorConditionFormula>ISPICKVAL(SyncedQuote.Status, 'Denied')</errorConditionFormula><errorMessage>Denied quote</errorMessage></ValidationRule>`,
+    });
+    try {
+      expect(await main(["check", "--strict", "--project", root])).toBe(0);
+      expect(warns).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("formulas traversing CampaignMember.Account and Entitlement.ServiceContract compile without a warning", async () => {
+    const root = await project({
+      "objects/CampaignMember/fields/Account_Name__c.field-meta.xml": field("<fullName>Account_Name__c</fullName><label>Account Name</label><type>Text</type><formula>Account.Name</formula>"),
+      "objects/Entitlement/fields/Contract_Name__c.field-meta.xml": field("<fullName>Contract_Name__c</fullName><label>Contract Name</label><type>Text</type><formula>ServiceContract.Name</formula>"),
+    });
+    try {
+      expect(await main(["check", "--strict", "--project", root])).toBe(0);
+      expect(warns).toEqual([]);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it("prints nothing with --quiet", async () => {
@@ -169,7 +198,7 @@ describe("check", () => {
     expect(await main(["check", "--project", ACME])).toBe(0);
     expect(warns).toEqual([]);
     expect(logs.some((l) => INFO_LINE.test(l))).toBe(true);
-    expect(logs[0]).toMatch(/^\d+ objects \(4 custom\), \d+ fields$/);
+    expect(logs[0]).toMatch(/^\d+ objects \(4 custom, \d+ standard\), \d+ fields \(\d+ custom, \d+ standard\)$/);
   });
 
   const SETTINGS_LINE = "info: 2 custom settings loaded without data (custom-setting data is not part of a retrieve): App_Config__c, Region_List__c";
@@ -181,7 +210,7 @@ describe("check", () => {
 
   it("lists __mdt types with m prefixes beside custom objects and counts records and labels (D-02, D-21)", async () => {
     expect(await main(["check", "--project", CMDT])).toBe(0);
-    expect(logs[0]).toMatch(/^\d+ objects \(5 custom\), \d+ fields$/);
+    expect(logs[0]).toMatch(/^\d+ objects \(5 custom, \d+ standard\), \d+ fields \(\d+ custom, \d+ standard\)$/);
     for (const l of [
       "  App_Config__c  a00  (provisional)",
       "  Region_List__c  a01  (provisional)",
@@ -255,6 +284,8 @@ describe("usage", () => {
     expect(usage).toContain("--key-prefixes <file>");
     expect(usage).toContain("--drop-prefixes");
     expect(usage).toContain("orglet check [--project <sfdx-dir>] [--strict]");
+    expect(usage).toContain("--summary");
+    expect(usage).toContain("--json");
     expect(usage).toContain("--strict");
     expect(usage).toContain("orglet reset [--db <postgres-url>] [--org-schema <name>] [--drop-prefixes]");
   });
@@ -331,6 +362,138 @@ describe("check with roll-ups over formula fields", () => {
       expect(await main(["check", "--strict", "--project", root])).toBe(1);
     } finally {
       await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+
+const NAMES = ["Foo__c", "Ext__c", "Support_Tier__mdt", "Tier_Group__mdt", "App_Config__c", "Region_List__c", "Ticket__c", "Welcome_Message", "Retired_Type", "F__c"];
+const cascadeProject = () =>
+  project({
+    "objects/Foo__c/fields/Ext__c.field-meta.xml": field("<fullName>Ext__c</fullName><type>ExternalLookup</type>"),
+    "objects/Foo__c/fields/F__c.field-meta.xml": field("<fullName>F__c</fullName><type>Text</type><length>10</length><formula>Ext__c</formula>"),
+    "objects/Foo__c/validationRules/R.validationRule-meta.xml":
+      `<?xml version="1.0" encoding="UTF-8"?><ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>R</fullName><active>true</active><errorConditionFormula>LEN(Ext__c) &gt; 1</errorConditionFormula><errorMessage>x</errorMessage></ValidationRule>`,
+  });
+
+describe("check report", () => {
+  // A baseline regeneration legitimately changes the census and the info line: update the files with
+  // `pnpm vitest run packages/cli/src/main.test.ts -u` as a reviewed step. CI runs without -u, so drift fails.
+  it("prints a stable census, verdict and area table for examples/acme", async () => {
+    expect(await main(["check", "--project", ACME])).toBe(0);
+    await expect(logs.join("\n") + "\n").toMatchFileSnapshot("./__snapshots__/check-acme.txt");
+  });
+
+  it("the acme summary is a stable prefix-free count report", async () => {
+    expect(await main(["check", "--summary", "--project", ACME])).toBe(0);
+    await expect(logs.join("\n") + "\n").toMatchFileSnapshot("./__snapshots__/check-acme-summary.txt");
+  });
+
+  it("default check prints warning lines byte-identical to the loader, seed plan and formula registry, in that order", async () => {
+    const cascade = await cascadeProject();
+    const warn = await warningProject();
+    try {
+      for (const projectDir of [CMDT, warn, cascade]) {
+        warns = [];
+        logs = [];
+        const result = admitFormulaRollups(await loadOrgSchema({ projectDir }));
+        const cmdt = planCustomMetadataSeed(result.schema, result.customMetadata);
+        const expected = [...result.warnings, ...cmdt.warnings, ...new FormulaRegistry(result.schema, cmdt).warnings].map((w) => `warning: ${w}`);
+        await main(["check", "--project", projectDir]);
+        expect(warns).toEqual(expected);
+        // The verdict counts exactly the warning lines printed.
+        const verdict = logs.find((l) => l.startsWith("verdict:"))!;
+        expect(verdict).toContain(expected.length === 0 ? "verdict: clean (warnings: 0" : `${expected.length} warnings to review`);
+      }
+    } finally {
+      await rm(warn, { recursive: true, force: true });
+      await rm(cascade, { recursive: true, force: true });
+    }
+  });
+
+  it("the root causes section lists a skipped ExternalLookup field with the formula and validation rule that read it", async () => {
+    const root = await cascadeProject();
+    try {
+      await main(["check", "--project", root]);
+      const at = logs.indexOf("root causes with dependents:");
+      expect(at, logs.join("\n")).toBeGreaterThanOrEqual(0);
+      expect(logs[at + 1]).toMatch(/^ {2}UNSUPPORTED:field-type .*\[2 dependents\]$/);
+      expect(logs[at + 2]).toMatch(/^ {4}UNSUPPORTED:formula /);
+      expect(logs[at + 3]).toMatch(/^ {4}UNSUPPORTED:formula /);
+      expect(logs.find((l) => l.startsWith("verdict:"))).toContain("3 warnings to review (root causes: 1, dependents: 2,");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("summary prints no object, field or rule names and no warning lines", async () => {
+    const cascade = await cascadeProject();
+    try {
+      for (const projectDir of [CMDT, cascade]) {
+        warns = [];
+        logs = [];
+        await main(["check", "--summary", "--project", projectDir]);
+        expect(warns).toEqual([]);
+        const out = logs.join("\n");
+        for (const n of NAMES) expect(out).not.toContain(n);
+        expect(out).toContain("verdict:");
+        expect(out).toContain("areas:");
+        expect(out).not.toContain("(provisional)");
+        // The area table has `info:<area>` count rows; only the name-listing `info: N ...` lines are forbidden.
+        expect(logs.filter((l) => l.startsWith("info: "))).toEqual([]);
+        expect(out).not.toContain("root causes with dependents");
+        expect(logs[0]).toMatch(/^\d+ objects \(/);
+      }
+    } finally {
+      await rm(cascade, { recursive: true, force: true });
+    }
+  });
+
+  it("json prints the full report including the informational category and no warning lines", async () => {
+    expect(await main(["check", "--json", "--project", CMDT])).toBe(0);
+    expect(warns).toEqual([]);
+    expect(logs).toHaveLength(1);
+    const r = JSON.parse(logs[0]!) as { version: number; verdict: { warnings: number }; diagnostics: unknown[]; info: { area: string }[]; areas: { key: string }[] };
+    expect(r.version).toBe(1);
+    expect(r.verdict.warnings).toBe(8);
+    expect(r.diagnostics).toHaveLength(8);
+    expect(r.info.some((d) => d.area === "custom-setting-no-data")).toBe(true);
+    expect(r.areas.some((a) => a.key === "info:custom-setting-no-data")).toBe(true);
+  });
+
+  it("json with summary prints only census, verdict and areas", async () => {
+    expect(await main(["check", "--json", "--summary", "--project", CMDT])).toBe(0);
+    expect(Object.keys(JSON.parse(logs[0]!) as object).sort()).toEqual(["areas", "census", "verdict", "version"]);
+    for (const n of NAMES) expect(logs[0]).not.toContain(n);
+  });
+
+  it("json prints even with --quiet", async () => {
+    expect(await main(["check", "--json", "--quiet", "--project", ACME])).toBe(0);
+    expect(logs).toHaveLength(1);
+    expect(() => void JSON.parse(logs[0]!)).not.toThrow();
+  });
+
+  it("--quiet hides the text report but not the warning lines", async () => {
+    const root = await warningProject();
+    try {
+      expect(await main(["check", "--quiet", "--project", root])).toBe(0);
+      expect(logs).toEqual([]);
+      expect(warns.length).toBeGreaterThanOrEqual(1);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("strict exits 1 on a warning and 0 on informational entries alone, in every output mode", async () => {
+    const warn = await warningProject();
+    const infoOnly = await project({ "objects/WorkOrder/fields/Foo__c.field-meta.xml": field("<fullName>Foo__c</fullName><type>Text</type><length>10</length>") });
+    try {
+      for (const flags of [[], ["--summary"], ["--json"], ["--json", "--summary"]]) {
+        expect(await main(["check", "--strict", ...flags, "--project", warn]), flags.join(" ")).toBe(1);
+        expect(await main(["check", "--strict", ...flags, "--project", infoOnly]), flags.join(" ")).toBe(0);
+      }
+    } finally {
+      await rm(warn, { recursive: true, force: true });
+      await rm(infoOnly, { recursive: true, force: true });
     }
   });
 });

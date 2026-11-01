@@ -1,0 +1,11 @@
+57 objects (4 custom, 53 standard), 3649 fields (24 custom, 3625 standard)
+146 feature-gated standard fields included (nullable; present in an org only when the feature is enabled)
+  BigTable__c  a00  (provisional)
+  Milestone__c  a01  (provisional)
+  Project__c  a02  (provisional)
+  UpsertTable__c  a03  (provisional)
+custom-object key prefixes are provisional here; `orglet up` assigns them once and reads them from the database thereafter
+verdict: clean (warnings: 0, informational: 39)
+areas:
+  info:reference-target-skipped  39
+info: 39 standard objects not modelled and unreferenced: ActionCadence, ActivityMetric, ActivityMetricRollup, ApptBundlePolicy, AssetType, AuthProvider, BillingPolicy, ContentAsset, ContentBody, EmailRoutingAddress, EmailTemplate, ExternalSocialAccount, FeedComment, LegalEntity, NamedCredential, OpportunitySplitType, OrderAction, OrderDeliveryGroup, PardotTenant, PaymentTerm, PriceRevisionPolicy, ProductSellingModel, ProrationPolicy, QuoteAction, QuoteLineGroup, QuoteLineItemRecipient, Record, RetailStore, ServiceAppointmentGroup, ServiceTerritory, SocialPersona, TaxPolicy, TaxTreatment, Territory2, UnitOfMeasure, WebStore, WorkOrder, WorkOrderLineItem, WorkType

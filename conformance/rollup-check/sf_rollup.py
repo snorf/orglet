@@ -6,7 +6,11 @@ and sort over a roll-up column, the rejection of a direct write and the recomput
 through simple-salesforce. One PASS/FAIL line per check; exit 1 on any FAIL. The records are
 deleted again at the end.
 
-Usage: BASE_URL=http://localhost:8083 python sf_rollup.py
+With FIXTURE=enterprise it adds formula-rollup: a roll-up over a formula field
+(Service_Order__c.Total_Lines__c over Service_Order_Line__c.Line_Total__c) recomputed on insert
+and update, so the expected total is 6 instead of 5.
+
+Usage: BASE_URL=http://localhost:8083 [FIXTURE=enterprise] python sf_rollup.py
 Env: BASE_URL (default http://localhost:8081), ORGLET_USERNAME (admin@orglet.local),
      ORGLET_PASSWORD (x), API_VERSION (59.0).
 """
@@ -23,6 +27,8 @@ BASE_URL = os.environ.get("BASE_URL", "http://localhost:8081")
 USERNAME = os.environ.get("ORGLET_USERNAME", "admin@orglet.local")
 PASSWORD = os.environ.get("ORGLET_PASSWORD", "x")
 API_VERSION = os.environ.get("API_VERSION", "59.0")
+ENTERPRISE = os.environ.get("FIXTURE", "acme") == "enterprise"
+EXPECTED = 6 if ENTERPRISE else 5
 
 
 class HttpRewriteSession(requests.Session):
@@ -43,6 +49,7 @@ def main():
     tag = f"rollup-check-{int(time.time() * 1000)}"
     results = []
     acct = None
+    order = None
 
     def check(name, fn):
         try:
@@ -99,11 +106,30 @@ def main():
             p = proj_counts()
             return p["Milestone_Count__c"] == 1 and p["Open_Milestones__c"] == 0, {"Milestone_Count__c": p["Milestone_Count__c"], "Open_Milestones__c": p["Open_Milestones__c"]}
 
+        def formula_rollup():
+            nonlocal order
+            order_obj = getattr(sf, "Service_Order__c")
+            line_obj = getattr(sf, "Service_Order_Line__c")
+            order = order_obj.create({"Name": f"RC Order {tag}"})["id"]
+            line_obj.create({"Service_Order__c": order, "Quantity__c": 2, "Unit_Price__c": 10})
+            second = line_obj.create({"Service_Order__c": order, "Quantity__c": 3, "Unit_Price__c": 5})["id"]
+
+            def read():
+                r = sf.query(f"SELECT Total_Lines__c, Line_Count__c FROM Service_Order__c WHERE Id = '{order}'")["records"][0]
+                return {"Total_Lines__c": r["Total_Lines__c"], "Line_Count__c": r["Line_Count__c"]}
+            a = read()
+            line_obj.update(second, {"Quantity__c": 1})
+            b = read()
+            ok = a["Total_Lines__c"] == 35 and a["Line_Count__c"] == 2 and b["Total_Lines__c"] == 25 and b["Line_Count__c"] == 2
+            return ok, {"afterInsert": a, "afterUpdate": b}
+
         check("describe-flags", describe_flags)
         check("recompute-insert", recompute_insert)
         check("soql-filter-sort", soql_filter_sort)
         check("write-rejected", write_rejected)
         check("recompute-delete", recompute_delete)
+        if ENTERPRISE:
+            check("formula-rollup", formula_rollup)
     except Exception as exc:  # noqa: BLE001
         results.append(False)
         print(f"FAIL setup {type(exc).__name__}: {exc}")
@@ -113,10 +139,15 @@ def main():
                 sf.Account.delete(acct)
             except Exception:  # noqa: BLE001
                 pass
+        if order:
+            try:
+                sf.Service_Order__c.delete(order)
+            except Exception:  # noqa: BLE001
+                pass
 
     passed = sum(1 for r in results if r)
-    print(f"simple-salesforce: {passed}/5 passed")
-    sys.exit(0 if passed == 5 and len(results) == 5 else 1)
+    print(f"simple-salesforce: {passed}/{EXPECTED} passed")
+    sys.exit(0 if passed == EXPECTED and len(results) == EXPECTED else 1)
 
 
 if __name__ == "__main__":

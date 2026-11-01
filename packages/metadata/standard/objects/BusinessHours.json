@@ -19,7 +19,8 @@
       "updateable": false,
       "referenceTo": [
         "BusinessHours"
-      ]
+      ],
+      "relationshipName": "BusinessHours"
     },
     {
       "name": "FridayEndTime",

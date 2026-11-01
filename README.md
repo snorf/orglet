@@ -66,6 +66,7 @@ Id changes meaning. A database created before this feature keeps the prefixes it
 carry.
 
 - `orglet check` has no database, so the prefixes it prints are labelled `(provisional)`.
+- `orglet check` prints a census, a one-line verdict and a table of findings per `UNSUPPORTED:<area>`; formula and roll-up failures caused by an upstream skip are listed under their root cause. `--summary` prints only counts (no names, safe to share), `--json` prints the same report as JSON, and `--strict` exits 1 on any warning (informational lines never count).
 - `orglet reset` drops the org's tables but keeps the prefix assignments; `orglet reset --drop-prefixes`
   forgets them too (the next `up` assigns fresh ones).
 - A prefix that would collide with a standard object or with another custom object's assignment
