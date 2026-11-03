@@ -145,7 +145,10 @@ Deferred to later milestones. Tracked but not in the current roadmap.
   the backup store, which orglet does not own
 - **ERASE-04**: Erase by person (every row referencing a Contact/Lead Id plus email match) with a
   dry-run report; post-erasure verification report
-- **BROWSE-06**: Audit log of who viewed which record (needs real per-reader authentication)
+- **AUTH-01**: OpenID Connect single sign-on for archive readers against a generic OIDC provider
+  (authorization code flow for the UI, bearer-token validation for API clients), replacing the permissive
+  password emulation when enabled; the prerequisite for BROWSE-06 (raised 2026-11-03, after v1.2 ships)
+- **BROWSE-06**: Audit log of who viewed which record (needs AUTH-01)
 - **BROWSE-07**: Version history and field diff per record (needs LOAD-09)
 - **FIX-02**: Regenerate-and-diff CI job for `examples/acme-archive` (like `baseline-gen-check`)
 - **FIX-03**: Hand-written adversarial CSV set (quoted newlines, BOM, 15-char Ids, empty vs null,
@@ -201,40 +204,40 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FILE-03 | — | Pending |
-| FILE-04 | — | Pending |
-| FILE-05 | — | Pending |
-| FILE-06 | — | Pending |
-| FILE-07 | — | Pending |
-| FILE-08 | — | Pending |
-| FILE-09 | — | Pending |
-| ARCH-01 | — | Pending |
-| ARCH-02 | — | Pending |
-| ARCH-03 | — | Pending |
-| ARCH-04 | — | Pending |
-| LOAD-01 | — | Pending |
-| LOAD-02 | — | Pending |
-| LOAD-03 | — | Pending |
-| LOAD-04 | — | Pending |
-| LOAD-05 | — | Pending |
-| LOAD-06 | — | Pending |
-| LOAD-07 | — | Pending |
-| LOAD-08 | — | Pending |
-| ERASE-01 | — | Pending |
-| ERASE-02 | — | Pending |
-| BROWSE-01 | — | Pending |
-| BROWSE-02 | — | Pending |
-| BROWSE-03 | — | Pending |
-| BROWSE-04 | — | Pending |
-| BROWSE-05 | — | Pending |
-| FIX-01 | — | Pending |
-| ACC3-01 | — | Pending |
+| FILE-03 | Phase 15 | Pending |
+| FILE-04 | Phase 15 | Pending |
+| FILE-05 | Phase 15 | Pending |
+| FILE-06 | Phase 15 | Pending |
+| FILE-07 | Phase 15 | Pending |
+| FILE-08 | Phase 15 | Pending |
+| FILE-09 | Phase 15 | Pending |
+| ARCH-01 | Phase 17 | Pending |
+| ARCH-02 | Phase 17 | Pending |
+| ARCH-03 | Phase 17 | Pending |
+| ARCH-04 | Phase 17 | Pending |
+| LOAD-01 | Phase 18 | Pending |
+| LOAD-02 | Phase 18 | Pending |
+| LOAD-03 | Phase 18 | Pending |
+| LOAD-04 | Phase 18 | Pending |
+| LOAD-05 | Phase 18 | Pending |
+| LOAD-06 | Phase 18 | Pending |
+| LOAD-07 | Phase 18 | Pending |
+| LOAD-08 | Phase 18 | Pending |
+| ERASE-01 | Phase 19 | Pending |
+| ERASE-02 | Phase 19 | Pending |
+| BROWSE-01 | Phase 20 | Pending |
+| BROWSE-02 | Phase 20 | Pending |
+| BROWSE-03 | Phase 20 | Pending |
+| BROWSE-04 | Phase 20 | Pending |
+| BROWSE-05 | Phase 20 | Pending |
+| FIX-01 | Phase 16 | Pending |
+| ACC3-01 | Phase 21 | Pending |
 
 **Coverage:**
 - v1 requirements: 28 total
-- Mapped to phases: 0
-- Unmapped: 28 ⚠️ (roadmap not yet created)
+- Mapped to phases: 28
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-11-03*
-*Last updated: 2026-11-03 after initial definition*
+*Last updated: 2026-11-03 after roadmap creation (Phases 15-21)*

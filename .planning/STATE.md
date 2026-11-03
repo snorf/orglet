@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
-status: defining_requirements
-stopped_at: Milestone v1.2 started 2026-11-03; defining requirements
+status: ready_to_plan
+stopped_at: Roadmap created for v1.2; next /gsd:discuss-phase 15
 last_updated: "2026-11-03T13:00:00.000Z"
 last_activity: 2026-11-03
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -28,12 +28,12 @@ rather than faked.
 ## Current Position
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
-Phase: Not started (defining requirements)
+Phase: 15 (Files Model) not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-11-03 — Milestone v1.2 started
+Status: Ready to plan
+Last activity: 2026-11-03 — Roadmap created for v1.2 (Phases 15-21)
 
-Progress: [░░░░░░░░░░] 0% (v1.2: requirements not yet defined)
+Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 
 ## Performance Metrics
 
@@ -183,5 +183,5 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 ## Session Continuity
 
 Last session: 2026-11-03
-Stopped at: Milestone v1.2 started (PROJECT.md updated); next: requirements and roadmap in /gsd:new-milestone
+Stopped at: Roadmap created for v1.2 (7 phases, 28/28 requirements mapped); next /gsd:discuss-phase 15
 Resume file: None
