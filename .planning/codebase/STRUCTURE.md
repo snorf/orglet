@@ -1,246 +1,288 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-09-29
+**Analysis Date:** 2026-11-03
 
 ## Directory Layout
 
 ```
-local-salesforce/                          # pnpm workspace root, package name "orglet"
+project-root/
 ├── packages/
-│   ├── metadata/          # SFDX + standard-object baseline -> OrgSchema
-│   │   ├── src/            # build.ts, sfdx.ts, schema.ts, types.ts, xml.ts (+ *.test.ts)
-│   │   └── standard/       # baseline data: objects/*.json, standardValueSets.json
-│   ├── schema/             # OrgSchema -> Postgres DDL/migration, Salesforce IDs
-│   │   └── src/             # columns.ts, ddl.ts, migrate.ts, ids.ts, db.ts (+ *.test.ts)
-│   ├── formula/            # Salesforce formula language bound to record context
-│   │   └── src/             # compile.ts, evaluate.ts, values.ts (+ formula.test.ts)
-│   ├── soql/               # SOQL AST -> parameterised SQL, result shaping
-│   │   └── src/             # compile.ts, shape.ts, dates.ts, errors.ts (+ compile.test.ts)
-│   ├── engine/              # DML pipeline: order of execution, hooks, bootstrap, query
-│   │   └── src/             # engine.ts, hooks.ts, store.ts, formulas.ts, query.ts, ...
-│   ├── api/                # Salesforce-compatible REST + login + built-in UI
-│   │   ├── src/
-│   │   │   ├── routes/       # one file per resource family (sobjects, query, composite, bulk, login, misc)
-│   │   │   └── bulk/         # Bulk API 2.0 internals: csv.ts, jobs.ts
-│   │   └── ui/              # index.html — the built-in object browser / SOQL console, served at "/"
-│   ├── cli/                # orglet command line
-│   │   └── src/             # index.ts (bin entry), main.ts (arg parsing + up/check/reset)
-│   └── sigha/               # VENDORED formula-language engine (do not hand-edit)
-│       └── src/             # syntax/, registry/, analysis/, engine/, i18n/
+│   ├── metadata/              # SFDX XML + baseline JSON → OrgSchema
+│   ├── schema/                # OrgSchema → Postgres DDL, migrations, IDs
+│   ├── formula/               # Salesforce formula compilation + evaluation
+│   ├── soql/                  # SOQL → parameterized SQL + result shaping
+│   ├── engine/                # DML pipeline, order of execution, rollups
+│   ├── api/                   # Fastify REST/SOAP endpoints + Bulk API 2.0
+│   ├── cli/                   # orglet up/check/reset commands
+│   └── sigha/                 # Vendored: Salesforce formula language parser
+│
+├── conformance/               # External SDK conformance tests (jsforce, python, describe, rollup, etc.)
+│   ├── jsforce/               # jsforce library integration tests
+│   ├── python/                # simple-salesforce library integration tests
+│   ├── describe-check/        # describe() endpoint conformance (enterprise & acme)
+│   ├── poly-check/            # Polymorphic relationship conformance
+│   ├── cmdt-check/            # Custom metadata seeding conformance
+│   └── rollup-check/          # Rollup field formula conformance
+│
 ├── examples/
-│   └── acme/                # SFDX fixture project (force-app/main/default/...) used by tests + conformance
-├── conformance/
-│   ├── jsforce/             # runs upstream jsforce e2e suite against orglet (run.sh, seed.mjs)
-│   └── python/               # runs a Python client suite against orglet (run.py)
-├── scripts/                 # repo maintenance scripts (e.g. sync-sigha.sh)
-├── docker-compose.yml        # Postgres 16 on localhost:5433 for local dev
-├── eslint.config.js          # flat ESLint config, typed lint over packages/*/tsconfig.json
-├── vitest.config.ts           # workspace-wide test runner config
-├── tsconfig.json / tsconfig.base.json / tsconfig.test.json   # TS project references
-└── pnpm-workspace.yaml        # workspace globs: packages/*, conformance/*
+│   ├── acme/                  # Simpler fixture: standard objects + custom fields/objects
+│   │   └── force-app/main/default/objects/
+│   └── enterprise/            # Complex fixture: custom metadata, relationships, rollups
+│       └── force-app/main/default/objects/
+│
+├── scripts/
+│   ├── gen-baseline/          # Salesforce standard-object baseline generator
+│   │   ├── generate.ts        # Main orchestration
+│   │   ├── pipeline.ts        # Multi-stage data transformation
+│   │   ├── sources.ts         # PDF/JSON source parsing
+│   │   ├── gating.ts          # Feature-gated standard fields
+│   │   ├── typemap.ts         # Field type mappings
+│   │   ├── overrides.json     # Manual corrections to source data
+│   │   ├── objects.json       # Which standard objects to include
+│   │   └── source/            # Downloaded Salesforce docs (PDFs, JSON snapshots)
+│   ├── sync-sigha.sh          # Re-vendor sigha from upstream Git revision
+│   └── run-all.sh             # Conformance harness orchestrator
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions: test, lint, conformance, sync checks
+│
+├── .planning/                 # GSD planning artifacts
+│   ├── codebase/              # These analysis documents
+│   │   ├── ARCHITECTURE.md
+│   │   └── STRUCTURE.md
+│   ├── phases/                # Completed phase specifications
+│   ├── milestones/            # Milestone documentation
+│   ├── todos/                 # Feature backlog
+│   ├── quick/                 # Small-task notes
+│   └── research/              # Investigation outcomes
+│
+├── .editorconfig              # Indent/EOL/charset baseline (2-space, LF)
+├── .env.example               # Template for local env vars (ORGLET_DATABASE_URL, ORGLET_PG_PORT)
+├── .gitignore                 # Excludes .env, dist/, node_modules/
+├── .npmrc                      # engine-strict=true, auto-install-peers=true
+├── .nvmrc                     # Node 22
+├── docker-compose.yml         # Postgres 16 single-service compose
+├── eslint.config.js           # Flat config, TypeScript-aware
+├── pnpm-workspace.yaml        # Workspace definition: packages/*, conformance/*
+├── pnpm-lock.yaml             # Single lockfile for entire workspace
+├── tsconfig.base.json         # Base: strict mode + strict flags, ES2022 target
+├── tsconfig.json              # Composite project references (tsc -b entry)
+├── tsconfig.test.json         # Non-composite test config with @orglet/* aliases
+├── tsconfig.scripts.json      # Baseline generator config
+├── vitest.config.ts           # Single workspace test config, @orglet/* aliases
+├── package.json               # Root workspace definition + scripts (build, test, lint, baseline:gen, etc.)
+└── README.md                  # Public documentation
 ```
 
 ## Directory Purposes
 
-**`packages/metadata`:**
-- Purpose: everything about turning declarative metadata (SFDX XML on disk, or the built-in
-  JSON baseline) into the in-memory `OrgSchema` every other package consumes.
-- Contains: XML parsing (`xml.ts`, `sfdx.ts`), baseline loading + merge (`build.ts`), the
-  `OrgSchema` implementation (`schema.ts`), shared type vocabulary (`types.ts`).
-- Key files: `packages/metadata/src/index.ts` (barrel + `loadOrgSchema()`), `packages/metadata/standard/objects/*.json` (one file per built-in standard object).
+**packages/ (8 packages, ordered by dependency):**
 
-**`packages/schema`:**
-- Purpose: the only package that knows how OrgSchema concepts map to Postgres (table/column
-  names, SQL types, DDL, migrations) and how Salesforce record IDs are generated/parsed.
-- Key files: `packages/schema/src/columns.ts` (naming + `ColumnSpec`), `packages/schema/src/ddl.ts` (`planSchema`/`planTable`), `packages/schema/src/migrate.ts`, `packages/schema/src/ids.ts`.
+| Package | Purpose | Key exports |
+|---|---|---|
+| `metadata` | Parse SFDX XML, load baseline JSON, build OrgSchema model | `loadOrgSchema()`, `OrgSchemaImpl`, `buildOrgSchema()`, `readSourceProject()` |
+| `schema` | DDL planning, Postgres migration, ID generation, key-prefix management | `migrate()`, `planSchema()`, `generateId()`, `reconcileKeyPrefixes()`, `Store` |
+| `formula` | Compile & evaluate Salesforce formula expressions | `compileFormula()`, `evaluateCompiled()`, `FormulaRegistry` |
+| `soql` | Compile SOQL to SQL, shape results, handle date literals | `compileSoql()`, `shapeRows()` |
+| `engine` | DML pipeline (save/delete/undelete), order of execution, rollups, hooks | `DmlEngine`, `bootstrapOrg()`, `store.ts`, `rollups.ts`, `seed.ts` |
+| `api` | Fastify HTTP server: REST/SOAP login, CRUD routes, query, describe, Bulk API 2.0 | `createApiServer()`, SessionStore, routes/* |
+| `cli` | `orglet up|check|reset` commands, check report generation | `main()` (entry), `report.ts` (check report builder) |
+| `sigha` | Vendored formula-language parser (lexer, AST, analyzer) from upstream | (not edited; re-synced via `scripts/sync-sigha.sh`) |
 
-**`packages/formula`:**
-- Purpose: the Salesforce-formula-to-record-context bridge: compiles source text (resolving
-  field/relationship/global references against an `OrgSchema`) and evaluates compiled formulas.
-- Key files: `packages/formula/src/compile.ts`, `packages/formula/src/evaluate.ts`, `packages/formula/src/values.ts`.
+**conformance/:**
+- **jsforce/**: Run jsforce test suite against orglet (seed.mjs fixture, run.sh harness)
+- **python/**: Run simple-salesforce test suite (run.py, requirements.txt)
+- **describe-check/**: Compare describe() output with real Salesforce snapshot (JSON contract)
+- **poly-check/**: Polymorphic relationship (typeof) correctness checks
+- **cmdt-check/**: Custom metadata record seeding correctness (compare with real org)
+- **rollup-check/**: Rollup field formula evaluation (compare with real org results)
+- All use `.venv/` (Python virtual envs) and `.cache/` (downloaded fixtures); not committed
 
-**`packages/soql`:**
-- Purpose: SOQL query compilation and result shaping, decoupled from the engine so it can be
-  unit-tested purely against strings (`packages/soql/src/compile.test.ts`).
-- Key files: `packages/soql/src/compile.ts`, `packages/soql/src/shape.ts`, `packages/soql/src/dates.ts` (date-literal ranges), `packages/soql/src/errors.ts`.
+**examples/:**
+- **acme/**: Simpler SFDX project (Account, Contact, Opportunity, custom objects Project__c/Milestone__c)
+- **enterprise/**: More complex (custom metadata Service_Level__mdt/Service_Region__mdt, org defaults, service orders with rollups)
+- Used by: CLI tests, conformance suite, CI check runs
+- Format: Standard SFDX with `sfdx-project.json`, `force-app/main/default/objects/`
 
-**`packages/engine`:**
-- Purpose: the write/read choke point — DML order of execution, query execution + pagination,
-  trigger hook interface, org bootstrap.
-- Key files: `packages/engine/src/engine.ts` (`DmlEngine`), `packages/engine/src/hooks.ts` (`TriggerExecutor`), `packages/engine/src/store.ts` (row-level Postgres access), `packages/engine/src/query.ts` (`runQuery`), `packages/engine/src/bootstrap.ts`.
+**scripts/:**
+- **gen-baseline/**: Generates `packages/metadata/standard/*.json` from Salesforce public docs
+  - Input sources: `source/` subdirectory (PDFs, JSON snapshots from describe APIs)
+  - Output: One JSON file per standard object (Account.json, Contact.json, etc.) with field definitions
+  - CI check: Verifies regeneration reproduces committed baseline exactly
+- **sync-sigha.sh**: Clones sigha repo at recorded Git revision, copies src/corpus/LICENSE into `packages/sigha/`
+  - Idempotent: Safe to run multiple times
+  - CI check: Verifies committed sigha exactly matches regeneration
 
-**`packages/api`:**
-- Purpose: the HTTP surface. `src/server.ts` is the composition root; everything
-  resource-specific lives in `src/routes/*`; Bulk API 2.0's job model lives in `src/bulk/*`
-  because it's stateful and specific to that one feature.
-- Key files: `packages/api/src/server.ts` (`createApiServer`), `packages/api/src/describe.ts` (describe-endpoint JSON), `packages/api/src/auth.ts` (`SessionStore`), `packages/api/ui/index.html`.
-
-**`packages/cli`:**
-- Purpose: user-facing entry point; wires `metadata` -> `schema` -> `engine` -> `api` together
-  and owns process lifecycle (signal handling, exit codes).
-- Key files: `packages/cli/src/main.ts` (all three subcommands), `packages/cli/src/index.ts` (bin shebang).
-
-**`packages/sigha`:**
-- Purpose: vendored, dependency-free Salesforce formula-language engine (lexer, parser, type
-  checker, evaluator) that `@orglet/formula` wraps with schema-aware field resolution.
-- Not modified by hand — see `packages/sigha/VENDOR.md` for the sync process. Excluded from
-  ESLint's typed rules (`eslint.config.js`) and from most "where do I add code" guidance below.
-
-**`examples/acme`:**
-- Purpose: an SFDX source-format fixture project used by package tests, the CLI quick-start,
-  and the conformance suites. Not a template to copy verbatim — extend it when a test needs a
-  new object/field/validation rule/record type.
-
-**`conformance/jsforce`, `conformance/python`:**
-- Purpose: run real upstream Salesforce SDK test suites (`jsforce`, `simple-salesforce`)
-  against a live orglet instance instead of a real org, to prove wire-level compatibility.
-  Excluded from the TS project build and from ESLint's typed lint.
+**.github/workflows/:**
+- **ci.yml**: Four jobs: test-pglite (no Docker), test-postgres (integration), conformance (jsforce + python), sigha-sync-check, baseline-gen-check
+- Runs on: push, pull_request to main
+- Concurrency: Cancel in-progress runs for the same ref
 
 ## Key File Locations
 
 **Entry Points:**
-- `packages/cli/src/index.ts`: `orglet` bin shebang, process exit-code handling.
-- `packages/cli/src/main.ts`: `up`/`check`/`reset` command implementations.
-- `packages/api/src/server.ts`: `createApiServer()`, Fastify app composition root.
+
+| File | Purpose |
+|---|---|
+| `packages/cli/src/index.ts` | Shebang wrapper (`#!/usr/bin/env node`) + error handler |
+| `packages/cli/src/main.ts` | Command dispatcher (up, check, reset) |
+| `packages/api/src/server.ts` | `createApiServer()` function (Fastify app) |
+| `packages/api/src/routes/*.ts` | Route handlers by concern (login, sobjects, query, composite, bulk, misc) |
+| `packages/api/ui/index.html` | Built-in browser UI (242 lines, no framework) |
 
 **Configuration:**
-- `docker-compose.yml`: local Postgres 16, port 5433.
-- `tsconfig.base.json` / `tsconfig.json` / `packages/*/tsconfig.json`: TS project references,
-  one composite project per package, `packages/*/dist` build output.
-- `eslint.config.js`: flat config, typed linting against every package's `tsconfig.json`.
-- `vitest.config.ts`: workspace test runner config.
-- `.nvmrc`: pinned Node version (engines require Node >=22).
+
+| File | Purpose |
+|---|---|
+| `package.json` | Root workspace + scripts (build, test, lint, baseline:gen) |
+| `pnpm-workspace.yaml` | Workspace packages + conformance/* |
+| `tsconfig.base.json` | Compiler options: strict mode, ES2022, NodeNext |
+| `tsconfig.test.json` | Test-only variant with `@orglet/*` path alias |
+| `.editorconfig` | Indent/EOL/charset (2-space, LF, UTF-8) |
+| `.eslintrc` → `eslint.config.js` | Flat config, type-checked linting |
+| `vitest.config.ts` | Test runner config: node environment, 30s timeout |
 
 **Core Logic:**
-- `packages/engine/src/engine.ts`: DML order of execution (the most load-bearing file in the
-  repo — read it before touching insert/update/delete/upsert behavior).
-- `packages/soql/src/compile.ts`: SOQL -> SQL compilation.
-- `packages/metadata/src/build.ts`: standard-baseline + SFDX merge into `OrgSchema`.
+
+| File | Purpose |
+|---|---|
+| `packages/metadata/src/build.ts` | `buildOrgSchema()` loader + merger |
+| `packages/metadata/src/sfdx.ts` | SFDX XML parser (fast-xml-parser) |
+| `packages/metadata/src/types.ts` | OrgSchema, SObjectDef, FieldDef interfaces |
+| `packages/schema/src/ddl.ts` | `planSchema()` → DDL plan |
+| `packages/schema/src/migrate.ts` | Apply DDL to Postgres |
+| `packages/schema/src/columns.ts` | Table/column naming, SQL type mapping |
+| `packages/engine/src/engine.ts` | `DmlEngine` class + order of execution |
+| `packages/engine/src/formulas.ts` | `FormulaRegistry` + formula field application |
+| `packages/engine/src/rollups.ts` | Rollup recompute logic |
+| `packages/engine/src/store.ts` | Low-level Postgres row access |
+| `packages/api/src/auth.ts` | `SessionStore`, login token generation |
+| `packages/api/src/describe.ts` | globalDescribe, objectDescribe builders |
+| `packages/api/src/bulk/jobs.ts` | Bulk API 2.0 job state machine |
+| `packages/soql/src/compile.ts` | SOQL AST → SQL compiler |
+| `packages/formula/src/compile.ts` | Formula parser → AST + field dependencies |
 
 **Testing:**
-- Co-located `*.test.ts` next to the code they exercise in every package's `src/` (e.g.
-  `packages/engine/src/engine.test.ts`, `packages/soql/src/compile.test.ts`).
-- `packages/api/src/api.test.ts` and `packages/api/src/bulk.test.ts` spin up a real
-  `createApiServer()` instance for HTTP-level tests.
-- `conformance/*` runs external SDK suites, invoked separately from `pnpm test` (see each
-  `README.md`/`run.sh`/`run.py`).
+
+| Pattern | Location |
+|---|---|
+| Per-package tests | `packages/*/src/**/*.test.ts` (co-located with source) |
+| Test config | `vitest.config.ts` (root) — single config for all packages |
+| Test database | Postgres container (conformance, integration tests) or pglite (pure unit tests) |
+| Test aliases | `vitest.config.ts` + `tsconfig.test.json` map `@orglet/*` to `packages/*/src/index.ts` for build-less test runs |
+| Total test files | ~80 test.ts files across all packages |
 
 ## Naming Conventions
 
 **Files:**
-- One file per concern, `camelCase`/`lowercase.ts`, e.g. `columns.ts`, `ddl.ts`, `hooks.ts`.
-- Tests are co-located as `<name>.test.ts` next to the file under test, not in a separate
-  `test/` or `__tests__/` directory.
-- Route modules are named after the Salesforce resource they implement:
-  `packages/api/src/routes/sobjects.ts`, `query.ts`, `composite.ts`, `bulk.ts`, `login.ts`,
-  `misc.ts` (catch-all for `/services/data`, `/limits`, `/search`).
-- Every package's public surface is re-exported from a single `src/index.ts` barrel; nothing
-  outside a package imports a package's internal files directly (enforced by convention, not
-  tooling) — always import from `@orglet/<package>`.
 
-**Standard-object baseline data:**
-- `packages/metadata/standard/objects/<ObjectName>.json`, one file per standard object, exact
-  Salesforce API name (e.g. `Account.json`, `OpportunityLineItem.json`).
+- **Single-concept files (one function/class/concern):** Lowercase, no separators: `engine.ts`, `errors.ts`, `store.ts`, `bootstrap.ts`, `hooks.ts`, `seed.ts`, `coerce.ts`, `query.ts`, `parents.ts`, `events.ts`, `rollups.ts`
+- **Multi-concept files:** Lowercase compound noun: `build.ts`, `sfdx.ts`, `schema.ts`, `types.ts`, `xml.ts`, `columns.ts`, `ddl.ts`, `migrate.ts`, `db.ts`, `internal.ts`, `prefixes.ts`, `compile.ts`, `evaluate.ts`, `values.ts`, `shape.ts`, `describe.ts`, `auth.ts`, `server.ts`
+- **Sub-package organization:** Directories group a feature family by route/module: `routes/*.ts` (one file per REST surface), `bulk/*.ts` (Bulk API 2.0 implementation)
+- **Test files:** Suffixed `.test.ts`, co-located with source (same directory as what they test)
+- **Barrel files:** `src/index.ts` — one per package, only public entry point
 
-**SFDX fixture data (`examples/acme`):**
-- Standard Salesforce SFDX source format: `force-app/main/default/objects/<Object>/...`.
-- Custom objects/fields end in `__c` (`Project__c`, `Account__c`); custom relationship names
-  end in `__r`. One `fields/<Field__c>.field-meta.xml` file per custom field, one
-  `validationRules/<Name>.validationRule-meta.xml` per rule, one
-  `recordTypes/<Name>.recordType-meta.xml` per record type — this is the on-disk shape any new
-  fixture metadata must follow.
+**Functions & Constants:**
 
-**Database identifiers:**
-- Table name = lower-cased object API name; column name = lower-cased field API name
-  (`columnName()`/`tableName()` in `packages/schema/src/columns.ts`). Identifiers over 63
-  bytes are truncated with a stable hash suffix (`identifier()`).
+- **Functions:** `camelCase`, verb-first for actions: `planSchema()`, `planTable()`, `loadParents()`, `applyFormulaFields()`, `coerceRecord()`, `bootstrapOrg()`, `runQuery()`, `compileFormula()`, `evaluateCompiled()`
+- **Error-constructing helpers:** Read as short phrase, return value not throw: `saveError()`, `Errors.requiredMissing()`, `apiError()`, `unknownSObject()`
+- **Pure lookups/predicates:** Noun or adjective: `columnName()`, `tableName()`, `isVirtual()`, `keyPrefixOf()`, `matchLookupTarget()`
+- **Private helpers within a file:** Unexported plain functions, not class methods: `isDir()`, `readXml()`, etc.
+- **Constants (enums/lookup tables):** `UPPER_SNAKE_CASE`: `CUSTOM_FIELD_TYPES`, `DEFAULT_ORG_SCHEMA`, `INTERNAL_SCHEMA`
+- **Test fixtures/paths:** `UPPER_SNAKE_CASE` when acting as a constant: `const ACME = fileURLToPath(...)`
 
-**Types/interfaces:**
-- `PascalCase` for types/interfaces/classes (`SObjectDef`, `FieldDef`, `DmlEngine`,
-  `CompiledQuery`); `Def`/`Spec` suffix for schema-shaped data (`FieldDef`, `ColumnSpec`,
-  `ForeignKeySpec`); `Options`/`Result` suffix for function parameter/return bags
-  (`EngineOptions`, `SaveResult`, `BuildResult`).
+**Types & Interfaces:**
+
+- **Interfaces, types, classes:** `PascalCase`
+- **Interfaces:** Not prefixed with `I` (e.g., `FieldDef`, `SObjectDef`, `OrgSchema`, not `IFieldDef`)
+- **Suffix conventions:**
+  - `*Def`: Schema/metadata definitions (`FieldDef`, `SObjectDef`, `PicklistDef`, `ValidationRuleDef`)
+  - `*Options`: Constructor/function option bags (`EngineOptions`, `DmlOptions`, `CompileOptions`, `MigrateOptions`)
+  - `*Result`: Return payloads (`SaveResult`, `MigrateResult`, `LoginResult`, `BuildResult`)
+  - `*Error`: Error subclasses (`DmlError`, `SoqlError`, `FormulaCompileError`, `UnsupportedMetadataError`)
 
 ## Where to Add New Code
 
-**New REST route / resource:**
-- Add a `register<Name>Routes(app, ctx)` function in a new file under
-  `packages/api/src/routes/`, following the pattern in `packages/api/src/routes/misc.ts` or
-  `sobjects.ts` (signature: `(app: FastifyInstance, ctx: ApiContext) => void`). Register the
-  call in `createApiServer()` (`packages/api/src/server.ts:148-153`). Reuse `apiError`,
-  `sendErrors`, `session()`, `NOT_FOUND`/`INVALID_SESSION` from `packages/api/src/server.ts`
-  for Salesforce-shaped error envelopes.
+**New REST Route:**
+- File: `packages/api/src/routes/{concern}.ts` (e.g., `composite.ts`, `bulk.ts`, `query.ts`)
+- Register: Call from `createApiServer()` in `packages/api/src/server.ts` (line ~145)
+- Tests: Co-located `packages/api/src/{concern}.test.ts`
+- Pattern: Export `register{Concern}Routes(app, ctx)`, use `sendErrors(reply, status, errors)` for error responses
 
-**New field type:**
-- `packages/metadata/src/types.ts`: add to the `FieldType` union and any new `FieldDef`
-  properties it needs.
-- `packages/metadata/src/build.ts`: handle it in `fromStandardJson()` and/or
-  `fromSourceField()` (the `switch (sf.type)` block) for baseline/SFDX conversion.
-- `packages/schema/src/columns.ts`: add its SQL type mapping in `columnFor()`/`sqlTypeFor()`.
-- `packages/engine/src/coerce.ts`: add client-value coercion rules.
-- `packages/soql/src/compile.ts`: add to the relevant type-classification sets (e.g.
-  `TEXT_TYPES`) if it affects filtering/sorting SQL generation.
-- If formula-relevant: `packages/formula/src/values.ts` (`sfTypeOf`, `toSfValue`/`fromSfValue`).
+**New Field Type:**
+- File: Add type definition to `packages/metadata/src/types.ts`
+- Coercion: Add case to `packages/engine/src/coerce.ts` (if special handling needed)
+- DDL: Add mapping in `packages/schema/src/columns.ts` → `sqlTypeFor(field)`
+- Tests: Add to existing `*.test.ts` in the affected packages
 
-**New standard object:**
-- Add `packages/metadata/standard/objects/<ObjectName>.json` following the shape of an
-  existing file (e.g. `packages/metadata/standard/objects/Contact.json`): `name`, `label`,
-  `labelPlural`, `keyPrefix` (must be unique), `hasOwner`, `fields[]`.
-- No code changes needed elsewhere — `loadBaseline()` (`packages/metadata/src/build.ts:34`)
-  picks up every `*.json` file in that directory automatically; schema/DDL/API all derive from
-  `OrgSchema`.
+**New Validation Rule Type:**
+- File: Add parsing to `packages/metadata/src/sfdx.ts` (`parseValidationRule()`)
+- Evaluation: Engine already evaluates formulas; add syntax to formula parser (sigha) if needed
+- Tests: `packages/metadata/src/sfdx.test.ts`, `packages/engine/src/engine.test.ts`
 
-**New SOQL feature (function, operator, clause):**
-- `packages/soql/src/compile.ts`: the `Compiler` class methods (e.g. condition/function
-  handling) are the place to extend; add a unit test in
-  `packages/soql/src/compile.test.ts` asserting the emitted SQL string/params.
-- If it changes what a row looks like after execution (e.g. a new aggregate shape), also touch
-  `packages/soql/src/shape.ts` and the `Shape`/`SObjectShape`/`AggregateShape` types in
-  `compile.ts`.
-- Unsupported SOQL should raise through `packages/soql/src/errors.ts` (`unsupported()`), not
-  silently produce wrong SQL.
+**New Formula Global ($X):**
+- File: Add to `packages/formula/src/compile.ts` (GlobalRoot type and `resolveGlobal()`)
+- Availability: Define when global is available (DML context, query context, always)
+- Tests: `packages/formula/src/globals.test.ts`
+- Engine integration: Add to Globals interface in `packages/engine/src/engine.ts` if it needs per-request setup
 
-**New DML hook / trigger behavior:**
-- Implement `TriggerExecutor` (`packages/engine/src/hooks.ts`) and pass it in
-  `EngineOptions.executors` when constructing `DmlEngine` (currently only
-  `packages/cli/src/main.ts` constructs one, with no executors configured — this is the seam
-  for future Apex/Flow support).
+**New CLI Command:**
+- File: `packages/cli/src/main.ts` (add function like `async function myCommand(c: Common, ...): Promise<number>`)
+- Dispatcher: Add case to `main()` function (line ~280+)
+- Usage: Update `USAGE` string at top of `main.ts`
+- Tests: `packages/cli/src/main.test.ts`
 
-**Bulk API 2.0 behavior:**
-- Job model and state machine: `packages/api/src/bulk/jobs.ts`.
-- CSV parsing/writing: `packages/api/src/bulk/csv.ts`.
-- HTTP surface: `packages/api/src/routes/bulk.ts`.
-
-**Utilities:**
-- Shared helpers live inside the package that owns the concern (e.g. datetime formatting in
-  `packages/schema/src/db.ts` `formatSalesforceDatetime`, value coercion in
-  `packages/formula/src/values.ts`) — there is no repo-wide `utils`/`shared` package; do not
-  create one for a single new helper. Add it to the most specific existing package instead.
+**New Package (rare):**
+- Create `packages/newname/` with:
+  - `package.json` (name: `@orglet/newname`, type: `module`, exports, main, types)
+  - `src/index.ts` (barrel: export all public APIs)
+  - `tsconfig.json` (extends `../../tsconfig.base.json`, project references to dependencies)
+  - `README.md` if module-level docs needed
+- Update `pnpm-workspace.yaml` if not in `packages/*` glob
+- Update root `tsconfig.json` references
+- Add to CI job in `.github/workflows/ci.yml` if it needs testing
 
 ## Special Directories
 
-**`packages/*/dist`:**
-- Purpose: TypeScript project-reference build output (`tsc -b`).
-- Generated: Yes. Committed: No.
+**packages/sigha/ (Vendored):**
+- Purpose: Salesforce formula-language front end (lexer, parser, analyzer)
+- Source: Synced from upstream git repository (github.com/rfaulhaber/sigha)
+- Tracking: `packages/sigha/VENDOR.md` records Repository URL and Revision
+- Sync script: `scripts/sync-sigha.sh <revision>`
+- CI check: `sigha-sync-check` job verifies reproducible sync
+- Not edited by hand; any improvements go upstream → resync
+- License: BSD-3 (see packages/sigha/LICENSE)
 
-**`packages/*/node_modules`, root `node_modules`:**
-- Purpose: pnpm-managed dependencies (workspace uses symlinked `workspace:*` deps between
-  packages).
-- Generated: Yes. Committed: No.
+**packages/metadata/standard/ (Generated):**
+- Purpose: Built-in baseline JSON for standard Salesforce objects
+- Format: One file per object (Account.json, Contact.json, etc.)
+- Generated from: `scripts/gen-baseline/` (sources/, overrides.json, v1-pins.json)
+- CI check: `baseline-gen-check` verifies regeneration is reproducible
+- Committed to repo; do not hand-edit
+- Generator inputs: PDFs/snapshots in `scripts/gen-baseline/source/`
 
-**`packages/metadata/standard`:**
-- Purpose: the built-in standard-object baseline (data, not code) — `files` entry in
-  `packages/metadata/package.json` ships it alongside `dist`.
-- Generated: No (hand-authored JSON). Committed: Yes.
+**conformance/ (Integration Tests):**
+- Not part of the build
+- Run separately via `conformance/run-all.sh` (CI job)
+- Each subdirectory runs against a live orglet instance + real org (or snapshot)
+- Languages: Bash (harness), JavaScript (jsforce), Python (simple-salesforce)
+- Outputs: Pass/fail per suite, human-readable comparison on mismatch
 
-**`conformance/jsforce/.cache`, `conformance/python/.venv`, `conformance/python/__pycache__`:**
-- Purpose: local checkouts/dependencies for running upstream SDK suites.
-- Generated: Yes. Committed: No.
+**examples/ (Test Fixtures):**
+- **acme/**: Used by CI test-pglite job (check --strict --project examples/acme)
+- **enterprise/**: Used by conformance job (higher complexity, exercises more features)
+- Format: SFDX projects (valid sfdx-project.json + force-app/ directory)
+- Committed; updated when adding new metadata support
 
-**`.planning/`:**
-- Purpose: GSD planning artifacts (this document's home: `.planning/codebase/`).
-- Generated: By GSD tooling. Committed: project-dependent.
+**.planning/ (GSD Workflow Artifacts):**
+- **codebase/**: Analysis documents (ARCHITECTURE.md, STRUCTURE.md, CONVENTIONS.md, TESTING.md, STACK.md, INTEGRATIONS.md, CONCERNS.md)
+- **phases/**: One spec per completed phase (phase-N.md with requirements, acceptance criteria, test plan)
+- **milestones/**: Milestone documentation (v1.0-complete, v1.1-audit, etc.)
+- **todos/**: Feature backlog + known limitations
+- **quick/**: Small task notes and decisions
+- **research/**: Investigation outcomes (why X, comparison of approaches, etc.)
 
 ---
 
-*Structure analysis: 2026-09-29*
+*Structure analysis: 2026-11-03 (v1.1 tag, main branch)*

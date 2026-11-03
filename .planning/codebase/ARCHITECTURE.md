@@ -1,349 +1,376 @@
 # Architecture
 
-**Analysis Date:** 2026-09-29
+**Analysis Date:** 2026-11-03
 
 ## Pattern Overview
 
-**Overall:** Layered pnpm monorepo, one npm package per pipeline stage, wired together by a
-thin CLI. Every package is a pure `@orglet/*` library with an `index.ts` barrel export; there
-is no shared "core" or "common" package — dependencies point strictly downstream
-(`metadata -> schema -> {formula, soql} -> engine -> api -> cli`).
+**Overall:** Layered package architecture with dependency flow: metadata → schema → {formula, soql} → engine → api → cli, plus vendored sigha for formula language parsing.
 
 **Key Characteristics:**
-- Postgres is the only datastore and the only source of truth (no in-memory record cache);
-  each package that touches storage does so through parameterised SQL, never an ORM.
-- Salesforce semantics (order of execution, IDs, describe shapes, error envelopes) are
-  reproduced deliberately and are heavily commented with *why*, e.g.
-  `packages/engine/src/engine.ts:1-7`, `packages/soql/src/compile.ts:1-4`.
-- Anything not implemented is surfaced as an `UNSUPPORTED:<area>` warning rather than silently
-  faked — see the pattern in `packages/metadata/src/build.ts:430-448` and
-  `packages/api/src/routes/misc.ts:66-74` (SOSL).
-- One package, `packages/sigha`, is vendored (not authored in this repo) — see
-  `packages/sigha/VENDOR.md` and the "do not edit by hand" banner in
-  `packages/sigha/src/index.ts:1`.
+- **Single source of truth:** Postgres is the only datastore; no in-memory caches beyond two job-tracking maps (Bulk API 2.0 state).
+- **Salesforce semantics:** Order of execution, ID generation, describe shapes, and error envelopes exactly match documented Salesforce behavior.
+- **Explicit unsupported:** Anything not implemented surfaces as `UNSUPPORTED:<area>` prefix in error messages rather than being faked.
+- **Schema-driven:** All behavior (validation, formulas, triggers) derives from the loaded OrgSchema, not hardcoded logic.
 
 ## Layers
 
-**Metadata (`@orglet/metadata`):**
-- Purpose: turn SFDX source-format XML plus the built-in standard-object baseline into an
-  in-memory `OrgSchema` (objects, fields, picklists, validation rules, record types).
+**@orglet/metadata — Org Schema builder:**
+- Purpose: Parse SFDX source-format XML, load built-in standard-object baseline, merge custom metadata, and build a runtime OrgSchema model.
 - Location: `packages/metadata/src`
-- Contains: XML parsing (`sfdx.ts`), baseline JSON loading and merge logic (`build.ts`), the
-  `OrgSchema` implementation (`schema.ts`), and the type vocabulary (`types.ts`) that every
-  downstream package imports.
-- Depends on: nothing in-repo (only `fast-xml-parser`).
-- Used by: `schema`, `formula`, `soql`, `engine`, `api`, `cli`.
+- Contains:
+  - XML parsing from SFDX projects (`sfdx.ts`)
+  - Baseline loading and merge logic (`build.ts`)
+  - OrgSchema type definitions and builders (`types.ts`, `schema.ts`)
+  - Rollup metadata extraction (`rollup.ts`)
+  - Diagnostic collection for warnings and info messages (`diagnostics.ts`)
+  - Baseline JSON format validation (`xml.ts`)
+- Depends on: `fast-xml-parser` (external), nothing in-repo
+- Used by: schema, formula, soql, engine, api, cli (every component needs OrgSchema as reference data)
+- Public entry: `loadOrgSchema(options)` loads baseline + optional SFDX project, returning `BuildResult` (schema + diagnostics + info + custom metadata definitions)
 
-**Schema (`@orglet/schema`):**
-- Purpose: compile an `OrgSchema` to Postgres DDL, diff/migrate a live database against it,
-  and generate/parse Salesforce-style 18-character record IDs.
+**@orglet/schema — Postgres DDL, migrations, Salesforce ID generation:**
+- Purpose: Compile an OrgSchema to Postgres DDL, diff/migrate a live database, track rollup backfills, manage custom-object key prefixes.
 - Location: `packages/schema/src`
-- Contains: table/column naming (`columns.ts`), DDL planning (`ddl.ts`), migration diffing
-  (`migrate.ts`), ID codec (`ids.ts`), and the thin `pg` pool wrapper (`db.ts`).
-- Depends on: `metadata`.
-- Used by: `soql`, `engine`, `api`, `cli`.
+- Contains:
+  - Salesforce ID generation and key-prefix mapping (`ids.ts`)
+  - Table/column naming conventions for Postgres (`columns.ts`)
+  - DDL planning: table creates, column adds/drops/alters, index/FK specs (`ddl.ts`)
+  - Migration diffing and application (`migrate.ts`)
+  - Rollup field support: SQL generation for recompute + backfill tracking (`rollup.ts`, `backfills.ts`)
+  - Key-prefix reconciliation: merge supplied prefixes with persisted and record-derived assignments (`prefixes.ts`)
+  - Database pool and transaction management (`db.ts`)
+  - Internal _orglet schema setup (prefix/backfill/bulk tables) (`internal.ts`)
+- Depends on: metadata, `pg` (Postgres driver)
+- Used by: soql (for table/column naming), engine (for ID generation, Store, rollup SQL), api (for Bulk API persistence), cli (for migrate + prefix reconciliation)
 
-**Formula (`@orglet/formula`):**
-- Purpose: compile and evaluate Salesforce formula expressions (formula fields, validation
-  rules, default values) against a record context.
+**@orglet/formula — Salesforce formula language compiler & evaluator:**
+- Purpose: Compile formula expressions to a typed AST, evaluate them in record context, handle formula globals ($User, $Organization, $CustomMetadata, $Api).
 - Location: `packages/formula/src`
-- Contains: compilation from source to a `CompiledFormula` bound to `FieldDef`s
-  (`compile.ts`), context-aware evaluation (`evaluate.ts`), and Salesforce<->JS value
-  conversion (`values.ts`, e.g. date/datetime formatting).
-- Depends on: `metadata`, `sigha` (the vendored formula-language front end: lexer, parser,
-  type checker, evaluator).
-- Used by: `engine`.
+- Contains:
+  - Formula compilation: AST building, field reference resolution, type checking (`compile.ts`)
+  - Evaluation: recursive visitor for AST execution in record context (`evaluate.ts`)
+  - Formula globals and field-reference dependencies (`compile.ts`, `globals.test.ts`)
+  - Type coercion (Salesforce string/date/number semantics) (`values.ts`)
+  - Rollup admission: deciding which formula fields can be rollup sources (`rollup-admission.ts`)
+  - Rollup input ordering: topologically sort formulas for backfill (`rollup-inputs.ts`)
+- Depends on: metadata, sigha (vendored formula-language parser: lexer, AST, analyzer)
+- Used by: engine (formula field evaluation, rollup recompute), api (describe/formula globals), cli (formula diagnostic collection)
+- Exports: `compileFormula(source, options)` returns `CompiledFormula` ready to evaluate in context; `evaluateCompiled(compiled, context)` returns `FormulaResult`
 
-**SOQL (`@orglet/soql`):**
-- Purpose: compile SOQL query strings to parameterised Postgres SQL and shape result rows
-  back into nested Salesforce record JSON.
+**@orglet/soql — SOQL query compiler:**
+- Purpose: Compile SOQL query strings to parameterized Postgres SQL, shape result rows to Salesforce format, handle date literals and polymorphic relationships.
 - Location: `packages/soql/src`
-- Contains: the compiler (`compile.ts`, built on `@jetstreamapp/soql-parser-js`), date-literal
-  range math (`dates.ts`), row->record shaping including parent joins, child subqueries and
-  aggregates (`shape.ts`), and SOQL-specific error types (`errors.ts`).
-- Depends on: `metadata`, `schema` (for table/column naming).
-- Used by: `engine`, `api`.
+- Contains:
+  - Query compilation: SOQL AST → SQL WHERE/SELECT/ORDER/LIMIT (`compile.ts`)
+  - Result shaping: convert Postgres rows to Salesforce format (arrays, nested objects, nulls) (`shape.ts`)
+  - Date literal expansion (TODAY, LAST_N_DAYS, etc.) (`dates.ts`)
+  - Polymorphic relationship (typeof) SQL generation (`polymorphic.ts`, `typeof.ts`)
+  - Query error builders (`errors.ts`)
+- Depends on: metadata (for field/relationship lookup), schema (for table/column naming), `@jetstreamapp/soql-parser-js` (SOQL AST parser)
+- Used by: engine (runQuery for data retrieval), api (query routes)
 
-**Engine (`@orglet/engine`):**
-- Purpose: the DML pipeline — insert/update/upsert/delete/undelete implementing Salesforce's
-  documented order of execution, plus query execution and org bootstrap.
+**@orglet/engine — DML pipeline implementing Salesforce order of execution:**
+- Purpose: Execute insert, update, upsert, delete, undelete with Salesforce's documented phase order: beforeTriggers → validation → rollups → formulas → afterTriggers → rollup recompute.
 - Location: `packages/engine/src`
-- Contains: the pipeline itself (`engine.ts`), the hook/trigger interface (`hooks.ts`), a
-  pub/sub change-event bus (`events.ts`), formula-field/compound-field application
-  (`formulas.ts`), parent-record loading for formulas (`parents.ts`), input coercion
-  (`coerce.ts`), row-level Postgres access (`store.ts`), SOQL execution + pagination
-  (`query.ts`), and first-boot seeding (`bootstrap.ts`).
-- Depends on: `metadata`, `schema`, `formula`, `soql`.
-- Used by: `api`, `cli`.
+- Contains:
+  - DML pipeline orchestration, per-record savepoints, allOrNone rollback (`engine.ts`)
+  - Hook/trigger interface for user-supplied executors (`hooks.ts`)
+  - Per-request change event stream (`events.ts`)
+  - Store: low-level row access (load/insert/update/delete) (`store.ts`)
+  - Compiled-formula cache with dependency ordering (`formulas.ts`)
+  - Parent record loading and relationship validation (`parents.ts`)
+  - Rollup recompute logic and child collection (`rollups.ts`)
+  - Auto-number and external ID seed logic (`seed.ts`)
+  - Custom metadata record seeding and seed planning (`seed.ts`)
+  - Value coercion and datetime normalization (`coerce.ts`)
+  - Query execution for SOQL/SOSL inside formulas/triggers (`query.ts`)
+  - Error definitions and factories (`errors.ts`)
+  - Org bootstrap (user/profile/organization/setup records) (`bootstrap.ts`)
+- Depends on: metadata, schema, formula, soql
+- Used by: api (routes call engine for DML), cli (seeding, bootstrap)
+- Public API: `DmlEngine` class (one per running server), methods `save()`, `delete()`, `undelete()`, `query()`, `retrieve()`, `backfillFormulaRollups()`; lifecycle: `beforeTriggers` → per-record pipeline → `afterTriggers` (via `TriggerExecutor` hooks)
 
-**API (`@orglet/api`):**
-- Purpose: the Salesforce-compatible HTTP surface — a Fastify app exposing REST sobjects,
-  SOQL query, describe, composite, Bulk API 2.0, login, and the built-in browser UI.
-- Location: `packages/api/src`, routes under `packages/api/src/routes`, Bulk API internals
-  under `packages/api/src/bulk`, static UI at `packages/api/ui/index.html`.
-- Contains: server bootstrap and cross-cutting hooks (`server.ts`), session/auth
-  (`auth.ts`), describe-endpoint JSON shaping (`describe.ts`), and one route module per
-  resource family.
-- Depends on: `metadata`, `schema`, `formula`, `soql`, `engine`.
-- Used by: `cli`.
+**@orglet/api — Salesforce-compatible HTTP surface:**
+- Purpose: Expose Salesforce REST/SOAP APIs (login, CRUD, query, describe, Bulk API 2.0, limits) so standard clients (jsforce, simple-salesforce) work unchanged.
+- Location: `packages/api/src`
+- Contains:
+  - Server bootstrap and central error handler (`server.ts`)
+  - REST routes by concern: login (SOAP/OAuth) (`routes/login.ts`), sObjects CRUD (`routes/sobjects.ts`), SOQL query (`routes/query.ts`), composite batch (`routes/composite.ts`), Bulk API 2.0 (`routes/bulk.ts`), misc (describe, limits) (`routes/misc.ts`)
+  - Session store and token generation (`auth.ts`)
+  - Describe (globalDescribe, describe sObject) (`describe.ts`)
+  - Bulk API 2.0 implementation:
+    - Job/batch persistence in `_orglet` schema (`bulk/schema.ts`)
+    - CSV parsing and record staging (`bulk/csv.ts`)
+    - Job state machine and completion (`bulk/jobs.ts`)
+    - SOQL restrictions for bulk ingest (`bulk/soql-rules.ts`)
+    - Job storage helpers (`bulk/store.ts`)
+  - Built-in UI (object browser, SOQL console) served from `ui/index.html`
+- Depends on: metadata, schema, formula, soql, engine
+- Routes organized under `/services/data/<version>/` (REST), `/services/Soap/` (login), `/id/` (session + org info), `/services/apexrest/` (stub for external ID testing)
+- HTTP status mapping: 4xx for validation/client errors, 500 for engine failures, error body always JSON array of `{message, errorCode, fields?}`
 
-**CLI (`@orglet/cli`):**
-- Purpose: the `orglet` binary — `up` (load metadata, migrate, bootstrap, serve), `check`
-  (validate an SFDX project without touching Postgres), `reset` (drop the org schema).
-- Location: `packages/cli/src` (`index.ts` is the `#!/usr/bin/env node` entry, `main.ts` holds
-  argument parsing and command implementations).
-- Depends on: `metadata`, `schema`, `engine`, `api`.
-- Used by: end users / `docker-compose.yml` / conformance scripts.
+**@orglet/cli — `orglet` command-line binary:**
+- Purpose: Three commands (up, check, reset) to bootstrap an org locally, validate metadata readiness, or clean up persisted state.
+- Location: `packages/cli/src`
+- Entry point: `index.ts` (shebang wrapper) → `main.ts` (command dispatcher) → `report.ts` (check report generation)
+- Commands:
+  - `orglet up`: Load metadata, reconcile key prefixes, migrate schema, bootstrap org, seed custom metadata, start Fastify API server
+  - `orglet check`: Load metadata, validate admissibility (without database), build diagnostic report, optionally exit non-zero on warnings (--strict)
+  - `orglet reset`: Drop org schema and associated job tracking, optionally drop key-prefix assignments (--drop-prefixes)
+- Report generation (`report.ts`): Pure function building CheckReport (census, verdict, per-area counts, root-cause groups, diagnostics)
+- Depends on: metadata, schema, formula, engine, api
 
-**Sigha (`@orglet/sigha`, vendored):**
-- Purpose: the dependency-free Salesforce formula *language* front end that `@orglet/formula`
-  wraps: lexer/parser/AST (`syntax/`), function and context registry (`registry/`), static
-  type checker (`analysis/`), and the tree-walking evaluator (`engine/`).
+**@orglet/sigha — Salesforce formula language (vendored):**
+- Purpose: Lexer, parser, and semantic analyzer for Salesforce formula expressions; vendored from upstream (github.com/rfaulhaber/sigha) to control formula feature set.
 - Location: `packages/sigha/src`
-- Not edited by hand — resynced from upstream via `scripts/sync-sigha.sh` (see
-  `packages/sigha/VENDOR.md`). Excluded from ESLint's type-checked ruleset
-  (`eslint.config.js:5`) since it is vendored code.
-- Depends on: `decimal.js` only.
-- Used by: `formula`.
+- Not edited in this repo; resynced via `scripts/sync-sigha.sh` tracking a specific Git revision
+- Exports: lexer, parser, analyzer, corpus (test cases)
+- Used by: formula (compile.ts calls sigha to parse and analyze formula ASTs)
+- Tracking: `packages/sigha/VENDOR.md` records repository URL and revision; CI verifies reproducible sync with `scripts/sync-sigha.sh`
 
 ## Data Flow
 
-**SFDX source -> OrgSchema -> Postgres DDL (startup):**
+**Startup Flow (orglet up):**
 
-1. `orglet up --project <dir>` calls `loadOrgSchema()` (`packages/metadata/src/index.ts:18`),
-   which loads the built-in baseline (`packages/metadata/standard/objects/*.json` +
-   `standardValueSets.json` via `loadBaseline()`) and, if `--project` is given, parses the
-   SFDX tree (`readSourceProject()` in `packages/metadata/src/sfdx.ts`).
-2. `buildOrgSchema()` (`packages/metadata/src/build.ts:409`) merges the two: standard objects
-   from the baseline are extended with project overrides (label, sharing model, custom
-   fields, validation rules, record types); files under `objects/*__c/` become new custom
-   objects with a stable, name-ordered key prefix (`customKeyPrefix()`,
-   `packages/metadata/src/build.ts:401`). Anything unsupported (custom metadata types, object
-   history/feed/share objects, unknown standard fields, dangling lookup targets) becomes an
-   `UNSUPPORTED:*` warning instead of an error.
-3. `planSchema`/`planTable` (`packages/schema/src/ddl.ts`) turn every `SObjectDef` into a
-   `TablePlan`: one Postgres table per object (lower-cased API name), one column per stored
-   field, foreign keys for single-target lookups/master-details, and indexes for lookups,
-   unique fields and external IDs.
-4. `migrate()` (`packages/schema/src/migrate.ts`) diffs the plan against the live database and
-   applies `CREATE TABLE`/`ALTER TABLE` statements; destructive changes (dropped
-   columns/tables, narrowed types) require `--force`.
-5. `bootstrapOrg()` (`packages/engine/src/bootstrap.ts`) seeds the Organization row, the
-   System Administrator Profile, the admin User, and one RecordType row per metadata record
-   type — idempotently, keyed on username.
+```
+CLI main()
+  ├─ loadOrgSchema(projectDir)  [metadata]
+  │   ├─ loadBaseline()                    → Baseline JSON
+  │   ├─ readSourceProject(projectDir)     → SFDX XML parsed
+  │   └─ buildOrgSchema(baseline, project) → OrgSchema + diagnostics + customMetadata
+  │
+  ├─ admitFormulaRollups(result)  [formula] → rejects formula rollups if not supported
+  │
+  ├─ reconcileKeyPrefixes(pool, schema)  [schema]
+  │   └─ persists key prefixes to _orglet.key_prefixes
+  │
+  ├─ migrate(pool, schema)  [schema]
+  │   ├─ planSchema(schema) → DDL plan
+  │   └─ applies CREATE TABLE / ALTER TABLE statements
+  │
+  ├─ bootstrapOrg(pool, schema)  [engine]
+  │   └─ inserts User, Profile, Organization, UserRole, RecordType setup records
+  │
+  ├─ planCustomMetadataSeed(schema, customMetadata)  [engine]
+  │   └─ builds CustomMetadataPlan (which __mdt records to insert)
+  │
+  ├─ seedCustomMetadata(pool, schema, plan)  [engine]
+  │   └─ inserts __mdt rows via the DmlEngine (fires triggers)
+  │
+  ├─ prepareBulk(pool, orgSchema)  [api]
+  │   └─ creates/reconciles _orglet.bulk_* tables, marks stale jobs Failed
+  │
+  ├─ new DmlEngine(pool, schema)  [engine]
+  │   └─ initializes Hook/Trigger executors, FormulaRegistry
+  │
+  ├─ engine.backfillFormulaRollups()  [engine]
+  │   └─ loads every object's live rows, evaluates formula rollups, inserts backfill marker into _orglet.rollup_backfills
+  │
+  └─ createApiServer({engine, ...})  [api]
+      └─ app.listen(port)
+```
 
-**REST -> engine DML pipeline (Salesforce order of execution):**
+**Per-Request Flow (DML Save):**
 
-1. A route handler (e.g. `packages/api/src/routes/sobjects.ts`) resolves the session from the
-   bearer token and calls `DmlEngine.insert/update/upsert/delete/undelete`
-   (`packages/engine/src/engine.ts`).
-2. Each call opens one Postgres transaction (`run()`, `engine.ts:207`); every record is
-   prepared (`prepareInsert`/`prepareUpdate`/`prepareId`) and, for update/delete/undelete, its
-   prior row is attached (`attachOld`).
-3. `saveBatch()` (`engine.ts:351`) builds the prospective row (system defaults, audit fields,
-   owner), then runs, in order: **before** hooks (`runHooks`, skipped in import mode) ->
-   Salesforce-derived field rules (`applyPlatformRules`: Opportunity stage
-   probability/forecast/IsClosed/IsWon, Case Status -> IsClosed/ClosedDate) -> required-field
-   checks (`checkRequired`) -> reference/foreign-key checks (`checkReferences`) -> custom
-   validation rules compiled by `@orglet/formula` (`FormulaRegistry.validationRules`) -> the
-   actual `INSERT`/`UPDATE` under a savepoint per record (so one unique-constraint violation
-   fails only that record) -> **after** hooks.
-4. Delete cascades/restricts/nulls child records per `ChildRelationship.cascadeDelete` /
-   `restrictedDelete` (`deleteBatch()`, `engine.ts:526`); undelete reverses it
-   (`undeleteBatch()`).
-5. `allOrNone` rolls the whole transaction back if any record failed; otherwise partial
-   success commits and each record reports its own errors (`run()`).
-6. On commit, per-object/per-type `ChangeEvent`s are published on `DmlEngine.bus`
-   (`packages/engine/src/events.ts`); `ORGLET_EVENTS=stdout` prints them as JSON
-   (`packages/cli/src/main.ts:85`) — the seam future change-event delivery (Kafka/SQS) would
-   subscribe to.
+```
+POST /services/data/v59.0/sobjects/{sObject}
+  │
+  └─ Route handler
+     ├─ loginSession(req)             → Session (user, org, profile)
+     ├─ engine.save(records, options) [engine]
+     │  └─ DmlEngine.save()
+     │     ├─ BEFORE_INSERT triggers
+     │     ├─ Per-record loop (under savepoint):
+     │     │  ├─ coerce values (camelCase → Postgres type)
+     │     │  ├─ lookup validation (if not import mode)
+     │     │  ├─ duplicate check + external ID uniqueness
+     │     │  ├─ required field check
+     │     │  ├─ validation rules (if not import mode)
+     │     │  ├─ formula field evaluation (async for compound fields)
+     │     │  ├─ Store.insert() into Postgres
+     │     │  └─ collect errors, retry next record (partial success)
+     │     │
+     │     ├─ AFTER_INSERT triggers
+     │     ├─ RollupRegistry.recompute() (for parents)
+     │     │  └─ loads parent rows, evaluates rollup formulas, updates parents under savepoint
+     │     │
+     │     └─ publish ChangeEvent[] to ChangeBus
+     │
+     └─ HTTP 201 + SaveResult[] (results: [{id, created}], errors: [{statusCode, message, fields}])
+```
 
-**SOQL -> SQL compiler and result shaping:**
+**Query Flow (SOQL):**
 
-1. `runQuery()` (`packages/engine/src/query.ts:30`) calls `compileSoql()`
-   (`packages/soql/src/compile.ts`), which parses the query with
-   `@jetstreamapp/soql-parser-js`, resolves every field/relationship path against the
-   `OrgSchema`, and emits one parameterised `SELECT` (parent lookups become joins, child
-   relationship subqueries become correlated `json_agg` subqueries) plus a `Shape` describing
-   how to turn rows back into nested records.
-2. `runQuery` wraps the compiled SQL in an outer `SELECT ... LIMIT batchSize+1 OFFSET offset`
-   to implement stateless pagination (Salesforce's `nextRecordsUrl`) without re-running the
-   planner per page; it only pays for a `COUNT(*)` when a page turns out to be non-final.
-3. `shapeRows()` (`packages/soql/src/shape.ts`) turns raw rows into Salesforce JSON
-   (`attributes`, nested parent objects, child arrays). Formula fields selected in the query
-   are computed afterward against the full stored row (`computeFormulaFields`,
-   `packages/engine/src/query.ts:69`) since the compiler cannot push them into SQL.
-4. SOQL errors (`packages/soql/src/errors.ts`) and DML errors
-   (`packages/engine/src/errors.ts`) are both mapped to Salesforce's REST error envelope by
-   the Fastify error handler in `packages/api/src/server.ts:135`.
+```
+GET /services/data/v59.0/query?q=SELECT...
+  │
+  └─ route/query.ts
+     ├─ session(req)
+     ├─ compileSoql(query, {schema})  [soql]
+     │  └─ @jetstreamapp/soql-parser-js parses string → AST
+     │  └─ walks AST, resolves fields, generates parameterized SQL
+     │
+     ├─ engine.query(compiled, options)  [engine]
+     │  └─ Store.query() executes on Postgres
+     │  └─ returns cursor-based result set (locator for nextRecordsUrl)
+     │
+     ├─ shapeRows(rows, compiled.shape)  [soql]
+     │  └─ converts Postgres flattened rows to nested Salesforce format
+     │
+     └─ HTTP 200 + {records: [...], totalSize, done, nextRecordsUrl?}
+```
 
-**Formula evaluation:**
+**Formula Evaluation (during save or rollup recompute):**
 
-1. `compileFormula()` (`packages/formula/src/compile.ts`) parses and type-checks a formula
-   with vendored `sigha` (`analyze`, `parse`), resolves every field/relationship/global
-   (`$User`, `$Profile`, `$Organization`, `$RecordType`) reference to a `FieldDef`, and
-   rewrites `PRIORVALUE`/`ISCHANGED`/`ISNEW` into synthetic references so the evaluator never
-   needs special-casing for record state.
-2. `evaluateCompiled()` (`packages/formula/src/evaluate.ts`) runs the compiled AST against an
-   `EvaluationContext` (`record`, optional `old`, `isNew`, and the loaded globals).
-3. `FormulaRegistry` (`packages/engine/src/formulas.ts`) compiles every formula field, default
-   value and validation rule once per `OrgSchema` and exposes `parentPaths()` so the engine
-   knows which parent records to preload (`loadParents`, `packages/engine/src/parents.ts`)
-   before evaluating.
-
-**Hook / trigger interface:**
-
-- `TriggerExecutor.run(ctx: TriggerContext)` (`packages/engine/src/hooks.ts`) is the single
-  extension point around every DML event (`before`/`after` x `insert`/`update`/`delete`/
-  `undelete`). `DmlEngine` is constructed with a list of executors
-  (`EngineOptions.executors`, `engine.ts:21`) and calls all of them for every batch
-  (`runHooks()`, `engine.ts:580`); `before` hooks may mutate `records` in place, and
-  `addError(index, message, field)` fails an individual record with
-  `FIELD_CUSTOM_VALIDATION_EXCEPTION`. This is the documented seam where Apex triggers and
-  record-triggered Flow would plug in later; nothing in this repo implements Apex.
-
-**Import mode:**
-
-- `orglet up --import` (or `EngineOptions.importMode`) is data-migration mode: `Id` and audit
-  fields on the input are kept as-is, Postgres foreign-key enforcement is disabled for the
-  session (`SET LOCAL session_replication_role = replica`, `engine.ts:215`) so parents and
-  children can load in any order, and hooks/validation rules/lookup checks are skipped
-  (`saveBatch()` gates each of these on `!this.importMode`). It is a deliberate "automation
-  off" data-load mode, not a shortcut in the normal path.
-
-**Bulk API 2.0 jobs:**
-
-1. Ingest and query jobs are in-memory only (`JobStore`, `packages/api/src/bulk/jobs.ts`),
-   scoped per server instance (a fresh store per `registerBulkRoutes()` call) — there is no
-   persistence or background worker.
-2. Everything happens synchronously inside the triggering request: ingest data is parsed from
-   CSV (`packages/api/src/bulk/csv.ts`) and run through the same `DmlEngine` batch operations
-   as the REST surface, in `CHUNK_SIZE = 200` batches (`packages/api/src/routes/bulk.ts:18`);
-   `state` transitions straight from `Open` to `JobComplete`/`Failed` on the
-   `UploadComplete` call. Query jobs run `runQuery()` eagerly and cache the full CSV result for
-   offset-paged download.
-3. Success/failure CSVs follow the documented shape (`sf__Id, sf__Created, ...` /
-   `sf__Id, sf__Error, ...`).
+```
+Field value is formula-computed
+  │
+  └─ FormulaRegistry.apply(record, schema)  [engine/formulas.ts]
+     ├─ compiled = FormulaRegistry.get(field)  ← cached CompiledFormula
+     │
+     ├─ context = EvaluationContext
+     │  ├─ user, organization, profile, setup globals (loaded once per save)
+     │  ├─ $CustomMetadata lookup (against CustomMetadataPlan)
+     │  └─ $Api session + base URL (if request context)
+     │
+     └─ evaluateCompiled(compiled, context)  [formula]
+        ├─ recursive visitor on AST
+        ├─ resolves field references from record data
+        ├─ applies Salesforce type coercion
+        └─ returns FormulaResult (value or error)
+```
 
 **State Management:**
-- No application-level state beyond Postgres itself and the two in-memory maps for Bulk API
-  jobs and query locators (`ApiContext.locators`, `packages/api/src/server.ts:39`, used for
-  `nextRecordsUrl`) and the session store (`SessionStore`, `packages/api/src/auth.ts`).
-  Nothing is cached across requests; every read goes back to Postgres.
+
+- **Postgres tables:** One table per sObject, plus internal `_orglet` schema (key_prefixes, bulk_jobs, bulk_batches, bulk_staged_rows, rollup_backfills)
+- **Per-request** Globals (user, organization, profile, role, custom metadata): loaded once and reused in formula evaluation for the entire batch
+- **Per-session** ChangeBus: collects change events, published once per commit
+- **Per-server** FormulaRegistry: caches compiled formulas across requests; cleared on shutdown
+- **In-transaction**: `session_replication_role = replica` set during import mode to disable foreign-key enforcement
 
 ## Key Abstractions
 
-**`OrgSchema` / `OrgSchemaImpl`:**
-- Purpose: the org's metadata model — every `SObjectDef`, its `FieldDef`s, picklist value
-  sets, and precomputed child-relationship index.
-- Examples: `packages/metadata/src/types.ts` (interfaces), `packages/metadata/src/schema.ts`
-  (implementation), export surface `packages/metadata/src/index.ts`.
-- Pattern: built once at startup (`loadOrgSchema`), then passed by reference (never mutated)
-  into `schema`, `soql`, `formula`, `engine`, `api`. `getObject`/`getField` are lower-cased
-  lookups; `childRelationships()` is precomputed in the constructor.
+**OrgSchema:**
+- Purpose: Runtime model of the org's metadata — every SObjectDef, FieldDef, PicklistDef, ValidationRuleDef, FormulaFailure, custom-metadata definitions.
+- Examples: `packages/metadata/src/types.ts` (interfaces), `packages/metadata/src/schema.ts` (loader and builder)
+- Pattern: Built once at startup (immutable), passed by reference through every layer; never mutated.
+- Provides: `schema.getObject(name)`, `schema.list()`, `schema.objects` (Map), `schema.labels` (Set)
 
-**`DmlEngine`:**
-- Purpose: the single choke point for all writes and the source of the `Store`/`FormulaRegistry`/
-  `ChangeBus` instances a running org needs.
-- Examples: `packages/engine/src/engine.ts`, exported via `packages/engine/src/index.ts`.
-- Pattern: one instance per running server (constructed once in `packages/cli/src/main.ts:81`),
-  holding a `pg` `Pool`, the `OrgSchema`, and the configured `TriggerExecutor[]`.
+**DmlEngine:**
+- Purpose: Single choke point for all writes; orchestrates order of execution, manages Store and FormulaRegistry, collects changes.
+- Examples: `packages/engine/src/engine.ts`
+- Pattern: One instance per running server, attached to ApiContext; methods called by routes and CLI commands
+- Exposes: `save()`, `delete()`, `undelete()`, `query()`, `retrieve()`, `backfillFormulaRollups()`, `transaction(callback)`, `bus` (ChangeBus)
 
-**`CompiledFormula` / `FormulaRegistry`:**
-- Purpose: separates the expensive step (parse + type-check + reference resolution) from the
-  cheap step (evaluate against a record), and centralizes "which formulas exist on this
-  schema" so the engine and formula default-value/validation-rule logic share one compiled
-  set.
-- Examples: `packages/formula/src/compile.ts`, `packages/engine/src/formulas.ts`.
+**CompiledFormula:**
+- Purpose: Separates expensive parsing + type-checking (formula compile) from evaluation (done per-record).
+- Examples: `packages/formula/src/compile.ts`
+- Pattern: `compileFormula(source, {schema})` → AST + field references + errors; then `evaluateCompiled(compiled, context)` → value or error, reusable across records
+- Cached in FormulaRegistry per-field for the lifetime of the server
 
-**`CompiledQuery` / `Shape`:**
-- Purpose: separates "SOQL -> SQL" (pure, testable in `packages/soql/src/compile.test.ts`)
-  from "rows -> Salesforce JSON" (`shapeRows`), and carries enough metadata (`computed`,
-  `fetchesAllColumns`) for the engine to know it must post-process formula fields.
-- Examples: `packages/soql/src/compile.ts`, `packages/soql/src/shape.ts`.
+**Store:**
+- Purpose: Low-level Postgres row access: knows column naming, virtual fields, soft-delete, but nothing about validation.
+- Examples: `packages/engine/src/store.ts`, used by DmlEngine internals
+- Pattern: Methods `loadByIds()`, `insert()`, `update()`, `delete()`, `findByField()`, `existingIds()`, `liveRows()`
+- Encapsulates: Table naming (via columnName), schema quoting, IsDeleted filtering
 
-**`TriggerExecutor` / `TriggerContext`:**
-- Purpose: the only way code outside `DmlEngine` observes or blocks a DML operation.
-- Examples: `packages/engine/src/hooks.ts`.
-- Pattern: list of executors run in registration order for every batch; `before` executors
-  mutate `records` in place, any executor can call `ctx.addError()` to fail individual rows.
+**FormulaRegistry:**
+- Purpose: Caches compiled formulas, builds dependency graph for rollup ordering, holds global values (user, org, etc.).
+- Examples: `packages/engine/src/formulas.ts`
+- Pattern: Constructed once, holds Map<fieldKey, CompiledFormula>; provides `apply()` and `applyFormulaFields()` for evaluation
+- Lifecycle: Holds references across all DML calls until server shutdown
 
-**`Work` (internal to `DmlEngine`):**
-- Purpose: per-record pipeline state (index, accumulated errors, `changes` vs. `next` vs.
-  `old`) threaded through prepare -> hooks -> validate -> write -> hooks.
-- Examples: `packages/engine/src/engine.ts:38-49` (not exported; internal only).
+**TriggerExecutor / Hook:**
+- Purpose: Interface for external code (future Apex/Flow emulator) to observe or block DML operations.
+- Examples: `packages/engine/src/hooks.ts` (interfaces), not yet implemented in core
+- Pattern: List of executors run in registration order for every batch; `before` executors block with errors, `after` observers publish side effects
+- Per-record state: index, accumulated errors, changes (client values), old (previous row), next (final new row to write)
+
+**RollupRegistry:**
+- Purpose: Tracks rollup parent-child relationships, collects affected parents during DML, recomputes their rollup fields after the batch completes.
+- Examples: `packages/engine/src/rollups.ts`
+- Pattern: Built from schema at engine startup; `affected(records)` collects parent IDs, `recompute(affectedIds)` loads parents and updates their rollup fields
+- Circular dependencies: Prevented by depth-order SQL (no infinite loops)
 
 ## Entry Points
 
-**CLI `orglet up` / `check` / `reset`:**
-- Location: `packages/cli/src/index.ts` (shebang wrapper) -> `packages/cli/src/main.ts`
-  (`main(argv)`).
-- Triggers: invoked as the `orglet` bin (`packages/cli/package.json` `bin.orglet`) or directly
-  via `node packages/cli/dist/index.js up --project <dir>`.
-- Responsibilities: `up` loads metadata, connects to Postgres, migrates the schema, bootstraps
-  the org, constructs `DmlEngine`, starts the Fastify server and blocks (`return -1` from
-  `main.ts:up()` signals "keep running" to `index.ts`); `check` validates an SFDX project
-  without touching Postgres; `reset` drops the org's Postgres schema.
+**CLI Binary:**
+- Location: `packages/cli/src/index.ts` (shebang) → `packages/cli/src/main.ts` (dispatcher)
+- Triggers: Invoked as `orglet up|check|reset` or directly via `node packages/cli/dist/index.js`
+- Responsibilities: Argument parsing, common setup (DB connection, org schema), delegating to command handlers
 
-**Fastify server (`createApiServer`):**
-- Location: `packages/api/src/server.ts:79`.
-- Triggers: called once by `orglet up` (`packages/cli/src/main.ts:88`); also called directly
-  by tests (`packages/api/src/api.test.ts`, `bulk.test.ts`) and conformance scripts.
-- Responsibilities: registers global content-type parsers (permissive JSON, raw XML/SOAP),
-  the bearer-auth `onRequest` hook for every `/services/data/v*` and `/id/*` path, the
-  `Sforce-Limit-Info` response header, the built-in UI route, the 404/error handlers that
-  produce Salesforce's error envelope, and all route modules
-  (`registerLoginRoutes`/`registerSobjectRoutes`/`registerQueryRoutes`/
-  `registerCompositeRoutes`/`registerBulkRoutes`/`registerMiscRoutes`).
+**API Server:**
+- Location: `packages/api/src/server.ts:87` (createApiServer function)
+- Triggers: Called once by `orglet up` (packages/cli/src/main.ts:199); can be instantiated directly for integration tests
+- Responsibilities: Fastify app setup, route registration, global error handler, content-type negotiation, authentication hook
 
-**Built-in page at `/`:**
-- Location: served from `packages/api/src/server.ts:145-146`, markup/JS in
-  `packages/api/ui/index.html` (single self-contained file, no build step, shipped via the
-  `ui` entry in `packages/api/package.json` `files`).
-- Responsibilities: an object browser and ad-hoc SOQL console against the running org, talking
-  to the same `/services/data/*` REST endpoints external clients use.
+**Built-in UI:**
+- Location: `packages/api/src/server.ts:145-146`, markup/JS in `packages/api/ui/index.html`
+- Serves: Single-page HTML/JS (242 lines, no framework, no build step)
+- Provides: Object browser (describe), ad-hoc SOQL console, token copy-to-clipboard
+- API: Calls server's /services/data and /id endpoints, parses JSON responses
 
 ## Error Handling
 
-**Strategy:** Every layer defines its own typed error class/constructor set, and only the
-Fastify error handler (`packages/api/src/server.ts:135`) knows how to turn them into HTTP +
-Salesforce's JSON error-array envelope (`[{ message, errorCode, fields? }]`).
+**Error Classes and HTTP Mapping:**
 
-**Patterns:**
-- `DmlError` + `Errors.*` factories (`packages/engine/src/errors.ts`) carry an `httpStatus`,
-  a Salesforce `statusCode` (e.g. `REQUIRED_FIELD_MISSING`, `INVALID_CROSS_REFERENCE_KEY`,
-  `FIELD_CUSTOM_VALIDATION_EXCEPTION`) and optional `fields`. Per-record DML failures are
-  collected as `SaveError[]` on a `SaveResult` rather than thrown, so one bad record in a
-  batch doesn't abort the others (`saveErrorsToApi()` /`statusFor()` in
-  `packages/api/src/routes/sobjects.ts`).
-- `SoqlError` + helpers (`malformed`, `invalidField`, `invalidType`, `invalidRelationship`,
-  `unsupported` in `packages/soql/src/errors.ts`) are thrown during compilation and caught by
-  the same top-level handler.
-- Unsupported-but-tolerated input (metadata the parser can't represent, SOSL search) logs an
-  `UNSUPPORTED:*` warning once and degrades gracefully instead of throwing — see
-  `ApiContext.unsupported` (`packages/api/src/server.ts:37`) and
-  `packages/api/src/routes/misc.ts:66-74`.
-- Postgres unique-constraint violations (`23505`) are caught per-record inside a savepoint and
-  translated back into a Salesforce `DUPLICATE_VALUE` error with the conflicting field name
-  (`duplicateError()`, `packages/engine/src/engine.ts:514`); every other Postgres error
-  propagates and rolls back the whole transaction.
+| Error Class | HTTP Status | Usage | Example |
+|---|---|---|---|
+| `DmlError` | error.httpStatus (401/403/400/409/404) | Record-level or request-level validation failures | Unknown sObject, required field missing, duplicate external ID |
+| `SoqlError` | 400 (always) | Query compilation/execution failures | Invalid SOQL syntax, unknown field, invalid relationship |
+| `FormulaCompileError` | Wrapped by DML/Soql error | Formula parsing or type-check failure | Invalid formula syntax, unknown global variable |
+| `UnsupportedMetadataError` | Wrapped in diagnostic (cli check) or logged (api) | Unsupported metadata type during parse | Custom Permission, Platform Event |
+
+**Error Shape (per-record SaveError):**
+
+```typescript
+{
+  statusCode: "REQUIRED_FIELD_MISSING" | "INVALID_TYPE_ON_FIELD_IN_RECORD" | ...,
+  message: string,
+  fields: string[]
+}
+```
+
+Real Salesforce StatusCode enum values only; never invented. Built via `Errors.*` factory (e.g., `Errors.requiredMissing(fields)`).
+
+**UNSUPPORTED Marker:**
+
+Prefix on *message text* (not statusCode) when the system recognizes a Salesforce feature it deliberately does not implement, vs. a genuine bug.
+
+Format: `UNSUPPORTED:<kebab-or-single-word-area> <explanation>`
+
+Examples in use: `UNSUPPORTED:formula-global`, `UNSUPPORTED:field-type`, `UNSUPPORTED:composite-rollback`, `UNSUPPORTED:schema-drop`
+
+Logged at three severity levels:
+1. Per-record warning (save may continue): `console.warn()`
+2. Per-request warning (operation may complete): `req.log.warn()`
+3. Metadata-level diagnostic (collected into check report): `formatDiagnostic()` → `warning:` prefix
 
 ## Cross-Cutting Concerns
 
-**Logging:** Fastify's built-in logger, enabled via `ApiOptions.logger` (wired to `!quiet` in
-`packages/cli/src/main.ts:88`). Structured change events are optionally printed as JSON to
-stdout when `ORGLET_EVENTS=stdout` (`packages/cli/src/main.ts:85`). No external log/metrics
-sink.
+**Logging:**
 
-**Validation:** Layered, matching Salesforce's own order — schema-level (required/type
-coercion in `packages/engine/src/coerce.ts`), referential (`checkReferences`), then
-declarative validation rules compiled by `@orglet/formula` and run per-record
-(`packages/engine/src/engine.ts:387-401`). All three run inside the same transaction as the
-write and can each add per-record errors.
+- `console.log`: Normal progress output (gated by `--quiet` flag)
+- `console.warn`: Every warning string including `UNSUPPORTED:*` ones (never gated)
+- `console.error`: Fatal startup failures (DB unreachable, config invalid) followed by hint
+- `req.log.warn()` (Fastify pino): Per-request expected gaps (composite rollback limitation, SOSL stub)
+- Optional `ORGLET_EVENTS=stdout`: One JSON object per line when set, format `{event: "change", ...changeEvent}`
 
-**Authentication:** `SessionStore` (`packages/api/src/auth.ts`) issues and resolves bearer
-tokens for both SOAP login (`/services/Soap/u/*`) and OAuth password grant
-(`/services/oauth2/token`). Two modes: `permissive` (any password accepted, default for local
-dev) and `list` (fixed `username:password` pairs from `orglet up --users`). Every
-`/services/data/v*` and `/id/*` request is gated by the `onRequest` hook in
-`packages/api/src/server.ts:106-120`, which attaches `req.login` and the resolved API version.
+**Validation:**
+
+- Lookup target validation: `matchLookupTarget()` against schema (before insert/update, skipped in import mode)
+- Uniqueness: External ID fields checked via `Store.findByField()` before insert/update
+- Required fields: `Errors.requiredMissing()` for any non-null, non-auto field without a value
+- Validation rules: Evaluated as formulas after coercion, field-level and cross-field rules run in sequence
+
+**Authentication:**
+
+- SOAP login: Parse username/password, issue session token (stored in SessionStore)
+- OAuth2 (password grant): Same token issuance, format compatible with jsforce
+- Bearer token: Extracted from `Authorization: Bearer <token>` header
+- Session TTL: Tokens persist for the lifetime of the server (no expiration in v1.0)
+- Import mode: Special session marker allows Ids and audit fields to be written; disables lookups, validation, hooks
+
+---
+
+*Architecture analysis: 2026-11-03 (v1.1 tag, main branch)*
