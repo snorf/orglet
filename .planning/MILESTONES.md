@@ -1,5 +1,62 @@
 # Milestones
 
+## v1.1 real-org fidelity (Shipped: 2026-11-01)
+
+**Delivered:** A large, real enterprise-org retrieve loads with every remaining warning inside a documented
+exclusion category, a public enterprise-shaped fixture loads clean in CI, and a populated v1.0 database
+upgrades to the new generated baseline without data loss.
+
+**Phases completed:** 7 phases (8-14), 62 plans, 139 tasks
+**Timeline:** 2026-10-12 → 2026-11-01 (20 days), 300 commits, PRs #11–#17 all merged with green CI
+**Code:** 607 files changed (+145 908 / −4 082, mostly generated baseline JSON and fixtures); ~10 900 lines of
+TypeScript in `packages/*/src` (excl. vendored sigha and tests) plus ~2 100 in `scripts/`; 922 tests in 55
+files on pglite, 924 on Postgres 16
+
+**Key accomplishments:**
+
+1. Upgrade safety net: a populated v1.0 database upgrades to the new baseline with no data loss on pglite and
+   Postgres 16; a foreign key that rows would violate is skipped with `UNSUPPORTED:schema-fk`; a second
+   `orglet up` is silent; standard objects may carry a `null` key prefix; structured diagnostics exist beside
+   the unchanged warning strings (Phase 8).
+2. The standard-object baseline is generator output (`scripts/gen-baseline`, CI drift gate): the 35 v1.0
+   objects grew from 659 to 2 536 fields with v1.0 fields byte-identical, 135 feature-gated fields tagged, a
+   MasterDetail refusal and v1-vs-v2 diff gate, per-object `ownerTargets` so plain `Owner.X` compiles; 18
+   business objects (Quote, Order, OrderItem, ContentVersion, ...) with DE-confirmed prefixes and documented
+   DML flags; `orglet check` separates referenced from unreferenced unmodelled objects (Phases 9-10).
+3. Custom metadata types load as read-only `__mdt` objects with their `customMetadata/` records seeded under
+   hash-derived stable Ids, `MetadataRelationship` fields load, List/Hierarchy custom settings and custom
+   labels load; new `conformance/cmdt-check` legs on both SDKs (Phase 11).
+4. The vendored sigha is resynced to a pinned fork commit that lexes unary `!` and `Relationship:Object.Field`;
+   `Owner:User.Email` evaluates against the typed target; new globals `$UserRole`, `$Api`, `$Label`,
+   `$CustomMetadata` and hierarchy `$Setup`; every compiled formula carries a dependency list (Phase 12).
+5. Roll-ups over same-object, non-volatile formula fields: Salesforce's admission rules enforced by
+   `admitFormulaRollups`, recompute over TypeScript-evaluated child values bound as an `unnest` derived table,
+   crash-safe one-time backfill behind `_orglet.rollup_backfills` (Phase 13).
+6. `orglet check` is a report: census, verdict, per-area table and root-cause groups, `--summary` redacted to
+   counts, `--json` for tooling; the public fixture `examples/enterprise` (63 objects, 3 742 fields) passes
+   `check --strict` and 11/11 conformance legs in CI beside acme 10/10; the author's DE retrieve: exit 0,
+   0 warnings; the large real-org retrieve: 94 warnings, all counted exclusions (Phase 14).
+
+**Known gaps (accepted as tech debt, see `milestones/v1.1-MILESTONE-AUDIT.md`):**
+
+- Upstream sigha PRs (`feat/unary-bang`, `feat/polymorphic-colon-ref`) are pushed to `snorf/sigha` but not
+  opened; orglet is pinned to the fork's `integration/phase-12`; re-pin is a quick task once they merge.
+- ACC2-03 met with counted exclusions rather than literal zero: 94 warnings on the large retrieve (platform
+  events, `$Permission`, unretrieved managed package, custom-metadata records of unretrieved types, incomplete
+  retrieve, accepted standard fields).
+- ContentVersion.ContentDocumentId nullable by override until file upload is done properly (999.10); formula
+  fields through parent relationships in SOQL unsupported (999.12); `$Permission` and List `$Setup` stay
+  `UNSUPPORTED:formula-global`.
+- Formula roll-up recompute is O(children of affected parents) with no cap; the backfill reads all live child
+  rows into memory.
+- Bookkeeping: 08-VERIFICATION.md left at `human_needed`, 11-VALIDATION.md never refreshed after execution;
+  41 pre-existing tsc errors in test files outside the CI gate; CI job `conformance` still not a required
+  check on `main`.
+
+**Archive:** `milestones/v1.1-ROADMAP.md`, `milestones/v1.1-REQUIREMENTS.md`, `milestones/v1.1-MILESTONE-AUDIT.md`
+
+---
+
 ## v1.0 hardening (Shipped: 2026-10-12)
 
 **Delivered:** A real Developer Edition retrieve loads with zero `UNSUPPORTED` warnings, the project
