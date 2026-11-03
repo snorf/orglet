@@ -66,7 +66,18 @@ Phase order, one line each: 15 first because the fixture cannot hold files and t
   3. A base64 `VersionData` insert yields a server-computed MD5 `Checksum`, `ContentSize`, `FileType` and `FileExtension`; `GET .../ContentVersion/{id}/VersionData` streams the exact bytes with `Content-Type` and `Content-Length`; records and SOQL carry the URL, never bytes; a multipart body answers `UNSUPPORTED:content-multipart`
   4. A ContentDocumentLink can attach a file to any keyed record, and SOQL on it without an `Id`, `ContentDocumentId` or `LinkedEntityId` filter is rejected with `MALFORMED_QUERY`
   5. Deleting a ContentDocument soft-deletes its versions and links and undelete restores them together; a missing blob answers 404 plus a diagnostic and a checksum mismatch is reported; `Attachment.Body` and `Document.Body` still answer `UNSUPPORTED:blob-field`
-**Plans**: TBD
+**Plans**: 10 plans in 6 waves
+Plans:
+- [ ] 15-01-PLAN.md — Base64 FieldType end to end (bytea, describe, coercion with the D-05 cap, Store exclusion)
+- [ ] 15-02-PLAN.md — BlobStore interface, InlineBlobStore, blobKey, sourced FileType/Content-Type table
+- [ ] 15-03-PLAN.md — Baseline regeneration: ContentDocumentLink, VersionData as Base64, required ContentDocumentId, cascades, blob-field area
+- [ ] 15-04-PLAN.md — LinkedEntityId expanded to every custom object at load time
+- [ ] 15-05-PLAN.md — NOT NULL for ContentVersion.ContentDocumentId, migrate schema-notnull reconcile, v1.1 upgrade test
+- [ ] 15-06-PLAN.md — Engine files step: document auto-create, versions, mirror, auto-link, blob put
+- [ ] 15-07-PLAN.md — Delete/undelete cascade (set-null fix), update mirror, ContentDocumentLink DML contract
+- [ ] 15-08-PLAN.md — SOQL: blob URL instead of bytes, ContentDocumentLink mandatory filter
+- [ ] 15-09-PLAN.md — REST: VersionData download with MD5 check, URLs in records, multipart and 413 refusals, README
+- [ ] 15-10-PLAN.md — files-check SDK conformance legs and the Postgres/conformance phase gate
 **Notes**: Regenerating the baseline must keep `baseline-gen-check` and the v1-vs-v2 diff gate green; include an upgrade test on a populated v1.1 database. Open: archive orgs keep `ContentDocumentId` nullable versus loader-synthesised stub documents (PITFALLS P18).
 
 ### Phase 16: Archive Fixture Generator
