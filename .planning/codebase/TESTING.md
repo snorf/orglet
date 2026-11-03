@@ -1,181 +1,284 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-09-29
+**Analysis Date:** 2026-11-03
 
 ## Test Framework
 
-**Runner:**
-- Vitest 3.2 (`vitest` in root `package.json` devDependencies). Config: `vitest.config.ts` (repo root — there is no per-package vitest config).
-- `environment: "node"`, `passWithNoTests: true`, `testTimeout: 30_000`, `hookTimeout: 60_000` — the long timeouts exist because Postgres schema migration in `beforeAll` can take several seconds per file.
-- Path aliases for source-level imports: `@orglet/<name>` resolves to `packages/<name>/src/index.ts` (not `dist`), so `pnpm test` never requires a prior `pnpm build`.
+**Runner & Config:**
+- Vitest 3.2.7 (root devDependency `^3.2.0`).
+- Single workspace-wide config: `vitest.config.ts` at the root.
+- Test environment: `node` (no browser).
+- Configuration:
+  ```typescript
+  test: {
+    include: ["packages/*/src/**/*.test.ts", "packages/*/test/**/*.test.ts"],
+    environment: "node",
+    passWithNoTests: true,
+    testTimeout: 30_000,        // Schema migrations against Postgres in Docker take seconds
+    hookTimeout: 60_000,        // beforeAll/afterAll for DB setup
+    maxWorkers: 3,              // When ORGLET_DATABASE_URL set (real Postgres); pglite is per-file
+  }
+  ```
 
-**Assertion Library:**
-- Vitest's built-in `expect` (Chai-compatible). No separate assertion library.
+**Assertions:**
+- `expect` from vitest (no separate assertion library).
+- Run command: `pnpm test` (workspace root).
 
-**Run Commands:**
-```bash
-pnpm test              # vitest run — all packages, single pass, no watch
-pnpm test:watch        # vitest — watch mode
-```
-There is no `pnpm test:coverage` script and no coverage tool configured (no `@vitest/coverage-*` dependency) — coverage is not measured or enforced.
-
-**Database backend:** `pnpm test` needs no Docker. Every Postgres-backed test file calls `openTestDb()` from `test/db.ts` in `beforeAll`: with `ORGLET_DATABASE_URL` unset it starts its own in-memory pglite (`@electric-sql/pglite` 0.5.8) behind `@electric-sql/pglite-socket` 0.2.11 on a free port and hands back an ordinary `pg` pool; with `ORGLET_DATABASE_URL` set it uses that Postgres instead (e.g. `pnpm db:up` then `ORGLET_DATABASE_URL=postgres://orglet:orglet@localhost:5433/orglet pnpm test`). `databaseUrlFromEnv()` has no default any more; the `localhost:5433` fallback lives only in the CLI (`packages/cli/src/main.ts`). CI runs the suite both ways (jobs `test-pglite` and `test-postgres`).
+**Type Checking for Tests:**
+- `tsconfig.test.json` (non-composite, `noEmit: true`).
+- `@orglet/*` path alias to each package's `src/index.ts` for fast source-time imports without a build step.
+- Includes: `packages/*/src/**/*.test.ts`, `packages/*/test/**/*.ts`, `test/**/*.ts`, `vitest.config.ts`, `eslint.config.js`, `scripts/**/*.ts`.
 
 ## Test File Organization
 
-**Location:** co-located with the source they test, inside each package's `src/`, never a separate `test/` directory (though `tsconfig.test.json`'s `include` also allows `packages/*/test/**/*.ts` for future use).
+**Locations:**
+- **Co-located:** `packages/*/src/**/*.test.ts` (primary pattern) — test file sits next to the module it tests, e.g. `packages/engine/src/engine.test.ts`, `packages/schema/src/migrate.test.ts`.
+- **Shared test utilities:** `packages/*/test/**/*.test.ts` — when a package has reusable fixtures or helpers (currently only `test/db.ts` at the root, which is auto-included in `vitest.config.ts`).
 
-**Naming:** `<name>.test.ts` next to `<name>.ts`, e.g. `packages/engine/src/engine.test.ts` beside `packages/engine/src/engine.ts`, `packages/soql/src/compile.test.ts` beside `packages/soql/src/compile.ts`. `vitest.config.ts` globs `packages/*/src/**/*.test.ts` and `packages/*/src/test/**/*.test.ts`.
+**File Counts:**
+- 55 test files across the codebase.
+- 841 `it(...)`/`test(...)` calls across those files (counted 2026-11-03; vitest reports ~920 cases including parameterised ones).
+- No test files are marked `it.skip`, `it.fails`, or `it.todo` (one historical reference in a comment).
 
-**All test files in the repo (13), with line counts and DB dependency:**
+**Naming Convention:**
+- Descriptive test names that read as assertions about business logic, not function names.
+- Good: `"selects canonical columns with the soft-delete filter and case-insensitive object names"` (tells you what invariant is being checked).
+- Bad: `"compiles a query"` (just repeats the function name).
 
-| File | Lines | Needs Postgres |
-|---|---|---|
-| `packages/schema/src/ids.test.ts` | 49 | no |
-| `packages/sigha/src/engine/org-conformance.test.ts` | 72 | no |
-| `packages/metadata/src/sfdx.test.ts` | 83 | no |
-| `packages/schema/src/pglite-compat.test.ts` | 95 | **yes** |
-| `packages/formula/src/formula.test.ts` | 117 | no |
-| `packages/schema/src/migrate.test.ts` | 119 | **yes** |
-| `packages/engine/src/query.test.ts` | 128 | **yes** |
-| `packages/soql/src/compile.test.ts` | 138 | no |
-| `packages/metadata/src/build.test.ts` | 160 | no |
-| `packages/sigha/src/engine/conformance.test.ts` | 208 | no |
-| `packages/engine/src/engine.test.ts` | 247 | **yes** |
-| `packages/api/src/bulk.test.ts` | 248 | **yes** |
-| `packages/api/src/api.test.ts` | 304 | **yes** |
+## Test Backend: pglite vs. Postgres
 
-`packages/cli` has `src/main.test.ts` (check output, `--strict` exit codes, usage); `up`/`reset` database paths are covered by schema/API tests and the conformance runs.
+**Default: Embedded pglite (no Docker required)**
+- When `ORGLET_DATABASE_URL` is **not** set, each test file gets its own in-memory pglite instance via `openTestDb()`.
+- Accessed through the `pg` client pool (so tests use the same interface as production).
+- Backend implementation: `@electric-sql/pglite` + `@electric-sql/pglite-socket` (single query queue per server to avoid interleaved-transaction deadlocks).
+- Per-file isolation: pglite runs one instance per test file, never shared, so no cross-test pollution.
+
+**Real Postgres (CI only)**
+- When `ORGLET_DATABASE_URL` is set, all tests use a real Postgres server.
+- Required for matrix conformance tests (`.github/workflows/ci.yml` `conformance` job).
+- CI services: `postgres:16-alpine` with health checks.
+
+**Worker Configuration:**
+- `maxWorkers: 3` only when `ORGLET_DATABASE_URL` is set (real Postgres).
+- Default (pglite): unlimited workers per test file.
+- Rationale: A v2 org schema holds ~500 relations and ~190 foreign keys, all created in one transaction (~700 locks). Many files migrating schemas in parallel exhaust Postgres's lock table. pglite is per-file, so no conflict.
+
+**Switching Backends:**
+- Implementation in `test/db.ts`:
+  - `usingPglite` constant: `true` when `databaseUrlFromEnv() === undefined`.
+  - `openTestDb()` returns a `TestDb` with `pool` and `close()` callback.
+  - Postgres-only tests skip conditionally with vitest's `skip(usingPglite, "Postgres-only: ...")` inside the test body (e.g. `packages/schema/src/prefixes.test.ts`, `packages/schema/src/pglite-compat.test.ts`); nothing is skipped statically.
+
+## Shared Test Utilities
+
+**`test/db.ts` — Test Database Factory:**
+- Provides `openTestDb(): Promise<TestDb>` — returns pool + close callback.
+- Handles the pglite-socket workaround (extended-protocol error filter) to work around a pglite bug present in ≤0.5.10/pglite-socket ≤0.2.13.
+  - Issue: When an extended-protocol message fails, pglite sends `ErrorResponse + ReadyForQuery` immediately instead of waiting for a `Sync`, causing the client to think the query is done and send the next query, leaving the protocol desynchronized.
+  - Solution: Install a filter on the pglite-socket server to drop premature `ReadyForQuery` messages until the client's `Sync`.
+  - Removable once upstream fix (pglite PR #1144) is released.
+- Export: `usingPglite: boolean` for conditional test skipping.
+
+**Test Fixtures:**
+- Paths to example projects: `const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url))`.
+- Used in every Postgres-backed test file to load schema: `await loadOrgSchema({ projectDir: ACME })`.
 
 ## Test Structure
 
-**Suite organization** — a fixture-driven `describe`/`it` structure, schema loaded once per file:
+**Setup & Teardown:**
 ```typescript
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { fileURLToPath } from "node:url";
-import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
-import { compileFormula, FormulaCompileError, type CompiledFormula } from "./compile.js";
+import { openTestDb, type TestDb } from "../../../test/db.js";
 
-const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+let testDb: TestDb;
+let pool: Pool;
 let schema: OrgSchema;
 
 beforeAll(async () => {
-  schema = (await loadOrgSchema({ projectDir: ACME })).schema;
-});
-
-const rule = (source: string, objectName = "Account") =>
-  compileFormula(source, { schema, objectName, context: "validation_rule" });
-
-describe("compileFormula", () => {
-  it("resolves field references case-insensitively to canonical names", () => {
-    const c = rule('AND(ISPICKVAL(type, "Customer - Direct"), ISBLANK(WEBSITE))');
-    expect(c.references.map((r) => r.key).sort()).toEqual(["Type", "Website"]);
-  });
-});
-```
-(`packages/formula/src/formula.test.ts`)
-
-**Patterns:**
-- Small local helper functions/closures defined above the `describe` blocks to keep test bodies terse (`rule(...)`, `field(...)`, `run(...)` in `formula.test.ts`; `one(sobject, input)` in `engine.test.ts`; `get/post/patch/del` HTTP helpers in `api.test.ts`).
-- `it.each([...])` for table-driven cases over fixed input/output pairs, e.g. known 15↔18-character Salesforce ID conversions in `packages/schema/src/ids.test.ts`.
-- Assertions read record data with bracket access (`record["Description"]`) matching the codebase's `Record<string, unknown>` record shape, not dot access.
-- No static `describe.skip`/`it.skip`/`.only`. A test that only works on real Postgres calls `skip(usingPglite, "<reason>")` from its test context (`usingPglite` exported by `test/db.ts`, the one backend signal, D-21); it reports as skipped with the reason, never as passed. Example: the concurrent-transactions test in `pglite-compat.test.ts`.
-- One sanctioned marker for a known upstream gap: `it.fails` (D-20, Phase 8). It asserts the *correct* future behaviour, so vitest reports it as passing while the gap exists and fails it the moment the gap closes, forcing the closing phase to flip it to `it`. Never use it for orglet's own bugs, and never on a case that already passes (the suite goes red). Example: `packages/formula/src/expectations.test.ts` (unary `!` and `Owner:User` colon syntax until the Phase 12 sigha resync).
-
-## Postgres-Backed Tests: Isolation and Lifecycle
-
-Every Postgres-backed test file (`migrate.test.ts`, `query.test.ts`, `engine.test.ts`, `api.test.ts`, `bulk.test.ts`, `pglite-compat.test.ts`) follows the same exact pattern:
-
-```typescript
-import { randomBytes } from "node:crypto";
-import { migrate, quote, type Pool } from "@orglet/schema";
-import { openTestDb, type TestDb } from "../../../test/db.js";
-
-const orgSchema = `test_${randomBytes(4).toString("hex")}`;  // e.g. test_a1b2c3d4
-let testDb: TestDb;
-let pool: Pool;
-
-beforeAll(async () => {
-  testDb = await openTestDb();   // own pglite per file, or ORGLET_DATABASE_URL if set
+  testDb = await openTestDb();
   pool = testDb.pool;
-  // ... migrate(pool, schema, { orgSchema }) to build this test's own schema
+  schema = (await loadOrgSchema({ projectDir: ACME })).schema;
+  await migrate(pool, schema, { orgSchema });
+  // ... additional setup
 });
 
 afterAll(async () => {
-  await pool.query(`DROP SCHEMA IF EXISTS ${quote(orgSchema)} CASCADE`);
   await testDb.close();
 });
+
+describe("moduleName", () => {
+  it("describes the business logic being tested", async () => {
+    // test body
+  });
+});
 ```
-(`packages/schema/src/migrate.test.ts`, `packages/engine/src/engine.test.ts`, `packages/api/src/api.test.ts`)
 
-- **One randomly-named Postgres schema per test file** (`test_<8 hex chars>`, via `randomBytes(4)`), created fresh in `beforeAll` and dropped with `CASCADE` in `afterAll`. This is the entire isolation mechanism on a shared Postgres — tests never share a schema, never touch a developer's own org data, and can run concurrently against the same Postgres instance/database without colliding.
-- No transaction-rollback-per-test isolation; state accumulates across `it()` blocks within one file and is asserted incrementally. Isolation is per-file, not per-test.
-- On real Postgres, `openTestDb()` checks connectivity (`SELECT 1`) first and fails with a message naming the URL and the fix (`pnpm db:up`, or unset `ORGLET_DATABASE_URL`). On pglite each file has its own instance, so the `test_<hex>` schema is defence in depth there, and required isolation on a shared Postgres.
-- When adding a new Postgres-backed test file, copy this exact `beforeAll`/`afterAll` shape rather than inventing a new isolation strategy.
+**Suite Organization:**
+- `describe(module or feature name, () => { ... })` groups related tests.
+- `it(invariant description, async () => { ... })` for individual test cases.
+- Tests are `async` because all DB operations are async (`await`).
 
-## pglite Compatibility (D-19)
+**Assertions Pattern:**
+- Use `expect(...)` from vitest for all assertions.
+- Assertions verify the critical path, not every detail:
+  ```typescript
+  expect(q.sobject.name).toBe("Account");
+  expect(q.sql).toContain('FROM "org"."account" t0');
+  expect(q.shape.kind === "sobject" && q.shape.fields.map(f => f.name)).toEqual(["Id", "Name", "Industry"]);
+  ```
 
-**Outcome: PASS — 2026-09-30, `@electric-sql/pglite` 0.5.8 + `@electric-sql/pglite-socket` 0.2.11, `pg` 8.23.0, Node 22.**
-`packages/schema/src/pglite-compat.test.ts` verifies on pglite: the `information_schema.columns` query
-`migrate.ts` uses (exact types, lengths, precision/scale), `information_schema.tables`, the
-`pg_constraint` lookup, `SET LOCAL session_replication_role = replica` (transaction-scoped) and its
-effect of skipping FK checks for import mode, with FKs enforced (SQLSTATE 23503) outside it. No
-import-mode test needs the Postgres-only skip. Known pglite limitation: pglite-socket serialises all
-connections through one query queue, so a second open transaction waits for the first; tests that need
-real concurrency skip on pglite (see the last test in that file). Re-run this file first after any
-pglite or pglite-socket version bump.
+## Mocking & Stubbing
 
-## Fixtures
+**No Mocking Framework:**
+- No mock library imported or used in the test suite (vitest has built-in mock support but it's not used).
+- Tests call real code paths and hit real Postgres (via pglite or CI Postgres).
 
-**SFDX fixture project:** `examples/acme/` (`examples/acme/sfdx-project.json` + `examples/acme/force-app/main/default/`) is the one fixture org used by nearly every test file that needs a schema — loaded via `loadOrgSchema({ projectDir: ACME })` where `ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url))`. It defines custom objects (`Project__c`, `Milestone__c`, `BigTable__c`, `UpsertTable__c`), standard object overlays (`Account`, `Contact`, `Opportunity`), a global value set (`Tier`) and a standard value set (`Industry`).
-- `BigTable__c` and `UpsertTable__c` were added specifically to satisfy the jsforce conformance suite's pagination and upsert tests (see `conformance/jsforce/README.md`) — when a conformance run needs new fixture metadata, add it here rather than creating a second fixture project.
-- There is exactly one fixture project; tests do not maintain per-file or per-package fixture variants — all share `examples/acme`.
+**Testing Real Behavior:**
+- Stubs are achieved through dependency injection (passing test doubles as constructor arguments or function parameters).
+- Example: custom executor passed to `DmlEngine` constructor to capture hook execution order:
+  ```typescript
+  const hookLog: string[] = [];
+  const engine = new DmlEngine(pool, schema, {
+    executors: [
+      {
+        run: (ctx: TriggerContext) => {
+          hookLog.push(`${ctx.timing}:${ctx.operation}:${ctx.sobject.name}`);
+          // test assertions on hookLog
+          return Promise.resolve();
+        },
+      },
+    ],
+  });
+  ```
 
-**In-code fixtures:** no separate fixture/factory files or libraries (no `factories/`, no `test/fixtures/` directory). Test data is constructed inline as plain object literals passed to `engine.insert(...)`/HTTP helpers within each test.
+## Test Types
 
-## Snapshot Tests
+**Unit Tests:**
+- Pure function tests (e.g., SOQL compilation, formula evaluation).
+- Located in the package where the function lives.
+- Example: `packages/soql/src/compile.test.ts` tests `compileSoql(soql: string): CompiledQuery` against many SOQL variants (joins, children, date literals, aggregates, polymorphic references).
 
-Not used anywhere (`toMatchSnapshot`/`toMatchInlineSnapshot` do not appear in the codebase). Assertions are always explicit `expect(...).toBe/toEqual/toMatch(...)` against literal expected values or regexes — prefer this style for new tests over introducing snapshots.
+**Integration Tests:**
+- DML pipeline tests (end-to-end from insert/update/upsert/delete to Postgres and triggers).
+- Schema migration tests (DDL planning and execution).
+- Located in the engine and schema packages: `packages/engine/src/engine.test.ts`, `packages/schema/src/migrate.test.ts`.
+- Hit real Postgres and exercise the full order of execution (before-hooks, coercion, validation, after-hooks, roll-ups, parent/child recomputation).
 
-## Golden-Corpus Conformance Tests (internal, `packages/sigha`)
+**E2E Conformance Tests (Not in Core Test Suite):**
+- Run against a live orglet server by real client SDKs (jsforce, simple-salesforce).
+- Located under `conformance/`: jsforce, python, describe-check, poly-check, rollup-check, cmdt-check.
+- CI job: `.github/workflows/ci.yml` `conformance` job (matrix over `examples/acme` and `examples/enterprise`).
+- See CONFORMANCE section below.
 
-Distinct from the top-level `conformance/` suites (below): `packages/sigha` (the vendored formula engine) has its own two-tier internal conformance tests that run under `pnpm test` like any other vitest file, reading JSON corpora instead of hand-written cases:
+## Baseline Fixtures & Snapshots
 
-- `packages/sigha/src/engine/conformance.test.ts` (208 lines) — runs every row in `packages/sigha/corpus/salesforce-v2.json` (a golden-file oracle corpus) through `runRow(...)` and asserts a **locked baseline** pass rate (`const BASELINE = 1`, i.e. 100% of the comparable subset). Rows the oracle is known to be wrong about are named individually in an `ORG_OVERRULED` set with an inline comment justifying each exclusion, backed by the org-verified corpus.
-- `packages/sigha/src/engine/org-conformance.test.ts` (72 lines) — same mechanism against `packages/sigha/corpus/org-verified.json`, rows read back from a real Salesforce org, described as "the top of the trust order" — a failure here is called out in the file's own comment as "a semantics bug, full stop."
-- Both use a `NUMERIC_RENDERING_QUARANTINE`-style `Set<string>` escape hatch for rows whose expected rendering isn't pinned down yet; quarantined rows count toward neither pass nor fail, and must never be used to silently absorb a new failure — the comments in both files are explicit that the baseline must only move up, and any new failing row has to be triaged (fixed, overruled with evidence, or quarantined), not have the baseline number lowered.
-- When touching formula evaluation semantics, run these two files and treat any drop in `BASELINE` as a regression to investigate, not a number to adjust down.
+**Baseline Standard Objects:**
+- Stored in `packages/metadata/standard/` (DDL, field metadata, picklist values, validation rules as JSON).
+- Auto-generated from Salesforce public documentation via `packages/metadata/standard/generate.mjs` (sourced from the official Salesforce describe call specs).
+- Committed to the repo; committed baseline == regeneration from committed inputs is verified in CI (`baseline-gen-check` job).
+- Not manually edited; changes require updating the generation script.
 
-## Conformance Suites (`conformance/`)
+**Upgrade Fixtures:**
+- `packages/metadata/standard/baseline-v1.0/` snapshots the baseline state at release v1.0, used in test comparisons to verify forward compatibility.
 
-Two **external** suites that exercise a live orglet server over HTTP using real upstream Salesforce SDKs, as opposed to vitest unit/integration tests. They are not part of `pnpm test`, but CI runs them in the `conformance` job of `.github/workflows/ci.yml` via `conformance/run-all.sh` (on every push and PR; not a required status check). Locally they need a running orglet instance plus Node+Jest and a Python venv. `conformance/README.md` is the dated overview of every check.
+## Conformance Tests
 
-**`conformance/python/` — simple-salesforce (Python SDK):**
-- `conformance/python/run.py` (self-contained script, no test framework) drives `simple_salesforce.Salesforce`; `BASE_URL`, `ORGLET_USERNAME` and `API_VERSION` are read from the environment (defaults `http://localhost:8180`, `admin@orglet.local`, `59.0`).
-- Pattern: a `check(name)` context manager wraps each scenario, catches all exceptions, records `(name, "PASS"/"FAIL", detail)`, prints a `[PASS]`/`[FAIL]` line immediately, and never stops the run early — every check attempts to run regardless of earlier failures, ending in a summary table.
-- Covers: describe, CRUD, external-id upsert, nested/parent SOQL, `query_more`, validation rules, delete/undelete visibility, limits, search, composite, error envelopes and Bulk API 2.0 (ingest and query).
-- Dependencies pinned in `conformance/python/requirements.txt` (`simple-salesforce==1.12.10`, `cryptography==43.0.3` pinned for a macOS wheel issue — see the comment in that file).
-- Result (2026-10-12): 29/29 pass (`conformance/python/README.md`).
+**Scope:**
+- Run real client SDKs against a locally-hosted orglet instance against `examples/acme` and `examples/enterprise` fixtures.
+- Verifies that clients cannot tell the difference for the surface orglet claims to support.
 
-**`conformance/jsforce/` — jsforce (JS/TS SDK), e2e subset:**
-- `conformance/jsforce/run.sh` checks out upstream `jsforce` at the pinned commit `9bae14e` (3.10.26) into `conformance/jsforce/.cache/jsforce`, builds it once per pin, optionally seeds fixture data, then runs two Jest invocations against a running orglet instance (literally the upstream SDK's test suite, redirected at orglet instead of a real scratch org): the core files (`connection-crud`, `connection-meta`, `sobject`, `query`) with `CORE_FILTER`, then `test/bulk2.test.ts` with `BULK2_FILTER`.
-- `conformance/jsforce/seed.mjs` seeds fixture rows (`BigTable__c`, Accounts/Contacts/Opportunities) that the upstream tests assume exist, via `POST`/`DELETE /composite/sobjects` (not Bulk API v1).
-- Usage: `./run.sh <base-url> <access-token> [--seed] [-- <jest test paths/args>]` — see the walkthrough in `conformance/jsforce/README.md`.
-- Result (2026-10-12): core 51 passed / 0 failed / 60 excluded by filter; Bulk API 2.0 12 passed / 0 failed / 5 excluded. Every exclusion is classified in the README.
-- The README documents a Jest/CommonJS import quirk (importing `bulk.test.ts` from another test file re-registers all its `it()`s), which is why there are two Jest invocations.
+**Suites under `conformance/`:**
 
-## What Is and Isn't Covered
+1. **jsforce core & Bulk API 2.0** (`conformance/jsforce/`)
+   - Harness: `conformance/jsforce/run.sh` (bash script).
+   - SDK: jsforce pinned at commit `JSFORCE_SHA=9bae14ea...` (3.10.26, 2026-09-22).
+   - Runs Jest test suite on core CRUD, metadata, sobject, query tests + Bulk v2 tests.
+   - Results: acme 51/60 passed (9 excluded), enterprise 50/61 passed (1 additional enterprise-only exclusion).
+   - Exclusions documented in `conformance/jsforce/README.md` (Bulk v1, SOSL, UI API, etc.).
 
-**Covered by `pnpm test` (vitest, fast, deterministic):**
-- Salesforce ID generation/validation (`ids.test.ts`), SFDX metadata parsing and standard-object baseline merge (`sfdx.test.ts`, `build.test.ts`), Postgres DDL generation and migration including idempotency and widen/narrow rules (`migrate.test.ts`), formula compilation and evaluation semantics (`formula.test.ts` + sigha's two corpus suites), SOQL-to-SQL compilation (`compile.test.ts`), the DML engine's order of execution including trigger hooks and change events (`engine.test.ts`), query execution/paging (`query.test.ts`), and the REST API surface end-to-end including Bulk API 2.0 (`api.test.ts`, `bulk.test.ts`).
+2. **simple-salesforce** (`conformance/python/`)
+   - Harness: `conformance/python/run.py` (Python script).
+   - Version: simple-salesforce 1.12.10.
+   - Results: 29/29 passed.
+   - Runs Python scripts against the running orglet instance.
 
-**Covered only by manual conformance runs, not vitest:**
-- Real-SDK-level behavior (jsforce, simple-salesforce) — quirks in HTTP status codes, header shapes, error envelope exact structure, trailing-slash handling, pagination against >2000 rows, composite/collection upsert semantics. These are the source of truth for several documented gaps (see `conformance/jsforce/README.md`'s "Other findings" table) that are not (yet) asserted by any vitest test.
-- `packages/cli`: `check` is unit-tested in `src/main.test.ts`; `up`/`reset` are exercised by the conformance runs and by schema/API tests.
+3. **describe-check** (`conformance/describe-check/`)
+   - Verifies `describe` calls (object and field metadata) match expected schema.
+   - Tests both jsforce and simple-salesforce implementations.
+   - Results: 32/32 (acme), 38/38 (enterprise) per SDK.
 
-**Known gaps, called out explicitly in `conformance/jsforce/README.md` (treat as intentional scope boundaries, not bugs, unless asked to close them):**
-- SOSL/`/search` (stub, always empty results), `FOR VIEW` SOQL clause, recently-viewed items, `describeLayouts` family, `/tabs`, `/theme`, `explain=` query param handling, Streaming API, Metadata/Tooling API, Apex REST, Chatter.
+4. **poly-check** (`conformance/poly-check/`)
+   - Polymorphic relationship tests (Owner field across Account, Case, etc.).
+   - Results: 5/5 (acme), 6/6 (enterprise) per SDK.
+
+5. **rollup-check** (`conformance/rollup-check/`)
+   - Roll-up summary field tests.
+   - Results: 5/5 (acme), 6/6 (enterprise) per SDK.
+
+6. **cmdt-check** (`conformance/cmdt-check/`)
+   - Custom metadata type CRUD tests.
+   - Results: 8/8 per SDK.
+   - Runs against a separate server and schema (`cmdt-check/project`).
+
+**Running Conformance Tests:**
+- Manual: `PORT=8094 ORG_SCHEMA=final7 conformance/run-all.sh` (starts its own orglet server, runs all checks, stops server).
+- CI: `.github/workflows/ci.yml` `conformance` job (matrix over projects, real Postgres service).
+- Both `examples/acme` and `examples/enterprise` tested in CI (matrix-driven).
+
+## CI Jobs
+
+**`.github/workflows/ci.yml` — Full Pipeline:**
+
+1. **`test-pglite` job:**
+   - Runs without a Postgres service (uses embedded pglite).
+   - Steps: checkout → install deps → build → lint → typecheck scripts → run unit/integration tests.
+   - Includes `orglet check --strict --project examples/enterprise` (diagnostics check).
+
+2. **`test-postgres` job:**
+   - Uses a real postgres:16-alpine service.
+   - Steps: checkout → install deps → build → lint → run tests (against real Postgres).
+   - Verifies behavior on real Postgres (not just pglite).
+   - Confirms `maxWorkers: 3` doesn't cause issues.
+
+3. **`conformance` job (matrix):**
+   - Matrix over `examples/acme` and `examples/enterprise`.
+   - Uses real postgres:16-alpine service.
+   - Steps: checkout → install deps → build → cache jsforce binary → venv Python → run `conformance/run-all.sh`.
+   - Runs 8 conformance checks per project (jsforce core, Bulk v2, jsforce describe, simple-salesforce describe, poly, rollup, cmdt).
+
+4. **`sigha-sync-check` job:**
+   - Verifies the vendored formula-language package (sigha) is bit-for-bit reproducible from the pinned commit.
+   - Runs `scripts/sync-sigha.sh` into a temp dir, diffs against committed `packages/sigha/src`.
+   - Fails if the vendored copy would diverge on re-sync.
+   - No manual edits to `packages/sigha/src/**` are allowed (Phase 1 D-18).
+
+5. **`baseline-gen-check` job:**
+   - Verifies committed baseline == regeneration from committed inputs (D-18/SC1).
+   - Runs `pnpm baseline:gen`, diffs against committed `packages/metadata/standard/`.
+   - Fails if any untracked files appear in the standard objects directory.
+
+## Test Coverage
+
+**Coverage Metrics:**
+- Not explicitly required (`coverage` option not set in vitest config).
+- ~840 `it(...)` cases covering core DML, SOQL, formulas, schema, API routes, and conformance.
+
+**High-Coverage Areas:**
+- DML pipeline: `packages/engine/src/engine.test.ts` plus the per-feature engine test files (`rollup*.test.ts`, `null-prefix.test.ts`, polymorphic and formula tests) cover order of execution, triggers, validation, roll-ups.
+- SOQL compilation: `packages/soql/src/compile.test.ts` (100+ test cases covering joins, parents, children, date literals, aggregates, polymorphic references, TYPEOF).
+- Formulas: `packages/formula/src/compile.test.ts` (formula parsing, type inference, function calls).
+- Schema: `packages/schema/src/migrate.test.ts` (DDL planning, type widening, virtual fields).
+
+**Conformance (Real SDKs):**
+- Hundreds of additional test cases through jsforce and simple-salesforce against the full API surface.
+- Real client libraries exercise paths that unit tests may miss.
+
+## No Skipped or Failing Tests
+
+- Current test suite has no `it.skip`, `it.fails`, or `it.todo` markers.
+- One historical reference in `packages/formula/src/expectations.test.ts` comment (formerly `it.fails`, D-05, fixed by Phase 12 sigha resync).
+- All test cases are active; none is marked skip, fails or todo.
 
 ---
 
-*Testing analysis: 2026-09-29, updated 2026-09-30 (phase 1: pglite backend), updated 2026-10-12 (phase 7: conformance in CI)*
+*Testing analysis: 2026-11-03*
