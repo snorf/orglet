@@ -113,13 +113,41 @@ pglite, 924 on Postgres 16.
 
 </details>
 
-## Next Milestone
+## Current Milestone: v1.2 archive mode
 
-Not yet defined. Run `/gsd:new-milestone`. Candidates from the backlog in `ROADMAP.md`: 999.8 platform
-events as publish-only objects, 999.9 Heimdall end-to-end backup run, 999.10 ContentVersion file upload done
-properly, 999.11 archive mode (read-only replica from a Heimdall backup), 999.12 formula fields through
-parent relationships in SOQL; plus the v2 items parked in `milestones/v1.1-REQUIREMENTS.md` (FILE, EVT, SEC,
-FLOW, APEX, UI, HEAD, CHECK-03, CMDT-05, CSET-03, ROLLX, BULKX, HEIM).
+**Goal:** Spin up orglet on an SFDX retrieve plus a Heimdall backup and browse the former org read-only,
+through the Salesforce API and a simple record view, with files served straight from the backup store.
+
+**Target features:**
+- Archive loader: `orglet archive load` reads Heimdall's Postgres index and the Bulk 2.0 CSVs from S3
+  (or an S3-compatible / local mirror of the key layout), streams them with `COPY` into orglet's tables,
+  latest version per Id by default with an optional as-of date, `_deleted` rows as soft-deleted so
+  `queryAll` works, FK checks deferred so lookup cycles need no ordering; reuses the Bulk 2.0 CSV parser
+  and import-mode coercion
+- Read-only mode: every DML refused with a real Salesforce status code except an explicit erasure path
+  for GDPR deletes; formula and roll-up fields frozen to the backed-up values, never recomputed, while
+  describe still reports them as calculated
+- Files done properly (backlog 999.10): ContentDocument auto-created on ContentVersion insert,
+  ContentDocumentLink modelled, `GET .../VersionData` download, the nullable ContentDocumentId override
+  dropped; blob store pluggable, bytea in a normal org and a checksum-addressed external store (Heimdall's
+  `files/<checksum[0:4]>/<checksum>.<ext>` layout) in archive mode, so binaries are read from the backup
+  without copying
+- Record browsing in the built-in UI: search over name and email fields, record view with fields and
+  related lists, clickable lookups, file download; vanilla JS on `/` as today
+- Public fixture: `examples/` gets a Heimdall-shaped backup generated from the acme fixture through
+  orglet's own Bulk 2.0 query output, with a local filesystem mirror of the S3 key layout for tests and CI
+
+**Key context:** Heimdall (open source, `devrandom-se/heimdall`) stores no schema snapshot, so the retrieve
+gives the schema and the backup gives the data. Record CSVs are Bulk 2.0 query output verbatim (formula,
+roll-up and system fields included); the Postgres index is `objects(org_id, period, id, version)` with
+`csv_id -> csvfiles.s3path`; only ContentVersion blobs are backed up, deduplicated by MD5 checksum. Period
+formats differ between S3 (`202602` / `Archive-202602`) and Postgres (`2602` / `-2602`). Format notes in
+`.planning/research/HEIMDALL-FORMAT.md`. Real-org data stays with the author; orglet is built and tested on
+public fixtures only.
+
+**Not in this milestone:** Heimdall end-to-end backup run against orglet (999.9); real authentication and
+audit log; SOSL (UI search uses SOQL); Attachment/Document bodies (Heimdall has none); platform events
+(999.8); formula fields through parent relationships in SOQL (999.12).
 
 ## Requirements
 
@@ -319,8 +347,8 @@ Validated in Phase 14 (v1.1, 2026-10-31):
 
 ### Active
 
-No active milestone (v1.1 shipped 2026-11-01). The next milestone's requirements are defined by
-`/gsd:new-milestone`; see "Next Milestone" above and the backlog in `.planning/ROADMAP.md`.
+Milestone v1.2 "archive mode" (started 2026-11-03). Requirements are defined in `.planning/REQUIREMENTS.md`
+once `/gsd:new-milestone` completes; see "Current Milestone" above.
 
 ### Out of Scope
 
@@ -477,4 +505,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-01 after v1.1 milestone*
+*Last updated: 2026-11-03 at the start of milestone v1.2*

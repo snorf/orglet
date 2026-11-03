@@ -1,39 +1,39 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: real-org fidelity
-status: milestone_complete
-stopped_at: v1.1 milestone archived (2026-11-01); next milestone not yet defined
+milestone: v1.2
+milestone_name: archive mode
+status: ready_to_plan
+stopped_at: Roadmap created for v1.2; next /gsd:discuss-phase 15
 last_updated: "2026-11-03T13:00:00.000Z"
 last_activity: 2026-11-03
 progress:
   total_phases: 7
-  completed_phases: 7
-  total_plans: 62
-  completed_plans: 62
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-11-01 after v1.1)
+See: .planning/PROJECT.md (updated 2026-11-03 at the start of v1.2)
 
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Planning the next milestone (`/gsd:new-milestone`); candidates in ROADMAP.md backlog 999.8-999.12
+**Current focus:** Milestone v1.2 "archive mode": orglet on a retrieve plus a Heimdall backup, read-only, with files from the backup store and a record view
 
 ## Current Position
 
-Milestone: v1.1 "real-org fidelity" — SHIPPED 2026-11-01 (archive: milestones/v1.1-ROADMAP.md, v1.1-REQUIREMENTS.md, v1.1-MILESTONE-AUDIT.md)
-Phase: none (next milestone not yet defined)
-Plan: none
-Status: Milestone complete
-Last activity: 2026-11-03
+Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
+Phase: 15 (Files Model) not started
+Plan: —
+Status: Ready to plan
+Last activity: 2026-11-03 — Roadmap created for v1.2 (Phases 15-21)
 
-Progress: [██████████] 100% (v1.1: 7/7 phases, 62/62 plans)
+Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 
 ## Performance Metrics
 
@@ -183,5 +183,5 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 ## Session Continuity
 
 Last session: 2026-11-03
-Stopped at: v1.1 tagged and codebase map refreshed (.planning/codebase/, 2026-11-03); next step /gsd:new-milestone
+Stopped at: Roadmap created for v1.2 (7 phases, 28/28 requirements mapped); next /gsd:discuss-phase 15
 Resume file: None
