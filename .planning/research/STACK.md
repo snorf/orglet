@@ -1,170 +1,168 @@
-# Technology Stack: v1.1 additions
+# Technology Stack: v1.2 archive mode (additions only)
 
-**Project:** orglet v1.1 "real-org fidelity"
-**Researched:** 2026-10-12
-**Scope:** only what the NEW features need. The existing stack (TS strict, Node 22, pnpm, Fastify 5, vitest, pglite, fast-xml-parser 5, soql-parser-js, vendored sigha, decimal.js) is unchanged.
-**Overall confidence:** MEDIUM-HIGH (data source and sigha findings verified against primary sources; legal reading is mine, not legal advice)
+**Project:** orglet
+**Milestone:** v1.2 archive mode
+**Researched:** 2026-11-03 (versions and licences checked against the npm registry on this date)
+**Scope:** only what the new features need. The v1.1 stack (TypeScript 5.9, Node 22, pnpm, `pg` 8.23, Fastify 5.12, vitest 3, pglite 0.5.8 + pglite-socket 0.2.11, `fast-xml-parser`, `@jetstreamapp/soql-parser-js`) is unchanged; see git history of this file and `.planning/codebase/STACK.md`.
 
-## Headline
+## Summary of decisions
 
-**Add zero new runtime dependencies.** Every v1.1 capability is a change to existing packages, one new
-offline generator script, and one new vendored data snapshot. The one genuinely new thing is a *data
-source* for the standard-object baseline, and a good one exists:
+| Question | Decision |
+|----------|----------|
+| (a) S3 access | `@aws-sdk/client-s3` only, in a new package `@orglet/archive`, behind a tiny `ObjectStore` interface. No `lib-storage`, no presigner. Tests use a filesystem `ObjectStore`, never the SDK. |
+| (b) COPY | `pg-copy-streams` 7.0.0 on real Postgres. pglite leg uses a different sink (multi-row `INSERT ... unnest`). Do not try COPY FROM STDIN on pglite. |
+| (c) CSV | Add `csv-parse` 7.0.3 for the streaming path. Keep `parseCsv` in `bulk/csv.ts` for small ingest bodies (it is in-memory, string-in). |
+| (d) Blobs | Buffers over `pg` for bytea; stream with `reply.send(Readable)`; JSON upload as base64 within the existing 64 MiB `bodyLimit`; no multipart plugin needed. |
+| (e) UI | Confirmed: vanilla JS, no new dependency. |
+| (f) Second Postgres | A second `pg.Pool` (read-only session) on a separate connection string; a restored dump is just another URL. No new dependency. |
 
-> **`forcedotcom/sf-skills`, skill `platform-data-and-tooling-api-context-get`** (Apache-2.0, published by
-> Salesforce, Inc.): one JSON file per standard sObject, converted from the public Object Reference pages.
-> 1 839 Data API sObjects + 291 Tooling records. This is the "Salesforce-maintained dataset" the
-> question asked about.
+## Recommended additions
 
-## 1. Reading the public Object Reference programmatically
+### Runtime dependencies
 
-### Findings
+| Library | Version | Licence | Package | Purpose | Why |
+|---------|---------|---------|---------|---------|-----|
+| `@aws-sdk/client-s3` | 3.1161.0 (2026-10-30), Node >=20 | Apache-2.0 | new `@orglet/archive` only | `GetObject` (CSV + blob stream), `HeadObject`, `ListObjectsV2` if needed | The only S3 client Heimdall itself uses (Java SDK, same key layout, same endpoint-override convention), works with MinIO/LocalStack via `endpoint` + `forcePathStyle`, and `Body` is a Node `Readable` that goes straight into `csv-parse`. Apache-2.0 is OSI and compatible with an Apache-2.0 project. Weight: about 3.3 MB unpacked plus transitive `@smithy/*`; acceptable because it is confined to one package and only imported when `--s3` is used. |
+| `pg-copy-streams` | 7.0.0 (2025-05-27) | MIT | `@orglet/schema` (or `archive`, see below) | `COPY ... FROM STDIN` writable stream over a `pg` client | The standard add-on for node-postgres (maintained under the brianc org), pure-JS `pg` only (orglet uses pure-JS). CJS, ships no types. |
+| `csv-parse` | 7.0.3 (2026-09-25) | MIT | `@orglet/archive` | Streaming RFC 4180 parser, `columns: true`, `bom: true` | Part of the `node-csv` suite, async-iterator friendly, ESM with bundled types. Needed because the existing parser takes a whole string and builds all rows in memory; Heimdall CSVs hold 50K-200K records each and a bucket holds many. |
 
-| Route | Result | Confidence |
-|-------|--------|------------|
-| `developer.salesforce.com/docs/atlas.en-us.object_reference.meta/...htm` via curl / WebFetch | **HTTP 403** (bot wall) from plain clients; pages are client-rendered. Verified 2026-10-12. | HIGH |
-| `/docs/get_document/...`, `/docs/get_document_content/...` (the XHR endpoints the docs SPA calls) | **403** to curl; 301 redirect for one variant. Undocumented, not a supported API, no stability promise. | HIGH (that they are blocked), LOW (that they are what the SPA uses) |
-| Official PDF bundle (`resources.docs.salesforce.com/.../atlas.en-us.object_reference.meta.pdf`) | **404**. Salesforce's own `platform-docs-get` skill says "Do not fall back to PDFs". | HIGH |
-| Salesforce's own retrieval guidance | `forcedotcom/sf-skills` `platform-docs-get`: for JS-heavy developer.salesforce.com use *browser-rendered extraction* (Playwright); no JSON API is documented. | HIGH |
-| `@salesforce/source-deploy-retrieve` 13.4.5 (Apache-2.0) | Metadata *registry* only (type -> directory/suffix). No field definitions, no key prefixes. Verified by grep of the shipped `metadataRegistry.json`. | HIGH |
-| `@salesforce/types` 1.8.0 (BSD-3), `@salesforce/schemas` 1.10.3 (ISC), `@salesforce/core` 9.3.6 | Config/CLI typings and JSON schemas for `sfdx-project.json` etc. No standard-object describes. | MEDIUM |
-| `jsforce` / `@jsforce/jsforce-node` 3.10.29 (MIT), `simple-salesforce` | Metadata-API *typings* (see 3.) and mocks only. Not a standard-object dataset. | HIGH |
-| Enterprise/Partner WSDL | Org-generated download (Setup). It is an org artefact, not public docs: **do not use** (legal rule). Note: the `wsdl_segment` strings inside the dataset below contain org-specific `__c` fields; ignore that section. | HIGH |
-| `salesforce/formula-engine` (BSD-3) | Formula grammar/functions only; no object catalogue. | HIGH |
+### Dev dependencies
 
-### Recommended source: sf-skills `platform-data-and-tooling-api-context-get`
+| Library | Version | Licence | Purpose |
+|---------|---------|---------|---------|
+| `@types/pg-copy-streams` | 1.2.5 | MIT | Types for `pg-copy-streams` (it ships none). |
 
-- URL: <https://github.com/forcedotcom/sf-skills/tree/main/plugins/builder/salesforce-development/skills/platform-data-and-tooling-api-context-get/assets/enterprise_api>
-- Licence: repo `LICENSE.txt` = Apache License 2.0, "Copyright (c) 2026 Salesforce, Inc." (GitHub reports `Apache-2.0`). Compatible with orglet's Apache-2.0. Keep the LICENSE/NOTICE next to the vendored copy.
-- Provenance: data is *generated from the public Object Reference* ("generated by generate_data_and_tooling_skill.py on 2026-07-23", per its index table). That satisfies "public documentation only": it is a Salesforce-published, Apache-licensed redistribution of the public docs, and no org was touched.
-- Freshness: repo HEAD `4bbae5c4...` (2026-10-09); skill last changed in `37effabd...` (release 2.2.0, 2026-09-22). Pin a commit SHA; resync by script like sigha.
-- Coverage checked for every v1.1 target object: Account, Contact, Opportunity, Lead, Case, Quote, QuoteLineItem, Order, OrderItem, AccountContactRelation, AccountTeamMember, OpportunityTeamMember, OpportunityContactRole, ContractLineItem, EmailMessage, ContentDocument, ContentVersion, FeedItem, Location, Address, Contract, User, Product2, Pricebook2, PricebookEntry, Task, Event, Campaign, CampaignMember, Asset are **all present** (field counts 7-175).
+Optional, not required for the milestone: bump `@electric-sql/pglite` 0.5.8 to 0.5.15 and `pglite-socket` to match. The tree already contains 0.5.10/0.2.13 for the `-age` etc. packages, so they are resolvable; do it as a separate chore, because `test/db.ts` carries a workaround for pglite#958 that should be re-verified on the bump.
 
-### What the JSON contains and what it lacks (drives generator design)
+## (a) S3 from Node 22 ESM
 
-File layout: `{ sections, title, description, fields, field_reference, usage, associated_objects, wsdl_segment, ... }`.
+- **Use `@aws-sdk/client-s3` v3 alone.** `GetObjectCommand` returns `Body` as `SdkStreamMixin & Readable` in Node; `for await` or `pipeline(body, parse(...))` streams without buffering. `Body` must be consumed or destroyed, or the socket leaks.
+- **`@aws-sdk/lib-storage` is not needed.** It exists for multipart upload (`Upload`). archive load only reads. The only write case is the fixture generator, which writes to a local mirror, not S3. Do not add it.
+- **No presigner.** `GET .../VersionData` is streamed through orglet (`Body` piped to the Fastify reply). Presigned URLs would leak the store to clients and break the "client cannot tell the difference" rule.
+- **Lighter alternatives rejected.** `aws4fetch` (MIT, 1.0.20, last release 2024-08) is small and fetch-based, but needs hand-written XML for `ListObjectsV2`, hand-rolled credential chain (no `DefaultCredentialsProvider` equivalent: env, shared profile, SSO, IMDS, web identity) and gives a web stream. Heimdall users authenticate with the standard AWS chain, so the SDK's provider chain is the feature. `minio` JS client (Apache-2.0, 8.0.7) is a viable second option but adds a different credential model and nothing the SDK lacks.
+- **Endpoint config** for MinIO/LocalStack/R2/other S3-compatible: `new S3Client({ region, endpoint: process.env.ORGLET_S3_ENDPOINT, forcePathStyle: true })`. Region must be set for custom endpoints (any value). `forcePathStyle` is required for MinIO and LocalStack unless using wildcard DNS. Credentials come from the default chain (nothing orglet-specific). [MEDIUM: from SDK v3 documented options and training knowledge; not re-verified against docs this session.]
+- **Tests: no S3 at all.** The `ObjectStore` interface has two implementations in v1.2: `FsObjectStore(rootDir)` (key layout `OrgId=.../Period=.../...` mapped to subdirectories; also the documented "local mirror" input of `orglet archive load --from-dir`) and `S3ObjectStore`. All unit, integration and CI tests run on `FsObjectStore`, so CI needs no AWS credentials, no MinIO container and no LocalStack. One optional, non-gating smoke test of `S3ObjectStore` against MinIO can be a separate manual script; do not put it in `pnpm test`.
+- **Key safety.** `s3path` values from the index are untrusted input in the `FsObjectStore` case: resolve against the root and reject any path that escapes it (`..`, absolute paths). Strip an optional `s3://bucket/` prefix as Heimdall's reader does.
+- **Bucket/prefix** is one bucket per org, keys prefixed `OrgId=<orgId>`; blob key `OrgId=<org>/Period=0/files/<cs[0:4]>/<cs>.<ext>` (HEIMDALL-FORMAT.md section 4).
 
-| Need (baseline JSON field) | Source in dataset | Gap / handling |
-|----------------------------|-------------------|----------------|
-| field `name`, `type` | `fields[Name].type` (SOAP names: `string`, `picklist`, `reference`, `double`, `int`, `currency`, `textarea`, `phone`, `url`, `email`, `address`, `boolean`, `date`, `datetime`/`dateTime` (both spellings occur), `id`) | Map table SOAP-type -> orglet `type` (Text, LongTextArea, Number, Currency, Picklist, Lookup...). `string` + length > 255 and `textarea` need care. |
-| `createable` / `updateable` / `nillable` / filterable / sortable / groupable | `fields[Name].properties` comma string ("Create, Filter, Group, Nillable, Sort, Update"), plus `Defaulted on create` | Parse to booleans; **absence = false**. HIGH value, fully covered. |
-| `referenceTo`, `relationshipName`, relationship type | `refers_to`, `relationship_name`, `relationship_type` | `refers_to` is a string; polymorphic targets appear as comma lists (e.g. Task.WhoId) - split on `,`. 1-3 such fields per object. |
-| `required` (not nillable, no default) | `required: true` on some entries | Prefer deriving from not-Nillable and not-Defaulted-on-create; use `required` as a cross-check. |
-| `label` | `field_reference[Name].field_label` | `field_reference` is a **second, differently-populated catalogue** (per SKILL.md "dual-catalog rule"). Union both; fall back to humanised API name (`AccountNumber` -> "Account Number") when absent. |
-| `length` | `field_reference[Name].length` (string) | Present for most text fields, but also for picklists (255) and non-text types; only use for `string`/`phone`/`url`/`email`/`textarea`. Also regex "Maximum size is N characters" in `description` as a fallback. Else default 255 + mark `generated: guessed`. |
-| `precision` / `scale` | **absent** | Keep hand-curated overrides file; default Currency 18/2, Number 18/0 unless docs prose says otherwise. Existing baseline already encodes values - the generator must *merge* (hand overrides win), not overwrite. |
-| picklist values | **absent** (docs describe them in prose or point to `StandardValueSet`) | Reuse existing `standardValueSet` mapping + `packages/metadata/standard/standardValueSets.json`; unmapped picklists emit `picklistValues: []` + `UNSUPPORTED:standard-picklist` style quiet note. Do not invent values. |
-| `keyPrefix` | **absent** | No machine-readable public source found. Keep a tiny hand-maintained `keyPrefixes.json` (3-char prefixes are stable, publicly listed); ~15 new objects need adding. LOW confidence on any third-party blog list - cross-check against 2 sources, never against an org. |
-| `labelPlural`, `hasOwner` | `title`/`description` only; `hasOwner` derivable from presence of `OwnerId` | Derive `hasOwner`; humanise `labelPlural` with a small override map. |
-| compound fields (`compoundFieldName`) | not modelled | Existing Address/Geolocation components table in generator (BillingStreet -> BillingAddress). Hand-maintained. |
+## (b) COPY with `pg`, and pglite
 
-### Traps in the dataset (must be coded against)
+**Real Postgres 16.** `pg-copy-streams` 7.0.0, `import copy from "pg-copy-streams"` (CJS default import is the safe form under NodeNext; verify the named `from` export compiles before using it). Pattern:
 
-1. **`__c` leakage.** `Account.field_reference` contains `Active__c` etc. (org-specific fields in the doc's own example tables). The generator must drop every key ending `__c`/`__r` and ignore `wsdl_segment`.
-2. **Mixed completeness.** `fields` (SOAP table) and `field_reference` (UI table) overlap partially; e.g. AccountTeamMember has 11 `fields` and 0 `field_reference`; Account `fields` 76 vs 126 `field_reference`. Fields only in `field_reference` have no createable/updateable flags: default them to read-only (`createable:false, updateable:false`) and record that in the generated header.
-3. **Doc prose is Salesforce-authored text.** Do not copy `description` strings into committed baseline JSON (facts - names, types, flags - only). Avoids republishing prose and keeps the baseline small.
-4. **Version drift.** Snapshot targets a recent API version (skill `minApiVersion: 67.0`); orglet's baseline should stamp the source SHA and docs-generation date in a generated-file header.
-5. **Docs gaps are real gaps.** Field present in the retrieve but absent from docs is a fidelity gap: surface through `orglet check` (quiet/gap category), do not guess.
+```ts
+import { pipeline } from "node:stream/promises";
+const stream = client.query(copy.from(`COPY "${table}" (${cols}) FROM STDIN WITH (FORMAT csv, NULL '')`));
+await pipeline(rowsToCsvReadable, stream);   // wait for pipeline, not 'finish'
+```
 
-### Integration with the existing repo
+- Requires a **dedicated checked-out client** (`pool.connect()`); one COPY at a time per client. Reuse `withTransaction` from `packages/schema/src/db.ts`.
+- **Transaction shape:** one transaction per load: `BEGIN; SET CONSTRAINTS ALL DEFERRED; COPY ...(per table, parents and children in any order); COMMIT`. This only defers constraints declared `DEFERRABLE`. **Schema consequence:** orglet's generated FK constraints must be `DEFERRABLE INITIALLY IMMEDIATE` (or the loader must drop/re-add them, or load with `session_replication_role = replica` which needs superuser). Check `packages/schema/src/ddl.ts` in the roadmap's first phase; I did not read it. `SET CONSTRAINTS ALL DEFERRED` also defers FK cycles (A->B->A) because checks run at COMMIT. Unique and primary-key constraints are not deferrable by default and stay immediate; that is wanted here.
+- **Batching:** a single COPY can carry the whole file; batching is only needed for progress and memory, and COPY already streams. Use one COPY per (object, CSV file) so a failure names the file. A COPY row error aborts the whole COPY and the transaction (no per-row error recovery); validate/coerce in Node before writing to the stream and report row-level problems as diagnostics. Savepoints (`SAVEPOINT` per object) let one object fail without losing the others only if the caller wants partial loads; default to all-or-nothing per run.
+- Coercion: Bulk 2.0 values (`2026-01-15T14:30:22.000+0000`, booleans, multipicklists, 18-char ids) go through the existing import-mode coercion, then are re-serialised to CSV for COPY. Do not feed raw Heimdall CSV to COPY unfiltered: rows must be filtered to the selected `(Id, SystemModstamp)` versions and columns mapped to orglet column names.
 
-- Vendor the snapshot like sigha: `scripts/sync-sfdocs.sh <sha>` copies only the ~35-50 needed `enterprise_api/<Object>.json` files (not all 1 839, not `wsdl_segment`) into `packages/metadata/standard/source/` with `LICENSE` + `VENDOR.md` (SHA, date). Vendoring makes CI/offline deterministic and keeps GitHub fetch out of tests.
-- Generator: `scripts/gen-standard-baseline.ts` run with the already-present `tsx`; reads snapshot + `standard/overrides/*.json` (precision/scale, keyPrefix, compound fields, picklist-set bindings, narrowed `OwnerId.referenceTo`) and writes `packages/metadata/standard/objects/<Obj>.json` in the **existing shape** (Account.json keys: `name,label,labelPlural,keyPrefix,hasOwner,fields[]` with `name,label,type,length,precision,scale,standardValueSet,restrictedPicklist,picklistValues,compoundFieldName,createable,updateable`). Output is deterministic (sorted keys) and committed; a vitest test regenerates in memory and diffs against the committed files.
-- Add a `pnpm gen:standard` script only; no new deps. A parity test: every field in the old 35 hand-written objects must still exist (baseline-not-in-docs was 0-1 per object in a spot check: Account lacks only `Tier`).
-- Optional live refresh (NOT in CI): Playwright against developer.salesforce.com is what Salesforce itself recommends for JS-heavy pages, but it is brittle, bot-walled, and adds a ~100 MB dependency. **Do not add it**; refresh from sf-skills instead.
+**pglite (verified by experiment on 2026-11-03, repo-pinned pglite 0.5.8 / PostgreSQL 18.3 / pglite-socket 0.2.11, Node 22.23.3, probes kept in the session scratchpad only):**
 
-## 2. Custom metadata, custom settings, custom labels: SFDX source format
+| Path | Result |
+|------|--------|
+| `COPY ... FROM STDIN` through pglite-socket with a `pg` client (hand-driven CopyInResponse/CopyData/CopyDone, which is what `pg-copy-streams` does) | FAILS: server returns `FATAL 08P01 terminating connection because protocol synchronization was lost`. pglite-socket forwards each client message as an independent unit, so the COPY sub-protocol does not survive. Same class of problem as pglite#958 handled in `test/db.ts`. |
+| In-process `db.query("COPY t FROM '/dev/blob'", [], { blob })` (pglite's own API) | Works, including bytea (`\x6869`) and `SET CONSTRAINTS ALL DEFERRED` with a deferred FK. But the orglet test harness hands code a `pg` Pool over the socket, not the `PGlite` object, so this path is unreachable from product code without a harness change. |
+| `SET CONSTRAINTS ALL DEFERRED` + insert child before parent + COMMIT | Works on pglite. |
 
-All verified against Salesforce's Metadata API reference (via the sf-skills `platform-metadata-api-context-get` assets: `CustomMetadata.json`, `CustomLabels.json`, `CustomObject.json`) and the SDR registry.
+Confidence: the failure is MEDIUM (my hand-rolled driver could be at fault, but it uses pg's own `sendCopyFromChunk`/`endCopyFrom`, and the error is protocol-level); the `/dev/blob` success is HIGH (observed). Do not spend phase time making STDIN work on pglite.
 
-| Artifact | Path in retrieve | Shape |
-|----------|------------------|-------|
-| Custom metadata *type* | `objects/<Name>__mdt/<Name>__mdt.object-meta.xml` + `objects/<Name>__mdt/fields/*.field-meta.xml` | `<CustomObject>` like any object; presence of `__mdt` suffix marks it. `visibility` Public/Protected/PackageProtected. Fields end `__c`; type may be `MetadataRelationship` (with `<referenceTo>` and `<metadataRelationshipControllingField>`). Already walks through `sfdx.ts` object/field loading; needs `__mdt` handling in the type map. |
-| Custom metadata *record* | `customMetadata/<Type>.<RecordDevName>.md-meta.xml` (SDR: dir `customMetadata`, suffix `md`) | `<CustomMetadata><label/><protected/><values><field>Field__c</field><value xsi:type="xsd:string">..</value></values>...`. `field` is the API name; `value` is `xsd:anyType` with an `xsi:type` attr, may be `xsi:nil="true"`. The type name is the part before the first `.` in the filename; record DeveloperName is the remainder (note: `<fullName>` is usually absent). |
-| Custom setting *definition* | `objects/<Name>__c/<Name>__c.object-meta.xml` with `<customSettingsType>List</customSettingsType>` or `Hierarchy` (Hierarchy is the default when the element is present without value, per docs) | Plain custom object plus the marker; `<visibility>` replaces older `customSettingsVisibility`. Fields are ordinary `.field-meta.xml`. |
-| Custom setting *data* | **Not in a metadata retrieve.** It is record data. | `$Setup` can only be populated from `--import`/seed data or REST DML. Define behaviour: the `__c` setting table is created, rows come from the data path; otherwise `$Setup.X__c.Field__c` evaluates against empty/default and logs a quiet note. Do not claim retrieve support. |
-| Custom labels | `labels/CustomLabels.labels-meta.xml` (SDR: dir `labels`, suffix `labels`, child element `labels`, unique id `fullName`) | `<CustomLabels><labels><fullName/><value/><language/><protected/><shortDescription/><categories/></labels>...`. Translations live elsewhere (`translations/`): out of scope, use the `language` of the base label. |
+**Design that keeps the pglite leg green:** a narrow `RowSink` interface in the loader (`write(table, columns, rows)`), two implementations selected by capability, not by `usingPglite` leaking into product code:
 
-### Existing parser: what to change (packages/metadata)
+1. `CopySink` (pg-copy-streams) for real Postgres. Selected when `SHOW server_version`/a probe says COPY works; default.
+2. `InsertSink` (portable): batched `INSERT INTO t (cols) SELECT * FROM unnest($1::text[], $2::int[], ...)` or multi-row `VALUES` in 1000-row batches, inside the same transaction, same deferred constraints. Works on both. CLI flag/env `ORGLET_ARCHIVE_SINK=insert|copy` (default `copy`). The pglite suite runs the full loader through `InsertSink`; the Postgres 16 CI job (`test-postgres`) additionally runs the same loader test with `CopySink`. Add one `describe.skipIf(usingPglite)` test in the existing style (`usingPglite` export in `test/db.ts`) that asserts COPY equals INSERT results on the fixture, so the two sinks cannot drift. Skip reason must be printed, per project rules ("tests skipped" must be reported).
+3. Insist that both sinks receive identical, already-coerced values so the only difference under test is transport.
 
-`src/xml.ts` uses `fast-xml-parser` with `ignoreAttributes: true`, `parseTagValue: false`, and a `REPEATED` set that already contains `value`/`values`.
+## (c) CSV parsing
 
-- Add `labels` to `REPEATED` (a single-label file would otherwise parse as an object, not array) - verify the rest of the set when editing.
-- `ignoreAttributes: true` loses `xsi:type`/`xsi:nil`. **Do not flip the global parser.** Coerce record values by the *declared field type* of `<Type>__mdt.<Field>__c` (the schema is already loaded), which is what Salesforce itself does. Only if nil-vs-empty matters, add a second parser instance with `ignoreAttributes: false, attributeNamePrefix: "@_"` used solely for `customMetadata/`.
-- New loaders mirror existing ones: `filesWithSuffix(join(root,"customMetadata"), ".md-meta.xml")`, `labels/CustomLabels.labels-meta.xml`. Produce `OrgSchema` additions (`customMetadataRecords`, `labels`) rather than a new package.
+- **What exists:** `packages/api/src/bulk/csv.ts` is a hand-written RFC 4180 parser: `parseCsv(text: string, delimiter)` over a complete string, building `string[][]`. It is **not streaming**, is character-by-character string concatenation, and accepts CR/LF/CRLF. Fine for Bulk ingest bodies (bounded by `bodyLimit`), wrong for backup CSVs (up to 200K rows per file, unbounded count, possibly large long-text fields).
+- **Add `csv-parse` 7.0.3** (MIT, ESM, types bundled) in `@orglet/archive`: `parse({ columns: true, bom: true, relax_column_count: false, skip_empty_lines: true })` and consume with `for await`. Reasons over alternatives: handles quoted newlines and doubled quotes per RFC 4180, bounded memory via async iteration with backpressure, header-as-keys gives the column mapping the loader needs, and the same suite has `csv-stringify` (MIT) if the COPY side needs a vetted writer (not required: `csvField` in `csv.ts` already escapes correctly; reuse it to avoid a dependency).
+- **Do not replace `parseCsv`** in the Bulk path (surgical changes; its lenient CR handling is tested). Do not move it either; the archive package must not import from `@orglet/api` (dependency direction: api depends downward). If both need shared CSV utilities later, extract in a separate refactor.
+- Encoding: Heimdall writes UTF-8 `text/csv`, no gzip. Pass `bom: true` anyway. Ignore gzip support (YAGNI; log `UNSUPPORTED:archive-compression` if a `.gz` key shows up).
+- Large-field guard: set `max_record_size` (e.g. 64 MiB) so a corrupt file with an unterminated quote fails with a clear error instead of consuming memory.
 
-### Does an OSI package already cover this? Yes for *types*, no for need
+## (d) Binary and blob handling
 
-- `@jsforce/jsforce-node` 3.10.29 (MIT): `lib/api/metadata/schema.d.ts` has `CustomMetadata { label, protected, values: CustomMetadataValue[] }`, `CustomMetadataValue { field, value }`, `CustomLabels { labels: CustomLabel[] }`, `CustomObject.customSettingsType`.
-- `@salesforce/source-deploy-retrieve` 13.4.5 (Apache-2.0): registry plus (de)serialisation of source format; heavy tree (`@salesforce/core`, jsforce, graceful-fs, ...).
-- **Recommendation: neither as a dependency.** orglet's parser is intentionally tiny and offline; the three shapes above are 5-10 elements each. Use the jsforce typings as a *reference* when hand-writing interfaces (types only, nothing imported). Adding SDR would drag in ~dozens of transitive packages and its own opinionated component model for no gain.
+- **Postgres bytea:** `pg` maps `Buffer` to bytea on write and returns `Buffer` on read, no type parser change needed (`db.ts` only overrides date/numeric/int8/time/timestamptz). Hex input in COPY CSV is `\x...`.
+- **Blob store interface** (placement: define `BlobStore` in `@orglet/engine`, next to `Store`, because the engine owns record persistence and `GET VersionData` needs it; implementations in `@orglet/schema`/`engine` for Postgres, in `@orglet/archive` for external): `put(meta, stream|Buffer) -> ref`, `get(ref) -> { stream, size, contentType }`, `has(ref)`. Two implementations: `PgBlobStore` (bytea column on a content table, normal org) and `ObjectBlobStore` (wraps `ObjectStore`, key `OrgId=<org>/Period=0/files/<cs[0:4]>/<cs>.<ext>`, read-only, no copy at load time). The archive-mode CV row stores `Checksum` + `FileExtension` and the store derives the key; no blob bytes are loaded.
+- **Upload via REST:** Salesforce REST creates ContentVersion with `VersionData` as base64 in the JSON body (for the `sobjects` endpoint) or multipart. Base64 JSON works inside the existing `bodyLimit: 64 * 1024 * 1024` (Salesforce's real limit is about 37.5 MB raw / 50 MB for the base64 body for this route; keep orglet at the existing limit and document it). Multipart upload (`@fastify/multipart` 10.1.7, MIT) is a Salesforce feature for large files; defer as `UNSUPPORTED:content-multipart` and do not add the dependency in v1.2. Note this is a read-only-archive milestone: upload only matters for the normal-org file path.
+- **Checksum:** compute MD5 hex (`node:crypto`, no dependency) on write for `Checksum`, matching Salesforce and Heimdall's dedup key. Verify after read in archive mode only on request (a `--verify-blobs` flag), not by default.
+- **Download:** Fastify 5 streams when `reply.send(readable)` is given a Node `Readable`; set `Content-Type`, `Content-Length` (from `ContentSize` or the store), and `Content-Disposition`. For bytea, a `Readable.from(buffer)` is fine (the value is already in memory from `pg`); for S3, pipe `Body`. Handle client aborts by destroying the S3 `Body` on `reply.raw` close. Do not use `@fastify/static` (MIT, 10.1.8): the source is not a directory. Range requests: not needed in v1.2; add later if browsers need video seeking.
+- **Size:** a `pg` bytea read is whole-value in memory (about 1 GB hard limit in Postgres, practical limit far lower). Acceptable for a normal org's dev files; this is why archive mode uses the external store. If large files in a normal org become a need, `lo_*` large objects or chunked rows are the upgrade, not in scope.
 
-## 3. sigha (formula front end)
+## (e) UI
 
-- Upstream: <https://github.com/rfaulhaber/sigha> (MIT, owner Ryan Faulhaber, ~active: last merged PR #45 on 2026-09-22; pushed 2026-09-29; 0 open issues, only dependabot PRs open). Vendored rev `2abe5dbb` (2026-09-22) = upstream HEAD of main at research time; resync with `scripts/sync-sigha.sh <rev>`.
-- Layout: `src/syntax/{lexer,parser,ast,token,chars}.ts`, `registry/`, `analysis/`, `engine/`, `i18n/`; golden corpus `corpus/salesforce-v2.json` (oracle-compared with `salesforce/formula-engine`) and `org-verified.json`.
-  - **Legal flag:** `org-verified.json` is upstream's record of rows verified *against a real org*. It is upstream's MIT data, already vendored since v1.0, but it is exactly the thing orglet's rule forbids producing itself. Johan should consciously accept or drop it; this research does not change that status quo.
+Confirmed: no framework, build step or new dependency. `packages/api/ui/index.html` is already a single self-contained page using `fetch` against orglet's own REST and query endpoints. Search (SOQL `LIKE`/SOSL stub), record view (describe + record GET), related lists (child-relationship describe + subqueries) and file download (an anchor to `.../VersionData`, which sends a session cookie or token as the page already does for queries) are all expressible with the existing REST surface. Growth risk is file size (242 lines today); if the page passes roughly 800 lines, split into several static files served by the existing static handler rather than introducing a bundler. [HIGH for "no dependency required", MEDIUM on the file-size threshold, which is a judgement.]
 
-### `!` token - verified: Salesforce accepts unary `!`
+## (f) Second Postgres (Heimdall index)
 
-- Evidence: Salesforce's open-source formula engine (BSD-3, `salesforce/formula-engine`) grammar `impl/src/main/antlr4/com/force/formula/parser/gen4/Formula.g4` has `unaryExpression : ... | NOT unaryExpression | BANG unaryExpression #unaryExpression_bang`, and `ANTLR4GrammarVisitor.visitUnaryExpression_bang` rewrites it to the `NOT` AST node. `LexerRules.g4`: `BANG : '!'`, `COLON : ':'`. Docs-derived sources also list `!` as logical NOT alongside `!=`. HIGH confidence for the semantic (`!x` == `NOT(x)`), same precedence as other unary operators.
-- The vendored corpus has **no unary `!` case** (only `!` inside string literals), which is why upstream never hit it.
-- Current sigha behaviour: `lexer.ts` case `"!"` emits an `operator` token only when followed by `=`, else error `unexpectedBang`. `parser.ts#parseUnary` only accepts `-`/`+`; `ast.ts#UnaryOperator = "-" | "+"` with a comment that NOT is a function.
-- **Smallest upstream change:** (a) lexer: `!` not followed by `=` becomes an `operator` token; delete/retire `unexpectedBang`; (b) ast: `UnaryOperator = "-" | "+" | "!"`; (c) parser `parseUnary`: accept `!` (same depth guard); (d) evaluator: treat `UnaryOp "!"` as the existing `NOT` implementation (null/blank semantics identical to `NOT`); (e) formatter/analysis exhaustive switches over `UnaryOperator` (compiler will list them); formatter should round-trip `!x` unchanged. Add corpus rows with expectations taken from the BSD-3 formula-engine oracle, not from an org.
+- Use a second `pg.Pool` from `createPool(url)` with a distinct connection string, e.g. `--heimdall-db <url>` / `HEIMDALL_DATABASE_URL`. Keep it separate from `ORGLET_DATABASE_URL`; never share a pool, the target is writable and the source must not be.
+- **Read-only:** pass `options: "-c default_transaction_read_only=on -c statement_timeout=0"` in the pool config (or `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY` on connect) so a bug cannot write to the index. Set `application_name: "orglet-archive-load"`.
+- A restored `pg_dump` loaded into any local Postgres is just another URL; orglet needs only `SELECT` on `objects`, `csvfiles` and `backup_runs` (and `object_stats` optionally). No Heimdall code and no dump parsing in orglet.
+- Reading `objects` for a large backup: use a cursor (`pg-cursor` 2.22.1, MIT, a `pg` sibling) or keyset pagination on `(csv_id, id)` rather than loading all rows; the plan is to group by `csv_id`, so `ORDER BY csv_id, id` with keyset pages of about 50K rows avoids the extra dependency. Prefer keyset pagination; add `pg-cursor` only if profiling demands.
+- The index DB has no org table; `org_id` is a filter column; `period` is YYMM int (negative = archive), unlike the S3 key's `yyyyMM` / `Archive-yyyyMM`. Do not derive keys from `period`; always use `csvfiles.s3path`.
+- pglite as the Heimdall index in tests: not needed. The public fixture backup should ship as SQL/CSV seed data inserted into a table set created by test code (Heimdall-shaped DDL, copy of HEIMDALL-FORMAT.md section 3 minus unused columns) in the same per-file pglite or Postgres the test already has, i.e. a second *schema* in the test database, so the "second Postgres" is just a second pool onto the same server in tests.
 
-### `Relationship:Object.Field` colon syntax - verified
+## Integration points in existing packages
 
-- Meaning: polymorphic relationship qualification: `Owner:User.Email`, `Owner:Queue.QueueEmail` (Salesforce cross-object owner formulas). The open-source engine models it as `FormulaUtils.getPolymorphicFieldName("Owner","User")` = `"Owner:User"` with `DOMAIN_DELIMETER` ':' and `getNameAndDomainFromFieldName` splitting it into {field, domain}.
-- Current sigha: `isIdentContinue` excludes `:`; `parseFieldRef` loops `dot identifier`. No `colon` token kind exists, so `Owner:User.Email` errors at the colon.
-- **Smallest upstream change:** in `scanIdentifier`, after the identifier run, if `peek()===":"` and `isIdentStart(peek(1))`, consume `:` plus the next identifier run, so `Owner:User` is a single identifier token (path segment `"Owner:User"`). Zero parser/AST change; `FieldRef.path[0] === "Owner:User"`. Edge: never absorb when the previous token context is a ternary-like `:`; Salesforce formulas have no `?:`/`:` operator, so the check is safe. Resolver side (orglet `packages/formula`): split a segment on `:`; when the field is polymorphic, resolve against the named target's fields, else keep the current `referenceTo` rules; mismatched domain -> compile diagnostic.
-- Process: change is upstream-only per `VENDOR.md` ("Behaviour changes belong upstream"). Johan owns the GitHub account `snorf`, not the upstream repo: plan a PR to `rfaulhaber/sigha` (small, with corpus tests), then `sync-sigha.sh <merged sha>`. Fallback if the PR stalls: pin a fork commit in `VENDOR.md` (still MIT) - do not hand-patch `packages/sigha/src` (the sync script wipes it).
+| Concern | Where | Notes |
+|---------|-------|-------|
+| `ObjectStore` interface, `FsObjectStore`, `S3ObjectStore`, CSV streaming, Heimdall index reader, version selection, `RowSink`s, `archive load` orchestration | **new package `@orglet/archive`** (depends on `metadata`, `schema`, `engine`) | Keeps the AWS SDK and `csv-parse` out of `api`/`engine`/`schema`. One barrel `src/index.ts`, explicit named exports, matches conventions. Add to root `tsconfig.json` references and `vitest.config.ts` aliases. |
+| `CopySink` (pg-copy-streams) | `@orglet/archive` | `@orglet/schema` stays free of the dependency; it exposes `createPool`, `withTransaction`. |
+| `BlobStore` interface and `PgBlobStore` | `@orglet/engine` (interface), `@orglet/schema` (bytea table DDL via OrgSchema/ddl) | DDL for the content table must go through the existing planner so migrations stay diff-based. |
+| `ObjectBlobStore` | `@orglet/archive`, injected into `ApiOptions` by `@orglet/cli` | `api` depends only on the `BlobStore` interface. |
+| `archive load` command | `@orglet/cli` | New subcommand beside `up/check/reset`; `--from-dir`, `--s3-bucket`, `--s3-endpoint`, `--heimdall-db`, `--as-of`, `--org-id`. |
+| Read-only mode | `@orglet/engine` (`EngineOptions.readOnly`) + `@orglet/api` | Refuse DML with a Salesforce-shaped error; GDPR erase is an explicit separate engine method. No dependency. |
+| `UNSUPPORTED:` areas to register | `archive-column`, `archive-compression`, `content-multipart` | Per mandatory convention. |
 
-## 4. Other v1.1 features: stack impact
+## Alternatives considered
 
-| Feature | Stack impact |
-|---------|--------------|
-| `$UserRole`, `$Api`, `$Setup`, `$Label`, `$CustomMetadata` globals | Pure TS in `packages/formula` + `engine`: extend the global-context builder next to `$User/$Profile/$Organization`. `$Label.X` from `labels`; `$CustomMetadata.Type__mdt.Record.Field__c` from loaded md rows; `$Api.Session_ID`/`Partner_Server_URL_*` return fixed emulator values. `$Permission` stays `UNSUPPORTED:formula-global`. No deps. |
-| Roll-up over formula fields | Engine/DDL logic only. Note: Salesforce rejects roll-ups over some formula shapes; follow documented restrictions, else `UNSUPPORTED:rollup-formula`. |
-| `orglet check` --summary/--json | Plain `JSON.stringify` + existing `console` conventions. No `commander`/`yargs`/`chalk`. |
-| `__mdt` objects read-only | DDL via existing planner; DML engine rejects writes with a real Salesforce status code (`INVALID_OPERATION`/`FEATURE_NOT_ENABLED`, confirm against docs), records inserted at load only. |
-
-## What NOT to add
-
-| Do not add | Why |
-|------------|-----|
-| Playwright/Puppeteer/Firecrawl for docs scraping | Docs are bot-walled (403), SPA-rendered, ToS-fuzzy; Salesforce already publishes the converted data under Apache-2.0. Heavy dependency. |
-| `@salesforce/source-deploy-retrieve` | Pulls `@salesforce/core`, jsforce and a large tree to read ~5 XML shapes. |
-| `jsforce` / `@jsforce/jsforce-node` as a runtime dep | Only its types would be useful; it is already used as a pinned conformance client, keep it there. |
-| An XSD/WSDL generator or any Enterprise WSDL | WSDL is org-generated; legal rule. |
-| `sf sobject describe` / org describe as a data source | Forbidden by the project's legal constraint (also counts as benchmarking). |
-| `commander`, `yargs`, `chalk`, table libraries | `check` output is simple text/JSON. |
-| ANTLR / a second formula parser | sigha plus two small upstream patches covers both syntax gaps. |
-| Third-party blog key-prefix tables as an automated source | Unverified, copyright-fuzzy; hand-maintain a small cross-checked JSON. |
+| Category | Recommended | Alternative | Why not |
+|----------|-------------|-------------|---------|
+| S3 client | `@aws-sdk/client-s3` | `aws4fetch` | No credential chain, hand-rolled XML, web streams |
+| S3 client | `@aws-sdk/client-s3` | `minio` 8.0.7 (Apache-2.0) | Different credential model, no benefit; Heimdall users already hold AWS-style credentials |
+| Multipart upload | not added | `@aws-sdk/lib-storage` | No S3 writes in scope |
+| COPY | `pg-copy-streams` | `INSERT` only everywhere | 5-20x slower on large loads; COPY is the requirement. Kept as the pglite sink |
+| COPY | `pg-copy-streams` | pglite `/dev/blob` | Unreachable from a socket-attached `pg` Pool; would fork product code for tests |
+| CSV | `csv-parse` | extend `parseCsv` to stream | A second hand-written streaming RFC 4180 state machine to test; `csv-parse` is MIT and boring |
+| CSV | `csv-parse` | `papaparse` (MIT), `fast-csv` (MIT) | Larger/older APIs; `csv-parse` has the cleanest async iterator and strict mode |
+| Upload | base64 JSON | `@fastify/multipart` | Out of scope, deferred |
+| UI | vanilla JS | React/Vite/etc. | Violates "no build step"; unneeded |
 
 ## Installation
 
 ```bash
-# No new dependencies. New scripts only:
-#   scripts/sync-sfdocs.sh <sf-skills-sha>    # vendors needed enterprise_api/*.json + LICENSE + VENDOR.md
-#   pnpm gen:standard                          # tsx scripts/gen-standard-baseline.ts
-#   scripts/sync-sigha.sh <rev>                # after upstream PR merges (existing)
+# archive package (new): run from repo root
+pnpm --filter @orglet/archive add @aws-sdk/client-s3@3.1161.0 pg-copy-streams@7.0.0 csv-parse@7.0.3 pg
+pnpm --filter @orglet/archive add -D @types/pg-copy-streams@1.2.5
 ```
 
-## Confidence
+(For the roadmap, not executed by research: pin exact versions; the existing repo uses carets for runtime libs, so carets are also acceptable.) After install, confirm `pnpm-lock.yaml` licence set is all OSI (`@aws-sdk/*` and `@smithy/*` are Apache-2.0).
 
-| Area | Level | Notes |
-|------|-------|-------|
-| Docs have no public JSON API; 403/404 on the guessed endpoints | HIGH | Tested 2026-10-12; Salesforce's own skill recommends browser rendering. |
-| sf-skills dataset: licence, coverage, shape | HIGH | Read LICENSE, fetched Account/Opportunity/etc., computed coverage on 30 target objects. |
-| Dataset sufficiency | MEDIUM | Good for names/types/flags/relationships; lengths partial, no picklist values / precision / key prefixes. Overrides required. |
-| Legal compatibility of using the dataset | MEDIUM | Apache-2.0 repo, derived from public docs, no org involved; the doc prose copyright is Salesforce's, hence facts-only output. Not legal advice. Confirm Johan is comfortable before first commit. |
-| SFDX formats (md, labels, customSettingsType) | HIGH for shapes, MEDIUM for edge cases (nil values, Hierarchy default, MetadataRelationship element names - confirm against `CustomField` doc when implementing). |
-| sigha `!` and `:` changes | HIGH | Verified in BSD-3 formula-engine grammar and in the vendored lexer/parser source. Effort on evaluator/formatter side not measured. |
+## What NOT to add
+
+- `@aws-sdk/lib-storage`, `@aws-sdk/s3-request-presigner`, `@fastify/multipart`, `@fastify/static`: no use case in v1.2.
+- MinIO or LocalStack containers in `docker-compose.yml` or CI: the filesystem `ObjectStore` covers the tests; adding services makes CI heavier and re-introduces credentials.
+- Any Heimdall client or JDBC-ish dependency: orglet reads the index and the bucket directly (HEIMDALL-FORMAT.md, consequences).
+- A UI framework, bundler or CSS dependency (no SLDS 2, per licensing constraint).
+- `aws-sdk-client-mock` or `s3rver`-style mocks: the interface seam makes them unnecessary.
+- A second CSV parser in `api`: leave Bulk ingest on `parseCsv`.
+
+## Open items for the roadmap
+
+1. Read `packages/schema/src/ddl.ts` and decide whether FKs are already `DEFERRABLE`; if not, a schema change plus migration is needed before COPY ordering stops mattering. I did not read ddl.ts this session.
+2. Confirm `import copy from "pg-copy-streams"` compiles under NodeNext + `verbatimModuleSyntax` with `@types/pg-copy-streams` (types describe CJS `export function from`); fall back to `createRequire` only if not.
+3. Re-run the pglite COPY-STDIN probe on pglite 0.5.15 / pglite-socket current before the phase starts; the upstream may have fixed the sub-protocol and then the second sink can be dropped. Licence of pglite is Apache-2.0 (0.5.15 verified).
+4. Re-verify S3 client options (`forcePathStyle`, endpoint override) against current AWS SDK v3 docs before implementing; this session verified versions and licences only, not the option semantics.
+5. Heimdall source says Postgres `period` and S3 key `Period` differ; the loader must trust `csvfiles.s3path` only.
 
 ## Sources
 
-- sf-skills repo (Apache-2.0): https://github.com/forcedotcom/sf-skills (`platform-data-and-tooling-api-context-get`, `platform-metadata-api-context-get`, `platform-docs-get`)
-- Salesforce formula engine (BSD-3): https://github.com/salesforce/formula-engine (`Formula.g4`, `LexerRules.g4`, `ANTLR4GrammarVisitor.java`, `FormulaUtils.java`)
-- sigha (MIT): https://github.com/rfaulhaber/sigha
-- npm (versions/licences checked 2026-10-12): `@salesforce/source-deploy-retrieve` 13.4.5 Apache-2.0; `@salesforce/types` 1.8.0 BSD-3; `@salesforce/schemas` 1.10.3 ISC; `@salesforce/core` 9.3.6 Apache-2.0; `@jsforce/jsforce-node` 3.10.29 MIT; `fast-xml-parser` 5.11.2 MIT; `@jetstreamapp/soql-parser-js` 8.1.2 MIT; `@electric-sql/pglite` 0.5.9 Apache-2.0
-- Local reading: `packages/sigha/src/syntax/{lexer,parser,ast}.ts`, `packages/metadata/src/xml.ts`, `scripts/sync-sigha.sh`
+- npm registry, checked 2026-11-03: `@aws-sdk/client-s3` 3.1161.0 Apache-2.0 (engines node >=20); `@aws-sdk/lib-storage` 3.1161.0 Apache-2.0; `pg-copy-streams` 7.0.0 MIT (2025-05-27); `@types/pg-copy-streams` 1.2.5 MIT; `csv-parse` 7.0.3 MIT (2026-09-25); `pg-cursor` 2.22.1 MIT; `aws4fetch` 1.0.20 MIT; `minio` 8.0.7 Apache-2.0; `@fastify/multipart` 10.1.7 MIT; `@fastify/static` 10.1.8 MIT; `fastify` 5.12.8 MIT; `@electric-sql/pglite` 0.5.15 Apache-2.0.
+- Repo reads: `packages/api/src/bulk/csv.ts`, `packages/schema/src/db.ts`, `test/db.ts`, `package.json`, `pnpm-workspace.yaml`, `.planning/research/HEIMDALL-FORMAT.md`.
+- Local experiments (this session, Node 22.23.3, repo-pinned pglite 0.5.8): COPY FROM STDIN via socket fails; `/dev/blob` COPY and deferred FKs work. [Reproducible; scripts are in the session scratchpad, not the repo.]
+- `pg-copy-streams` README (github.com/brianc/node-pg-copy-streams): usage pattern, pure-JS `pg` only, completion signalled by `end`. [MEDIUM]
+- Not verified this session (training knowledge, LOW-MEDIUM): AWS SDK v3 endpoint/`forcePathStyle` semantics; Fastify 5 stream reply behaviour; Salesforce REST ContentVersion upload limits.
