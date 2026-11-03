@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
-status: ready_to_plan
-stopped_at: Roadmap created for v1.2; next /gsd:discuss-phase 15
-last_updated: "2026-11-03T13:00:00.000Z"
-last_activity: 2026-11-03
+status: planning
+stopped_at: Phase 15 context gathered
+last_updated: "2026-11-03T20:02:09.966Z"
+last_activity: 2026-11-03 — Roadmap created for v1.2 (Phases 15-21)
 progress:
-  total_phases: 7
+  total_phases: 11
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -167,6 +167,7 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
   11-VALIDATION.md map; clear the tsc errors under tsconfig.test.json (36 on 2026-11-03: 19 in vendored sigha
   files, 17 in test files; then add `typecheck:tests`);
   make the `conformance` CI job required on main (ruleset change, Johan's call)
+
 - v1.0 audit tech debt still open: combined Bulk-ingest + roll-up test; roll-up re-backfill
   (`orglet rollup --recompute`, ROLLX-01)
 
@@ -182,6 +183,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-03
-Stopped at: Roadmap created for v1.2 (7 phases, 28/28 requirements mapped); next /gsd:discuss-phase 15
-Resume file: None
+Last session: 2026-11-03T20:02:09.962Z
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-files-model/15-CONTEXT.md
