@@ -4,8 +4,8 @@ milestone: v1.1
 milestone_name: real-org fidelity
 status: milestone_complete
 stopped_at: v1.1 milestone archived (2026-11-01); next milestone not yet defined
-last_updated: "2026-11-01T09:30:00.000Z"
-last_activity: 2026-11-01
+last_updated: "2026-11-03T13:00:00.000Z"
+last_activity: 2026-11-03
 progress:
   total_phases: 7
   completed_phases: 7
@@ -31,7 +31,7 @@ Milestone: v1.1 "real-org fidelity" — SHIPPED 2026-11-01 (archive: milestones/
 Phase: none (next milestone not yet defined)
 Plan: none
 Status: Milestone complete
-Last activity: 2026-11-01
+Last activity: 2026-11-03
 
 Progress: [██████████] 100% (v1.1: 7/7 phases, 62/62 plans)
 
@@ -164,11 +164,11 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 - v1.1 audit tech debt (see milestones/v1.1-MILESTONE-AUDIT.md): open the two upstream sigha PRs and
   re-pin to upstream main (VENDOR.md D-02 quick task); refresh 08-VERIFICATION.md status and the
-  11-VALIDATION.md map; clear the 41 pre-existing tsc errors in test files (then add `typecheck:tests`);
+  11-VALIDATION.md map; clear the tsc errors under tsconfig.test.json (36 on 2026-11-03: 19 in vendored sigha
+  files, 17 in test files; then add `typecheck:tests`);
   make the `conformance` CI job required on main (ruleset change, Johan's call)
 - v1.0 audit tech debt still open: combined Bulk-ingest + roll-up test; roll-up re-backfill
   (`orglet rollup --recompute`, ROLLX-01)
-- Refresh `.planning/codebase/` with `/gsd:map-codebase` before planning the next milestone (map predates v1.0)
 
 ### Blockers/Concerns
 
@@ -182,6 +182,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-01
-Stopped at: v1.1 milestone archived; next step /gsd:new-milestone
+Last session: 2026-11-03
+Stopped at: v1.1 tagged and codebase map refreshed (.planning/codebase/, 2026-11-03); next step /gsd:new-milestone
 Resume file: None
