@@ -58,7 +58,7 @@
 
 | ID | Description | Research Support |
 |----|-------------|------------------|
-| FILE-03 | CV insert without `ContentDocumentId` creates the document; nullable override removed; describe `nillable:false` | Generator override removal makes `nillable:false` fall out of the Object Reference properties line (verified, no `Nillable` token). `checkRequired` (engine.ts:~716) would reject the insert, so the files step must pre-assign the `069` Id before it. NOT NULL needs a new `columnFor` rule and a new migrate step (neither exists). See Architecture Patterns 1 and 4. |
+| FILE-03 | CV insert without `ContentDocumentId` creates the document; nullable override removed; describe `nillable:false` | Generator override removal makes `nillable:false` fall out of the Object Reference properties line (verified, no `Nillable` token). `checkRequired` (engine.ts:830) would reject the insert, so the files step must pre-assign the `069` Id before it. NOT NULL needs a new `columnFor` rule and a new migrate step (neither exists). See Architecture Patterns 1 and 4. |
 | FILE-04 | CV insert with existing `ContentDocumentId` adds a version, flips `IsLatest`, increments `VersionNumber`, mirrors | Same files step inside `write()` of `saveBatch`; lock the document row (`FOR UPDATE`), count/max existing versions, flip, insert, mirror. Pattern 1. |
 | FILE-05 | Base64 `VersionData` accepted; server computes `Checksum`, `ContentSize`, `FileType`, `FileExtension`; multipart refused `UNSUPPORTED:content-multipart` | New FieldType `Base64`; strict base64 decode in the files step; `node:crypto` MD5; verified Fastify behaviour for a multipart content-type parser and for 413 (currently falls into the 500 branch of the error handler). Cap 50 MiB base64 / 37.5 MiB bytes. Patterns 2 and 6. |
 | FILE-06 | `GET .../ContentVersion/{id}/VersionData` streams bytes with `Content-Type`/`Content-Length`; records and SOQL carry the URL; describe `base64` | Verified: a static `.../:id/VersionData` route wins over `/:type/:field/:value` in Fastify 5.12.5 (probe). jsforce `record.blob()` and simple-salesforce `get_base64()` hit exactly this URL (read from SDK source). URL injection points: `recordJson` (3 callers), SOQL select, shape. Pattern 3. |
@@ -286,7 +286,7 @@ Existing `_orglet` bookkeeping (key_prefixes, rollup_backfills, bulk jobs) is un
 **Warning signs:** `LatestPublishedVersionId` is NULL after a delete/undelete round trip.
 
 ### Pitfall 2: Removing the nullable override makes the insert fail before the engine can fill the column
-**What goes wrong:** With `nillable:false` and not `defaultedOnCreate`, `checkRequired` (engine.ts ~:716) reports `REQUIRED_FIELD_MISSING: ContentDocumentId` for the very insert FILE-03 must accept.
+**What goes wrong:** With `nillable:false` and not `defaultedOnCreate`, `checkRequired` (engine.ts:830) reports `REQUIRED_FIELD_MISSING: ContentDocumentId` for the very insert FILE-03 must accept.
 **How to avoid:** Pre-assign the `069...` Id in the files step before `checkRequired` (Pattern 1 step 1), or alternatively mark the field `defaultedOnCreate: true` in the override (changes describe, not recommended: the describe contract is `nillable:false`, `defaultedOnCreate:false` unless a source says otherwise). A pre-assigned Id also means `checkReferences` (which only checks fields present in `w.changes`) does not try to validate the not-yet-existing document.
 
 ### Pitfall 3: `migrate()` has no nullability handling
