@@ -1,0 +1,38 @@
+{
+  "name": "CaseContactRole",
+  "label": "Case Contact Role",
+  "labelPlural": "Case Contact Role",
+  "keyPrefix": "03j",
+  "keyPrefixSource": "de-describe",
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "CasesId",
+      "label": "Case ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Case"
+      ],
+      "relationshipName": "Cases"
+    },
+    {
+      "name": "ContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "nillable": false,
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact"
+    },
+    {
+      "name": "Role",
+      "label": "Role",
+      "type": "Picklist"
+    }
+  ]
+}

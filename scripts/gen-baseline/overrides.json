@@ -307,6 +307,96 @@
         }
       }
     },
+    "ContentDocumentLink": {
+      "keyPrefix": {
+        "value": "06A",
+        "source": "unverified"
+      },
+      "labels": {
+        "label": "Content Document Link",
+        "labelPlural": "Content Document Links",
+        "reason": "label not stated by either source; Phase 15 research"
+      },
+      "fields": {
+        "ContentDocumentId": {
+          "set": {
+            "deleteConstraint": "Cascade",
+            "childRelationshipName": "ContentDocumentLinks"
+          },
+          "reason": "FILE-08: deleting a ContentDocument deletes its links (Object Reference ContentDocumentLink usage: cascade delete does not fire link triggers); child relationship name ContentDocumentLinks per research"
+        },
+        "LinkedEntityId": {
+          "set": {
+            "referenceTo": [
+              "Account",
+              "Asset",
+              "Campaign",
+              "Case",
+              "Contact",
+              "Contract",
+              "EmailMessage",
+              "Event",
+              "Lead",
+              "Location",
+              "OperatingHours",
+              "Opportunity",
+              "Order",
+              "OrderItem",
+              "Organization",
+              "Product2",
+              "ServiceAppointment",
+              "SocialPost",
+              "Task",
+              "User"
+            ],
+            "relationshipName": "LinkedEntity",
+            "deleteConstraint": "Cascade"
+          },
+          "reason": "FILE-07: the documented target list names 200+ objects; Rule 2 would drop the field, so it is narrowed to the modelled intersection (same 20 as ContentVersion.FirstPublishLocationId); custom objects are appended at load time (build.ts, plan 15-04). Cascade: a record's file links go with it. No childRelationshipName, like every other polymorphic lookup, so a child subquery over it stays refused (Phase 15 D-16)"
+        },
+        "ShareType": {
+          "set": {
+            "nillable": false,
+            "picklistValues": [
+              {
+                "value": "V",
+                "label": "Viewer"
+              },
+              {
+                "value": "C",
+                "label": "Collaborator"
+              },
+              {
+                "value": "I",
+                "label": "Inferred"
+              }
+            ],
+            "restrictedPicklist": true
+          },
+          "reason": "Phase 15 OQ6/D-14: Object Reference ShareType prose says Required and lists V (Viewer), C (Collaborator), I (Inferred); Rule 6 drops per-org picklist values unless set here"
+        },
+        "Visibility": {
+          "set": {
+            "picklistValues": [
+              {
+                "value": "AllUsers",
+                "label": "AllUsers"
+              },
+              {
+                "value": "InternalUsers",
+                "label": "InternalUsers"
+              },
+              {
+                "value": "SharedUsers",
+                "label": "SharedUsers"
+              }
+            ],
+            "restrictedPicklist": true
+          },
+          "reason": "D-14: Object Reference Visibility prose lists AllUsers, InternalUsers, SharedUsers; labels are not documented, so the value is the label"
+        }
+      }
+    },
     "ContentVersion": {
       "keyPrefix": {
         "value": "068",
@@ -325,9 +415,10 @@
       "fields": {
         "ContentDocumentId": {
           "set": {
-            "nillable": true
+            "deleteConstraint": "Cascade",
+            "childRelationshipName": "ContentVersions"
           },
-          "reason": "documented exception to D-18: Object Reference ContentVersion usage says omit ContentDocumentId to create a new document, so the field is optional on insert although its Properties line omits Nillable; the automatic ContentDocument creation is not implemented (Phase 10 scope); accepted at the D-04 checkpoint 2026-10-14"
+          "reason": "Phase 15 D-01: required as the Properties line says (the Phase 10 nullable exception is removed; the engine creates the ContentDocument when the client omits it). FILE-08: deleting a ContentDocument deletes its versions (Object Reference, ContentDocument usage); child relationship name ContentVersions per research"
         },
         "FirstPublishLocationId": {
           "set": {
@@ -364,6 +455,12 @@
             "relationshipName": "RecordType"
           },
           "reason": "name rule (09-06 checkpoint, extended in Phase 10 D-19): field name names modelled object RecordType; neither source states Refers To; relationshipName guessed from the field name"
+        },
+        "VersionData": {
+          "set": {
+            "updateable": false
+          },
+          "reason": "Phase 15 OQ4: the REST API Developer Guide (Insert or Update Blob Data) says a changed file is a new ContentVersion; replacing bytes in place would invalidate Checksum, ContentSize and the ContentDocument mirror. Differs from the Object Reference Properties (Create, Nillable, Update) on this one flag"
         },
         "Title": {
           "set": {

@@ -1,14 +1,16 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { loadOrgSchema, type OrgSchema } from "@orglet/metadata";
+import { loadOrgSchema, type FieldDef, type OrgSchema } from "@orglet/metadata";
 import { generateId, matchTargetByPrefix, migrate, quote, toCaseSafeId, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg } from "./bootstrap.js";
+import { coerceValue } from "./coerce.js";
 import { DmlEngine } from "./engine.js";
 import type { ChangeEvent } from "./events.js";
 import type { Session, TriggerContext } from "./hooks.js";
 import { loadParents } from "./parents.js";
+import { Store } from "./store.js";
 
 const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
@@ -75,7 +77,7 @@ const BUSINESS_FLAGS: Record<string, [boolean, boolean, boolean, boolean]> = {
   OrderItem: [true, true, true, false], AccountContactRelation: [true, true, true, false], AccountTeamMember: [true, true, true, false],
   OpportunityTeamMember: [true, true, true, false], OpportunityContactRole: [true, true, true, false], OpportunitySplit: [true, true, true, false],
   ContractLineItem: [true, true, true, true], CaseContactRole: [true, true, true, false], CaseMilestone: [false, true, false, false],
-  EmailMessage: [true, true, true, true], ContentDocument: [false, true, true, true], ContentVersion: [true, true, false, false],
+  EmailMessage: [true, true, true, true], ContentDocument: [false, true, true, true], ContentDocumentLink: [true, true, true, false], ContentVersion: [true, true, false, false],
   FeedItem: [true, true, true, false], Location: [true, true, true, true], Address: [true, true, true, true],
 };
 const unknownId = (name: string) => toCaseSafeId(`${schema.getObject(name)?.keyPrefix ?? "000"}000000000099`);
@@ -472,5 +474,54 @@ describe("polymorphic parents", () => {
     const [kase] = await engine.insert(session, "Case", [{ Subject: "Queue owned", OwnerId: groupId }]);
     expect(kase).toMatchObject({ success: true });
     expect((await engine.retrieve(session, "Case", [kase!.id!])).get(kase!.id!)).toMatchObject({ OwnerId: groupId });
+  });
+});
+
+describe("Base64 coercion and storage (Phase 15)", () => {
+  const blob: FieldDef = {
+    name: "VersionData",
+    label: "Version Data",
+    type: "Base64",
+    custom: false,
+    nillable: true,
+    createable: true,
+    updateable: false,
+    defaultedOnCreate: false,
+    unique: false,
+    externalId: false,
+    caseSensitive: false,
+    idLookup: false,
+    nameField: false,
+  };
+
+  it("coerceValue keeps a valid base64 string unchanged", () => {
+    expect(coerceValue(blob, "aGVsbG8=")).toEqual({ value: "aGVsbG8=" });
+  });
+
+  it("coerceValue accepts MIME-style line breaks in base64", () => {
+    expect(coerceValue(blob, "aGVs\r\nbG8=")).toEqual({ value: "aGVsbG8=" });
+  });
+
+  it.each([
+    ["characters outside the base64 alphabet", "aGVs*G8="],
+    ["a length that is not a multiple of 4", "aGVsbG8"],
+    ["a non-string value", 123],
+  ])("coerceValue refuses %s", (_label, raw) => {
+    const r = coerceValue(blob, raw);
+    expect(r.error).toMatchObject({ statusCode: "INVALID_TYPE_ON_FIELD_IN_RECORD", fields: ["VersionData"] });
+  });
+
+  it("coerceValue refuses base64 longer than 52,428,800 characters as MAXIMUM_SIZE_OF_DOCUMENT", () => {
+    const r = coerceValue(blob, "A".repeat(52_428_804));
+    expect(r.error).toMatchObject({ statusCode: "MAXIMUM_SIZE_OF_DOCUMENT", fields: ["VersionData"] });
+    expect(r.error?.message.startsWith("UNSUPPORTED:content-size ")).toBe(true);
+  });
+
+  it("a Base64 field is never in Store's stored fields", () => {
+    const account = schema.getObject("Account");
+    if (!account) throw new Error("Account missing from schema");
+    const names = new Store(schema, "x").storedFields({ ...account, fields: [...account.fields, blob] }).map((f) => f.name);
+    expect(names).toContain("Name");
+    expect(names).not.toContain("VersionData");
   });
 });

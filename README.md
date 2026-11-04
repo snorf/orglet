@@ -144,6 +144,16 @@ that completes the upload or creates the query job, which answers with the final
 - Security: job data, including uploaded CSV, now outlives restarts. With the default permissive login
   anyone who can reach the port can read it; use `--users` outside a local machine.
 
+## Files
+
+ContentVersion is the upload path. Inserting a ContentVersion with base64 `VersionData` in a JSON body creates its ContentDocument (or adds a version to the one named by `ContentDocumentId`), and the server computes `Checksum`, `ContentSize`, `FileType` and `FileExtension`. Records, composite collection reads and SOQL carry `/services/data/vXX.X/sobjects/ContentVersion/{id}/VersionData` instead of bytes; fetch that URL (jsforce `record.blob()`, simple-salesforce `get_base64()`) to download.
+
+- Downloads are always `Content-Disposition: attachment` with `X-Content-Type-Options: nosniff` and `Accept-Ranges: none`; the Content-Type comes from the file extension only. A version stored without bytes answers 404.
+- Limits: 52,428,800 base64 characters (37.5 MiB decoded) per insert and a 64 MiB request body. Both answer 413 `MAXIMUM_SIZE_OF_DOCUMENT` with an `UNSUPPORTED:content-size` message. Bytes are stored inline as `bytea`, one value per version, so this is a practical cap.
+- Multipart upload is not supported and answers 415 `UNSUPPORTED:content-multipart`; send `VersionData` as base64 JSON.
+- ContentDocumentLink queries need an `=` or `IN` filter on `Id`, `ContentDocumentId` or `LinkedEntityId`, otherwise `MALFORMED_QUERY`. orglet always enforces this, since it has no "Query All Files" permission.
+- Deleting a ContentDocument soft-deletes its versions and links; undelete restores them. Links are undeleted only together with their document or linked record.
+
 ## Layout
 
 ```

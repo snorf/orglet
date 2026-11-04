@@ -13,9 +13,10 @@ real-world metadata retrieved from the author's own Developer Edition.
 | jsforce e2e subset: core | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26) | 51 passed / 0 failed / 60 excluded | [jsforce/README.md](jsforce/README.md) |
 | jsforce e2e subset: Bulk API 2.0 | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26) | 12 passed / 0 failed / 5 excluded | [jsforce/README.md](jsforce/README.md) |
 | simple-salesforce script | 2026-10-31 | 7cacd50 | simple-salesforce 1.12.10 | 29/29 passed | [python/README.md](python/README.md) |
-| describe-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 32/32, simple-salesforce 32/32; enterprise 38/38 each | [describe-check/README.md](describe-check/README.md) |
+| describe-check | 2026-11-04 | 6a1b117 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 33/33, simple-salesforce 33/33 (describe-check now covers 33 objects); enterprise 38/38 each | [describe-check/README.md](describe-check/README.md) |
 | poly-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5; enterprise 6/6 each | [poly-check/README.md](poly-check/README.md) |
 | rollup-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 5/5, simple-salesforce 5/5; enterprise 6/6 each | [rollup-check/README.md](rollup-check/README.md) |
+| files-check | 2026-11-04 | 6a1b117 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 7/7, simple-salesforce 5/5 | [files-check/README.md](files-check/README.md) |
 | cmdt-check | 2026-10-31 | 7cacd50 | jsforce 9bae14e (3.10.26), simple-salesforce 1.12.10 | jsforce 8/8, simple-salesforce 8/8 | [cmdt-check/README.md](cmdt-check/README.md) |
 
 Every row except the two fixture checks (DE retrieve, enterprise) and cmdt-check runs against `examples/acme` on a fresh schema and, in CI, also against `examples/enterprise`; cmdt-check runs

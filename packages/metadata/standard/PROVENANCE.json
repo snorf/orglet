@@ -190,17 +190,29 @@
       "v1": 0,
       "verified": 69
     },
+    "ContentDocumentLink": {
+      "docOnly": 0,
+      "featureGated": 1,
+      "fields": 4,
+      "guessed": 0,
+      "override": 10,
+      "sdkOnly": 4,
+      "skippedFieldType": 0,
+      "skippedReferenceTarget": 0,
+      "v1": 0,
+      "verified": 10
+    },
     "ContentVersion": {
       "docOnly": 0,
       "featureGated": 2,
-      "fields": 40,
+      "fields": 41,
       "guessed": 15,
-      "override": 4,
-      "sdkOnly": 55,
-      "skippedFieldType": 1,
+      "override": 7,
+      "sdkOnly": 56,
+      "skippedFieldType": 0,
       "skippedReferenceTarget": 2,
       "v1": 0,
-      "verified": 111
+      "verified": 113
     },
     "Contract": {
       "docOnly": 0,
@@ -860,6 +872,9 @@
     ],
     "Contact.JigsawContactId": [
       "data-com"
+    ],
+    "ContentDocumentLink.LinkedEntityId": [
+      "chatter"
     ],
     "ContentVersion.ContentLocation": [
       "social"
@@ -3390,6 +3405,35 @@
       "labels": "override",
       "ownerTargets": "verified"
     },
+    "ContentDocumentLink": {
+      "fields": {
+        "ContentDocumentId": {
+          "childRelationshipName": "override",
+          "deleteConstraint": "override",
+          "label": "sdk-only"
+        },
+        "LinkedEntityId": {
+          "deleteConstraint": "override",
+          "label": "sdk-only",
+          "referenceTo": "override",
+          "relationshipName": "override"
+        },
+        "ShareType": {
+          "label": "sdk-only",
+          "nillable": "override",
+          "picklistValues": "override",
+          "restrictedPicklist": "override"
+        },
+        "Visibility": {
+          "label": "sdk-only",
+          "picklistValues": "override",
+          "restrictedPicklist": "override"
+        }
+      },
+      "flags": "doc-only",
+      "keyPrefix": "unverified",
+      "labels": "override"
+    },
     "ContentVersion": {
       "fields": {
         "Checksum": {
@@ -3397,6 +3441,8 @@
           "length": "sdk-only"
         },
         "ContentDocumentId": {
+          "childRelationshipName": "override",
+          "deleteConstraint": "override",
           "label": "sdk-only"
         },
         "ContentLocation": {
@@ -3537,6 +3583,10 @@
           "label": "sdk-only",
           "length": "sdk-only",
           "nameField": "override"
+        },
+        "VersionData": {
+          "label": "sdk-only",
+          "updateable": "override"
         },
         "VersionDataUrl": {
           "label": "sdk-only",
@@ -16454,7 +16504,6 @@
   ],
   "skipped": {
     "fieldType": [
-      "ContentVersion.VersionData (base64)",
       "EmailMessage.BccIds (JunctionIdList)",
       "EmailMessage.CcIds (JunctionIdList)",
       "EmailMessage.ContentDocumentIds (JunctionIdList)",

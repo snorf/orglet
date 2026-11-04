@@ -28,3 +28,7 @@ export const unsupported = (area: string, detail: string): SoqlError => new Soql
 /** D-10: EntityDefinition/FieldDefinition are not modelled objects; a MetadataRelationship to them exposes only the stored qualified API name. errorCode stays INVALID_FIELD (not UNSUPPORTED) per D-10. */
 export const definitionRelationshipOnly = (rel: string, path: string): SoqlError =>
   new SoqlError("INVALID_FIELD", `UNSUPPORTED:entity-definition only QualifiedApiName is selectable on ${rel}; ${path} is not supported`);
+
+/** ContentDocumentLink's documented query restriction (Object Reference); orglet enforces it always, as without the "Query All Files" permission (API 59.0+). */
+export const contentDocumentLinkFilter = (): SoqlError =>
+  new SoqlError("MALFORMED_QUERY", "Implementation restriction: ContentDocumentLink requires a filter by a single Id on ContentDocumentId or LinkedEntityId using the equals operator or multiple Id's using the IN operator.");

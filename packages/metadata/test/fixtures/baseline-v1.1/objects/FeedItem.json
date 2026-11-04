@@ -1,0 +1,222 @@
+{
+  "name": "FeedItem",
+  "label": "Feed Item",
+  "labelPlural": "Feed Items",
+  "keyPrefix": "0D5",
+  "keyPrefixSource": "de-describe",
+  "undeletable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "Body",
+      "label": "Body",
+      "type": "LongTextArea",
+      "length": 10000
+    },
+    {
+      "name": "CommentCount",
+      "label": "Comment Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentDescription",
+      "label": "Content Description",
+      "type": "TextArea",
+      "length": 255,
+      "updateable": false
+    },
+    {
+      "name": "ContentFileName",
+      "label": "Content File Name",
+      "type": "Text",
+      "length": 255,
+      "updateable": false
+    },
+    {
+      "name": "ContentSize",
+      "label": "Content Size",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentType",
+      "label": "Content Type",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HasContent",
+      "label": "Has Content",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasFeedEntity",
+      "label": "Has Feed Entity Attachment",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasLink",
+      "label": "Has Link",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasVerifiedComment",
+      "label": "Has Verified Comment",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "InsertedById",
+      "label": "InsertedBy ID",
+      "type": "Lookup",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "InsertedBy"
+    },
+    {
+      "name": "IsClosed",
+      "label": "Is Closed",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsRichText",
+      "label": "Is Rich Text",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "LastEditById",
+      "label": "Last Edit By ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "LastEditBy"
+    },
+    {
+      "name": "LastEditDate",
+      "label": "Last Edit Date",
+      "type": "DateTime",
+      "updateable": false
+    },
+    {
+      "name": "LikeCount",
+      "label": "Like Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LinkUrl",
+      "label": "Link URL",
+      "type": "Url",
+      "length": 1000,
+      "updateable": false
+    },
+    {
+      "name": "NetworkScope",
+      "label": "Network Scope",
+      "type": "Picklist",
+      "updateable": false
+    },
+    {
+      "name": "ParentId",
+      "label": "Parent ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account",
+        "Asset",
+        "Campaign",
+        "Case",
+        "Contact",
+        "ContentDocument",
+        "Contract",
+        "Event",
+        "Lead",
+        "Location",
+        "OperatingHours",
+        "Opportunity",
+        "Order",
+        "OrderItem",
+        "Product2",
+        "ServiceAppointment",
+        "SocialPost",
+        "Task",
+        "User"
+      ],
+      "relationshipName": "Parent"
+    },
+    {
+      "name": "Revision",
+      "label": "Revision",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "updateable": false
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Title",
+      "label": "Title",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "Type",
+      "label": "Feed Item Type",
+      "type": "Picklist",
+      "updateable": false,
+      "featureGated": true
+    },
+    {
+      "name": "Visibility",
+      "label": "Visibility",
+      "type": "Picklist"
+    }
+  ]
+}

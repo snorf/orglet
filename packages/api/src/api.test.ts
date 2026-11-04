@@ -71,6 +71,7 @@ const BUSINESS: Record<string, Business> = {
   CaseMilestone: { keyPrefix: "555", createable: false, updateable: true, deletable: false, undeletable: false, searchable: false, hasOwner: false, nameField: null },
   EmailMessage: { keyPrefix: "02s", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: false, nameField: "Name" },
   ContentDocument: { keyPrefix: "069", createable: false, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: true, nameField: "Title" },
+  ContentDocumentLink: { keyPrefix: "06A", createable: true, updateable: true, deletable: true, undeletable: false, searchable: false, hasOwner: false, nameField: null },
   ContentVersion: { keyPrefix: "068", createable: true, updateable: true, deletable: false, undeletable: false, searchable: true, hasOwner: true, nameField: "Title" },
   FeedItem: { keyPrefix: "0D5", createable: true, updateable: true, deletable: true, undeletable: false, searchable: true, hasOwner: false, nameField: null },
   Location: { keyPrefix: "131", createable: true, updateable: true, deletable: true, undeletable: true, searchable: true, hasOwner: true, nameField: "Name" },
@@ -379,9 +380,9 @@ describe("composite", () => {
 });
 
 describe("thin objects", () => {
-  it("describe-check: objects.txt lists the 14 thin and the 18 business objects", () => {
+  it("describe-check: objects.txt lists the 14 thin, the 18 business objects and ContentDocumentLink", () => {
     expect([...listedObjects].sort()).toEqual([...Object.keys(THIN), ...Object.keys(BUSINESS)].sort());
-    expect(listedObjects).toHaveLength(32);
+    expect(listedObjects).toHaveLength(33);
   });
 
   it("thin objects: global describe lists each with every DescribeGlobalSObjectResult key and the documented flags", async () => {

@@ -250,6 +250,12 @@ function fromStandardJson(
     f.groupable = j.groupable ?? false;
     f.filterable = j.filterable ?? true;
   }
+  // Blob fields cannot appear in a WHERE, ORDER BY or GROUP BY (SOQL never reads the bytes, Phase 15 D-04).
+  if (j.type === "Base64") {
+    f.sortable = false;
+    f.groupable = false;
+    f.filterable = false;
+  }
   return f;
 }
 
@@ -339,6 +345,7 @@ function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): 
       f.sortable = false;
       f.groupable = false;
       break;
+    case "Base64":
     case "LongTextArea":
     case "Html":
       f.sortable = false;
@@ -698,6 +705,18 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
       continue;
     }
     customMetadata.push({ ...r, type: obj.name });
+  }
+
+  // FILE-07: LinkedEntityId points at every keyed object. The generator can list only modelled standard objects, so the
+  // retrieve's custom objects are appended here (custom settings and custom metadata types cannot own files).
+  const linked = objects.get("contentdocumentlink")?.fields.find((f) => f.name === "LinkedEntityId");
+  if (linked?.referenceTo) {
+    const existing = linked.referenceTo;
+    const custom = [...objects.values()]
+      .filter((o) => o.custom && o.customMetadata !== true && o.customSetting === undefined && o.keyPrefix !== null)
+      .map((o) => o.name)
+      .sort((a, b) => a.localeCompare(b));
+    linked.referenceTo = [...existing, ...custom.filter((n) => !existing.includes(n))];
   }
 
   // Dangling references are allowed (e.g. Campaign not in phase 0) but reported once per target.

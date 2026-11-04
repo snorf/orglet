@@ -1,0 +1,71 @@
+{
+  "name": "AccountContactRelation",
+  "label": "Account Contact Relationship",
+  "labelPlural": "Account Contact Relationships",
+  "keyPrefix": "07k",
+  "keyPrefixSource": "de-describe",
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "AccountContactRelationshipCurrency",
+      "label": "Account Contact Relationship Currency",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Account"
+    },
+    {
+      "name": "ContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact"
+    },
+    {
+      "name": "EndDate",
+      "label": "End Date",
+      "type": "Date"
+    },
+    {
+      "name": "IsActive",
+      "label": "Active",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsDirect",
+      "label": "Direct",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Roles",
+      "label": "Roles",
+      "type": "MultiselectPicklist"
+    },
+    {
+      "name": "StartDate",
+      "label": "Start Date",
+      "type": "Date"
+    }
+  ]
+}

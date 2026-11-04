@@ -45,6 +45,11 @@ export function isVirtual(field: FieldDef): boolean {
   return field.formula !== undefined || field.type === "Address" || field.type === "Name" || field.type === "Location";
 }
 
+/** A blob column exists in the table but is read and written only through the engine's BlobStore, never through a select list. */
+export function isBlob(field: FieldDef): boolean {
+  return field.type === "Base64";
+}
+
 export function sqlTypeFor(field: FieldDef): string {
   switch (field.type) {
     case "Id":
@@ -72,6 +77,8 @@ export function sqlTypeFor(field: FieldDef): string {
     case "LongTextArea":
     case "Html":
       return "text";
+    case "Base64":
+      return "bytea";
     case "MultiselectPicklist":
       return `varchar(${field.length ?? 4099})`;
     case "AutoNumber":
@@ -94,12 +101,18 @@ export function sqlTypeFor(field: FieldDef): string {
 
 const SYSTEM_NOT_NULL = new Set(["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"]);
 
-export function columnFor(field: FieldDef): ColumnSpec | undefined {
+/**
+ * Lookups the engine always fills, so storage can say what describe says (Phase 15 D-01). Deliberately a short list:
+ * nillable:false alone must never mean NOT NULL, because many baseline fields are nillable:false but system-filled.
+ */
+const STRUCTURAL_NOT_NULL: ReadonlySet<string> = new Set(["ContentVersion.ContentDocumentId"]);
+
+export function columnFor(field: FieldDef, objectName: string): ColumnSpec | undefined {
   if (isVirtual(field)) return undefined;
   const spec: ColumnSpec = {
     name: columnName(field),
     sqlType: sqlTypeFor(field),
-    notNull: SYSTEM_NOT_NULL.has(field.name) || field.type === "MasterDetail",
+    notNull: SYSTEM_NOT_NULL.has(field.name) || field.type === "MasterDetail" || STRUCTURAL_NOT_NULL.has(`${objectName}.${field.name}`),
   };
   if (field.type === "Checkbox") {
     spec.notNull = true;

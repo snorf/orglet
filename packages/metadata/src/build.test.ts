@@ -8,7 +8,7 @@ const V1_BASELINE = fileURLToPath(new URL("../test/fixtures/baseline-v1.0/", imp
 
 const SYSTEM_FIELDS = ["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"];
 /** Objects the Object Reference gives no name-equivalent field (D-02); adding one must be a conscious act. */
-const NO_NAME_FIELD = ["AccountContactRelation", "AccountTeamMember", "CaseContactRole", "CaseMilestone", "FeedItem", "OpportunityContactRole", "OpportunityHistory"];
+const NO_NAME_FIELD = ["AccountContactRelation", "AccountTeamMember", "CaseContactRole", "CaseMilestone", "ContentDocumentLink", "FeedItem", "OpportunityContactRole", "OpportunityHistory"];
 /** 03-RESEARCH.md Fact Table as amended by CONTEXT D-03a. extra = fields beyond system fields and OwnerId. */
 const THIN: Record<
   string,
@@ -191,9 +191,21 @@ describe("standard baseline alone", () => {
   });
 
   it("business: blob, junction and geolocation fields are not in the schema", () => {
-    for (const [object, field] of [["ContentVersion", "VersionData"], ["FeedItem", "ContentData"], ["EmailMessage", "BccIds"], ["EmailMessage", "CcIds"], ["EmailMessage", "ContentDocumentIds"], ["EmailMessage", "ToIds"], ["Location", "Location"]] as const) {
+    for (const [object, field] of [["FeedItem", "ContentData"], ["EmailMessage", "BccIds"], ["EmailMessage", "CcIds"], ["EmailMessage", "ContentDocumentIds"], ["EmailMessage", "ToIds"], ["Location", "Location"]] as const) {
       expect(result.schema.getField(object, field), `${object}.${field}`).toBeUndefined();
     }
+  });
+
+  it("files model (Phase 15): VersionData is Base64, ContentDocumentId is required and cascades, ContentDocumentLink loads with its cascades", () => {
+    const version = result.schema.getField("ContentVersion", "VersionData");
+    expect(version).toMatchObject({ type: "Base64", updateable: false, filterable: false, sortable: false, groupable: false });
+    expect(result.schema.getField("ContentVersion", "ContentDocumentId")).toMatchObject({ nillable: false, deleteConstraint: "Cascade", referenceTo: ["ContentDocument"], childRelationshipName: "ContentVersions" });
+    expect(result.schema.getObject("ContentDocumentLink")).toMatchObject({ keyPrefix: "06A", keyPrefixSource: "unverified", hasOwner: false, createable: true, updateable: true, deletable: true, undeletable: false });
+    expect(result.schema.getField("ContentDocumentLink", "ContentDocumentId")).toMatchObject({ nillable: false, deleteConstraint: "Cascade", referenceTo: ["ContentDocument"], childRelationshipName: "ContentDocumentLinks" });
+    const linked = result.schema.getField("ContentDocumentLink", "LinkedEntityId");
+    expect(linked).toMatchObject({ deleteConstraint: "Cascade", relationshipName: "LinkedEntity" });
+    expect(linked?.referenceTo).toHaveLength(20);
+    expect(linked?.childRelationshipName).toBeUndefined();
   });
 
   it("baseline field names take the SDK spelling where the Object Reference differs only by case", () => {
@@ -1147,5 +1159,64 @@ describe("custom settings and labels (CSET-01, CSET-02)", () => {
     const settings = r.info.filter((d) => d.area === "custom-setting-no-data").map((d) => d.object);
     expect(settings).toEqual(["App_Config__c", "Region_List__c"]);
     expect(r.schema.getField("Support_Tier__mdt", "Target_Field__c")?.referenceTo).toEqual(["FieldDefinition"]);
+  });
+});
+
+describe("Base64 standard fields (Phase 15)", () => {
+  it("a Base64 standard field loads as not filterable, sortable or groupable", async () => {
+    const real = await loadBaseline();
+    const blobObject: StandardObjectJson = {
+      name: "BlobHolder",
+      label: "Blob Holder",
+      labelPlural: "Blob Holders",
+      keyPrefix: null,
+      keyPrefixSource: "unverified",
+      createable: false,
+      hasOwner: false,
+      fields: [
+        { name: "Name", label: "Name", type: "Text", length: 80, nillable: false, idLookup: true, nameField: true },
+        { name: "Blob", label: "Blob", type: "Base64" },
+      ],
+    };
+    const blob = buildOrgSchema({ ...real, objects: [...real.objects, blobObject] }).schema.getField("BlobHolder", "Blob");
+    expect(blob).toMatchObject({ type: "Base64", filterable: false, sortable: false, groupable: false });
+  });
+});
+
+describe("ContentDocumentLink.LinkedEntityId (FILE-07)", () => {
+  const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
+  const emptyProject = (): Parameters<typeof buildOrgSchema>[1] => ({ rootDir: "", packageDirectories: [], objects: [], globalValueSets: [], standardValueSets: [], warnings: [] });
+
+  it("links to the 20 generated targets followed by every custom object in name order", async () => {
+    const generated = (await loadOrgSchema()).schema.getField("ContentDocumentLink", "LinkedEntityId")?.referenceTo;
+    expect(generated).toHaveLength(20);
+    const acme = (await loadOrgSchema({ projectDir: ACME })).schema.getField("ContentDocumentLink", "LinkedEntityId")?.referenceTo;
+    expect(acme).toEqual([...generated!, "BigTable__c", "Milestone__c", "Project__c", "UpsertTable__c"]);
+  });
+
+  it("does not link to custom settings or custom metadata types", async () => {
+    const r = await loadOrgSchema({ projectDir: CMDT });
+    const targets = r.schema.getField("ContentDocumentLink", "LinkedEntityId")?.referenceTo ?? [];
+    expect(targets).toContain("Ticket__c");
+    for (const n of ["App_Config__c", "Region_List__c", "Support_Tier__mdt", "Tier_Group__mdt"]) expect(targets).not.toContain(n);
+  });
+
+  it("a custom object lists the link as a child relationship", async () => {
+    const { schema } = await loadOrgSchema({ projectDir: ACME });
+    const child = schema.childRelationships("Project__c").find((c) => c.childSObject === "ContentDocumentLink");
+    expect(child).toMatchObject({ childSObject: "ContentDocumentLink", field: "LinkedEntityId", cascadeDelete: true });
+    expect(child?.relationshipName).toBeUndefined();
+  });
+
+  it("the expansion adds no diagnostics", async () => {
+    const r = await loadOrgSchema({ projectDir: ACME });
+    expect(r.warnings.filter((w) => w.includes("ContentDocumentLink"))).toEqual([]);
+    expect(r.diagnostics.filter((d) => d.object === "ContentDocumentLink" || d.message.includes("ContentDocumentLink"))).toEqual([]);
+  });
+
+  it("a baseline without ContentDocumentLink loads unchanged", async () => {
+    const real = await loadBaseline();
+    const without = { ...real, objects: real.objects.filter((o) => o.name !== "ContentDocumentLink") };
+    expect(() => buildOrgSchema(without, emptyProject())).not.toThrow();
   });
 });

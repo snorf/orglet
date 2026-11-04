@@ -25,6 +25,10 @@ describe("gen-baseline typemap: type normalisation", () => {
     expect(mapType("Account", "A", "JunctionIdLIst", {})).toEqual({ skip: "unsupported", sourceType: "JunctionIdLIst" });
   });
 
+  it("base64 maps to the Base64 field type", () => {
+    expect(mapType("ContentVersion", "VersionData", "base64", {})).toMatchObject({ type: "Base64", guessed: false });
+  });
+
   it("aborts on an unknown type token naming Object.Field and the token", () => {
     expect(() => mapType("Account", "Weird", "hologram", {})).toThrow(GeneratorError);
     expect(() => mapType("Account", "Weird", "hologram", {})).toThrow(/Account\.Weird.*hologram/);

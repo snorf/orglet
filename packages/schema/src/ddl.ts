@@ -40,7 +40,7 @@ export function planTable(schema: OrgSchema, obj: SObjectDef): TablePlan {
   const sequences: string[] = [];
 
   for (const field of obj.fields) {
-    const column = columnFor(field);
+    const column = columnFor(field, obj.name);
     if (!column) continue;
     columns.push(column);
     const col = column.name;

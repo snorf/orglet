@@ -16,3 +16,8 @@ export { runQuery } from "./query.js";
 export type { QueryOptions, QueryPage } from "./query.js";
 export { planCustomMetadataSeed, seedCustomMetadata, customMetadataSummary } from "./seed.js";
 export type { CustomMetadataPlan, CustomMetadataSeedRow, CustomMetadataSeedOptions, CustomMetadataSeedResult } from "./seed.js";
+export { blobKey, InlineBlobStore } from "./blobs.js";
+export type { BlobRef, BlobStore, OpenedBlob } from "./blobs.js";
+export { contentTypeFor, fileExtensionOf, fileTypeFor } from "./filetypes.js";
+export { mirrorDocument } from "./files.js";
+export type { FileStamp } from "./files.js";

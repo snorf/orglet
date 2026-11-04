@@ -1,0 +1,97 @@
+{
+  "name": "ContentDocumentLink",
+  "label": "Content Document Link",
+  "labelPlural": "Content Document Links",
+  "keyPrefix": "06A",
+  "keyPrefixSource": "unverified",
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "ContentDocumentId",
+      "label": "Content Document ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "ContentDocument"
+      ],
+      "relationshipName": "ContentDocument",
+      "childRelationshipName": "ContentDocumentLinks",
+      "deleteConstraint": "Cascade"
+    },
+    {
+      "name": "LinkedEntityId",
+      "label": "Linked Entity ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "Account",
+        "Asset",
+        "Campaign",
+        "Case",
+        "Contact",
+        "Contract",
+        "EmailMessage",
+        "Event",
+        "Lead",
+        "Location",
+        "OperatingHours",
+        "Opportunity",
+        "Order",
+        "OrderItem",
+        "Organization",
+        "Product2",
+        "ServiceAppointment",
+        "SocialPost",
+        "Task",
+        "User"
+      ],
+      "relationshipName": "LinkedEntity",
+      "deleteConstraint": "Cascade",
+      "featureGated": true
+    },
+    {
+      "name": "ShareType",
+      "label": "Share Type",
+      "type": "Picklist",
+      "nillable": false,
+      "picklistValues": [
+        {
+          "value": "V",
+          "label": "Viewer"
+        },
+        {
+          "value": "C",
+          "label": "Collaborator"
+        },
+        {
+          "value": "I",
+          "label": "Inferred"
+        }
+      ],
+      "restrictedPicklist": true
+    },
+    {
+      "name": "Visibility",
+      "label": "Visibility",
+      "type": "Picklist",
+      "picklistValues": [
+        {
+          "value": "AllUsers",
+          "label": "AllUsers"
+        },
+        {
+          "value": "InternalUsers",
+          "label": "InternalUsers"
+        },
+        {
+          "value": "SharedUsers",
+          "label": "SharedUsers"
+        }
+      ],
+      "restrictedPicklist": true
+    }
+  ]
+}

@@ -12,6 +12,10 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:?\d{2})?$/;
 const TIME_RE = /^\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?Z?$/;
 
+/** REST "Insert or Update Blob Data": 50 MB of base64 text, 37.5 MB decoded, for a non-multipart insert. The guide says MB; orglet reads MiB (the lenient reading). */
+export const MAX_VERSION_DATA_BASE64 = 52_428_800;
+export const MAX_VERSION_DATA_BYTES = 39_321_600;
+
 export interface Coerced {
   value: RecordValue;
   error?: SaveError;
@@ -88,6 +92,15 @@ export function coerceValue(field: FieldDef, raw: unknown): Coerced {
         if (bad !== undefined) return { value: null, error: Errors.restrictedPicklist(field.label, field.name, bad) };
       }
       return { value };
+    }
+    case "Base64": {
+      if (typeof raw !== "string") return { value: null, error: Errors.invalidType(field.label, field.name, raw) };
+      // Checked on the raw length first so an oversized string is never scanned.
+      if (raw.length > MAX_VERSION_DATA_BASE64) return { value: null, error: Errors.contentTooLarge(field.name) };
+      // Buffer.from(s, "base64") silently skips invalid characters, so the alphabet is checked here. The placeholder keeps up to 50 MiB of input out of the message.
+      const s = raw.replace(/\r?\n/g, "");
+      if (s.length % 4 !== 0 || !/^[A-Za-z0-9+/]*={0,2}$/.test(s)) return { value: null, error: Errors.invalidType(field.label, field.name, "<base64>") };
+      return { value: s };
     }
     case "Address":
     case "Name":

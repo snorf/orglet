@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
-status: ready_to_plan
-stopped_at: Roadmap created for v1.2; next /gsd:discuss-phase 15
-last_updated: "2026-11-03T13:00:00.000Z"
-last_activity: 2026-11-03
+status: verifying
+stopped_at: Completed 15-10-PLAN.md
+last_updated: "2026-11-04T13:28:27.931Z"
+last_activity: 2026-11-04
 progress:
-  total_phases: 7
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 11
+  completed_phases: 1
+  total_plans: 10
+  completed_plans: 10
+  percent: 14
 ---
 
 # Project State
@@ -23,23 +23,23 @@ See: .planning/PROJECT.md (updated 2026-11-03 at the start of v1.2)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Milestone v1.2 "archive mode": orglet on a retrieve plus a Heimdall backup, read-only, with files from the backup store and a record view
+**Current focus:** Phase 16 — archive-fixture-generator (next: /gsd:discuss-phase 16)
 
 ## Current Position
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
-Phase: 15 (Files Model) not started
-Plan: —
-Status: Ready to plan
-Last activity: 2026-11-03 — Roadmap created for v1.2 (Phases 15-21)
+Phase: 16 (archive-fixture-generator) — NOT STARTED
+Plan: Not started
+Status: Phase 15 complete and verified (15-VERIFICATION.md: passed, 5/5 criteria)
+Last activity: 2026-11-04
 
-Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
+Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 10
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -151,6 +151,15 @@ Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 | Phase 14 P08 | 10min | 2 tasks | 9 files |
 | Phase 14 P11 | 20min | 3 tasks | 8 files |
 | Phase 14 P12 | n/a | 3 tasks | 3 files |
+| Phase 15 P01 | 25min | 2 tasks | 14 files |
+| Phase 15 P02 | 10min | 2 tasks | 5 files |
+| Phase 15 P03 | 25min | 3 tasks | 30 files |
+| Phase 15 P04 | 8min | 1 tasks | 2 files |
+| Phase 15 P08 | 15min | 2 tasks | 6 files |
+| Phase 15 P05 | 15min | 2 tasks | 9 files |
+| Phase 15 P07 | 10min | 2 tasks | 2 files |
+| Phase 15 P09 | 25min | 3 tasks | 5 files |
+| Phase 15 P10 | n/a | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -160,6 +169,12 @@ Decisions are logged in PROJECT.md (Key Decisions table, now covering Phases 1-1
 CONTEXT.md / SUMMARY.md. The per-plan decision log kept here through v1.1 is in the git history of this
 file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Summary).
 
+- [Phase 15]: 15-03: CDL undeletable false from Supported Calls; blob skips stay in fieldType buckets, token UNSUPPORTED:blob-field
+- [Phase 15]: Base64 fields refused in WHERE/ORDER/GROUP (INVALID_FIELD); ContentDocumentLink filter always enforced (no Query All Files model)
+- [Phase 15]: NOT NULL only via explicit STRUCTURAL_NOT_NULL set; migrate reconciles nullability with UNSUPPORTED:schema-notnull skip-and-warn
+- [Phase 15]: Set-null cascade skips rows already being deleted up the stack (keeps LatestPublishedVersionId)
+- [Phase 15]: 15-09: Content-Length from BlobStore size, not ContentSize; blob diagnostics once per version via req.log.warn
+
 ### Pending Todos
 
 - v1.1 audit tech debt (see milestones/v1.1-MILESTONE-AUDIT.md): open the two upstream sigha PRs and
@@ -167,6 +182,7 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
   11-VALIDATION.md map; clear the tsc errors under tsconfig.test.json (36 on 2026-11-03: 19 in vendored sigha
   files, 17 in test files; then add `typecheck:tests`);
   make the `conformance` CI job required on main (ruleset change, Johan's call)
+
 - v1.0 audit tech debt still open: combined Bulk-ingest + roll-up test; roll-up re-backfill
   (`orglet rollup --recompute`, ROLLX-01)
 
@@ -182,6 +198,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-03
-Stopped at: Roadmap created for v1.2 (7 phases, 28/28 requirements mapped); next /gsd:discuss-phase 15
+Last session: 2026-11-04T12:56:50.668Z
+Stopped at: Completed 15-10-PLAN.md
 Resume file: None

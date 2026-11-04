@@ -28,6 +28,12 @@ export function failure(errors: SaveError[]): SaveResult {
 
 export const Errors = {
   requiredMissing: (fields: string[]) => saveError("REQUIRED_FIELD_MISSING", `Required fields are missing: [${fields.join(", ")}]`, fields),
+  /**
+   * No documented Salesforce error exists for an oversized JSON blob body (Phase 15 D-05); MAXIMUM_SIZE_OF_DOCUMENT is the closest
+   * real StatusCode member (partner WSDL) and the message carries the UNSUPPORTED:content-size marker.
+   */
+  contentTooLarge: (field: string) =>
+    saveError("MAXIMUM_SIZE_OF_DOCUMENT", `UNSUPPORTED:content-size ${field} exceeds 37.5 MiB (52428800 base64 characters); multipart upload is not supported yet`, [field]),
   stringTooLong: (label: string, field: string, value: string, max: number) =>
     saveError("STRING_TOO_LONG", `${label}: data value too large: ${value} (max length=${max})`, [field]),
   invalidType: (label: string, field: string, value: unknown) =>

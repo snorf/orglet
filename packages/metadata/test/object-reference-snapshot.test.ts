@@ -127,6 +127,7 @@ describe("Object Reference extraction (committed facts)", () => {
     expected["ContentDocument"] = { present: ["delete", "undelete", "update", "search"], absent: ["create"] };
     expected["ContentVersion"] = { present: ["create", "update", "search"], absent: ["delete", "undelete"] };
     expected["FeedItem"] = { present: ["create", "update", "delete", "search"], absent: ["undelete"] };
+    expected["ContentDocumentLink"] = { present: ["create", "update", "delete"], absent: ["undelete"] };
     const problems: string[] = [];
     for (const [object, { present, absent }] of Object.entries(expected)) {
       const calls = extracted.get(object)?.supportedCalls ?? [];

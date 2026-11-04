@@ -63,7 +63,7 @@ export interface GeneratorReport {
   conflictsSettledByPin: string[];
   /** `Object.Field.fact` facts emitted from a type default (D-05 lengths, numeric precision/scale, humanised labels). */
   guessed: string[];
-  /** `UNSUPPORTED:field-type Object.Field (<token>)` for documented fields the baseline cannot model. */
+  /** `UNSUPPORTED:field-type Object.Field (<token>)` for documented fields the baseline cannot model; base64 fields report `UNSUPPORTED:blob-field` instead. */
   unsupportedTypes: string[];
   /** `Object.Field.fact` source disagreements settled by an overrides.json `set`. */
   overrideResolved: string[];
@@ -95,6 +95,8 @@ export interface GenerateResult {
 }
 
 type FieldKey = keyof StandardFieldJson;
+/** D-15: the only blob field orglet models; the engine's files step is its sole reader and writer. Every other base64 field is reported as UNSUPPORTED:blob-field. */
+const MODELLED_BLOB_FIELDS: ReadonlySet<string> = new Set(["ContentVersion.VersionData"]);
 const COMPARED_FLAGS = ["createable", "updateable", "nillable", "defaultedOnCreate"] as const;
 const FLAG_DEFAULTS: Readonly<Record<(typeof COMPARED_FLAGS)[number], boolean>> = { createable: true, updateable: true, nillable: true, defaultedOnCreate: false };
 const byName = (a: { name: string }, b: { name: string }): number => codeUnit(a.name, b.name);
@@ -490,6 +492,11 @@ export function generate(inputs: GeneratorInputs, options: GenerateOptions): Gen
           report.unsupportedTypes.push(`UNSUPPORTED:field-type ${where} (${d.skip.sourceType})`);
           skip("fieldType", d, `${where} (${d.skip.sourceType})`);
         }
+        continue;
+      }
+      if (d?.json.type === "Base64" && !fieldPins && !MODELLED_BLOB_FIELDS.has(where)) {
+        report.unsupportedTypes.push(`UNSUPPORTED:blob-field ${where} (base64)`);
+        skip("fieldType", d, `${where} (base64)`);
         continue;
       }
       if (!d && !fieldOverride?.keep) throw new GeneratorError(`${where} is in v1.0 but in neither source; add an overrides.json keep entry`);

@@ -5,8 +5,8 @@
  * Later phases extend EXPECTED_WARNINGS when their baseline change is meant to warn; they never weaken the row or
  * second-run assertions. Since Phase 9 the baseline grows additively: ADD COLUMN and ADD CONSTRAINT are expected,
  * rows are compared on their v1.0 columns, and DROP TABLE, DROP COLUMN and ALTER COLUMN ... TYPE stay
- * forbidden. Since Phase 10 the baseline also grows by new objects: CREATE TABLE is allowed for exactly the 18 Phase 10
- * tables (NEW_TABLES) and stays forbidden for every v1.0 table. Runs on pglite by default and on Postgres 16 with ORGLET_DATABASE_URL.
+ * forbidden. Since Phase 10 the baseline also grows by new objects: CREATE TABLE is allowed for exactly the tables listed in
+ * NEW_TABLES (the 18 Phase 10 tables; Phase 15 adds ContentDocumentLink) and stays forbidden for every v1.0 table. Runs on pglite by default and on Postgres 16 with ORGLET_DATABASE_URL.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
@@ -24,7 +24,7 @@ const V1_BASELINE = fileURLToPath(new URL("../../metadata/test/fixtures/baseline
 /** Warnings the current code is expected to print when upgrading the v1.0 fixture org. Phase 9 v2 baseline: none (every change is an ADD COLUMN or an FK the fixture rows satisfy). */
 const EXPECTED_WARNINGS: string[] = [];
 /** The tables of the 18 objects Phase 10 adds; the only CREATE TABLE statements the upgrade may emit. */
-const NEW_TABLES = ["accountcontactrelation", "accountteammember", "address", "casecontactrole", "casemilestone", "contentdocument", "contentversion", "contractlineitem", "emailmessage", "feeditem", "location", "opportunitycontactrole", "opportunitysplit", "opportunityteammember", "order", "orderitem", "quote", "quotelineitem"];
+const NEW_TABLES = ["accountcontactrelation", "accountteammember", "address", "casecontactrole", "casemilestone", "contentdocument", "contentdocumentlink", "contentversion", "contractlineitem", "emailmessage", "feeditem", "location", "opportunitycontactrole", "opportunitysplit", "opportunityteammember", "order", "orderitem", "quote", "quotelineitem"];
 const TABLES = ["account", "contact", "case", "group"] as const;
 const orgSchema = `test_${randomBytes(4).toString("hex")}`;
 

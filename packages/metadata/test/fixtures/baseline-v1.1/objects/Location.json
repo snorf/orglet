@@ -1,0 +1,435 @@
+{
+  "name": "Location",
+  "label": "Location",
+  "labelPlural": "Locations",
+  "keyPrefix": "131",
+  "keyPrefixSource": "de-describe",
+  "hasOwner": true,
+  "fields": [
+    {
+      "name": "AccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "Account"
+    },
+    {
+      "name": "ActivationDate",
+      "label": "Activation Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AssignedFoCount",
+      "label": "Assigned Fulfillment Order Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "BusinessHoursId",
+      "label": "Business Hours ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "BusinessHours"
+      ],
+      "relationshipName": "BusinessHours"
+    },
+    {
+      "name": "CloseDate",
+      "label": "Close Date",
+      "type": "Date"
+    },
+    {
+      "name": "ConstructionEndDate",
+      "label": "Construction End Date",
+      "type": "Date"
+    },
+    {
+      "name": "ConstructionStartDate",
+      "label": "Construction Start Date",
+      "type": "Date"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DefaultPickupTime",
+      "label": "Default Pickup Time",
+      "type": "Time"
+    },
+    {
+      "name": "DefaultProcessingTime",
+      "label": "Default Processing Time",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "DefaultProcessingTimeUnit",
+      "label": "Default Processing Time Unit",
+      "type": "Picklist"
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "DistributionArea",
+      "label": "Distribution Area",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "DrivingDirections",
+      "label": "Driving Directions",
+      "type": "Text",
+      "length": 1000
+    },
+    {
+      "name": "EarliestPickupTimeOffset",
+      "label": "Earliest Pickup Time Offset",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "Email",
+      "label": "Email",
+      "type": "Email",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ExternalReference",
+      "label": "External Reference",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "Fax",
+      "label": "Fax",
+      "type": "Phone",
+      "length": 40,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FoCapacity",
+      "label": "Fulfillment Order Capacity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "FulfillingBusinessHoursId",
+      "label": "Business Hours ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "BusinessHours"
+      ],
+      "relationshipName": "FulfillingBusinessHours"
+    },
+    {
+      "name": "GrossFloorArea",
+      "label": "Gross Floor Area",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "GrossFloorAreaUom",
+      "label": "Gross Floor Area Unit of Measure",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HasLifeSupport",
+      "label": "Life Support",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "HasSensitiveLoad",
+      "label": "Sensitive Load",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsEligibleForPickup",
+      "label": "Is Eligible For Pickup",
+      "type": "Checkbox"
+    },
+    {
+      "name": "IsInventoryLocation",
+      "label": "Inventory Location",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsKeyAtPremises",
+      "label": "Key at Premises",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsMobile",
+      "label": "Mobile Location",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsOkToEnter",
+      "label": "Ok to Enter",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsSupplyGuaranteed",
+      "label": "Supply Guaranteed",
+      "type": "Checkbox",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LatestPickupTimeOffset",
+      "label": "Latest Pickup Time Offset",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "Latitude",
+      "label": "Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "LocationLevel",
+      "label": "Location Level",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LocationType",
+      "label": "Location Type",
+      "type": "Picklist",
+      "nillable": false
+    },
+    {
+      "name": "Longitude",
+      "label": "Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "MeterReadInstructions",
+      "label": "Meter Read Instructions",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MeterReadWarning",
+      "label": "Meter Read Warning",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Mobile",
+      "label": "Mobile",
+      "type": "Phone",
+      "length": 40,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Name",
+      "label": "Location Name",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "NumberOfOccupants",
+      "label": "Number of Occupants",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OpenDate",
+      "label": "Open Date",
+      "type": "Date"
+    },
+    {
+      "name": "ParentLocationId",
+      "label": "Parent Location ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Location"
+      ],
+      "relationshipName": "ParentLocation"
+    },
+    {
+      "name": "Phone",
+      "label": "Phone",
+      "type": "Phone",
+      "length": 40,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PickupProcessingTime",
+      "label": "Pickup Processing Time",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "PossessionDate",
+      "label": "Possession Date",
+      "type": "Date"
+    },
+    {
+      "name": "PrimaryPropertyFunction",
+      "label": "Primary Property Function",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Priority",
+      "label": "Priority",
+      "type": "Picklist"
+    },
+    {
+      "name": "PropertyOwnerAccountId",
+      "label": "Account ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Account"
+      ],
+      "relationshipName": "PropertyOwnerAccount"
+    },
+    {
+      "name": "RemodelEndDate",
+      "label": "Remodel End Date",
+      "type": "Date"
+    },
+    {
+      "name": "RemodelStartDate",
+      "label": "Remodel Start Date",
+      "type": "Date"
+    },
+    {
+      "name": "RootLocationId",
+      "label": "Root Location ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Location"
+      ],
+      "relationshipName": "RootLocation"
+    },
+    {
+      "name": "ShouldSyncWithOci",
+      "label": "Sync with OCI",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ShouldTrackFoCapacity",
+      "label": "Track Fulfillment Order Capacity",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SupplyGuaranteeReason",
+      "label": "Supply Guarantee Reason",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeZone",
+      "label": "Time Zone",
+      "type": "Picklist"
+    },
+    {
+      "name": "VisitorAddressId",
+      "label": "Address ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Address"
+      ],
+      "relationshipName": "VisitorAddress"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
  * IsDeleted soft-delete flag where the object has one; knows nothing about validation or order of execution.
  */
 import { hasSoftDelete, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
-import { columnName, isVirtual, quote, sequenceName, tableName, type Queryable } from "@orglet/schema";
+import { columnName, isBlob, isVirtual, quote, sequenceName, tableName, type Queryable } from "@orglet/schema";
 import type { RecordData, RecordValue } from "@orglet/formula";
 
 export class Store {
@@ -17,7 +17,8 @@ export class Store {
   }
 
   storedFields(obj: SObjectDef): FieldDef[] {
-    return obj.fields.filter((f) => !isVirtual(f));
+    // Blob columns are read and written only through the engine's BlobStore (Phase 15 D-04), so no row, event or hook ever carries bytes.
+    return obj.fields.filter((f) => !isVirtual(f) && !isBlob(f));
   }
 
   private selectList(obj: SObjectDef): string {

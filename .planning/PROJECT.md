@@ -37,6 +37,17 @@ in counted exclusion categories documented in `conformance/README.md`. 922 tests
 Postgres 16, 55 files; CI jobs `test-pglite`, `test-postgres`, `conformance`, `sigha-sync-check`,
 `baseline-gen-check`.
 
+**v1.2 progress:** Phase 15 complete 2026-11-04 — the files model: `Base64` field type (`bytea`, describe
+`base64`, strict coercion with a 50 MB cap), ContentDocumentLink in the generated baseline with
+`LinkedEntityId` expanded to every custom object at load time, `ContentVersion.ContentDocumentId` NOT NULL
+with a `schema-notnull` migrate reconcile proven on a populated v1.1 database, engine files step (document
+auto-create, versioning with `IsLatest`/`VersionNumber`, mirror, auto-link, delete/undelete cascade),
+SOQL blob URLs and the ContentDocumentLink mandatory filter, streamed `VersionData` download with MD5
+verification, multipart refused as `UNSUPPORTED:content-multipart`, and the `BlobStore` interface with
+`InlineBlobStore` as the only implementation so far. Conformance 12/12 legs including the new files-check
+(jsforce 7/7, simple-salesforce 5/5); 1 044 tests on pglite, 1 047 on Postgres 16, 60 files. Residual:
+`FirstPublishLocationId` not expanded to custom objects; enterprise conformance matrix not re-run.
+
 **Known gaps carried forward:** upstream sigha PRs not opened (orglet pinned to the fork); ContentVersion
 upload is a stopgap (backlog 999.10); formula fields through parent relationships in SOQL (999.12);
 platform events (999.8); `$Permission` and List `$Setup` stay `UNSUPPORTED:formula-global`; `conformance`
@@ -345,10 +356,25 @@ Validated in Phase 14 (v1.1, 2026-10-31):
   documented by category in `conformance/README.md` (relaxation from literal zero recorded in
   `milestones/v1.1-REQUIREMENTS.md`) — ACC2-03
 
+Validated in Phase 15 (v1.2, 2026-11-04):
+
+- ✓ ContentVersion insert without `ContentDocumentId` creates its ContentDocument with mirrored title,
+  type and size; `ContentDocumentId` is `nillable: false` and NOT NULL in storage — FILE-03
+- ✓ A second version flips `IsLatest`, increments `VersionNumber` and updates
+  `LatestPublishedVersionId` — FILE-04
+- ✓ Base64 `VersionData` in the JSON body yields server-computed `Checksum`, `ContentSize`, `FileType`,
+  `FileExtension`; multipart answers `UNSUPPORTED:content-multipart` — FILE-05
+- ✓ `GET .../ContentVersion/{id}/VersionData` streams the exact bytes with `Content-Type` and
+  `Content-Length`; records and SOQL carry the URL, never bytes — FILE-06
+- ✓ ContentDocumentLink is a generated baseline object with a polymorphic `LinkedEntityId` over every
+  keyed object; unfiltered SOQL on it is `MALFORMED_QUERY` — FILE-07
+- ✓ Deleting a ContentDocument soft-deletes versions and links; undelete restores them together — FILE-08
+- ✓ Blobs sit behind one `BlobStore` interface, `InlineBlobStore` (`bytea`) in a normal org — FILE-09
+
 ### Active
 
-Milestone v1.2 "archive mode" (started 2026-11-03). Requirements are defined in `.planning/REQUIREMENTS.md`
-once `/gsd:new-milestone` completes; see "Current Milestone" above.
+Milestone v1.2 "archive mode" (started 2026-11-03). Remaining requirements (ARCH-*, LOAD-*, UI-*, fixture)
+are defined in `.planning/REQUIREMENTS.md`; see "Current Milestone" above. Phase 16 is next.
 
 ### Out of Scope
 
@@ -505,4 +531,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-03 at the start of milestone v1.2*
+*Last updated: 2026-11-04 after Phase 15 (files model) completed*

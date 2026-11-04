@@ -238,7 +238,7 @@ function rewriteFieldRef(node: FieldRef, r: Resolver): Expr {
       const type = node.path.length === 4 ? r.schema.getObject(typeName) : undefined;
       if (!type || type.customMetadata !== true) throw fieldNotFound(node.path.join("."), { object: "$CustomMetadata", field: typeName });
       const field = r.schema.getField(type.name, fieldName);
-      if (!field || field.type === "LongTextArea") throw fieldNotFound(node.path.join("."), { object: type.name, field: fieldName });
+      if (!field || field.type === "LongTextArea" || field.type === "Base64") throw fieldNotFound(node.path.join("."), { object: type.name, field: fieldName });
       const row = r.customMetadata?.get(type.name.toLowerCase())?.get(recordName.toLowerCase());
       if (row === undefined) r.unknownRecords.add(`${type.name}.${recordName}`);
       const rec = typeof row?.["DeveloperName"] === "string" ? row["DeveloperName"] : recordName;

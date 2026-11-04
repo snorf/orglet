@@ -1,0 +1,60 @@
+{
+  "name": "OpportunityContactRole",
+  "label": "Opportunity Contact Role",
+  "labelPlural": "Opportunity Contact Role",
+  "keyPrefix": "00K",
+  "keyPrefixSource": "de-describe",
+  "undeletable": false,
+  "searchable": false,
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "ContactId",
+      "label": "Contact ID",
+      "type": "Lookup",
+      "nillable": false,
+      "referenceTo": [
+        "Contact"
+      ],
+      "relationshipName": "Contact"
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsPrimary",
+      "label": "Primary",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "OpportunityId",
+      "label": "Opportunity ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Opportunity"
+      ],
+      "relationshipName": "Opportunity"
+    },
+    {
+      "name": "Role",
+      "label": "Role",
+      "type": "Picklist"
+    }
+  ]
+}

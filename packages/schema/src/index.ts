@@ -8,6 +8,7 @@ export {
   columnFor,
   columnName,
   identifier,
+  isBlob,
   isVirtual,
   quote,
   sequenceName,
