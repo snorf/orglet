@@ -6,7 +6,7 @@ import { parseQuery, type FieldType, type Query, type Subquery, type WhereClause
 import { definitionTarget, hasSoftDelete, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { columnName, quote, tableName } from "@orglet/schema";
 import { dateLiteralRange, dateNLiteralRange, toIsoDate, type DateRange } from "./dates.js";
-import { definitionRelationshipOnly, invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
+import { SoqlError, contentDocumentLinkFilter, definitionRelationshipOnly, invalidField, invalidRelationship, invalidType, malformed, unsupported } from "./errors.js";
 import { NAME_OBJECT_FIELDS, pseudoField } from "./polymorphic.js";
 import { TYPEOF_RESTRICTIONS, assertTypeofAllowed, diagnoseTypeofParseError, notATarget, notPolymorphic } from "./typeof.js";
 
@@ -24,6 +24,8 @@ export interface ShapeField {
   alias: string;
   /** Picklist whose label is wanted (toLabel). */
   labels?: Map<string, string>;
+  /** Base64 field: the selected value is the row id; shaped into the download URL. */
+  blob?: { type: string; field: string };
 }
 
 export interface SObjectShape {
@@ -238,6 +240,7 @@ class Compiler {
   /** SQL expression reading `field` from table alias `alias`, including virtual fields. */
   private expr(alias: string, obj: SObjectDef, field: FieldDef): string {
     if (field.formula !== undefined) throw unsupported("soql-formula", `formula field ${obj.name}.${field.name} cannot be used in WHERE, ORDER BY or GROUP BY yet`);
+    if (field.type === "Base64") throw new SoqlError("INVALID_FIELD", `\nfield '${field.name}' can not be filtered, sorted or grouped in a query call`);
     switch (field.type) {
       case "Name": {
         const parts = obj.fields.filter((f) => f.compoundFieldName === field.name && (f.name === "FirstName" || f.name === "LastName")).sort((a) => (a.name === "FirstName" ? -1 : 1));
@@ -284,6 +287,7 @@ class Compiler {
     const obj = this.objectFor(query.sObject);
     const scope: Scope = { obj, alias: this.nextAlias(), joins: new Map() };
     const stripAlias = (name: string) => (query.sObjectAlias && name.toLowerCase().startsWith(`${query.sObjectAlias.toLowerCase()}.`) ? name.slice(query.sObjectAlias.length + 1) : name);
+    requiresLinkFilter(obj, query.where, stripAlias);
 
     const fields = query.fields ?? [];
     const countOnly = fields.length === 1 && fields[0]?.type === "FieldFunctionExpression" && fields[0].functionName.toUpperCase() === "COUNT" && fields[0].parameters.length === 0;
@@ -347,6 +351,12 @@ class Compiler {
         return;
       }
       if (target.fields.some((f) => f.name === field.name && !labels)) return;
+      if (field.type === "Base64") {
+        const bcol = this.nextColumn();
+        selectItems.push(`${alias}.${quote("id")} AS ${quote(bcol)}`);
+        target.fields.push({ name: field.name, alias: bcol, blob: { type: obj.name, field: field.name } });
+        return;
+      }
       const col = this.nextColumn();
       selectItems.push(`${this.expr(alias, obj, field)} AS ${quote(col)}`);
       const sf: ShapeField = { name: field.name, alias: col };
@@ -698,6 +708,7 @@ class Compiler {
       const q = cond.valueQuery;
       if (!q.sObject) throw malformed("semi-join needs an object");
       const innerObj = this.objectFor(q.sObject);
+      requiresLinkFilter(innerObj, q.where, (n) => n);
       const innerScope: Scope = { obj: innerObj, alias: inner.nextAlias(), joins: new Map() };
       if (q.fields?.some((f) => f.type === "FieldTypeof")) throw malformed(TYPEOF_RESTRICTIONS.semiJoin);
       const innerField = q.fields?.[0];
@@ -847,6 +858,91 @@ class Compiler {
       })
       .join(", ");
   }
+}
+
+interface LinkCondition {
+  field?: unknown;
+  operator?: string;
+  value?: unknown;
+  literalType?: unknown;
+  openParen?: number;
+  closeParen?: number;
+}
+
+const LINK_FILTER_FIELDS = new Set(["id", "contentdocumentid", "linkedentityid"]);
+
+/**
+ * ContentDocumentLink may only be queried with a filter on Id, ContentDocumentId or LinkedEntityId (= or IN).
+ * Salesforce lifts this with the "Query All Files" permission (API 59.0+); orglet has no permission model, so it always enforces it.
+ * Reading: could a row match without a qualifying filter? Treat every qualifying condition as false and every other condition
+ * (and every NOT-ed operand) as true, evaluate the WHERE chain as a boolean expression (AND before OR); true means yes -> reject.
+ */
+function requiresLinkFilter(obj: SObjectDef, where: WhereClause | undefined, stripAlias: (n: string) => string): void {
+  if (obj.name !== "ContentDocumentLink") return;
+  if (!where) throw contentDocumentLinkFilter();
+  type Tok = "(" | ")" | "AND" | "OR" | boolean;
+  const toks: Tok[] = [];
+  let negate = false;
+  let negDepth = 0; // open parentheses of a NOT ( ... ) group: everything inside counts as "may match"
+  let current: WhereClause | undefined = where;
+  while (current) {
+    const left: unknown = "left" in current ? current.left : null;
+    if (left !== null && typeof left === "object" && ("field" in left || "fn" in left)) {
+      const c = left as LinkCondition;
+      const open = c.openParen ?? 0;
+      for (let i = 0; i < open; i++) toks.push("(");
+      if (negDepth > 0) negDepth += open;
+      const field = typeof c.field === "string" ? stripAlias(c.field).toLowerCase() : "";
+      const op = (c.operator ?? "").toUpperCase();
+      const qualifies = LINK_FILTER_FIELDS.has(field) && ((op === "=" && c.literalType !== "NULL" && c.value !== null && c.value !== undefined) || op === "IN");
+      toks.push(negate || negDepth > 0 ? true : !qualifies);
+      negate = false;
+      const close = c.closeParen ?? 0;
+      for (let i = 0; i < close; i++) toks.push(")");
+      negDepth = Math.max(0, negDepth - close);
+    } else if (left !== null && typeof left === "object" && "openParen" in left) {
+      const n = (left as { openParen: number }).openParen;
+      for (let i = 0; i < n; i++) toks.push("(");
+      negDepth += n;
+      current = "right" in current ? current.right : undefined;
+      continue;
+    } else if ("operator" in current && current.operator === "NOT") {
+      negate = true;
+      current = current.right;
+      continue;
+    }
+    if ("operator" in current && current.operator !== "NOT") {
+      toks.push(current.operator === "OR" ? "OR" : "AND");
+      current = current.right;
+    } else current = undefined;
+  }
+  let pos = 0;
+  const orExpr = (): boolean => {
+    let v = andExpr();
+    while (toks[pos] === "OR") {
+      pos++;
+      v = andExpr() || v;
+    }
+    return v;
+  };
+  const andExpr = (): boolean => {
+    let v = atom();
+    while (toks[pos] === "AND") {
+      pos++;
+      v = atom() && v;
+    }
+    return v;
+  };
+  const atom = (): boolean => {
+    const t = toks[pos++];
+    if (t === "(") {
+      const v = orExpr();
+      pos++;
+      return v;
+    }
+    return t === true;
+  };
+  if (orExpr()) throw contentDocumentLinkFilter();
 }
 
 export function compileSoql(soql: string, options: CompileOptions): CompiledQuery {

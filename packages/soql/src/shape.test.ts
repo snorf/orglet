@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SObjectShape, TypeofShape } from "./compile.js";
-import { shapeSObjectRow } from "./shape.js";
+import { blobUrl, shapeSObjectRow } from "./shape.js";
 
 const ownerShape: SObjectShape = { kind: "sobject", type: "", idAlias: "c1", poly: { typeAlias: "c2", fkAlias: "c3" }, fields: [{ name: "Name", alias: "c4" }], computed: [], parents: new Map(), children: new Map() };
 const caseShape: SObjectShape = { kind: "sobject", type: "Case", idAlias: "c0", fields: [], computed: [], parents: new Map([["Owner", ownerShape]]), children: new Map() };
@@ -90,5 +90,19 @@ describe("shapeSObjectRow with TYPEOF", () => {
     expect(owner).toBeNull();
     expect(onUnmodelledPrefix).toHaveBeenCalledTimes(1);
     expect(onUnmodelledPrefix).toHaveBeenCalledWith("zzz");
+  });
+});
+
+describe("blob fields", () => {
+  const shape: SObjectShape = { kind: "sobject", type: "ContentVersion", idAlias: "c0", fields: [{ name: "VersionData", alias: "c1", blob: { type: "ContentVersion", field: "VersionData" } }], computed: [], parents: new Map(), children: new Map() };
+
+  it("a blob field shapes as its download URL, null when the id is null", () => {
+    const rec = shapeSObjectRow(shape, { c0: "068A", c1: "068A" }, { apiVersion: "59.0" });
+    expect(rec?.VersionData).toBe("/services/data/v59.0/sobjects/ContentVersion/068A/VersionData");
+    expect(shapeSObjectRow(shape, { c0: "068A", c1: null }, { apiVersion: "59.0" })?.VersionData).toBeNull();
+  });
+
+  it("blobUrl builds the REST blob path", () => {
+    expect(blobUrl("ContentVersion", "068A", "VersionData", "61.0")).toBe("/services/data/v61.0/sobjects/ContentVersion/068A/VersionData");
   });
 });

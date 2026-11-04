@@ -23,6 +23,11 @@ export function attributes(type: string, id: unknown, apiVersion: string): Row {
   return { type, url: `/services/data/v${apiVersion}/sobjects/${type}/${String(id)}` };
 }
 
+/** The URL jsforce `record.blob()` and simple-salesforce `get_base64()` call; records and SOQL carry it instead of bytes (FILE-06). */
+export function blobUrl(type: string, id: string, field: string, apiVersion: string): string {
+  return `/services/data/v${apiVersion}/sobjects/${type}/${id}/${field}`;
+}
+
 export function shapeSObjectRow(shape: SObjectShape, row: Row, options: ShapeOptions): Row | null {
   let type = shape.type;
   if (shape.poly) {
@@ -40,7 +45,7 @@ export function shapeSObjectRow(shape: SObjectShape, row: Row, options: ShapeOpt
   const record: Row = { attributes: attributes(type, id, options.apiVersion) };
   for (const f of shape.fields) {
     const v = row[f.alias];
-    record[f.name] = f.labels && typeof v === "string" ? (f.labels.get(v) ?? v) : v;
+    record[f.name] = f.blob ? (typeof v === "string" ? blobUrl(f.blob.type, v, f.blob.field, options.apiVersion) : null) : f.labels && typeof v === "string" ? (f.labels.get(v) ?? v) : v;
   }
   for (const [rel, parent] of shape.parents) record[rel] = shapeSObjectRow(parent, row, options);
   for (const [rel, t] of shape.typeofs ?? []) record[rel] = shapeTypeof(t, row, options);

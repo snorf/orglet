@@ -542,3 +542,90 @@ describe("MetadataRelationship in SOQL (CMDT-03, D-07, D-10)", () => {
     expect(parentOf(parentOf(q, "Default_Tier__r"), "Target_Object__r").type).toBe("EntityDefinition");
   });
 });
+
+describe("Base64 fields (FILE-06)", () => {
+  it("VersionData selects the row id, never the bytes column", () => {
+    const q = compile("SELECT Id, VersionData FROM ContentVersion");
+    expect(q.sql).not.toContain('"versiondata"');
+    const f = q.shape.kind === "sobject" ? q.shape.fields.find((x) => x.name === "VersionData") : undefined;
+    expect(f?.blob).toEqual({ type: "ContentVersion", field: "VersionData" });
+  });
+
+  it("FIELDS(ALL) on ContentVersion never selects the bytes column", () => {
+    expect(compile("SELECT FIELDS(ALL) FROM ContentVersion LIMIT 10").sql).not.toContain('"versiondata"');
+  });
+
+  it("VersionData cannot be filtered, sorted or grouped", () => {
+    for (const q of ["SELECT Id FROM ContentVersion WHERE VersionData != null", "SELECT Id FROM ContentVersion ORDER BY VersionData", "SELECT VersionData FROM ContentVersion GROUP BY VersionData"]) {
+      expect(() => compile(q), q).toThrow(SoqlError);
+      try {
+        compile(q);
+      } catch (e) {
+        expect((e as SoqlError).errorCode).toBe("INVALID_FIELD");
+      }
+    }
+  });
+
+  it("a parent's VersionData selects through the join", () => {
+    const q = compile("SELECT LatestPublishedVersion.VersionData FROM ContentDocument");
+    expect(q.sql).not.toContain('"versiondata"');
+    const parent = q.shape.kind === "sobject" ? [...q.shape.parents.values()][0] : undefined;
+    expect(parent?.fields[0]?.blob?.type).toBe("ContentVersion");
+  });
+});
+
+describe("ContentDocumentLink mandatory filter (FILE-07)", () => {
+  const A = "'001000000000001AAA'";
+  const rejected = [
+    "SELECT Id FROM ContentDocumentLink",
+    "SELECT Id FROM ContentDocumentLink WHERE ShareType = 'V'",
+    "SELECT COUNT() FROM ContentDocumentLink",
+    `SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId != ${A}`,
+    `SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId = ${A} OR ShareType = 'V'`,
+    "SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId LIKE '001%'",
+    "SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId = null",
+    `SELECT Id FROM ContentDocumentLink WHERE NOT (LinkedEntityId = ${A})`,
+    "SELECT Id FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentDocumentLink WHERE ShareType = 'V')",
+  ];
+  const accepted = [
+    `SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId = ${A}`,
+    "SELECT Id FROM ContentDocumentLink WHERE ContentDocumentId IN ('069000000000001AAA', '069000000000002AAA')",
+    "SELECT Id FROM ContentDocumentLink WHERE Id = '06A000000000001AAA'",
+    `SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId = ${A} AND ShareType = 'V'`,
+    `SELECT Id FROM ContentDocumentLink WHERE (LinkedEntityId = ${A} OR LinkedEntityId = '001000000000002AAA') AND Visibility = 'AllUsers'`,
+    "SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId IN (SELECT Id FROM Account)",
+    `SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId = ${A}`,
+    `SELECT l.Id FROM ContentDocumentLink l WHERE l.LinkedEntityId = ${A}`,
+    `SELECT Id FROM ContentDocument WHERE Id IN (SELECT ContentDocumentId FROM ContentDocumentLink WHERE LinkedEntityId = ${A})`,
+    "SELECT Id, (SELECT Id, LinkedEntityId FROM ContentDocumentLinks) FROM ContentDocument",
+  ];
+
+  it.each(rejected)("rejects without a guaranteed filter: %s", (q) => {
+    let err: unknown;
+    try {
+      compile(q);
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(SoqlError);
+    expect((err as SoqlError).errorCode).toBe("MALFORMED_QUERY");
+    expect((err as SoqlError).message).toBe(
+      "Implementation restriction: ContentDocumentLink requires a filter by a single Id on ContentDocumentId or LinkedEntityId using the equals operator or multiple Id's using the IN operator.",
+    );
+  });
+
+  it.each(accepted)("accepts a guaranteed filter: %s", (q) => {
+    expect(() => compile(q)).not.toThrow();
+  });
+
+  it("the polymorphic child form stays refused (D-16)", () => {
+    let err: unknown;
+    try {
+      compile("SELECT Id, (SELECT Id FROM ContentDocumentLinks) FROM Account");
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(SoqlError);
+    expect((err as SoqlError).errorCode).toBe("INVALID_FIELD");
+  });
+});
