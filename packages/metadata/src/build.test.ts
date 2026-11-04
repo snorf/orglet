@@ -1165,7 +1165,7 @@ describe("Base64 standard fields (Phase 15)", () => {
         { name: "Name", label: "Name", type: "Text", length: 80, nillable: false, idLookup: true, nameField: true },
         { name: "Blob", label: "Blob", type: "Base64" },
       ],
-    } as StandardObjectJson;
+    };
     const blob = buildOrgSchema({ ...real, objects: [...real.objects, blobObject] }).schema.getField("BlobHolder", "Blob");
     expect(blob).toMatchObject({ type: "Base64", filterable: false, sortable: false, groupable: false });
   });
