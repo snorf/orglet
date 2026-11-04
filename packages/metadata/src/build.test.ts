@@ -8,7 +8,7 @@ const V1_BASELINE = fileURLToPath(new URL("../test/fixtures/baseline-v1.0/", imp
 
 const SYSTEM_FIELDS = ["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"];
 /** Objects the Object Reference gives no name-equivalent field (D-02); adding one must be a conscious act. */
-const NO_NAME_FIELD = ["AccountContactRelation", "AccountTeamMember", "CaseContactRole", "CaseMilestone", "FeedItem", "OpportunityContactRole", "OpportunityHistory"];
+const NO_NAME_FIELD = ["AccountContactRelation", "AccountTeamMember", "CaseContactRole", "CaseMilestone", "ContentDocumentLink", "FeedItem", "OpportunityContactRole", "OpportunityHistory"];
 /** 03-RESEARCH.md Fact Table as amended by CONTEXT D-03a. extra = fields beyond system fields and OwnerId. */
 const THIN: Record<
   string,
@@ -191,9 +191,21 @@ describe("standard baseline alone", () => {
   });
 
   it("business: blob, junction and geolocation fields are not in the schema", () => {
-    for (const [object, field] of [["ContentVersion", "VersionData"], ["FeedItem", "ContentData"], ["EmailMessage", "BccIds"], ["EmailMessage", "CcIds"], ["EmailMessage", "ContentDocumentIds"], ["EmailMessage", "ToIds"], ["Location", "Location"]] as const) {
+    for (const [object, field] of [["FeedItem", "ContentData"], ["EmailMessage", "BccIds"], ["EmailMessage", "CcIds"], ["EmailMessage", "ContentDocumentIds"], ["EmailMessage", "ToIds"], ["Location", "Location"]] as const) {
       expect(result.schema.getField(object, field), `${object}.${field}`).toBeUndefined();
     }
+  });
+
+  it("files model (Phase 15): VersionData is Base64, ContentDocumentId is required and cascades, ContentDocumentLink loads with its cascades", () => {
+    const version = result.schema.getField("ContentVersion", "VersionData");
+    expect(version).toMatchObject({ type: "Base64", updateable: false, filterable: false, sortable: false, groupable: false });
+    expect(result.schema.getField("ContentVersion", "ContentDocumentId")).toMatchObject({ nillable: false, deleteConstraint: "Cascade", referenceTo: ["ContentDocument"], childRelationshipName: "ContentVersions" });
+    expect(result.schema.getObject("ContentDocumentLink")).toMatchObject({ keyPrefix: "06A", keyPrefixSource: "unverified", hasOwner: false, createable: true, updateable: true, deletable: true, undeletable: false });
+    expect(result.schema.getField("ContentDocumentLink", "ContentDocumentId")).toMatchObject({ nillable: false, deleteConstraint: "Cascade", referenceTo: ["ContentDocument"], childRelationshipName: "ContentDocumentLinks" });
+    const linked = result.schema.getField("ContentDocumentLink", "LinkedEntityId");
+    expect(linked).toMatchObject({ deleteConstraint: "Cascade", relationshipName: "LinkedEntity" });
+    expect(linked?.referenceTo).toHaveLength(20);
+    expect(linked?.childRelationshipName).toBeUndefined();
   });
 
   it("baseline field names take the SDK spelling where the Object Reference differs only by case", () => {

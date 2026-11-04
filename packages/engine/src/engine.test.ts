@@ -77,7 +77,7 @@ const BUSINESS_FLAGS: Record<string, [boolean, boolean, boolean, boolean]> = {
   OrderItem: [true, true, true, false], AccountContactRelation: [true, true, true, false], AccountTeamMember: [true, true, true, false],
   OpportunityTeamMember: [true, true, true, false], OpportunityContactRole: [true, true, true, false], OpportunitySplit: [true, true, true, false],
   ContractLineItem: [true, true, true, true], CaseContactRole: [true, true, true, false], CaseMilestone: [false, true, false, false],
-  EmailMessage: [true, true, true, true], ContentDocument: [false, true, true, true], ContentVersion: [true, true, false, false],
+  EmailMessage: [true, true, true, true], ContentDocument: [false, true, true, true], ContentDocumentLink: [true, true, true, false], ContentVersion: [true, true, false, false],
   FeedItem: [true, true, true, false], Location: [true, true, true, true], Address: [true, true, true, true],
 };
 const unknownId = (name: string) => toCaseSafeId(`${schema.getObject(name)?.keyPrefix ?? "000"}000000000099`);
