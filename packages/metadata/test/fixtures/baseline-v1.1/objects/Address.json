@@ -1,0 +1,179 @@
+{
+  "name": "Address",
+  "label": "Address",
+  "labelPlural": "Addresses",
+  "keyPrefix": "130",
+  "keyPrefixSource": "de-describe",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "Address",
+      "label": "Address",
+      "type": "Address",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "AddressType",
+      "label": "Address Type",
+      "type": "Picklist",
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "City",
+      "label": "City",
+      "type": "Text",
+      "length": 40
+    },
+    {
+      "name": "Country",
+      "label": "Country",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "DrivingDirections",
+      "label": "Driving Directions",
+      "type": "Text",
+      "length": 1000
+    },
+    {
+      "name": "Floor",
+      "label": "Floor",
+      "type": "Text",
+      "length": 50,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "GeocodeAccuracy",
+      "label": "Geocode Accuracy",
+      "type": "Picklist"
+    },
+    {
+      "name": "HouseNumberSupplement",
+      "label": "House Number Supplement",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Latitude",
+      "label": "Latitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "LocationType",
+      "label": "Location Type",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Longitude",
+      "label": "Longitude",
+      "type": "Number",
+      "precision": 18,
+      "scale": 15
+    },
+    {
+      "name": "Name",
+      "label": "Name",
+      "type": "AutoNumber",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
+    },
+    {
+      "name": "ParentId",
+      "label": "Parent ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Location"
+      ],
+      "relationshipName": "Parent"
+    },
+    {
+      "name": "PostalCode",
+      "label": "Zip/Postal Code",
+      "type": "Text",
+      "length": 20
+    },
+    {
+      "name": "State",
+      "label": "State/Province",
+      "type": "Text",
+      "length": 80
+    },
+    {
+      "name": "Street",
+      "label": "Address",
+      "type": "TextArea",
+      "length": 255
+    },
+    {
+      "name": "StreetSupplement1",
+      "label": "Street Supplement 1",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StreetSupplement2",
+      "label": "Street Supplement 2",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TimeZone",
+      "label": "Time Zone",
+      "type": "Picklist"
+    },
+    {
+      "name": "UnitNumber",
+      "label": "Unit Number",
+      "type": "Text",
+      "length": 50,
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}

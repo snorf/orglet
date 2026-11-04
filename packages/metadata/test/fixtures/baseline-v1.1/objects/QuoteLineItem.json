@@ -1,0 +1,651 @@
+{
+  "name": "QuoteLineItem",
+  "label": "Quote Line Item",
+  "labelPlural": "Quote Line Items",
+  "keyPrefix": "0QL",
+  "keyPrefixSource": "de-describe",
+  "hasOwner": false,
+  "fields": [
+    {
+      "name": "AggregatedQuantity",
+      "label": "Aggregated Quantity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BatchIdentifier",
+      "label": "Batch Identifier",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "BillingFrequency",
+      "label": "Billing Frequency",
+      "type": "Picklist",
+      "featureGated": true
+    },
+    {
+      "name": "BillingReference",
+      "label": "Billing Reference",
+      "type": "Text",
+      "length": 80,
+      "updateable": false
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "CustomProductName",
+      "label": "Custom Product Name",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "Description",
+      "label": "Line Item Description",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "Discount",
+      "label": "Discount (Percentage)",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
+    },
+    {
+      "name": "DiscountAmount",
+      "label": "Discount (Amount)",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "DoesAutomaticallyRenew",
+      "label": "Automatically Renew",
+      "type": "Checkbox",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "EffectiveGrantDate",
+      "label": "Effective Grant Date",
+      "type": "Date"
+    },
+    {
+      "name": "EndDate",
+      "label": "End Date",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
+      "name": "EndDateTime",
+      "label": "End Date Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "EndQuantity",
+      "label": "End Quantity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "EndTime",
+      "label": "End Time",
+      "type": "Time"
+    },
+    {
+      "name": "HasQuantitySchedule",
+      "label": "Has Quantity Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasRevenueSchedule",
+      "label": "Has Revenue Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "HasSchedule",
+      "label": "Schedule",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsPrimarySegment",
+      "label": "Is Primary Segment",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LineNumber",
+      "label": "Line Item Number",
+      "type": "AutoNumber",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "idLookup": true,
+      "nameField": true,
+      "displayFormat": "{00000000}"
+    },
+    {
+      "name": "ListPrice",
+      "label": "List Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ListPriceTotal",
+      "label": "List Price Total",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Margin",
+      "label": "Margin",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
+    },
+    {
+      "name": "MarginAmount",
+      "label": "Margin Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2
+    },
+    {
+      "name": "NetTotalPrice",
+      "label": "Net Total Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "NetUnitPrice",
+      "label": "Net Unit Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "OpportunityLineItemId",
+      "label": "Line Item ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "OpportunityLineItem"
+      ],
+      "relationshipName": "OpportunityLineItem"
+    },
+    {
+      "name": "ParentQuoteLineItemId",
+      "label": "Quote Line Item ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "QuoteLineItem"
+      ],
+      "relationshipName": "ParentQuoteLineItem",
+      "featureGated": true
+    },
+    {
+      "name": "PartnerDiscountPercent",
+      "label": "Partner Discount Percent",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
+    },
+    {
+      "name": "PartnerUnitPrice",
+      "label": "Partner Unit Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2
+    },
+    {
+      "name": "PeriodBoundary",
+      "label": "Period Boundary",
+      "type": "Picklist"
+    },
+    {
+      "name": "PeriodBoundaryDay",
+      "label": "Period Boundary Day",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "PeriodBoundaryStartMonth",
+      "label": "Period Boundary Start Month",
+      "type": "Picklist"
+    },
+    {
+      "name": "PriceWaterfallIdentifier",
+      "label": "Price Waterfall Identifier",
+      "type": "Text",
+      "length": 80,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PricebookEntryId",
+      "label": "Price Book Entry ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "PricebookEntry"
+      ],
+      "relationshipName": "PricebookEntry"
+    },
+    {
+      "name": "PricingContractId",
+      "label": "Contract ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "Contract"
+      ],
+      "relationshipName": "PricingContract"
+    },
+    {
+      "name": "PricingTerm",
+      "label": "Pricing Term",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PricingTermCount",
+      "label": "Pricing Term Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PricingTermUnit",
+      "label": "Pricing Term Unit",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Product2Id",
+      "label": "Product ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Product2"
+      ],
+      "relationshipName": "Product2"
+    },
+    {
+      "name": "ProductInstanceIdentifier",
+      "label": "Product Instance Identifier",
+      "type": "Text",
+      "length": 255
+    },
+    {
+      "name": "Quantity",
+      "label": "Quantity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "nillable": false
+    },
+    {
+      "name": "QuoteId",
+      "label": "Quote ID",
+      "type": "Lookup",
+      "nillable": false,
+      "updateable": false,
+      "referenceTo": [
+        "Quote"
+      ],
+      "relationshipName": "Quote"
+    },
+    {
+      "name": "RampIdentifier",
+      "label": "Ramp Identifier",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "RecipientScaledQuantity",
+      "label": "Recipient Scaled Quantity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "RelatedQuoteLineItemId",
+      "label": "Quote Line Item ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "OrderItem"
+      ],
+      "relationshipName": "RelatedQuoteLineItem"
+    },
+    {
+      "name": "RevenueCloudPackagingFlag",
+      "label": "Revenue Cloud Packaging Flag",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SegmentIdentifier",
+      "label": "Segment Identifier",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false,
+      "idLookup": true
+    },
+    {
+      "name": "SegmentName",
+      "label": "Segment Name",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SegmentType",
+      "label": "Segment Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "SellingModelType",
+      "label": "Selling Model Type",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ServiceDate",
+      "label": "Date",
+      "type": "Date"
+    },
+    {
+      "name": "SortOrder",
+      "label": "Sort Order",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0
+    },
+    {
+      "name": "StartDate",
+      "label": "Start Date",
+      "type": "Date"
+    },
+    {
+      "name": "StartDateTime",
+      "label": "Start Date Time",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StartEndTimeZone",
+      "label": "Start and End Time Zone",
+      "type": "Picklist"
+    },
+    {
+      "name": "StartQuantity",
+      "label": "Start Quantity",
+      "type": "Number",
+      "precision": 18,
+      "scale": 6,
+      "updateable": false
+    },
+    {
+      "name": "StartTime",
+      "label": "Start Time",
+      "type": "Time"
+    },
+    {
+      "name": "StartingPriceTotal",
+      "label": "Starting Price Total",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "StartingUnitPriceSource",
+      "label": "Starting Unit Price Source",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Status",
+      "label": "Status",
+      "type": "Picklist"
+    },
+    {
+      "name": "SubscriptionTerm",
+      "label": "Subscription Term",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false,
+      "restrictedPicklist": true
+    },
+    {
+      "name": "SubscriptionTermUnit",
+      "label": "Subscription Term Unit",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Subtotal",
+      "label": "Subtotal",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAdjustment",
+      "label": "Total Adjustment",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalAdjustmentAmount",
+      "label": "Total Adjustment Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalCost",
+      "label": "Total Cost",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalLineAmount",
+      "label": "Total Line Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalMargin",
+      "label": "Total Margin",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalMarginAmount",
+      "label": "Total Margin Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalPrice",
+      "label": "Total Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalPriceWithTax",
+      "label": "Total Price with Tax",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "TotalTaxAmount",
+      "label": "Total Tax Amount",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "UnitCost",
+      "label": "Unit Cost",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2
+    },
+    {
+      "name": "UnitPrice",
+      "label": "Sales Price",
+      "type": "Currency",
+      "precision": 18,
+      "scale": 2,
+      "nillable": false
+    },
+    {
+      "name": "UnitPriceUplift",
+      "label": "Unit Price Uplift",
+      "type": "Percent",
+      "precision": 5,
+      "scale": 2
+    },
+    {
+      "name": "ValidationResult",
+      "label": "Validation Result",
+      "type": "Picklist"
+    },
+    {
+      "name": "Visibility",
+      "label": "Visibility",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    }
+  ]
+}

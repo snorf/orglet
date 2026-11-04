@@ -1,0 +1,178 @@
+{
+  "name": "ContentDocument",
+  "label": "Content Document",
+  "labelPlural": "Content Documents",
+  "keyPrefix": "069",
+  "keyPrefixSource": "de-describe",
+  "createable": false,
+  "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
+  "fields": [
+    {
+      "name": "ArchivedById",
+      "label": "User ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "ArchivedBy"
+    },
+    {
+      "name": "ArchivedDate",
+      "label": "Archived Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentModifiedDate",
+      "label": "Content Modified Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentSize",
+      "label": "Size",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentSizeLong",
+      "label": "Size",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 1000,
+      "createable": false
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "FileExtension",
+      "label": "File Extension",
+      "type": "Text",
+      "length": 40,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FileType",
+      "label": "File Type",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "IsArchived",
+      "label": "Is Archived",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsInternalOnly",
+      "label": "Is Internal Only",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "LastReferencedDate",
+      "label": "Last Referenced Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LastViewedDate",
+      "label": "Last Viewed Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "LatestPublishedVersionId",
+      "label": "Latest Published Version ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "ContentVersion"
+      ],
+      "relationshipName": "LatestPublishedVersion"
+    },
+    {
+      "name": "MalwareScanDate",
+      "label": "Malware Scan Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MalwareScanStatus",
+      "label": "Malware Scan Status",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PublishStatus",
+      "label": "Publish Status",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "SharingOption",
+      "label": "Prevent others from sharing and unsharing",
+      "type": "Picklist",
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "SharingPrivacy",
+      "label": "File Privacy on Records",
+      "type": "Picklist",
+      "createable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Title",
+      "label": "Title",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "createable": false,
+      "idLookup": true,
+      "nameField": true
+    }
+  ]
+}

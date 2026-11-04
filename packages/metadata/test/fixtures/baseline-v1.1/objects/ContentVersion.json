@@ -1,0 +1,349 @@
+{
+  "name": "ContentVersion",
+  "label": "Content Version",
+  "labelPlural": "Content Versions",
+  "keyPrefix": "068",
+  "keyPrefixSource": "de-describe",
+  "deletable": false,
+  "undeletable": false,
+  "hasOwner": true,
+  "ownerTargets": [
+    "User"
+  ],
+  "fields": [
+    {
+      "name": "Checksum",
+      "label": "Checksum",
+      "type": "Text",
+      "length": 50,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentDocumentId",
+      "label": "Content Document ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "ContentDocument"
+      ],
+      "relationshipName": "ContentDocument"
+    },
+    {
+      "name": "ContentLocation",
+      "label": "Content Location",
+      "type": "Picklist",
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
+      "name": "ContentModifiedById",
+      "label": "User ID",
+      "type": "Lookup",
+      "createable": false,
+      "updateable": false,
+      "referenceTo": [
+        "User"
+      ],
+      "relationshipName": "ContentModifiedBy"
+    },
+    {
+      "name": "ContentModifiedDate",
+      "label": "Content Modified Date",
+      "type": "DateTime",
+      "updateable": false
+    },
+    {
+      "name": "ContentSize",
+      "label": "Size",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentSizeLong",
+      "label": "Size",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ContentUrl",
+      "label": "Content URL",
+      "type": "Url",
+      "length": 1333
+    },
+    {
+      "name": "CurrencyIsoCode",
+      "label": "Currency ISO Code",
+      "type": "Picklist",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Description",
+      "label": "Description",
+      "type": "LongTextArea",
+      "length": 1000
+    },
+    {
+      "name": "Division",
+      "label": "Division",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "ExternalDataSourceId",
+      "label": "External Data Source ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "ExternalDataSource"
+      ],
+      "relationshipName": "ExternalDataSource"
+    },
+    {
+      "name": "ExternalDocumentInfo1",
+      "label": "External Document Info1",
+      "type": "Text",
+      "length": 1000
+    },
+    {
+      "name": "ExternalDocumentInfo2",
+      "label": "External Document Info2",
+      "type": "Text",
+      "length": 1000
+    },
+    {
+      "name": "FeaturedContentBoost",
+      "label": "Featured Content Boost",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FeaturedContentDate",
+      "label": "Featured Content Date",
+      "type": "Date",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FileExtension",
+      "label": "File Extension",
+      "type": "Text",
+      "length": 40,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FileType",
+      "label": "File Type",
+      "type": "Text",
+      "length": 20,
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "FirstPublishLocationId",
+      "label": "First Publish Location ID",
+      "type": "Lookup",
+      "updateable": false,
+      "referenceTo": [
+        "Account",
+        "Asset",
+        "Campaign",
+        "Case",
+        "Contact",
+        "Contract",
+        "EmailMessage",
+        "Event",
+        "Lead",
+        "Location",
+        "OperatingHours",
+        "Opportunity",
+        "Order",
+        "OrderItem",
+        "Organization",
+        "Product2",
+        "ServiceAppointment",
+        "SocialPost",
+        "Task",
+        "User"
+      ],
+      "relationshipName": "FirstPublishLocation"
+    },
+    {
+      "name": "IsAssetEnabled",
+      "label": "Asset File Enabled",
+      "type": "Checkbox",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsLatest",
+      "label": "Is Latest",
+      "type": "Checkbox",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "IsMajorVersion",
+      "label": "Major Version",
+      "type": "Checkbox",
+      "nillable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "Language",
+      "label": "Language",
+      "type": "Picklist"
+    },
+    {
+      "name": "MalwareScanDate",
+      "label": "Malware Scan Date",
+      "type": "DateTime",
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "MalwareScanStatus",
+      "label": "Malware Scan Status",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "NegativeRatingCount",
+      "label": "Negative Rating Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Origin",
+      "label": "Content Origin",
+      "type": "Picklist",
+      "updateable": false,
+      "defaultedOnCreate": true,
+      "featureGated": true
+    },
+    {
+      "name": "PathOnClient",
+      "label": "Path On Client",
+      "type": "Text",
+      "length": 500,
+      "updateable": false
+    },
+    {
+      "name": "PositiveRatingCount",
+      "label": "Positive Rating Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "PublishStatus",
+      "label": "Publish Status",
+      "type": "Picklist",
+      "nillable": false,
+      "createable": false,
+      "updateable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "RatingCount",
+      "label": "Rating Count",
+      "type": "Number",
+      "precision": 18,
+      "scale": 0,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "ReasonForChange",
+      "label": "Reason For Change",
+      "type": "Text",
+      "length": 1000
+    },
+    {
+      "name": "RecordTypeId",
+      "label": "Record Type ID",
+      "type": "Lookup",
+      "referenceTo": [
+        "RecordType"
+      ],
+      "relationshipName": "RecordType"
+    },
+    {
+      "name": "SharingOption",
+      "label": "Prevent others from sharing and unsharing",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "SharingPrivacy",
+      "label": "File Privacy on Records",
+      "type": "Picklist",
+      "nillable": false,
+      "defaultedOnCreate": true
+    },
+    {
+      "name": "TagCsv",
+      "label": "Tags",
+      "type": "LongTextArea",
+      "length": 2000
+    },
+    {
+      "name": "TextPreview",
+      "label": "Text Preview",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "Title",
+      "label": "Title",
+      "type": "Text",
+      "length": 255,
+      "nillable": false,
+      "idLookup": true,
+      "nameField": true
+    },
+    {
+      "name": "VersionDataUrl",
+      "label": "Version Data URL",
+      "type": "Text",
+      "length": 255,
+      "createable": false,
+      "updateable": false
+    },
+    {
+      "name": "VersionNumber",
+      "label": "Version Number",
+      "type": "Text",
+      "length": 20,
+      "createable": false,
+      "updateable": false
+    }
+  ]
+}
