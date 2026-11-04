@@ -27,6 +27,8 @@ export type FieldType =
   | "TextArea"
   | "LongTextArea"
   | "Html"
+  /** Binary field (REST describe type base64), e.g. ContentVersion.VersionData. Stored as bytea outside every select list; records and SOQL carry the download URL, never bytes (Phase 15 D-04). */
+  | "Base64"
   | "EncryptedText"
   | "Lookup"
   | "MasterDetail"

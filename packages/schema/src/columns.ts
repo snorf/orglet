@@ -45,6 +45,11 @@ export function isVirtual(field: FieldDef): boolean {
   return field.formula !== undefined || field.type === "Address" || field.type === "Name" || field.type === "Location";
 }
 
+/** A blob column exists in the table but is read and written only through the engine's BlobStore, never through a select list. */
+export function isBlob(field: FieldDef): boolean {
+  return field.type === "Base64";
+}
+
 export function sqlTypeFor(field: FieldDef): string {
   switch (field.type) {
     case "Id":
@@ -72,6 +77,8 @@ export function sqlTypeFor(field: FieldDef): string {
     case "LongTextArea":
     case "Html":
       return "text";
+    case "Base64":
+      return "bytea";
     case "MultiselectPicklist":
       return `varchar(${field.length ?? 4099})`;
     case "AutoNumber":

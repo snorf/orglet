@@ -4,7 +4,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
-import { buildOrgSchema, loadBaseline, type OrgSchema } from "@orglet/metadata";
+import { buildOrgSchema, loadBaseline, type FieldDef, type OrgSchema } from "@orglet/metadata";
 import { describeField, globalDescribe, objectDescribe } from "./describe.js";
 
 const NULL_PREFIX = fileURLToPath(new URL("../../metadata/test/fixtures/null-prefix/", import.meta.url));
@@ -44,5 +44,14 @@ describe("describe", () => {
     expect(Object.keys(gatedDescribe).sort()).toEqual(Object.keys(plainDescribe).sort());
     expect(gatedDescribe["nillable"]).toBe(true);
     expect("featureGated" in gatedDescribe).toBe(false);
+  });
+});
+
+describe("describe of Base64 fields (Phase 15)", () => {
+  it("a Base64 field describes as type base64 with soapType xsd:base64Binary", () => {
+    const account = schema.getObject("Account");
+    if (!account) throw new Error("Account missing from schema");
+    const blob: FieldDef = { name: "Blob", label: "Blob", type: "Base64", custom: false, nillable: true, createable: true, updateable: false, defaultedOnCreate: false, unique: false, externalId: false, caseSensitive: false, idLookup: false, nameField: false, filterable: false, sortable: false, groupable: false };
+    expect(describeField(schema, account, blob)).toMatchObject({ type: "base64", soapType: "xsd:base64Binary", length: 0, filterable: false, sortable: false, groupable: false });
   });
 });

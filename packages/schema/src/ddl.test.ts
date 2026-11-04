@@ -1,6 +1,7 @@
 /** planTable index and foreign-key rules (Phase 11: unique lookups, MetadataRelationship). */
 import { describe, expect, it } from "vitest";
 import { OrgSchemaImpl, type FieldDef, type FieldType, type SObjectDef } from "@orglet/metadata";
+import { columnFor, isBlob } from "./columns.js";
 import { planTable } from "./ddl.js";
 
 const field = (name: string, type: FieldType, extra: Partial<FieldDef> = {}): FieldDef => ({
@@ -76,5 +77,14 @@ describe("planTable indexes and foreign keys", () => {
   it("a unique case-insensitive Text field keeps its lower() unique index", () => {
     const o = obj("Code__c", [field("Id", "Id"), field("Code__c", "Text", { length: 20, unique: true })]);
     expect(planTable(schemaOf(o), o).indexes).toContainEqual({ name: "ux_code__c_code__c", unique: true, expression: 'lower("code__c")' });
+  });
+});
+
+describe("Base64 fields (Phase 15)", () => {
+  it("a Base64 field is stored as a nullable bytea column", () => {
+    const f = field("VersionData", "Base64");
+    expect(columnFor(f)).toMatchObject({ sqlType: "bytea", notNull: false });
+    expect(isBlob(f)).toBe(true);
+    expect(isBlob(field("Title", "Text"))).toBe(false);
   });
 });

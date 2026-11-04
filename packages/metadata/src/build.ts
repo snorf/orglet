@@ -250,6 +250,12 @@ function fromStandardJson(
     f.groupable = j.groupable ?? false;
     f.filterable = j.filterable ?? true;
   }
+  // Blob fields cannot appear in a WHERE, ORDER BY or GROUP BY (SOQL never reads the bytes, Phase 15 D-04).
+  if (j.type === "Base64") {
+    f.sortable = false;
+    f.groupable = false;
+    f.filterable = false;
+  }
   return f;
 }
 
@@ -339,6 +345,7 @@ function fromSourceField(sf: SourceField, objectName: string, sets: ValueSets): 
       f.sortable = false;
       f.groupable = false;
       break;
+    case "Base64":
     case "LongTextArea":
     case "Html":
       f.sortable = false;

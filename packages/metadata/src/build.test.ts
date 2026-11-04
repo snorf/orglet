@@ -1149,3 +1149,24 @@ describe("custom settings and labels (CSET-01, CSET-02)", () => {
     expect(r.schema.getField("Support_Tier__mdt", "Target_Field__c")?.referenceTo).toEqual(["FieldDefinition"]);
   });
 });
+
+describe("Base64 standard fields (Phase 15)", () => {
+  it("a Base64 standard field loads as not filterable, sortable or groupable", async () => {
+    const real = await loadBaseline();
+    const blobObject: StandardObjectJson = {
+      name: "BlobHolder",
+      label: "Blob Holder",
+      labelPlural: "Blob Holders",
+      keyPrefix: null,
+      keyPrefixSource: "unverified",
+      createable: false,
+      hasOwner: false,
+      fields: [
+        { name: "Name", label: "Name", type: "Text", length: 80, nillable: false, idLookup: true, nameField: true },
+        { name: "Blob", label: "Blob", type: "Base64" },
+      ],
+    } as StandardObjectJson;
+    const blob = buildOrgSchema({ ...real, objects: [...real.objects, blobObject] }).schema.getField("BlobHolder", "Blob");
+    expect(blob).toMatchObject({ type: "Base64", filterable: false, sortable: false, groupable: false });
+  });
+});

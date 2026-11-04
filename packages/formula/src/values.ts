@@ -53,6 +53,7 @@ export function sfTypeOf(field: FieldDef): SfType {
       return "Text";
     case "Address":
     case "Location":
+    case "Base64":
       return "Unknown";
   }
 }

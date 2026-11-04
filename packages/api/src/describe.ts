@@ -51,6 +51,8 @@ function describeType(f: FieldDef): string {
       return "location";
     case "EncryptedText":
       return "encryptedstring";
+    case "Base64":
+      return "base64";
   }
 }
 
@@ -77,6 +79,8 @@ function soapType(t: string): string {
       return "urn:address";
     case "location":
       return "urn:location";
+    case "base64":
+      return "xsd:base64Binary";
     default:
       return "xsd:string";
   }
