@@ -707,6 +707,18 @@ export function buildOrgSchema(baseline: Baseline, project?: SourceProject): Bui
     customMetadata.push({ ...r, type: obj.name });
   }
 
+  // FILE-07: LinkedEntityId points at every keyed object. The generator can list only modelled standard objects, so the
+  // retrieve's custom objects are appended here (custom settings and custom metadata types cannot own files).
+  const linked = objects.get("contentdocumentlink")?.fields.find((f) => f.name === "LinkedEntityId");
+  if (linked?.referenceTo) {
+    const existing = linked.referenceTo;
+    const custom = [...objects.values()]
+      .filter((o) => o.custom && o.customMetadata !== true && o.customSetting === undefined && o.keyPrefix !== null)
+      .map((o) => o.name)
+      .sort((a, b) => a.localeCompare(b));
+    linked.referenceTo = [...existing, ...custom.filter((n) => !existing.includes(n))];
+  }
+
   // Dangling references are allowed (e.g. Campaign not in phase 0) but reported once per target.
   // "Referenced" (D-05, D-09) = named in referenceTo of a lookup, master-detail or owner field, or as a roll-up child.
   // Formula and validation-rule paths to another object go through such a field, so no separate scan is needed.

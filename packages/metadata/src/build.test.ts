@@ -1182,3 +1182,41 @@ describe("Base64 standard fields (Phase 15)", () => {
     expect(blob).toMatchObject({ type: "Base64", filterable: false, sortable: false, groupable: false });
   });
 });
+
+describe("ContentDocumentLink.LinkedEntityId (FILE-07)", () => {
+  const CMDT = fileURLToPath(new URL("../../../conformance/cmdt-check/project/", import.meta.url));
+  const emptyProject = (): Parameters<typeof buildOrgSchema>[1] => ({ rootDir: "", packageDirectories: [], objects: [], globalValueSets: [], standardValueSets: [], warnings: [] });
+
+  it("links to the 20 generated targets followed by every custom object in name order", async () => {
+    const generated = (await loadOrgSchema()).schema.getField("ContentDocumentLink", "LinkedEntityId")?.referenceTo;
+    expect(generated).toHaveLength(20);
+    const acme = (await loadOrgSchema({ projectDir: ACME })).schema.getField("ContentDocumentLink", "LinkedEntityId")?.referenceTo;
+    expect(acme).toEqual([...generated!, "BigTable__c", "Milestone__c", "Project__c", "UpsertTable__c"]);
+  });
+
+  it("does not link to custom settings or custom metadata types", async () => {
+    const r = await loadOrgSchema({ projectDir: CMDT });
+    const targets = r.schema.getField("ContentDocumentLink", "LinkedEntityId")?.referenceTo ?? [];
+    expect(targets).toContain("Ticket__c");
+    for (const n of ["App_Config__c", "Region_List__c", "Support_Tier__mdt", "Tier_Group__mdt"]) expect(targets).not.toContain(n);
+  });
+
+  it("a custom object lists the link as a child relationship", async () => {
+    const { schema } = await loadOrgSchema({ projectDir: ACME });
+    const child = schema.childRelationships("Project__c").find((c) => c.childSObject === "ContentDocumentLink");
+    expect(child).toMatchObject({ childSObject: "ContentDocumentLink", field: "LinkedEntityId", cascadeDelete: true });
+    expect(child?.relationshipName).toBeUndefined();
+  });
+
+  it("the expansion adds no diagnostics", async () => {
+    const r = await loadOrgSchema({ projectDir: ACME });
+    expect(r.warnings.filter((w) => w.includes("ContentDocumentLink"))).toEqual([]);
+    expect(r.diagnostics.filter((d) => d.object === "ContentDocumentLink" || d.message.includes("ContentDocumentLink"))).toEqual([]);
+  });
+
+  it("a baseline without ContentDocumentLink loads unchanged", async () => {
+    const real = await loadBaseline();
+    const without = { ...real, objects: real.objects.filter((o) => o.name !== "ContentDocumentLink") };
+    expect(() => buildOrgSchema(without, emptyProject())).not.toThrow();
+  });
+});
