@@ -198,3 +198,158 @@ describe("ContentVersion insert in import mode", () => {
     expect(Buffer.concat(chunks).toString()).toBe("abc");
   });
 });
+
+describe("delete and undelete (FILE-08)", () => {
+  let account: string;
+  let kase: string;
+  let doc: string;
+  let cv1: string;
+  let cv2: string;
+  let linkAccount: string;
+  let linkCase: string;
+
+  const flags = async (table: string, id: string) => (await pool.query<{ isdeleted: boolean }>(`SELECT isdeleted FROM ${quote(orgSchema)}.${quote(table)} WHERE id = $1`, [id])).rows[0]?.isdeleted;
+
+  beforeAll(async () => {
+    account = await one("Account", { Name: "Files cascade" });
+    kase = await one("Case", { Subject: "Files cascade" });
+    cv1 = await one("ContentVersion", { Title: "V1", PathOnClient: "v1.txt", VersionData: base64("one"), FirstPublishLocationId: account });
+    doc = (await get("ContentVersion", cv1))["ContentDocumentId"] as string;
+    cv2 = await one("ContentVersion", { Title: "V2", PathOnClient: "v2.txt", VersionData: base64("two"), ContentDocumentId: doc });
+    linkAccount = (await pool.query<{ id: string }>(`SELECT id FROM ${quote(orgSchema)}.contentdocumentlink WHERE contentdocumentid = $1 AND linkedentityid = $2`, [doc, account])).rows[0]!.id;
+    linkCase = await one("ContentDocumentLink", { ContentDocumentId: doc, LinkedEntityId: kase, ShareType: "V" });
+  });
+
+  it("deleting a ContentDocument soft-deletes its versions and links", async () => {
+    const [r] = await engine.delete(session, "ContentDocument", [doc]);
+    expect(r?.errors).toEqual([]);
+    expect(await flags("contentdocument", doc)).toBe(true);
+    for (const id of [cv1, cv2]) expect(await flags("contentversion", id)).toBe(true);
+    for (const id of [linkAccount, linkCase]) expect(await flags("contentdocumentlink", id)).toBe(true);
+  });
+
+  it("the cascade does not null the document's LatestPublishedVersionId", async () => {
+    const res = await pool.query<{ latestpublishedversionid: string }>(`SELECT latestpublishedversionid FROM ${quote(orgSchema)}.contentdocument WHERE id = $1`, [doc]);
+    expect(res.rows[0]?.latestpublishedversionid).toBe(cv2);
+  });
+
+  it("undeleting the ContentDocument restores versions and links together", async () => {
+    const [r] = await engine.undelete(session, "ContentDocument", [doc]);
+    expect(r?.errors).toEqual([]);
+    expect(await flags("contentdocument", doc)).toBe(false);
+    for (const id of [cv1, cv2]) expect(await flags("contentversion", id)).toBe(false);
+    for (const id of [linkAccount, linkCase]) expect(await flags("contentdocumentlink", id)).toBe(false);
+    expect((await get("ContentDocument", doc))["LatestPublishedVersionId"]).toBe(cv2);
+    expect((await get("ContentVersion", cv1))["IsLatest"]).toBe(false);
+    expect((await get("ContentVersion", cv2))["IsLatest"]).toBe(true);
+  });
+
+  it("deleting a linked Account soft-deletes its links and undelete restores them", async () => {
+    const [d] = await engine.delete(session, "Account", [account]);
+    expect(d?.errors).toEqual([]);
+    expect(await flags("contentdocumentlink", linkAccount)).toBe(true);
+    expect(await flags("contentdocumentlink", linkCase)).toBe(false);
+    expect(await flags("contentdocument", doc)).toBe(false);
+    expect(await flags("contentversion", cv2)).toBe(false);
+    const [u] = await engine.undelete(session, "Account", [account]);
+    expect(u?.errors).toEqual([]);
+    expect(await flags("contentdocumentlink", linkAccount)).toBe(false);
+  });
+
+  it("a ContentVersion cannot be deleted directly", async () => {
+    const [r] = await engine.delete(session, "ContentVersion", [cv1]);
+    expect(r?.errors[0]?.statusCode).toBe("INVALID_TYPE_FOR_OPERATION");
+  });
+
+  it("a ContentDocumentLink cannot be undeleted directly", async () => {
+    const [d] = await engine.delete(session, "ContentDocumentLink", [linkCase]);
+    expect(d?.errors).toEqual([]);
+    const [r] = await engine.undelete(session, "ContentDocumentLink", [linkCase]);
+    expect(r?.errors[0]?.statusCode).toBe("INVALID_TYPE_FOR_OPERATION");
+  });
+});
+
+describe("mirror on update (D-11)", () => {
+  let doc: string;
+  let cv1: string;
+  let cv2: string;
+
+  beforeAll(async () => {
+    cv1 = await one("ContentVersion", { Title: "M1", PathOnClient: "m1.txt", VersionData: base64("a") });
+    doc = (await get("ContentVersion", cv1))["ContentDocumentId"] as string;
+    cv2 = await one("ContentVersion", { Title: "M2", PathOnClient: "m2.txt", VersionData: base64("b"), ContentDocumentId: doc });
+  });
+
+  it("updating the latest version's Title mirrors it to the document", async () => {
+    const [r] = await engine.update(session, "ContentVersion", [{ Id: cv2, Title: "Renamed" }]);
+    expect(r?.errors).toEqual([]);
+    expect((await get("ContentDocument", doc))["Title"]).toBe("Renamed");
+  });
+
+  it("updating an older version's Title leaves the document alone", async () => {
+    const [r] = await engine.update(session, "ContentVersion", [{ Id: cv1, Title: "Old name" }]);
+    expect(r?.errors).toEqual([]);
+    expect((await get("ContentDocument", doc))["Title"]).toBe("Renamed");
+  });
+
+  it("a direct ContentDocument Title update changes only the document", async () => {
+    const [r] = await engine.update(session, "ContentDocument", [{ Id: doc, Title: "Doc only" }]);
+    expect(r?.errors).toEqual([]);
+    expect((await get("ContentDocument", doc))["Title"]).toBe("Doc only");
+    expect((await get("ContentVersion", cv2))["Title"]).toBe("Renamed");
+  });
+
+  it("VersionData cannot be updated", async () => {
+    const [r] = await engine.update(session, "ContentVersion", [{ Id: cv2, VersionData: base64("x") }]);
+    expect(r?.errors[0]?.statusCode).toBe("INVALID_FIELD_FOR_INSERT_UPDATE");
+  });
+});
+
+describe("ContentDocumentLink DML (FILE-07, D-14)", () => {
+  let doc: string;
+  let account: string;
+
+  beforeAll(async () => {
+    const cv = await one("ContentVersion", { Title: "L", PathOnClient: "l.txt", VersionData: base64("l") });
+    doc = (await get("ContentVersion", cv))["ContentDocumentId"] as string;
+    account = await one("Account", { Name: "Link target" });
+  });
+
+  const link = (extra: Record<string, unknown>) => engine.insert(session, "ContentDocumentLink", [{ ContentDocumentId: doc, ...extra }]).then((r) => r[0]!);
+
+  it("a link attaches a file to an Account, a Case and a custom object", async () => {
+    const kase = await one("Case", { Subject: "Link target" });
+    const project = await one("Project__c", { Name: "Link target", Account__c: account });
+    for (const id of [account, kase, project]) {
+      const r = await link({ LinkedEntityId: id, ShareType: "V" });
+      expect(r.errors, JSON.stringify(r.errors)).toEqual([]);
+    }
+  });
+
+  it("a link to a missing record or an unowned key prefix is INVALID_CROSS_REFERENCE_KEY", async () => {
+    expect((await link({ LinkedEntityId: generateId("001"), ShareType: "V" })).errors[0]?.statusCode).toBe("INVALID_CROSS_REFERENCE_KEY");
+    expect((await link({ LinkedEntityId: generateId("0Q0"), ShareType: "V" })).errors[0]?.statusCode).toBe("INVALID_CROSS_REFERENCE_KEY");
+  });
+
+  it("ShareType is required", async () => {
+    expect((await link({ LinkedEntityId: account })).errors).toMatchObject([{ statusCode: "REQUIRED_FIELD_MISSING", fields: ["ShareType"] }]);
+  });
+
+  it("ShareType and Visibility are restricted picklists", async () => {
+    expect((await link({ LinkedEntityId: account, ShareType: "X" })).errors[0]?.statusCode).toBe("INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST");
+    expect((await link({ LinkedEntityId: account, ShareType: "V", Visibility: "Everyone" })).errors[0]?.statusCode).toBe("INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST");
+  });
+
+  it("ShareType and Visibility can be updated, ContentDocumentId and LinkedEntityId are create-only, a link can be deleted", async () => {
+    const other = await one("Account", { Name: "Other target" });
+    const id = (await link({ LinkedEntityId: other, ShareType: "V" })).id as string;
+    const [ok] = await engine.update(session, "ContentDocumentLink", [{ Id: id, ShareType: "C", Visibility: "InternalUsers" }]);
+    expect(ok?.errors).toEqual([]);
+    const [moved] = await engine.update(session, "ContentDocumentLink", [{ Id: id, LinkedEntityId: account }]);
+    expect(moved?.errors[0]?.statusCode).toBe("INVALID_FIELD_FOR_INSERT_UPDATE");
+    const [redoc] = await engine.update(session, "ContentDocumentLink", [{ Id: id, ContentDocumentId: generateId("069") }]);
+    expect(redoc?.errors[0]?.statusCode).toBe("INVALID_FIELD_FOR_INSERT_UPDATE");
+    const [del] = await engine.delete(session, "ContentDocumentLink", [id]);
+    expect(del?.errors).toEqual([]);
+  });
+});

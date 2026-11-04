@@ -29,7 +29,7 @@ import { InlineBlobStore, type BlobStore } from "./blobs.js";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
 import { ChangeBus, type ChangeEvent, type ChangeType } from "./events.js";
-import { finishVersion, placeVersion, prepareVersion, type PreparedFile } from "./files.js";
+import { finishVersion, mirrorDocument, placeVersion, prepareVersion, type PreparedFile } from "./files.js";
 import { applyCompoundFields, applyFormulaFields, FormulaRegistry } from "./formulas.js";
 import type { DmlOperation, Session, TriggerContext, TriggerExecutor } from "./hooks.js";
 import { loadParents } from "./parents.js";
@@ -565,7 +565,13 @@ export class DmlEngine {
             if (w.file && !this.importMode) await placeVersion(client, this.store, w.next, w.file, stamp);
             await this.store.insert(client, obj, w.next);
             if (w.file) await finishVersion(client, this.store, this.blobs, w.next, w.file, stamp, this.importMode);
-          } else await this.store.update(client, obj, w.id as string, { ...w.changes, ...(this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now }) });
+          } else {
+            await this.store.update(client, obj, w.id as string, { ...w.changes, ...(this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now }) });
+            // D-11: the ContentDocument mirrors its latest version; Title is the only mirrored field a version update can change.
+            if (obj.name === "ContentVersion" && !this.importMode && w.next["IsLatest"] === true && "Title" in w.changes) {
+              await mirrorDocument(client, this.store, w.next, { now, userId: session.userId });
+            }
+          }
           await client.query(`RELEASE SAVEPOINT rec`);
         } catch (err) {
           await client.query(`ROLLBACK TO SAVEPOINT rec`);
@@ -926,7 +932,11 @@ export class DmlEngine {
             parent?.errors.push(...c.errors);
           }
         } else {
-          await client.query(`UPDATE ${this.store.table(childObj)} SET "${field.name.toLowerCase()}" = NULL WHERE "${field.name.toLowerCase()}" = ANY($1)`, [ids]);
+          // Pitfall 1 (Phase 15): a child row that is itself being deleted up the cascade stack (a ContentDocument whose
+          // LatestPublishedVersionId points at a version cascading with it) keeps its pointer, so undelete restores it intact.
+          const keep = rows.map((r) => asString(r["Id"])).filter((id) => !deleting.has(id));
+          if (keep.length === 0) continue;
+          await client.query(`UPDATE ${this.store.table(childObj)} SET "${field.name.toLowerCase()}" = NULL WHERE "id" = ANY($1) AND "${field.name.toLowerCase()}" = ANY($2)`, [keep, ids]);
         }
       }
       const stamp = { at: formatSalesforceDatetime(new Date()), by: session.userId };
