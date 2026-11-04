@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
 status: executing
-stopped_at: Completed 15-04-PLAN.md
-last_updated: "2026-11-04T08:10:40.730Z"
+stopped_at: Completed 15-08-PLAN.md
+last_updated: "2026-11-04T08:11:34.363Z"
 last_activity: 2026-11-04
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 10
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
 Phase: 15 (files-model) — EXECUTING
-Plan: 5 of 10
+Plan: 6 of 10
 Status: Ready to execute
 Last activity: 2026-11-04
 
@@ -155,6 +155,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 | Phase 15 P02 | 10min | 2 tasks | 5 files |
 | Phase 15 P03 | 25min | 3 tasks | 30 files |
 | Phase 15 P04 | 8min | 1 tasks | 2 files |
+| Phase 15 P08 | 15min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,7 @@ CONTEXT.md / SUMMARY.md. The per-plan decision log kept here through v1.1 is in 
 file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Summary).
 
 - [Phase 15]: 15-03: CDL undeletable false from Supported Calls; blob skips stay in fieldType buckets, token UNSUPPORTED:blob-field
+- [Phase 15]: Base64 fields refused in WHERE/ORDER/GROUP (INVALID_FIELD); ContentDocumentLink filter always enforced (no Query All Files model)
 
 ### Pending Todos
 
@@ -189,6 +191,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-04T08:10:40.726Z
-Stopped at: Completed 15-04-PLAN.md
+Last session: 2026-11-04T08:11:34.360Z
+Stopped at: Completed 15-08-PLAN.md
 Resume file: None
