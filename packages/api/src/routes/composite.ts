@@ -124,7 +124,7 @@ export function registerCompositeRoutes(app: FastifyInstance, ctx: ApiContext): 
     const found = await ctx.engine.retrieve(session(req), obj.name, ids);
     return reply.send(ids.map((id) => {
       const rec = [...found.values()].find((r) => asString(r["Id"]).startsWith(id.slice(0, 15)));
-      return rec ? recordJson(obj.name, rec, version(req), body?.fields) : null;
+      return rec ? recordJson(obj, rec, version(req), body?.fields) : null;
     }));
   });
 

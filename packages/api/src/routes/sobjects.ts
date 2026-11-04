@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { normalizeDatetime, runQuery, type SaveResult } from "@orglet/engine";
-import { normalizeId } from "@orglet/schema";
-import { attributes } from "@orglet/soql";
+import { normalizeId, isBlob } from "@orglet/schema";
+import type { SObjectDef } from "@orglet/metadata";
+import { attributes, blobUrl } from "@orglet/soql";
 import { asString, type RecordData } from "@orglet/formula";
 import { basicInfo, globalDescribe, objectDescribe } from "../describe.js";
 import { NOT_FOUND, apiError, sendErrors, session, type ApiContext, type ApiError } from "../server.js";
@@ -10,24 +11,29 @@ export function saveErrorsToApi(result: SaveResult): ApiError[] {
   return result.errors.map((e) => apiError(e.statusCode, e.message, e.fields));
 }
 
-/** Per-record error status: 404 for missing records, 400 otherwise. */
+/** Per-record error status: 404 for missing records, 413 for the file size cap (D-05), 400 otherwise. */
 export function statusFor(result: SaveResult): number {
   const code = result.errors[0]?.statusCode;
   if (code === "NOT_FOUND") return 404;
   if (code === "ENTITY_IS_DELETED") return 404;
+  if (code === "MAXIMUM_SIZE_OF_DOCUMENT") return 413;
   return 400;
 }
 
-export function recordJson(type: string, record: RecordData, version: string, fields?: string[]): Record<string, unknown> {
-  const out: Record<string, unknown> = { attributes: attributes(type, record["Id"], version) };
+/** Base64 fields (VersionData) are always the download URL, never bytes (FILE-06). */
+export function recordJson(obj: SObjectDef, record: RecordData, version: string, fields?: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = { attributes: attributes(obj.name, record["Id"], version) };
+  const full: RecordData = { ...record };
+  const id = record["Id"];
+  if (typeof id === "string") for (const f of obj.fields) if (isBlob(f)) full[f.name] = blobUrl(obj.name, id, f.name, version);
   if (fields && fields.length > 0) {
     for (const f of fields) {
-      const key = Object.keys(record).find((k) => k.toLowerCase() === f.toLowerCase());
-      if (key) out[key] = record[key];
+      const key = Object.keys(full).find((k) => k.toLowerCase() === f.toLowerCase());
+      if (key) out[key] = full[key];
     }
     return out;
   }
-  for (const [k, v] of Object.entries(record)) out[k] = v;
+  for (const [k, v] of Object.entries(full)) out[k] = v;
   return out;
 }
 
@@ -110,7 +116,7 @@ export function registerSobjectRoutes(app: FastifyInstance, ctx: ApiContext): vo
     if (!id) return sendErrors(reply, 404, [NOT_FOUND]);
     const record = (await ctx.engine.retrieve(session(req), obj.name, [id])).get(id);
     if (!record) return sendErrors(reply, 404, [NOT_FOUND]);
-    return reply.send(recordJson(obj.name, record, version(req), fieldsParam(req)));
+    return reply.send(recordJson(obj, record, version(req), fieldsParam(req)));
   });
 
   app.patch<{ Params: { type: string; id: string } }>("/services/data/v:version/sobjects/:type/:id", async (req, reply) => {
@@ -155,7 +161,7 @@ export function registerSobjectRoutes(app: FastifyInstance, ctx: ApiContext): vo
     }
     if (rows.length === 0) return sendErrors(reply, 404, [NOT_FOUND]);
     if (rows.length > 1) return reply.code(300).send(rows.map((r) => `/services/data/v${version(req)}/sobjects/${obj.name}/${asString(r["Id"])}`));
-    return reply.send(recordJson(obj.name, rows[0] as RecordData, version(req), fieldsParam(req)));
+    return reply.send(recordJson(obj, rows[0] as RecordData, version(req), fieldsParam(req)));
   });
 
   app.patch<{ Params: { type: string; field: string; value: string } }>("/services/data/v:version/sobjects/:type/:field/:value", async (req, reply) => {

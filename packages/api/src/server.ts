@@ -98,6 +98,8 @@ export function createApiServer(options: ApiOptions): FastifyInstance {
 
   void app.register(formbody);
   app.addContentTypeParser(["text/xml", "application/xml", "application/soap+xml"], { parseAs: "string" }, (_req, body, done) => done(null, body));
+  // FILE-10 (multipart VersionData upload) is deferred. The body is never read, so nothing is buffered.
+  app.addContentTypeParser(/^multipart\//i, (_req, _payload, done) => done(Object.assign(new Error("multipart body"), { statusCode: 415, errorCode: "CONTENT_MULTIPART" }), undefined));
   // Salesforce clients send JSON with and without charset, sometimes with an empty body.
   app.removeContentTypeParser("application/json");
   app.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) => {
@@ -144,6 +146,8 @@ export function createApiServer(options: ApiOptions): FastifyInstance {
     if (err instanceof DmlError) return sendErrors(reply, err.httpStatus, [apiError(err.statusCode, err.message, err.fields)]);
     if (err instanceof SoqlError) return sendErrors(reply, 400, [apiError(err.errorCode, err.message)]);
     if (err.errorCode === "JSON_PARSER_ERROR") return sendErrors(reply, 400, [apiError("JSON_PARSER_ERROR", err.message)]);
+    if (err.errorCode === "CONTENT_MULTIPART") return sendErrors(reply, 415, [apiError("UNSUPPORTED", "UNSUPPORTED:content-multipart multipart request bodies are not supported yet; send VersionData as base64 in a JSON body")]);
+    if (err.statusCode === 413) return sendErrors(reply, 413, [apiError("MAXIMUM_SIZE_OF_DOCUMENT", "UNSUPPORTED:content-size request body exceeds the 64 MiB limit")]);
     if (err.statusCode === 415) return sendErrors(reply, 415, [apiError("UNSUPPORTED_MEDIA_TYPE", "Unsupported media type")]);
     req.log.error(err);
     return sendErrors(reply, 500, [apiError("UNKNOWN_EXCEPTION", err.message)]);
