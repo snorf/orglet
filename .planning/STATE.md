@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
 status: executing
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-11-04T08:03:08.919Z"
+stopped_at: Completed 15-03-PLAN.md
+last_updated: "2026-11-04T08:07:48.765Z"
 last_activity: 2026-11-04
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 10
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
 Phase: 15 (files-model) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 Status: Ready to execute
 Last activity: 2026-11-04
 
@@ -153,6 +153,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 | Phase 14 P12 | n/a | 3 tasks | 3 files |
 | Phase 15 P01 | 25min | 2 tasks | 14 files |
 | Phase 15 P02 | 10min | 2 tasks | 5 files |
+| Phase 15 P03 | 25min | 3 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -161,6 +162,8 @@ Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 Decisions are logged in PROJECT.md (Key Decisions table, now covering Phases 1-14) and in each phase's
 CONTEXT.md / SUMMARY.md. The per-plan decision log kept here through v1.1 is in the git history of this
 file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Summary).
+
+- [Phase 15]: 15-03: CDL undeletable false from Supported Calls; blob skips stay in fieldType buckets, token UNSUPPORTED:blob-field
 
 ### Pending Todos
 
@@ -185,6 +188,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-04T08:03:08.916Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-11-04T08:07:48.761Z
+Stopped at: Completed 15-03-PLAN.md
 Resume file: None

@@ -17,7 +17,7 @@ superseded by FILE-03..FILE-09 below; **FILE-02** stays deferred.
 
 ### Files (ContentVersion, ContentDocument, ContentDocumentLink)
 
-- [ ] **FILE-03**: Inserting a ContentVersion without `ContentDocumentId` creates its ContentDocument and
+- [x] **FILE-03**: Inserting a ContentVersion without `ContentDocumentId` creates its ContentDocument and
   sets `ContentDocumentId`, `IsLatest = true` and `VersionNumber = "1"`; the ContentDocument mirrors
   `Title`, `FileType`, `FileExtension`, `ContentSize` and `LatestPublishedVersionId`. The Phase 10
   nullable override on `ContentDocumentId` is removed, so describe reports `nillable: false` as a real
@@ -31,11 +31,11 @@ superseded by FILE-03..FILE-09 below; **FILE-02** stays deferred.
 - [x] **FILE-06**: `GET /services/data/vXX.X/sobjects/ContentVersion/{id}/VersionData` streams the bytes
   with `Content-Type` and `Content-Length`; record JSON and SOQL results carry the `VersionData` URL,
   never bytes; describe lists `VersionData` as type `base64`
-- [ ] **FILE-07**: `ContentDocumentLink` is a generated baseline object with a polymorphic
+- [x] **FILE-07**: `ContentDocumentLink` is a generated baseline object with a polymorphic
   `LinkedEntityId` to every keyed object, `ShareType` and `Visibility`; a SOQL query on it that does not
   filter on `Id`, `ContentDocumentId` or `LinkedEntityId` is rejected with Salesforce's implementation-
   restriction error (`MALFORMED_QUERY`)
-- [ ] **FILE-08**: Deleting a ContentDocument soft-deletes its ContentVersions and ContentDocumentLinks;
+- [x] **FILE-08**: Deleting a ContentDocument soft-deletes its ContentVersions and ContentDocumentLinks;
   undelete restores them together
 - [x] **FILE-09**: Blobs live behind one store interface: `bytea` in Postgres by default, a checksum-
   addressed external store (key `files/<checksum[0:4]>/<checksum>.<extension>`, local directory or
@@ -204,12 +204,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FILE-03 | Phase 15 | Pending |
+| FILE-03 | Phase 15 | Complete |
 | FILE-04 | Phase 15 | Pending |
 | FILE-05 | Phase 15 | Complete |
 | FILE-06 | Phase 15 | Complete |
-| FILE-07 | Phase 15 | Pending |
-| FILE-08 | Phase 15 | Pending |
+| FILE-07 | Phase 15 | Complete |
+| FILE-08 | Phase 15 | Complete |
 | FILE-09 | Phase 15 | Complete |
 | ARCH-01 | Phase 17 | Pending |
 | ARCH-02 | Phase 17 | Pending |
