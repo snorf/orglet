@@ -3,7 +3,7 @@
 Source: https://github.com/forcedotcom/sf-skills (Apache-2.0, see LICENSE.txt; Copyright (c) 2026 Salesforce, Inc.)
 Path: plugins/builder/salesforce-development/skills/platform-data-and-tooling-api-context-get/assets/enterprise_api
 Revision: 4bbae5c421e51b40e4169afa72c4496372a602a7
-Synced: 2026-10-14
+Synced: 2026-11-04
 Missing upstream: BusinessProcess
 
 Files are copied unmodified. They are an input to scripts/gen-baseline (offline generator) and are not shipped
@@ -25,6 +25,7 @@ ca3b4bf5a35991a0835729e4333a773baf1f685aff08221448d743ceb69ca717  CallCenter.jso
 b5c0ffefb7e80a3c66513d9a0eafdaeeb0e3c0337d72b9a0fa29ea0101fc3b17  CaseMilestone.json
 b41e99e54ba800066df5f70b37267017633c78b3b9005cc462c7006f028b666f  Contact.json
 964f1b8cc4b504abb8016bdd6bead9641e8e0be8f6aad4f736adbef60e9e0be1  ContentDocument.json
+a794a31ae8c5f5f7c39c829a99b3bc9c2d63fa79513ad1fbf47bcf23a935f4a8  ContentDocumentLink.json
 4f2a7420522c170b578ada7f274e60eda09ba869a7c8cdb1168e81900cd52759  ContentVersion.json
 3736d75235e3d008986a87cdc04b9aab2775f9660fea5465432f78e8a14a5235  Contract.json
 76c5535d84b113b51194c098458136ee715f22283fbb8b8a8d8d3fddd120cdf9  ContractLineItem.json

@@ -14,6 +14,7 @@
   "CaseMilestone",
   "Contact",
   "ContentDocument",
+  "ContentDocumentLink",
   "ContentVersion",
   "Contract",
   "ContractLineItem",
