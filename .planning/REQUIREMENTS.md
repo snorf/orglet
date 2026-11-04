@@ -25,10 +25,10 @@ superseded by FILE-03..FILE-09 below; **FILE-02** stays deferred.
 - [ ] **FILE-04**: Inserting a ContentVersion with an existing `ContentDocumentId` adds a version: the
   previous version gets `IsLatest = false`, `VersionNumber` increments, and the ContentDocument mirrors
   the new latest version
-- [ ] **FILE-05**: `VersionData` is accepted as base64 in the JSON insert body; the server computes
+- [x] **FILE-05**: `VersionData` is accepted as base64 in the JSON insert body; the server computes
   `Checksum` (MD5 hex), `ContentSize`, `FileType` and `FileExtension` from the bytes and `PathOnClient`;
   a multipart request body is refused with `UNSUPPORTED:content-multipart`
-- [ ] **FILE-06**: `GET /services/data/vXX.X/sobjects/ContentVersion/{id}/VersionData` streams the bytes
+- [x] **FILE-06**: `GET /services/data/vXX.X/sobjects/ContentVersion/{id}/VersionData` streams the bytes
   with `Content-Type` and `Content-Length`; record JSON and SOQL results carry the `VersionData` URL,
   never bytes; describe lists `VersionData` as type `base64`
 - [ ] **FILE-07**: `ContentDocumentLink` is a generated baseline object with a polymorphic
@@ -206,8 +206,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | FILE-03 | Phase 15 | Pending |
 | FILE-04 | Phase 15 | Pending |
-| FILE-05 | Phase 15 | Pending |
-| FILE-06 | Phase 15 | Pending |
+| FILE-05 | Phase 15 | Complete |
+| FILE-06 | Phase 15 | Complete |
 | FILE-07 | Phase 15 | Pending |
 | FILE-08 | Phase 15 | Pending |
 | FILE-09 | Phase 15 | Pending |

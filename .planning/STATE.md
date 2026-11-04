@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
-status: planning
-stopped_at: Phase 15 context gathered
-last_updated: "2026-11-03T20:02:09.966Z"
-last_activity: 2026-11-03 — Roadmap created for v1.2 (Phases 15-21)
+status: executing
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-11-04T08:00:25.769Z"
+last_activity: 2026-11-04
 progress:
   total_phases: 11
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 10
+  completed_plans: 1
   percent: 0
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-11-03 at the start of v1.2)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Milestone v1.2 "archive mode": orglet on a retrieve plus a Heimdall backup, read-only, with files from the backup store and a record view
+**Current focus:** Phase 15 — files-model
 
 ## Current Position
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
-Phase: 15 (Files Model) not started
-Plan: —
-Status: Ready to plan
-Last activity: 2026-11-03 — Roadmap created for v1.2 (Phases 15-21)
+Phase: 15 (files-model) — EXECUTING
+Plan: 2 of 10
+Status: Ready to execute
+Last activity: 2026-11-04
 
 Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 
@@ -151,6 +151,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 | Phase 14 P08 | 10min | 2 tasks | 9 files |
 | Phase 14 P11 | 20min | 3 tasks | 8 files |
 | Phase 14 P12 | n/a | 3 tasks | 3 files |
+| Phase 15 P01 | 25min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -183,6 +184,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-03T20:02:09.962Z
-Stopped at: Phase 15 context gathered
-Resume file: .planning/phases/15-files-model/15-CONTEXT.md
+Last session: 2026-11-04T08:00:25.766Z
+Stopped at: Completed 15-01-PLAN.md
+Resume file: None
