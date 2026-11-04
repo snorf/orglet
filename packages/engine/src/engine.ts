@@ -25,9 +25,11 @@ import {
   withTransaction,
   type Pool, type PoolClient, type VirtualChildren, type VirtualRows } from "@orglet/schema";
 import { asString, type EvaluationContext, type RecordData } from "@orglet/formula";
+import { InlineBlobStore, type BlobStore } from "./blobs.js";
 import { coerceRecord, coerceValue } from "./coerce.js";
 import { Errors, failure, saveError, unknownSObject, type SaveError, type SaveResult } from "./errors.js";
 import { ChangeBus, type ChangeEvent, type ChangeType } from "./events.js";
+import { finishVersion, placeVersion, prepareVersion, type PreparedFile } from "./files.js";
 import { applyCompoundFields, applyFormulaFields, FormulaRegistry } from "./formulas.js";
 import type { DmlOperation, Session, TriggerContext, TriggerExecutor } from "./hooks.js";
 import { loadParents } from "./parents.js";
@@ -47,6 +49,8 @@ export interface EngineOptions {
    * Postgres foreign keys are disabled for the session while it is on.
    */
   importMode?: boolean;
+  /** Where file bytes live; defaults to the inline bytea store. Archive mode plugs its external store in here, Phase 17/18. */
+  blobs?: BlobStore;
 }
 
 /**
@@ -82,6 +86,8 @@ interface Work {
   next: RecordData;
   id?: string;
   created?: boolean;
+  /** ContentVersion insert: decoded VersionData and document bookkeeping (files.ts). */
+  file?: PreparedFile;
 }
 
 interface Globals {
@@ -111,6 +117,7 @@ export class DmlEngine {
   readonly executors: TriggerExecutor[];
   readonly orgSchema: string;
   readonly importMode: boolean;
+  readonly blobs: BlobStore;
 
   constructor(
     readonly pool: Pool,
@@ -123,6 +130,7 @@ export class DmlEngine {
     this.rollups = new RollupRegistry(schema, this.formulas);
     this.executors = options.executors ?? [];
     this.importMode = options.importMode ?? false;
+    this.blobs = options.blobs ?? new InlineBlobStore(this.store);
   }
 
   get warnings(): string[] {
@@ -520,6 +528,14 @@ export class DmlEngine {
       }
     }
 
+    if (operation === "insert" && obj.name === "ContentVersion") {
+      for (const w of live()) {
+        const { file, errors } = prepareVersion(this.schema, w.changes, w.next, this.importMode);
+        w.file = file;
+        w.errors.push(...errors);
+      }
+    }
+
     // Before hooks may change `next`; anything they touch counts as a change.
     if (!this.importMode) await this.runHooks(session, obj, operation, "before", work.filter((w) => w.errors.length === 0));
     for (const w of live()) {
@@ -544,8 +560,12 @@ export class DmlEngine {
       for (const w of live()) {
         await client.query(`SAVEPOINT rec`);
         try {
-          if (operation === "insert") await this.store.insert(client, obj, w.next);
-          else await this.store.update(client, obj, w.id as string, { ...w.changes, ...(this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now }) });
+          if (operation === "insert") {
+            const stamp = { now, userId: session.userId };
+            if (w.file && !this.importMode) await placeVersion(client, this.store, w.next, w.file, stamp);
+            await this.store.insert(client, obj, w.next);
+            if (w.file) await finishVersion(client, this.store, this.blobs, w.next, w.file, stamp, this.importMode);
+          } else await this.store.update(client, obj, w.id as string, { ...w.changes, ...(this.importMode ? {} : { LastModifiedDate: now, LastModifiedById: session.userId, SystemModstamp: now }) });
           await client.query(`RELEASE SAVEPOINT rec`);
         } catch (err) {
           await client.query(`ROLLBACK TO SAVEPOINT rec`);

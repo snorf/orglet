@@ -19,3 +19,5 @@ export type { CustomMetadataPlan, CustomMetadataSeedRow, CustomMetadataSeedOptio
 export { blobKey, InlineBlobStore } from "./blobs.js";
 export type { BlobRef, BlobStore, OpenedBlob } from "./blobs.js";
 export { contentTypeFor, fileExtensionOf, fileTypeFor } from "./filetypes.js";
+export { mirrorDocument } from "./files.js";
+export type { FileStamp } from "./files.js";
