@@ -91,6 +91,10 @@ export async function openTestDb(): Promise<TestDb> {
     close: async () => {
       await pool.end();
       await server.stop();
+      // pglite-socket's stop() does not await its handlers' detach, and each socket's close is handled on
+      // setImmediate; a detach that runs after db.close() throws from isInTransaction() as an unhandled
+      // rejection. Let those immediates run while the database is still open.
+      await new Promise((resolve) => setImmediate(resolve));
       await db.close();
     },
   };
