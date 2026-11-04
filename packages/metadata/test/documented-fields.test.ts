@@ -19,6 +19,7 @@ const REPO_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
  * documented; Product2.RecordTypeId is field_reference-only, so the documented count is 84/818 = 0.1027 (the raw
  * ratio 99/818 = 12.1 % matches the decision exactly). Bound rounded up to three decimals; lowering it is a decision.
  * Phase 10 (53 objects, 48 Phase 10 hand lookups): observed 122/1410 = 0.0865.
+ * Phase 15 (54 objects): observed 117/1414 = 0.0827.
  */
 const SKIP_RATIO_MAX = 0.103;
 // The loader adds these (standard/README.md); matched lower-cased because Postgres columns are.

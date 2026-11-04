@@ -279,20 +279,56 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
   });
 
   const BUSINESS = [
-    "AccountContactRelation", "AccountTeamMember", "Address", "CaseContactRole", "CaseMilestone", "ContentDocument", "ContentVersion", "ContractLineItem", "EmailMessage",
+    "AccountContactRelation", "AccountTeamMember", "Address", "CaseContactRole", "CaseMilestone", "ContentDocument", "ContentDocumentLink", "ContentVersion", "ContractLineItem", "EmailMessage",
     "FeedItem", "Location", "OpportunityContactRole", "OpportunitySplit", "OpportunityTeamMember", "Order", "OrderItem", "Quote", "QuoteLineItem",
   ];
 
-  it("BASE2-06: blob, junction-id-list and compound-geolocation fields of the 18 are omitted and listed in the generator report", () => {
+  it("BASE2-06: junction-id-list and compound-geolocation fields of the business objects are omitted as UNSUPPORTED:field-type", () => {
     const omitted = full.report.unsupportedTypes
-      .map((e) => /^UNSUPPORTED:field-type (\S+)/.exec(e)![1]!)
-      .filter((where) => BUSINESS.includes(where.split(".")[0]!))
+      .map((e) => /^UNSUPPORTED:field-type (\S+)/.exec(e)?.[1])
+      .filter((where): where is string => where !== undefined && BUSINESS.includes(where.split(".")[0]!))
       .sort(codeUnit);
-    expect(omitted).toEqual(["ContentVersion.VersionData", "EmailMessage.BccIds", "EmailMessage.CcIds", "EmailMessage.ContentDocumentIds", "EmailMessage.ToIds", "FeedItem.ContentData", "Location.Location"]);
+    expect(omitted).toEqual(["EmailMessage.BccIds", "EmailMessage.CcIds", "EmailMessage.ContentDocumentIds", "EmailMessage.ToIds", "Location.Location"]);
     for (const where of omitted) {
       const [object, name] = where.split(".") as [string, string];
       expect(objects.get(object)!.fields.some((f) => f.name === name), where).toBe(false);
     }
+  });
+
+  it("D-15: base64 fields other than ContentVersion.VersionData are omitted as UNSUPPORTED:blob-field", () => {
+    const blobs = full.report.unsupportedTypes
+      .map((e) => /^UNSUPPORTED:blob-field (\S+)/.exec(e)?.[1])
+      .filter((where): where is string => where !== undefined && BUSINESS.includes(where.split(".")[0]!))
+      .sort(codeUnit);
+    expect(blobs).toEqual(["FeedItem.ContentData"]);
+    expect(full.report.unsupportedTypes.filter((e) => /^UNSUPPORTED:field-type \S+ \(base64\)/.test(e))).toEqual([]);
+    expect(objects.get("FeedItem")!.fields.some((f) => f.name === "ContentData")).toBe(false);
+  });
+
+  it("ContentVersion.VersionData is generated as Base64 and not updateable", () => {
+    expect(objects.get("ContentVersion")!.fields.find((f) => f.name === "VersionData")).toMatchObject({ type: "Base64", updateable: false });
+  });
+
+  it("ContentVersion.ContentDocumentId is required and cascades (the Phase 10 nullable override is gone)", () => {
+    const f = objects.get("ContentVersion")!.fields.find((x) => x.name === "ContentDocumentId")!;
+    expect(f.nillable).toBe(false);
+    expect(f.deleteConstraint).toBe("Cascade");
+    expect(f.childRelationshipName).toBe("ContentVersions");
+  });
+
+  it("ContentDocumentLink is generated with its documented fields", () => {
+    const cdl = objects.get("ContentDocumentLink")!;
+    expect(cdl.keyPrefix).toBe("06A");
+    const field = (n: string) => cdl.fields.find((f) => f.name === n)!;
+    expect(field("ContentDocumentId")).toMatchObject({ type: "Lookup", referenceTo: ["ContentDocument"], deleteConstraint: "Cascade", childRelationshipName: "ContentDocumentLinks", updateable: false });
+    const linked = field("LinkedEntityId");
+    expect(linked).toMatchObject({ type: "Lookup", relationshipName: "LinkedEntity", deleteConstraint: "Cascade", updateable: false });
+    expect(linked.referenceTo).toHaveLength(20);
+    expect(linked.childRelationshipName).toBeUndefined();
+    expect(field("ShareType")).toMatchObject({ type: "Picklist", restrictedPicklist: true, nillable: false });
+    expect(field("ShareType").picklistValues?.map((v) => v.value)).toEqual(["V", "C", "I"]);
+    expect(field("Visibility")).toMatchObject({ type: "Picklist", restrictedPicklist: true });
+    expect(field("Visibility").picklistValues?.map((v) => v.value)).toEqual(["AllUsers", "InternalUsers", "SharedUsers"]);
   });
 
   it("D-18: documented-required fields of the 18 stay required; forcedNullable lists only v1.0 objects", () => {
@@ -339,7 +375,7 @@ describe("step B: every documented field (BASE2-02, BASE2-03)", () => {
   });
 
   it("the three polymorphic subsets are exactly the modelled targets", () => {
-    const expected: Record<string, number> = { "FeedItem.ParentId": 19, "EmailMessage.RelatedToId": 10, "ContentVersion.FirstPublishLocationId": 20 };
+    const expected: Record<string, number> = { "FeedItem.ParentId": 19, "EmailMessage.RelatedToId": 10, "ContentVersion.FirstPublishLocationId": 20, "ContentDocumentLink.LinkedEntityId": 20 };
     for (const [where, count] of Object.entries(expected)) {
       const [object, name] = where.split(".") as [string, string];
       const referenceTo = objects.get(object)!.fields.find((f) => f.name === name)?.referenceTo;

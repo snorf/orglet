@@ -47,7 +47,7 @@ export const TYPE_MAP: Readonly<Record<string, TypeRule>> = {
   address: { kind: "field", type: "Address", readOnly: true },
   id: { kind: "skip", reason: "system" },
   junctionidlist: { kind: "skip", reason: "unsupported" },
-  base64: { kind: "skip", reason: "unsupported" },
+  base64: { kind: "field", type: "Base64" },
   anytype: { kind: "skip", reason: "unsupported" },
   complexvalue: { kind: "skip", reason: "unsupported" },
   location: { kind: "skip", reason: "unsupported" },
