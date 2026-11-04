@@ -8,7 +8,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { FastifyInstance } from "fastify";
 import { loadOrgSchema } from "@orglet/metadata";
 import { dropKeyPrefixes, migrate, quote, reconcileKeyPrefixes, type Pool } from "@orglet/schema";
-import { openTestDb, type TestDb } from "../../../test/db.js";
+import { openTestDb, usingPglite, type TestDb } from "../../../test/db.js";
 import { bootstrapOrg, DmlEngine } from "@orglet/engine";
 import { createApiServer } from "./server.js";
 
@@ -230,4 +230,29 @@ describe("VersionData download", () => {
     expect(res.statusCode).toBe(404);
     expect(arr(res)[0]?.["errorCode"]).toBe("NOT_FOUND");
   });
+});
+
+describe("large upload", () => {
+  it("large upload: a 36 MiB upload and download stay within a bounded memory footprint", async ({ skip }) => {
+    skip(usingPglite, "Postgres-only: pglite runs in-process, so its WASM memory would dominate RSS");
+    const bytes = randomBytes(36 * 1024 * 1024);
+    const b64 = bytes.toString("base64");
+    const expected = md5(bytes);
+    const baseline = process.memoryUsage().rss;
+    let peak = baseline;
+    const timer = setInterval(() => {
+      peak = Math.max(peak, process.memoryUsage().rss);
+    }, 5);
+    try {
+      const res = await post(`${V}/sobjects/ContentVersion`, { Title: "big", PathOnClient: "big.bin", VersionData: b64 });
+      expect(res.statusCode, res.body.slice(0, 200)).toBe(201);
+      const down = await get(`${V}/sobjects/ContentVersion/${json(res)["id"] as string}/VersionData`);
+      expect(down.statusCode).toBe(200);
+      expect(md5(down.rawPayload)).toBe(expected);
+    } finally {
+      clearInterval(timer);
+    }
+    console.log(`large upload RSS growth: ${((peak - baseline) / 1024 / 1024).toFixed(0)} MiB`);
+    expect(peak - baseline).toBeLessThan(400 * 1024 * 1024);
+  }, 120_000);
 });
