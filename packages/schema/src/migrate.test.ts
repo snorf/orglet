@@ -370,3 +370,68 @@ describe("isWidening", () => {
     expect(isWidening("date", "timestamptz")).toBe(false);
   });
 });
+
+describe("NOT NULL reconciliation (Phase 15 D-02)", () => {
+  const org = `test_${randomBytes(4).toString("hex")}`;
+  const COLUMN = "contentdocumentid";
+  const NULL_WARNING = (n: number) => `UNSUPPORTED:schema-notnull column contentversion.contentdocumentid holds ${n} row(s) with NULL; NOT NULL not applied; correct them and run orglet up again`;
+  let schema: OrgSchema;
+
+  const isNullable = async (): Promise<string | undefined> =>
+    (await pool.query<{ is_nullable: string }>(`SELECT is_nullable FROM information_schema.columns WHERE table_schema = $1 AND table_name = 'contentversion' AND column_name = $2`, [org, COLUMN])).rows[0]?.is_nullable;
+  const dropNotNull = () => pool.query(`ALTER TABLE ${quote(org)}."contentversion" ALTER COLUMN "${COLUMN}" DROP NOT NULL`);
+  const rows = async () => (await pool.query<{ id: string; contentdocumentid: string | null }>(`SELECT "id", "${COLUMN}" FROM ${quote(org)}."contentversion" ORDER BY "id"`)).rows;
+
+  beforeAll(async () => {
+    ({ schema } = await loadOrgSchema({ projectDir: ACME }));
+  });
+  afterAll(async () => {
+    await pool.query(`DROP SCHEMA IF EXISTS ${quote(org)} CASCADE`);
+  });
+
+  it("a fresh org creates contentversion.contentdocumentid NOT NULL", async () => {
+    await migrate(pool, schema, { orgSchema: org });
+    expect(await isNullable()).toBe("NO");
+  });
+
+  it("a nullable column the plan wants NOT NULL gets SET NOT NULL when no row is NULL", async () => {
+    await dropNotNull();
+    const res = await migrate(pool, schema, { orgSchema: org });
+    expect(res.statements).toContain(`ALTER TABLE ${quote(org)}."contentversion" ALTER COLUMN "${COLUMN}" SET NOT NULL`);
+    expect(res.warnings).toEqual([]);
+    expect(await isNullable()).toBe("NO");
+  });
+
+  it("NULL rows skip the constraint with one schema-notnull warning and stay untouched", async () => {
+    await dropNotNull();
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      // No user rows exist in this bare schema; skip FK enforcement like import mode does.
+      await client.query("SET LOCAL session_replication_role = replica");
+      for (const id of ["068000000000001AAA", "068000000000002AAA"]) {
+        await client.query(
+          `INSERT INTO ${quote(org)}."contentversion" ("id", "isdeleted", "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp") VALUES ($1, false, now(), $2, now(), $2, now())`,
+          [id, "005000000000001AAA"],
+        );
+      }
+      await client.query("COMMIT");
+    } finally {
+      client.release();
+    }
+    const before = await rows();
+    const res = await migrate(pool, schema, { orgSchema: org });
+    expect(res.warnings).toEqual([NULL_WARNING(2)]);
+    expect(res.diagnostics).toEqual([{ area: "schema-notnull", object: "ContentVersion", field: "ContentDocumentId", message: NULL_WARNING(2).replace("UNSUPPORTED:schema-notnull ", "") }]);
+    expect(res.statements.filter((s) => s.includes("SET NOT NULL"))).toEqual([]);
+    expect(await rows()).toEqual(before);
+    expect((await migrate(pool, schema, { orgSchema: org })).warnings).toEqual([NULL_WARNING(2)]);
+  });
+
+  it("--force does not rewrite NULL rows", async () => {
+    const before = await rows();
+    const res = await migrate(pool, schema, { orgSchema: org, force: true });
+    expect(res.warnings).toEqual([NULL_WARNING(2)]);
+    expect(await rows()).toEqual(before);
+  });
+});

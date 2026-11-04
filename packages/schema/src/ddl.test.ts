@@ -83,8 +83,17 @@ describe("planTable indexes and foreign keys", () => {
 describe("Base64 fields (Phase 15)", () => {
   it("a Base64 field is stored as a nullable bytea column", () => {
     const f = field("VersionData", "Base64");
-    expect(columnFor(f)).toMatchObject({ sqlType: "bytea", notNull: false });
+    expect(columnFor(f, "ContentVersion")).toMatchObject({ sqlType: "bytea", notNull: false });
     expect(isBlob(f)).toBe(true);
     expect(isBlob(field("Title", "Text"))).toBe(false);
+  });
+});
+
+describe("structural NOT NULL (Phase 15 D-01)", () => {
+  it("ContentVersion.ContentDocumentId is the one structural NOT NULL lookup", () => {
+    const f = field("ContentDocumentId", "Lookup", { referenceTo: ["ContentDocument"], nillable: false });
+    expect(columnFor(f, "ContentVersion")?.notNull).toBe(true);
+    expect(columnFor(f, "ContentDocumentLink")?.notNull).toBe(false);
+    expect(columnFor(field("Title", "Text", { nillable: false, length: 255 }), "ContentDocument")?.notNull).toBe(false);
   });
 });

@@ -101,12 +101,18 @@ export function sqlTypeFor(field: FieldDef): string {
 
 const SYSTEM_NOT_NULL = new Set(["Id", "IsDeleted", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"]);
 
-export function columnFor(field: FieldDef): ColumnSpec | undefined {
+/**
+ * Lookups the engine always fills, so storage can say what describe says (Phase 15 D-01). Deliberately a short list:
+ * nillable:false alone must never mean NOT NULL, because many baseline fields are nillable:false but system-filled.
+ */
+const STRUCTURAL_NOT_NULL: ReadonlySet<string> = new Set(["ContentVersion.ContentDocumentId"]);
+
+export function columnFor(field: FieldDef, objectName: string): ColumnSpec | undefined {
   if (isVirtual(field)) return undefined;
   const spec: ColumnSpec = {
     name: columnName(field),
     sqlType: sqlTypeFor(field),
-    notNull: SYSTEM_NOT_NULL.has(field.name) || field.type === "MasterDetail",
+    notNull: SYSTEM_NOT_NULL.has(field.name) || field.type === "MasterDetail" || STRUCTURAL_NOT_NULL.has(`${objectName}.${field.name}`),
   };
   if (field.type === "Checkbox") {
     spec.notNull = true;

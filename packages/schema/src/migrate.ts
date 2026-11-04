@@ -43,17 +43,18 @@ interface ExistingColumn {
   table: string;
   column: string;
   sqlType: string;
+  nullable: boolean;
 }
 
 async function existingColumns(client: PoolClient, orgSchema: string): Promise<ExistingColumn[]> {
-  const res = await client.query<{ table_name: string; column_name: string; data_type: string; character_maximum_length: number | null; numeric_precision: number | null; numeric_scale: number | null }>(
-    `SELECT table_name, column_name, data_type, character_maximum_length, numeric_precision, numeric_scale
+  const res = await client.query<{ table_name: string; column_name: string; data_type: string; character_maximum_length: number | null; numeric_precision: number | null; numeric_scale: number | null; is_nullable: string }>(
+    `SELECT table_name, column_name, data_type, is_nullable, character_maximum_length, numeric_precision, numeric_scale
        FROM information_schema.columns
       WHERE table_schema = $1
       ORDER BY table_name, ordinal_position`,
     [orgSchema],
   );
-  return res.rows.map((r) => ({ table: r.table_name, column: r.column_name, sqlType: normalizeType(r) }));
+  return res.rows.map((r) => ({ table: r.table_name, column: r.column_name, sqlType: normalizeType(r), nullable: r.is_nullable === "YES" }));
 }
 
 /** Render information_schema's description of a column in the same spelling ddl.ts uses. */
@@ -170,6 +171,28 @@ export async function migrate(pool: Pool, schema: OrgSchema, options: MigrateOpt
       if (plans.some((p) => p.table === table)) continue;
       if (force) await run(`DROP TABLE ${quote(orgSchema)}.${quote(table)} CASCADE`);
       else pushDiagnostic(sink, { area: "schema-drop", message: `table ${table} is no longer in the metadata; kept (use --force to drop)` });
+    }
+
+    // 1b. D-02 (Phase 8 rule): a column the metadata wants NOT NULL but the database holds nullable is tightened only
+    // when no row violates it; otherwise skipped with one warning and checked again on the next run. Rows are never rewritten.
+    for (const plan of plans) {
+      const cols = existingTables.get(plan.table);
+      if (!cols) continue;
+      for (const column of plan.columns) {
+        if (!column.notNull || cols.get(column.name)?.nullable !== true) continue;
+        const res = await client.query<{ n: string }>(`SELECT count(*)::text AS n FROM ${quote(orgSchema)}.${quote(plan.table)} WHERE ${quote(column.name)} IS NULL`);
+        const n = Number(res.rows[0]?.n ?? 0);
+        if (n === 0) await run(`ALTER TABLE ${quote(orgSchema)}.${quote(plan.table)} ALTER COLUMN ${quote(column.name)} SET NOT NULL`);
+        else {
+          const field = fieldOf(plan, column.name);
+          pushDiagnostic(sink, {
+            area: "schema-notnull",
+            object: plan.object.name,
+            ...(field !== undefined ? { field } : {}),
+            message: `column ${plan.table}.${column.name} holds ${n} row(s) with NULL; NOT NULL not applied; correct them and run orglet up again`,
+          });
+        }
+      }
     }
 
     // 2. Sequences, indexes, foreign keys. Existing sequences and indexes are read from the catalog once and
