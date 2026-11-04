@@ -37,7 +37,7 @@ superseded by FILE-03..FILE-09 below; **FILE-02** stays deferred.
   restriction error (`MALFORMED_QUERY`)
 - [ ] **FILE-08**: Deleting a ContentDocument soft-deletes its ContentVersions and ContentDocumentLinks;
   undelete restores them together
-- [ ] **FILE-09**: Blobs live behind one store interface: `bytea` in Postgres by default, a checksum-
+- [x] **FILE-09**: Blobs live behind one store interface: `bytea` in Postgres by default, a checksum-
   addressed external store (key `files/<checksum[0:4]>/<checksum>.<extension>`, local directory or
   S3-compatible endpoint) in archive mode. A missing blob answers 404 plus a diagnostic, never empty
   bytes; a download whose MD5 differs from `Checksum` is reported. `Attachment.Body` and
@@ -210,7 +210,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FILE-06 | Phase 15 | Complete |
 | FILE-07 | Phase 15 | Pending |
 | FILE-08 | Phase 15 | Pending |
-| FILE-09 | Phase 15 | Pending |
+| FILE-09 | Phase 15 | Complete |
 | ARCH-01 | Phase 17 | Pending |
 | ARCH-02 | Phase 17 | Pending |
 | ARCH-03 | Phase 17 | Pending |
