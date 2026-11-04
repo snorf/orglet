@@ -18,3 +18,4 @@ export { planCustomMetadataSeed, seedCustomMetadata, customMetadataSummary } fro
 export type { CustomMetadataPlan, CustomMetadataSeedRow, CustomMetadataSeedOptions, CustomMetadataSeedResult } from "./seed.js";
 export { blobKey, InlineBlobStore } from "./blobs.js";
 export type { BlobRef, BlobStore, OpenedBlob } from "./blobs.js";
+export { contentTypeFor, fileExtensionOf, fileTypeFor } from "./filetypes.js";
