@@ -170,7 +170,7 @@ Plans:
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete    | 2026-10-31 |
-| 15. Files Model | v1.2 | 10/10 | Complete   | 2026-11-04 |
+| 15. Files Model | v1.2 | 10/10 | Complete    | 2026-11-04 |
 | 16. Archive Fixture Generator | v1.2 | 0/0 | Not started | - |
 | 17. Archive Mode & Read-Only | v1.2 | 0/0 | Not started | - |
 | 18. Archive Loader | v1.2 | 0/0 | Not started | - |
