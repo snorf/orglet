@@ -22,7 +22,7 @@ superseded by FILE-03..FILE-09 below; **FILE-02** stays deferred.
   `Title`, `FileType`, `FileExtension`, `ContentSize` and `LatestPublishedVersionId`. The Phase 10
   nullable override on `ContentDocumentId` is removed, so describe reports `nillable: false` as a real
   org does (archive loads supply the column from the backup)
-- [ ] **FILE-04**: Inserting a ContentVersion with an existing `ContentDocumentId` adds a version: the
+- [x] **FILE-04**: Inserting a ContentVersion with an existing `ContentDocumentId` adds a version: the
   previous version gets `IsLatest = false`, `VersionNumber` increments, and the ContentDocument mirrors
   the new latest version
 - [x] **FILE-05**: `VersionData` is accepted as base64 in the JSON insert body; the server computes
@@ -205,7 +205,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FILE-03 | Phase 15 | Complete |
-| FILE-04 | Phase 15 | Pending |
+| FILE-04 | Phase 15 | Complete |
 | FILE-05 | Phase 15 | Complete |
 | FILE-06 | Phase 15 | Complete |
 | FILE-07 | Phase 15 | Complete |
