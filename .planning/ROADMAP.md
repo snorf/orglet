@@ -44,7 +44,7 @@ Audit: [milestones/v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md).
 
 Goal: spin up orglet on an SFDX retrieve plus a Heimdall backup and browse the former org read-only, through the Salesforce API and a simple record view, with files served straight from the backup store. Research: `research/SUMMARY.md` (decisions D1-D5).
 
-- [ ] **Phase 15: Files Model** - ContentDocument auto-create, versions, VersionData download, ContentDocumentLink, blob store interface
+- [x] **Phase 15: Files Model** - ContentDocument auto-create, versions, VersionData download, ContentDocumentLink, blob store interface (completed 2026-11-04)
 - [ ] **Phase 16: Archive Fixture Generator** - deterministic Heimdall-shaped backup of `examples/acme` in `examples/acme-archive`
 - [ ] **Phase 17: Archive Mode & Read-Only** - persisted org mode, write refusal, no-write `up`, frozen formula storage
 - [ ] **Phase 18: Archive Loader** - `orglet archive load` streams the backup into an empty archive org
@@ -77,7 +77,7 @@ Plans:
 - [x] 15-07-PLAN.md — Delete/undelete cascade (set-null fix), update mirror, ContentDocumentLink DML contract
 - [x] 15-08-PLAN.md — SOQL: blob URL instead of bytes, ContentDocumentLink mandatory filter
 - [x] 15-09-PLAN.md — REST: VersionData download with MD5 check, URLs in records, multipart and 413 refusals, README
-- [ ] 15-10-PLAN.md — files-check SDK conformance legs and the Postgres/conformance phase gate
+- [x] 15-10-PLAN.md — files-check SDK conformance legs and the Postgres/conformance phase gate
 **Notes**: Regenerating the baseline must keep `baseline-gen-check` and the v1-vs-v2 diff gate green; include an upgrade test on a populated v1.1 database. Open: archive orgs keep `ContentDocumentId` nullable versus loader-synthesised stub documents (PITFALLS P18).
 
 ### Phase 16: Archive Fixture Generator
@@ -170,7 +170,7 @@ Plans:
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete    | 2026-10-31 |
-| 15. Files Model | v1.2 | 9/10 | In Progress|  |
+| 15. Files Model | v1.2 | 10/10 | Complete   | 2026-11-04 |
 | 16. Archive Fixture Generator | v1.2 | 0/0 | Not started | - |
 | 17. Archive Mode & Read-Only | v1.2 | 0/0 | Not started | - |
 | 18. Archive Loader | v1.2 | 0/0 | Not started | - |
@@ -186,7 +186,7 @@ Unsequenced ideas captured for a later milestone. 999.1-999.7 (the gaps observed
 
 **Goal:** Load __e platform events as objects that accept POST /sobjects (publish) and describe correctly but store nothing queryable, with an optional change-event stream, as groundwork for EVT-01 (CDC/Platform Events to Kafka/SQS). Removes UNSUPPORTED:object-kind for __e.
 **Requirements:** TBD
-**Plans:** 9/10 plans executed
+**Plans:** 10/10 plans complete
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
