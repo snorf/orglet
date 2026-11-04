@@ -149,3 +149,85 @@ describe("ContentVersion upload and URLs", () => {
     expect(arr(res)[0]?.["errorCode"]).toBe("INVALID_TYPE_ON_FIELD_IN_RECORD");
   });
 });
+
+describe("VersionData download", () => {
+  const dl = (id: string) => get(`${V}/sobjects/ContentVersion/${id}/VersionData`);
+  const linesFor = (area: string, id: string) => logLines.filter((l) => l.includes(`${area} ContentVersion ${id}`));
+
+  it("the download streams the exact bytes with the D-06 headers", async () => {
+    const bytes = randomBytes(300 * 1024);
+    const id = await upload("report.pdf", bytes);
+    const res = await dl(id);
+    expect(res.statusCode).toBe(200);
+    expect(res.rawPayload.equals(bytes)).toBe(true);
+    expect(res.headers["content-type"]).toBe("application/pdf");
+    expect(res.headers["content-length"]).toBe("307200");
+    expect(res.headers["content-disposition"]).toBe(`attachment; filename="report.pdf"; filename*=UTF-8''report.pdf`);
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
+    expect(res.headers["accept-ranges"]).toBe("none");
+  });
+
+  it("an unknown extension downloads as application/octet-stream", async () => {
+    const res = await dl(await upload("data.json", Buffer.from("{}")));
+    expect(res.headers["content-type"]).toBe("application/octet-stream");
+  });
+
+  it("an svg is never served inline", async () => {
+    const res = await dl(await upload("x.svg", Buffer.from("<svg/>")));
+    expect(res.headers["content-type"]).toBe("image/svg+xml");
+    expect(String(res.headers["content-disposition"])).toMatch(/^attachment/);
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
+  });
+
+  it("filenames are sanitised in Content-Disposition", async () => {
+    const id = await upload('C:\\tmp\\we"ird\r\nname.txt', Buffer.from("x"));
+    const cd = String((await dl(id)).headers["content-disposition"]);
+    expect(cd).not.toMatch(/[\r\n]/);
+    const quoted = /filename="([^"]*)"/.exec(cd)?.[1] ?? "";
+    expect(quoted).not.toContain('"');
+    expect(cd).toContain("filename*=UTF-8''we%22ird%0D%0Aname.txt");
+  });
+
+  it("the external-id route still answers for other paths", async () => {
+    const res = await get(`${V}/sobjects/Account/VersionData/x`);
+    expect(res.statusCode).toBe(404);
+    expect(arr(res)[0]?.["message"]).toMatch(/external ID field/);
+  });
+
+  it("missing blob answers 404 with a diagnostic, never empty bytes", async () => {
+    const id = await upload("nobytes.txt", null);
+    for (let i = 0; i < 2; i++) {
+      const res = await dl(id);
+      expect(res.statusCode).toBe(404);
+      const [e] = arr(res);
+      expect(e?.["errorCode"]).toBe("NOT_FOUND");
+      expect(e?.["message"]).toContain(id);
+      expect(e?.["message"]).toContain("VersionData");
+    }
+    expect(linesFor("blob-missing", id)).toHaveLength(1);
+  });
+
+  it("checksum mismatch is served and reported once per version", async () => {
+    const id = await upload("tampered.txt", Buffer.from("plain content"));
+    const zero = "0".repeat(32);
+    await pool.query(`UPDATE ${quote(orgSchema)}.contentversion SET checksum = $1 WHERE id = $2`, [zero, id]);
+    for (let i = 0; i < 2; i++) {
+      const res = await dl(id);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toBe("plain content");
+    }
+    const lines = linesFor("blob-checksum", id);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain(zero);
+    expect(lines[0]).toContain(md5("plain content"));
+    expect(logLines.some((l) => l.includes("plain content"))).toBe(false);
+  });
+
+  it("a deleted or unknown version answers 404", async () => {
+    expect((await dl("068000000000000AAA")).statusCode).toBe(404);
+    const acc = json(await post(`${V}/sobjects/Account`, { Name: "Blobless" }))["id"] as string;
+    const res = await get(`${V}/sobjects/Account/${acc}/VersionData`);
+    expect(res.statusCode).toBe(404);
+    expect(arr(res)[0]?.["errorCode"]).toBe("NOT_FOUND");
+  });
+});

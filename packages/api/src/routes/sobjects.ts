@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
+import { Transform, pipeline } from "node:stream";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { normalizeDatetime, runQuery, type SaveResult } from "@orglet/engine";
+import { contentTypeFor, normalizeDatetime, runQuery, type BlobRef, type SaveResult } from "@orglet/engine";
 import { normalizeId, isBlob } from "@orglet/schema";
 import type { SObjectDef } from "@orglet/metadata";
 import { attributes, blobUrl } from "@orglet/soql";
@@ -37,6 +39,15 @@ export function recordJson(obj: SObjectDef, record: RecordData, version: string,
   return out;
 }
 
+/** Content-Disposition value: always attachment (D-06); filename from the basename of PathOnClient, ASCII fallback plus RFC 5987 form. */
+function contentDisposition(pathOnClient: unknown): string {
+  const base = typeof pathOnClient === "string" ? (pathOnClient.split(/[/\\]/).pop() ?? "") : "";
+  if (base === "") return "attachment";
+  const ascii = base.replace(/[^\x20-\x7e]|["\\]/g, "");
+  const encoded = encodeURIComponent(base).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
 function fieldsParam(req: FastifyRequest): string[] | undefined {
   const raw = (req.query as { fields?: string }).fields;
   return raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
@@ -70,6 +81,62 @@ export function registerSobjectRoutes(app: FastifyInstance, ctx: ApiContext): vo
     const [result] = await ctx.engine.insert(session(req), obj.name, [(req.body ?? {}) as Record<string, unknown>]);
     if (!result?.success) return sendErrors(reply, statusFor(result as SaveResult), saveErrorsToApi(result as SaveResult));
     return reply.code(201).send({ id: result.id, success: true, errors: [] });
+  });
+
+  // FILE-06: the path jsforce record.blob() and simple-salesforce get_base64() call. D-06: always attachment + nosniff,
+  // Content-Type only from the extension table, no Range. D-07: MD5 checked while streaming; a mismatch after the headers
+  // are sent cannot change the status, so it is reported.
+  const reported = new Set<string>();
+  const reportOnce = (req: FastifyRequest, area: string, id: string, detail: Record<string, unknown>, text: string) => {
+    const key = `${area}:${id}`;
+    if (reported.has(key)) return;
+    reported.add(key);
+    req.log.warn({ area, id, ...detail }, `${area} ContentVersion ${id}: ${text}`);
+  };
+
+  app.get<{ Params: { type: string; id: string } }>("/services/data/v:version/sobjects/:type/:id/VersionData", async (req, reply) => {
+    const obj = objectOr404(req.params.type, reply);
+    if (!obj) return;
+    const field = obj.fields.find((f) => f.name === "VersionData" && isBlob(f));
+    if (!field) return sendErrors(reply, 404, [NOT_FOUND]);
+    const id = normalizeId(req.params.id);
+    if (!id) return sendErrors(reply, 404, [NOT_FOUND]);
+    const row = (await ctx.engine.retrieve(session(req), obj.name, [id])).get(id);
+    if (!row) return sendErrors(reply, 404, [NOT_FOUND]);
+    const str = (v: unknown) => (typeof v === "string" ? v : null);
+    const ref: BlobRef = { object: obj.name, field: field.name, id, checksum: str(row["Checksum"]), extension: str(row["FileExtension"]) };
+    const opened = await ctx.engine.blobs.open(ctx.engine.pool, ref);
+    if (!opened) {
+      reportOnce(req, "blob-missing", id, {}, "no bytes behind VersionData");
+      return sendErrors(reply, 404, [apiError("NOT_FOUND", `ContentVersion ${id} has no VersionData bytes`)]);
+    }
+    // Content-Length comes from the store: a header promising more than the stream delivers would hang the client.
+    if (typeof row["ContentSize"] === "number" && row["ContentSize"] !== opened.size) {
+      reportOnce(req, "blob-size", id, { expected: row["ContentSize"], actual: opened.size }, "stored size differs from ContentSize");
+    }
+    const hash = createHash("md5");
+    const verifier = new Transform({
+      transform(chunk: Buffer, _enc, cb) {
+        hash.update(chunk);
+        cb(null, chunk);
+      },
+      flush(cb) {
+        const actual = hash.digest("hex");
+        if (ref.checksum !== null && ref.checksum !== actual) reportOnce(req, "blob-checksum", id, { expected: ref.checksum, actual }, "stored bytes do not match Checksum");
+        cb();
+      },
+    });
+    // An error mid-stream destroys the response instead of sending JSON after the headers.
+    pipeline(opened.stream, verifier, (err) => {
+      if (err) req.log.error(err);
+    });
+    return reply
+      .header("content-type", contentTypeFor(ref.extension))
+      .header("content-length", String(opened.size))
+      .header("content-disposition", contentDisposition(row["PathOnClient"]))
+      .header("x-content-type-options", "nosniff")
+      .header("accept-ranges", "none")
+      .send(verifier);
   });
 
   // ---- updated / deleted since ---------------------------------------------------------
