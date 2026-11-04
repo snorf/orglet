@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
 status: executing
-stopped_at: Completed 15-07-PLAN.md
-last_updated: "2026-11-04T08:21:37.454Z"
+stopped_at: Completed 15-09-PLAN.md
+last_updated: "2026-11-04T08:25:42.161Z"
 last_activity: 2026-11-04
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
   percent: 0
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
 Phase: 15 (files-model) — EXECUTING
-Plan: 9 of 10
+Plan: 10 of 10
 Status: Ready to execute
 Last activity: 2026-11-04
 
@@ -158,6 +158,7 @@ Progress: [░░░░░░░░░░] 0% (v1.2: 0 of 7 phases)
 | Phase 15 P08 | 15min | 2 tasks | 6 files |
 | Phase 15 P05 | 15min | 2 tasks | 9 files |
 | Phase 15 P07 | 10min | 2 tasks | 2 files |
+| Phase 15 P09 | 25min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -171,6 +172,7 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 - [Phase 15]: Base64 fields refused in WHERE/ORDER/GROUP (INVALID_FIELD); ContentDocumentLink filter always enforced (no Query All Files model)
 - [Phase 15]: NOT NULL only via explicit STRUCTURAL_NOT_NULL set; migrate reconciles nullability with UNSUPPORTED:schema-notnull skip-and-warn
 - [Phase 15]: Set-null cascade skips rows already being deleted up the stack (keeps LatestPublishedVersionId)
+- [Phase 15]: 15-09: Content-Length from BlobStore size, not ContentSize; blob diagnostics once per version via req.log.warn
 
 ### Pending Todos
 
@@ -195,6 +197,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-04T08:21:37.451Z
-Stopped at: Completed 15-07-PLAN.md
+Last session: 2026-11-04T08:25:42.158Z
+Stopped at: Completed 15-09-PLAN.md
 Resume file: None
