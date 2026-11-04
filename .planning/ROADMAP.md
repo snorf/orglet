@@ -74,7 +74,7 @@ Plans:
 - [x] 15-04-PLAN.md — LinkedEntityId expanded to every custom object at load time
 - [x] 15-05-PLAN.md — NOT NULL for ContentVersion.ContentDocumentId, migrate schema-notnull reconcile, v1.1 upgrade test
 - [x] 15-06-PLAN.md — Engine files step: document auto-create, versions, mirror, auto-link, blob put
-- [ ] 15-07-PLAN.md — Delete/undelete cascade (set-null fix), update mirror, ContentDocumentLink DML contract
+- [x] 15-07-PLAN.md — Delete/undelete cascade (set-null fix), update mirror, ContentDocumentLink DML contract
 - [x] 15-08-PLAN.md — SOQL: blob URL instead of bytes, ContentDocumentLink mandatory filter
 - [ ] 15-09-PLAN.md — REST: VersionData download with MD5 check, URLs in records, multipart and 413 refusals, README
 - [ ] 15-10-PLAN.md — files-check SDK conformance legs and the Postgres/conformance phase gate
@@ -170,7 +170,7 @@ Plans:
 | 12. sigha Resync & Formula Globals | v1.1 | 8/8 | Complete    | 2026-10-23 |
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete    | 2026-10-31 |
-| 15. Files Model | v1.2 | 7/10 | In Progress|  |
+| 15. Files Model | v1.2 | 8/10 | In Progress|  |
 | 16. Archive Fixture Generator | v1.2 | 0/0 | Not started | - |
 | 17. Archive Mode & Read-Only | v1.2 | 0/0 | Not started | - |
 | 18. Archive Loader | v1.2 | 0/0 | Not started | - |
@@ -186,7 +186,7 @@ Unsequenced ideas captured for a later milestone. 999.1-999.7 (the gaps observed
 
 **Goal:** Load __e platform events as objects that accept POST /sobjects (publish) and describe correctly but store nothing queryable, with an optional change-event stream, as groundwork for EVT-01 (CDC/Platform Events to Kafka/SQS). Removes UNSUPPORTED:object-kind for __e.
 **Requirements:** TBD
-**Plans:** 7/10 plans executed
+**Plans:** 8/10 plans executed
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
