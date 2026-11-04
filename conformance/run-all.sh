@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Starts orglet on $PROJECT (default examples/acme) and runs every SDK conformance check against it: the jsforce
 # e2e subset (jsforce/run.sh --seed, first, on the fresh schema its README numbers assume), the
-# simple-salesforce script (python/run.py), and both legs of describe-check, poly-check and
-# rollup-check, and both cmdt-check legs against a second server on conformance/cmdt-check/project
+# simple-salesforce script (python/run.py), and both legs of describe-check, poly-check,
+# rollup-check and files-check (Phase 15), and both cmdt-check legs against a second server on conformance/cmdt-check/project
 # (Phase 11). Used by the `conformance` CI job; locally, point it at a throwaway schema.
 # Exit status is non-zero if any leg failed; a PASS/FAIL line per leg is printed at the end.
 #
@@ -65,6 +65,8 @@ leg poly-check-jsforce env BASE_URL="$BASE" FIXTURE="$FIXTURE" node conformance/
 leg poly-check-python env BASE_URL="$BASE" FIXTURE="$FIXTURE" "$PYTHON" conformance/poly-check/sf_poly.py
 leg rollup-check-jsforce env BASE_URL="$BASE" FIXTURE="$FIXTURE" node conformance/rollup-check/jsforce.mjs
 leg rollup-check-python env BASE_URL="$BASE" FIXTURE="$FIXTURE" "$PYTHON" conformance/rollup-check/sf_rollup.py
+leg files-check-jsforce env BASE_URL="$BASE" node conformance/files-check/jsforce.mjs
+leg files-check-python env BASE_URL="$BASE" "$PYTHON" conformance/files-check/sf_files.py
 leg cmdt-check-jsforce env BASE_URL="$CMDT_BASE" node conformance/cmdt-check/jsforce.mjs
 leg cmdt-check-python env BASE_URL="$CMDT_BASE" "$PYTHON" conformance/cmdt-check/sf_cmdt.py
 
