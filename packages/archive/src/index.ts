@@ -5,3 +5,5 @@ export { heimdallColumns, heimdallSoql, soqlDatetime, objectRecordName, objectMe
 export type { DescribeFieldShape, Checkpoint, SoqlOptions } from "./columns.js";
 export { parseBulkCsv, ArchiveCsvError } from "./csv.js";
 export type { BulkCsv } from "./csv.js";
+export { indexDdl, renderIndexSql, INDEX_TABLES } from "./indexsql.js";
+export type { CsvFileRow, ObjectRow, BackupRunRow, BackupRunStatus, IndexRows } from "./indexsql.js";
