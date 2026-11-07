@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
 status: executing
-stopped_at: Completed 16-04-PLAN.md
-last_updated: "2026-11-07T15:49:36.379Z"
+stopped_at: Completed 16-05-PLAN.md
+last_updated: "2026-11-07T15:54:40.025Z"
 last_activity: 2026-11-07
 progress:
   total_phases: 11
   completed_phases: 1
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
 Phase: 16 (archive-fixture-generator) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-11-07
 
@@ -163,6 +163,7 @@ Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 | Phase 16 P01 | 10min | 3 tasks | 12 files |
 | Phase 16 P03 | 25min | 3 tasks | 4 files |
 | Phase 16 P04 | 25min | 2 tasks | 6 files |
+| Phase 16 P05 | 15min | 2 tasks | 40 files |
 
 ## Accumulated Context
 
@@ -179,6 +180,7 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 - [Phase 15]: 15-09: Content-Length from BlobStore size, not ContentSize; blob diagnostics once per version via req.log.warn
 - [Phase 16]: Roll-ups are seeded as supplied (import mode stores them); tsconfig.scripts.json maps @orglet/sigha to built d.ts
 - [Phase 16]: Query results keep formula fields at SELECT position (computedAt) so Bulk CSV headers match Heimdall column rule
+- [Phase 16]: Fixture CSV names are synthetic 750 Ids; BigTable__c LIMIT 8 forces two CSVs per period
 
 ### Pending Todos
 
@@ -203,6 +205,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-07T15:49:36.376Z
-Stopped at: Completed 16-04-PLAN.md
+Last session: 2026-11-07T15:54:40.021Z
+Stopped at: Completed 16-05-PLAN.md
 Resume file: None
