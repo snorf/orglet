@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
 status: executing
-stopped_at: Completed 16-03-PLAN.md
-last_updated: "2026-11-07T15:45:12.254Z"
+stopped_at: Completed 16-04-PLAN.md
+last_updated: "2026-11-07T15:49:36.379Z"
 last_activity: 2026-11-07
 progress:
   total_phases: 11
   completed_phases: 1
   total_plans: 16
-  completed_plans: 13
+  completed_plans: 14
   percent: 14
 ---
 
@@ -29,7 +29,7 @@ rather than faked.
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
 Phase: 16 (archive-fixture-generator) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-11-07
 
@@ -162,6 +162,7 @@ Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 | Phase 15 P10 | n/a | 2 tasks | 5 files |
 | Phase 16 P01 | 10min | 3 tasks | 12 files |
 | Phase 16 P03 | 25min | 3 tasks | 4 files |
+| Phase 16 P04 | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -177,6 +178,7 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 - [Phase 15]: Set-null cascade skips rows already being deleted up the stack (keeps LatestPublishedVersionId)
 - [Phase 15]: 15-09: Content-Length from BlobStore size, not ContentSize; blob diagnostics once per version via req.log.warn
 - [Phase 16]: Roll-ups are seeded as supplied (import mode stores them); tsconfig.scripts.json maps @orglet/sigha to built d.ts
+- [Phase 16]: Query results keep formula fields at SELECT position (computedAt) so Bulk CSV headers match Heimdall column rule
 
 ### Pending Todos
 
@@ -201,6 +203,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-07T15:45:12.250Z
-Stopped at: Completed 16-03-PLAN.md
+Last session: 2026-11-07T15:49:36.376Z
+Stopped at: Completed 16-04-PLAN.md
 Resume file: None
