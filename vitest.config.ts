@@ -7,7 +7,7 @@ const pkg = (name: string) =>
 export default defineConfig({
   resolve: {
     alias: Object.fromEntries(
-      ["sigha", "metadata", "schema", "formula", "soql", "engine", "api", "cli"].map((n) => [
+      ["sigha", "metadata", "schema", "formula", "soql", "engine", "api", "archive", "cli"].map((n) => [
         `@orglet/${n}`,
         pkg(n),
       ]),
