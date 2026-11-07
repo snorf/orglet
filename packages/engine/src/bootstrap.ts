@@ -4,7 +4,7 @@
  * and the default BusinessHours and the Salesforce UserLicense every real org has. Those two
  * objects reject API writes (UserLicense is read-only, BusinessHours cannot be deleted), so
  * this is how they get rows outside import mode. Idempotent: existing rows are reused and
- * never modified.
+ * never modified. Ids and the stamp can be pinned through options for the deterministic archive fixture.
  */
 import type { OrgSchema, SObjectDef } from "@orglet/metadata";
 import { formatSalesforceDatetime, generateId, type Pool, withTransaction } from "@orglet/schema";
@@ -16,6 +16,10 @@ export interface BootstrapOptions {
   orgSchema: string;
   organizationName?: string;
   admin?: { username?: string; email?: string; firstName?: string; lastName?: string; alias?: string };
+  /** Fixed CreatedDate/LastModifiedDate/SystemModstamp (Salesforce `+0000` form) for every row minted here; defaults to the wall clock. The archive fixture generator pins it (Phase 16 D-01). */
+  now?: string;
+  /** Fixed Ids for the rows minted here; absent entries are generated. recordTypes is keyed by lower-cased "<object>.<developerName>", the recordTypeIds key form. */
+  ids?: { organization?: string; profile?: string; user?: string; businessHours?: string; userLicense?: string; recordTypes?: Readonly<Record<string, string>> };
 }
 
 export interface BootstrapResult {
@@ -48,7 +52,7 @@ export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: Boots
   const recordType = need(schema, "RecordType");
   const businessHours = need(schema, "BusinessHours");
   const userLicense = need(schema, "UserLicense");
-  const now = formatSalesforceDatetime(new Date());
+  const now = options.now ?? formatSalesforceDatetime(new Date());
   const username = options.admin?.username ?? "admin@orglet.local";
 
   return withTransaction(pool, async (client) => {
@@ -61,9 +65,9 @@ export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: Boots
       const org = await client.query<{ id: string }>(`SELECT "id" FROM ${store.table(organization)} LIMIT 1`);
       session = { userId: existing.rows[0].id, profileId: existing.rows[0].profileid, organizationId: org.rows[0]?.id ?? "" };
     } else {
-      const orgId = generateId(prefixOf(organization));
-      const profileId = generateId(prefixOf(profile));
-      const userId = generateId(prefixOf(user));
+      const orgId = options.ids?.organization ?? generateId(prefixOf(organization));
+      const profileId = options.ids?.profile ?? generateId(prefixOf(profile));
+      const userId = options.ids?.user ?? generateId(prefixOf(user));
       const system = { IsDeleted: false, CreatedDate: now, CreatedById: userId, LastModifiedDate: now, LastModifiedById: userId, SystemModstamp: now };
       // The user row must come first: every other row's CreatedById points at it.
       await store.insert(client, user, {
@@ -103,12 +107,12 @@ export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: Boots
     // default BusinessHours (an imported one too) counts as present.
     const defaultHours = await client.query<{ id: string }>(`SELECT "id" FROM ${store.table(businessHours)} WHERE "isdefault" = true AND "isdeleted" = false LIMIT 1`);
     if (!defaultHours.rows[0]) {
-      await store.insert(client, businessHours, { Id: generateId(prefixOf(businessHours)), Name: SEED_BUSINESS_HOURS, IsDefault: true, IsActive: true, ...stamp });
+      await store.insert(client, businessHours, { Id: options.ids?.businessHours ?? generateId(prefixOf(businessHours)), Name: SEED_BUSINESS_HOURS, IsDefault: true, IsActive: true, ...stamp });
     }
     const license = await client.query<{ id: string }>(`SELECT "id" FROM ${store.table(userLicense)} WHERE "masterlabel" = $1 AND "isdeleted" = false LIMIT 1`, [SEED_USER_LICENSE]);
     let licenseId = license.rows[0]?.id;
     if (licenseId === undefined) {
-      licenseId = generateId(prefixOf(userLicense));
+      licenseId = options.ids?.userLicense ?? generateId(prefixOf(userLicense));
       await store.insert(client, userLicense, { Id: licenseId, Name: SEED_USER_LICENSE, MasterLabel: SEED_USER_LICENSE, ...stamp });
     }
     // Link the admin profile only while it has no license; an imported or user-set value stays.
@@ -121,7 +125,7 @@ export async function bootstrapOrg(pool: Pool, schema: OrgSchema, options: Boots
       for (const rt of obj.recordTypes) {
         const key = `${obj.name}.${rt.name}`.toLowerCase();
         if (recordTypeIds.has(key)) continue;
-        const id = generateId(prefixOf(recordType));
+        const id = options.ids?.recordTypes?.[key] ?? generateId(prefixOf(recordType));
         await store.insert(client, recordType, {
           Id: id,
           Name: rt.label,
