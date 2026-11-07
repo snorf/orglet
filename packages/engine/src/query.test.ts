@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
-import { buildOrgSchema, loadBaseline, loadOrgSchema, readSourceProject, type OrgSchema } from "@orglet/metadata";
+import { buildOrgSchema, loadBaseline, loadOrgSchema, OrgSchemaImpl, readSourceProject, type FieldDef, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { compileFormula } from "@orglet/formula";
 import { generateId, matchTargetByPrefix, migrate, quote, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
@@ -141,6 +141,48 @@ describe("runQuery", () => {
   it("honours the query's own LIMIT under pagination", async () => {
     const page = await q("SELECT Id FROM Contact LIMIT 1", { batchSize: 2000 });
     expect(page).toMatchObject({ totalSize: 1, done: true });
+  });
+});
+
+describe("formula fields keep their SELECT position", () => {
+  const formulaOrg = `test_${randomBytes(4).toString("hex")}`;
+  let formulaEngine: DmlEngine;
+  let formulaSession: Session;
+
+  beforeAll(async () => {
+    const account = schema.getObject("Account") as SObjectDef;
+    const template = account.fields.find((f) => f.name === "Name") as FieldDef;
+    const extended: SObjectDef = {
+      ...account,
+      fields: [
+        ...account.fields,
+        { ...template, name: "First__c", label: "First", type: "Text", formula: 'Name & "1"' },
+        { ...template, name: "Second__c", label: "Second", type: "Text", formula: 'Name & "2"' },
+      ],
+    };
+    const objects = new Map(schema.objects);
+    objects.set("account", extended);
+    const extendedSchema = new OrgSchemaImpl(objects, schema.globalValueSets, schema.standardValueSets, schema.labels);
+    await migrate(pool, extendedSchema, { orgSchema: formulaOrg });
+    formulaSession = (await bootstrapOrg(pool, extendedSchema, { orgSchema: formulaOrg })).session;
+    formulaEngine = new DmlEngine(pool, extendedSchema, { orgSchema: formulaOrg });
+    const [r] = await formulaEngine.insert(formulaSession, "Account", [{ Name: "Ordered" }]);
+    if (!r?.success) throw new Error(JSON.stringify(r?.errors));
+  });
+
+  afterAll(async () => {
+    await pool.query(`DROP SCHEMA IF EXISTS ${quote(formulaOrg)} CASCADE`);
+  });
+
+  it("two adjacent formula fields come back in SELECT order, not reversed", async () => {
+    const page = await runQuery(formulaEngine, formulaSession, "SELECT Id, First__c, Second__c, Name FROM Account", { apiVersion: "60.0" });
+    expect(Object.keys(page.records[0] ?? {})).toEqual(["attributes", "Id", "First__c", "Second__c", "Name"]);
+    expect(page.records[0]).toMatchObject({ First__c: "Ordered1", Second__c: "Ordered2" });
+  });
+
+  it("a formula field selected last stays last", async () => {
+    const page = await runQuery(formulaEngine, formulaSession, "SELECT Name, Id, Second__c FROM Account", { apiVersion: "60.0" });
+    expect(Object.keys(page.records[0] ?? {})).toEqual(["attributes", "Name", "Id", "Second__c"]);
   });
 });
 

@@ -98,7 +98,10 @@ function restoreSelectOrder(shape: SObjectShape, records: Row[]): void {
   const at = shape.computedAt;
   if (!at) return;
   const ordered: string[] = shape.fields.map((f) => f.name);
+  // Insert from the highest position down so earlier indexes stay valid; reverse first so that
+  // adjacent formula fields (same position) end up in the order they were selected.
   [...shape.computed]
+    .reverse()
     .sort((a, b) => (at.get(b) ?? 0) - (at.get(a) ?? 0))
     .forEach((name) => ordered.splice(Math.min(at.get(name) ?? ordered.length, ordered.length), 0, name));
   for (const record of records) {
