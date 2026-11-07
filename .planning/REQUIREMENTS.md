@@ -116,7 +116,7 @@ superseded by FILE-03..FILE-09 below; **FILE-02** stays deferred.
 
 ### Public fixture and acceptance
 
-- [ ] **FIX-01**: A deterministic script under `scripts/` boots orglet on `examples/acme` with a fixed
+- [x] **FIX-01**: A deterministic script under `scripts/` boots orglet on `examples/acme` with a fixed
   clock, runs Bulk 2.0 query per object in Heimdall's field order, and writes `examples/acme-archive/`:
   the S3 key layout with two periods and `_deleted` folders, `Period=0/files/` blobs for the fixture's
   ContentVersions, and a dump of the `objects`/`csvfiles`/`backup_runs` index. A re-run produces
@@ -230,7 +230,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BROWSE-03 | Phase 20 | Pending |
 | BROWSE-04 | Phase 20 | Pending |
 | BROWSE-05 | Phase 20 | Pending |
-| FIX-01 | Phase 16 | Pending |
+| FIX-01 | Phase 16 | Complete |
 | ACC3-01 | Phase 21 | Pending |
 
 **Coverage:**

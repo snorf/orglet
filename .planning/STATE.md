@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
-status: verifying
-stopped_at: Phase 16 context gathered
-last_updated: "2026-11-07T13:37:07.751Z"
-last_activity: 2026-11-04
+status: executing
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-11-07T15:39:13.871Z"
+last_activity: 2026-11-07
 progress:
   total_phases: 11
   completed_phases: 1
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 16
+  completed_plans: 12
   percent: 14
 ---
 
@@ -23,15 +23,15 @@ See: .planning/PROJECT.md (updated 2026-11-03 at the start of v1.2)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 16 — archive-fixture-generator (next: /gsd:discuss-phase 16)
+**Current focus:** Phase 16 — archive-fixture-generator
 
 ## Current Position
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
-Phase: 16 (archive-fixture-generator) — NOT STARTED
-Plan: Not started
-Status: Phase 15 complete and verified (15-VERIFICATION.md: passed, 5/5 criteria)
-Last activity: 2026-11-04
+Phase: 16 (archive-fixture-generator) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-11-07
 
 Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 
@@ -160,6 +160,7 @@ Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 | Phase 15 P07 | 10min | 2 tasks | 2 files |
 | Phase 15 P09 | 25min | 3 tasks | 5 files |
 | Phase 15 P10 | n/a | 2 tasks | 5 files |
+| Phase 16 P01 | 10min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -198,6 +199,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-07T13:37:07.748Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-archive-fixture-generator/16-CONTEXT.md
+Last session: 2026-11-07T15:39:13.866Z
+Stopped at: Completed 16-01-PLAN.md
+Resume file: None
