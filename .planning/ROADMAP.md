@@ -88,7 +88,14 @@ Plans:
   1. One script under `scripts/` boots orglet on `examples/acme` with a fixed clock and writes `examples/acme-archive/` from Bulk 2.0 query output in Heimdall's field order
   2. The output has the S3 key layout with two periods, `_deleted` folders, `Period=0/files/` blobs for the fixture's ContentVersions, and a dump of the `objects`/`csvfiles`/`backup_runs` index
   3. Running the script twice produces byte-identical output, and each blob's MD5 equals its ContentVersion `Checksum`
-**Plans**: TBD
+**Plans**: 6 plans in 5 waves
+Plans:
+- [ ] 16-01-PLAN.md — New @orglet/archive package: key/period, column/SOQL, objects.name/metadata, CSV reader, index DDL and renderer
+- [ ] 16-02-PLAN.md — BootstrapOptions fixed ids/now, always-pglite openPgliteDb(), value-free leak guard
+- [ ] 16-03-PLAN.md — Import-mode spikes, seed data module (two-period story), fixture org boot and apply
+- [ ] 16-04-PLAN.md — Heimdall-style Bulk 2.0 export per period (checkpoint paging, Failed run) and index rows
+- [ ] 16-05-PLAN.md — buildFixture(), generated README, gen/--check CLI, root scripts, committed examples/acme-archive
+- [ ] 16-06-PLAN.md — Fixture acceptance test (determinism, MD5 == Checksum, index load, story), phase gate, README review
 **Notes**: Needs a seeded id/clock seam in engine/schema (PITFALLS P23); the index dump is written independently of the loader so the loader test is not circular.
 
 ### Phase 17: Archive Mode & Read-Only
