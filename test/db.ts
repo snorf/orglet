@@ -4,6 +4,7 @@
  * reaches it through the ordinary pg pool, so no Docker is needed. A per-file instance rather than one
  * shared instance, because pglite-socket runs every connection through a single query queue and
  * interleaved transactions from parallel test files can block each other indefinitely.
+ * `openPgliteDb()` skips the switch and always uses pglite.
  * pglite-socket needs Node 19+ (global CustomEvent); the project pins Node 22.
  */
 import { PGlite } from "@electric-sql/pglite";
@@ -77,6 +78,11 @@ export async function openTestDb(): Promise<TestDb> {
     }
     return { pool, close: () => pool.end() };
   }
+  return openPgliteDb();
+}
+
+/** In-process pglite behind pglite-socket, regardless of ORGLET_DATABASE_URL. The archive fixture generator uses this so it can never write into a dev or CI Postgres (Phase 16 D-12). */
+export async function openPgliteDb(): Promise<TestDb> {
   const db = await PGlite.create();
   // pglite-socket allows one connection by default. pg-pool destroys a client after a failed query
   // and reconnects at once; if the server has not yet processed the old socket's close, the new
