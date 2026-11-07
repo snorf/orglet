@@ -90,4 +90,22 @@ async function computeFormulaFields(engine: DmlEngine, client: PoolClient, sessi
     const source: RecordData | undefined = byId.get(id);
     for (const name of shape.computed) record[name] = source?.[name] ?? null;
   }
+  restoreSelectOrder(shape, records);
+}
+
+/** Formula values are appended after the stored columns; put each back where the SELECT listed it, as Salesforce does (Bulk CSV headers follow record key order). */
+function restoreSelectOrder(shape: SObjectShape, records: Row[]): void {
+  const at = shape.computedAt;
+  if (!at) return;
+  const ordered: string[] = shape.fields.map((f) => f.name);
+  [...shape.computed]
+    .sort((a, b) => (at.get(b) ?? 0) - (at.get(a) ?? 0))
+    .forEach((name) => ordered.splice(Math.min(at.get(name) ?? ordered.length, ordered.length), 0, name));
+  for (const record of records) {
+    const copy = { ...record };
+    for (const key of Object.keys(record)) delete record[key];
+    if ("attributes" in copy) record["attributes"] = copy["attributes"];
+    for (const key of ordered) if (key in copy) record[key] = copy[key];
+    for (const key of Object.keys(copy)) if (!(key in record)) record[key] = copy[key];
+  }
 }

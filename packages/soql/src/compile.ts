@@ -36,6 +36,8 @@ export interface SObjectShape {
   fields: ShapeField[];
   /** Formula fields requested; computed after the query by the caller, which needs the full row. */
   computed: string[];
+  /** Position in `fields` at which each computed field was selected, so callers can restore SELECT order. */
+  computedAt?: Map<string, number>;
   parents: Map<string, SObjectShape>;
   /** Child subqueries: column alias holding a JSON array of child rows (already shaped keys). */
   children: Map<string, { alias: string; shape: SObjectShape }>;
@@ -347,7 +349,10 @@ class Compiler {
     const addField = (target: SObjectShape, alias: string, obj: SObjectDef, field: FieldDef, labels?: Map<string, string>) => {
       if (field.formula !== undefined) {
         if (target !== shape) throw unsupported("soql-formula", `formula field ${obj.name}.${field.name} on a parent relationship cannot be selected yet`);
-        if (!target.computed.includes(field.name)) target.computed.push(field.name);
+        if (!target.computed.includes(field.name)) {
+          target.computed.push(field.name);
+          (target.computedAt ??= new Map()).set(field.name, target.fields.length);
+        }
         return;
       }
       if (target.fields.some((f) => f.name === field.name && !labels)) return;
