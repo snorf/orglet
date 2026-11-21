@@ -1,0 +1,3 @@
+IsDeleted,Name,CreatedDate,CreatedById,LastModifiedDate,LastModifiedById,RecordTypeId,Account__c,Budget__c,Code__c,End_Date__c,Is_Overdue__c,Manager__c,Notes__c,Start_Date__c,Status__c,Milestone_Count__c,Next_Due_Date__c,Open_Milestones__c,SystemModstamp,Id
+false,Project 1,2026-01-08T08:00:00.000+0000,005000000000001AAA,2026-02-06T09:00:00.000+0000,005000000000001AAA,012000000000001AAA,001000000000001AAA,50000,PRJ-001,2025-12-15,true,005000000000001AAA,"Rewritten notes:
+- phase 1 delivered",2025-03-01,Active,3,2026-03-31,1,2026-02-06T09:00:00.000+0000,a02000000000001AAA

@@ -21,6 +21,8 @@
     "baseline:check": "tsx scripts/gen-baseline/generate.ts --check",
     "baseline:snapshot": "tsx scripts/gen-baseline/snapshot-pdf.ts",
     "baseline:sync": "bash scripts/sync-sfdocs.sh",
+    "archive-fixture:gen": "tsx --tsconfig tsconfig.test.json scripts/gen-archive-fixture/generate.ts",
+    "archive-fixture:check": "tsx --tsconfig tsconfig.test.json scripts/gen-archive-fixture/generate.ts --check",
     "typecheck:scripts": "tsc -p tsconfig.scripts.json",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down"

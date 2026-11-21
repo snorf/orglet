@@ -221,6 +221,8 @@ importers:
         specifier: ^5.12.5
         version: 5.12.5
 
+  packages/archive: {}
+
   packages/cli:
     dependencies:
       '@orglet/api':

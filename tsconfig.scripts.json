@@ -1,4 +1,10 @@
 {
   "extends": "./tsconfig.test.json",
+  "compilerOptions": {
+    "paths": {
+      "@orglet/sigha": ["./packages/sigha/dist/index.d.ts"],
+      "@orglet/*": ["./packages/*/src/index.ts"]
+    }
+  },
   "include": ["scripts/**/*.ts"]
 }

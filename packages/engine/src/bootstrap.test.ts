@@ -4,6 +4,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomBytes } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { loadOrgSchema, type OrgSchema, type SObjectDef } from "@orglet/metadata";
 import { formatSalesforceDatetime, generateId, migrate, quote, type Pool } from "@orglet/schema";
 import { openTestDb, type TestDb } from "../../../test/db.js";
@@ -96,5 +97,61 @@ describe("bootstrapOrg seed rows", () => {
     expect(licenses).toHaveLength(2);
     expect(licenses.map((l) => l.name).sort()).toEqual(["Other", "Salesforce"]);
     expect(profiles).toEqual([{ id: session.profileId, userlicenseid: otherLicense }]);
+  });
+});
+
+describe("bootstrapOrg fixed ids and clock", () => {
+  const ACME = fileURLToPath(new URL("../../../examples/acme/", import.meta.url));
+  const NOW = "2026-01-02T08:00:00.000+0000";
+  const ids = {
+    organization: "00D000000000001EAA",
+    profile: "00e000000000001AAA",
+    user: "005000000000001AAA",
+    businessHours: "01m000000000001AAA",
+    userLicense: "100000000000001AAA",
+    recordTypes: { "project__c.internal": "012000000000001AAA", "project__c.external": "012000000000002AAA" },
+  };
+
+  async function acmeOrg(): Promise<{ org: string; acme: OrgSchema }> {
+    const acme = (await loadOrgSchema({ projectDir: ACME })).schema;
+    const org = `test_${randomBytes(4).toString("hex")}`;
+    orgs.push(org);
+    await migrate(pool, acme, { orgSchema: org });
+    return { org, acme };
+  }
+
+  it("mints bootstrap rows with the supplied ids and stamp", async () => {
+    const { org, acme } = await acmeOrg();
+    const { session, recordTypeIds } = await bootstrapOrg(pool, acme, { orgSchema: org, now: NOW, ids });
+    expect(session).toEqual({ userId: ids.user, profileId: ids.profile, organizationId: ids.organization });
+    expect(recordTypeIds.get("project__c.internal")).toBe(ids.recordTypes["project__c.internal"]);
+    const expected: Record<string, string[]> = {
+      organization: [ids.organization],
+      profile: [ids.profile],
+      user: [ids.user],
+      businesshours: [ids.businessHours],
+      userlicense: [ids.userLicense],
+      recordtype: Object.values(ids.recordTypes),
+    };
+    for (const [table, want] of Object.entries(expected)) {
+      const { rows } = await pool.query<{ id: string; createddate: string; lastmodifieddate: string; systemmodstamp: string }>(
+        `SELECT "id", "createddate", "lastmodifieddate", "systemmodstamp" FROM ${quote(org)}.${quote(table)} ORDER BY "id"`,
+      );
+      expect(rows.map((r) => r.id).sort(), table).toEqual([...want].sort());
+      for (const r of rows) expect([r.createddate, r.lastmodifieddate, r.systemmodstamp], table).toEqual([NOW, NOW, NOW]);
+    }
+  });
+
+  it("generates ids for record types the options do not name", async () => {
+    const { org, acme } = await acmeOrg();
+    const { recordTypeIds } = await bootstrapOrg(pool, acme, {
+      orgSchema: org,
+      now: NOW,
+      ids: { recordTypes: { "project__c.internal": ids.recordTypes["project__c.internal"], "nosuch__c.thing": "012000000000009AAA" } },
+    });
+    expect(recordTypeIds.get("project__c.internal")).toBe(ids.recordTypes["project__c.internal"]);
+    expect(recordTypeIds.get("project__c.external")).toMatch(/^012/);
+    expect(recordTypeIds.get("project__c.external")).not.toBe(ids.recordTypes["project__c.internal"]);
+    expect(recordTypeIds.has("nosuch__c.thing")).toBe(false);
   });
 });

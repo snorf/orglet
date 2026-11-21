@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
 status: verifying
-stopped_at: Completed 15-10-PLAN.md
-last_updated: "2026-11-04T13:28:27.931Z"
-last_activity: 2026-11-04
+stopped_at: Phase 16 complete and verified
+last_updated: "2026-11-21T08:39:57.367Z"
+last_activity: 2026-11-21
 progress:
   total_phases: 11
-  completed_phases: 1
-  total_plans: 10
-  completed_plans: 10
-  percent: 14
+  completed_phases: 2
+  total_plans: 16
+  completed_plans: 16
+  percent: 18
 ---
 
 # Project State
@@ -23,17 +23,17 @@ See: .planning/PROJECT.md (updated 2026-11-03 at the start of v1.2)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 16 — archive-fixture-generator (next: /gsd:discuss-phase 16)
+**Current focus:** Phase 17 — archive-mode-read-only (next: /gsd:discuss-phase 17)
 
 ## Current Position
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
-Phase: 16 (archive-fixture-generator) — NOT STARTED
+Phase: 17 (archive-mode-read-only) — NOT STARTED
 Plan: Not started
-Status: Phase 15 complete and verified (15-VERIFICATION.md: passed, 5/5 criteria)
-Last activity: 2026-11-04
+Status: Phase 16 complete and verified (16-VERIFICATION.md: passed, 3/3 criteria)
+Last activity: 2026-11-21
 
-Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
+Progress: [███░░░░░░░] 29% (v1.2: 2 of 7 phases)
 
 ## Performance Metrics
 
@@ -160,6 +160,11 @@ Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 | Phase 15 P07 | 10min | 2 tasks | 2 files |
 | Phase 15 P09 | 25min | 3 tasks | 5 files |
 | Phase 15 P10 | n/a | 2 tasks | 5 files |
+| Phase 16 P01 | 10min | 3 tasks | 12 files |
+| Phase 16 P03 | 25min | 3 tasks | 4 files |
+| Phase 16 P04 | 25min | 2 tasks | 6 files |
+| Phase 16 P05 | 15min | 2 tasks | 40 files |
+| Phase 16 P06 | 15min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -174,6 +179,9 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 - [Phase 15]: NOT NULL only via explicit STRUCTURAL_NOT_NULL set; migrate reconciles nullability with UNSUPPORTED:schema-notnull skip-and-warn
 - [Phase 15]: Set-null cascade skips rows already being deleted up the stack (keeps LatestPublishedVersionId)
 - [Phase 15]: 15-09: Content-Length from BlobStore size, not ContentSize; blob diagnostics once per version via req.log.warn
+- [Phase 16]: Roll-ups are seeded as supplied (import mode stores them); tsconfig.scripts.json maps @orglet/sigha to built d.ts
+- [Phase 16]: Query results keep formula fields at SELECT position (computedAt) so Bulk CSV headers match Heimdall column rule
+- [Phase 16]: Fixture CSV names are synthetic 750 Ids; BigTable__c LIMIT 8 forces two CSVs per period
 
 ### Pending Todos
 
@@ -198,6 +206,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-04T12:56:50.668Z
-Stopped at: Completed 15-10-PLAN.md
+Last session: 2026-11-21T08:26:10.545Z
+Stopped at: Completed 16-06-PLAN.md
 Resume file: None

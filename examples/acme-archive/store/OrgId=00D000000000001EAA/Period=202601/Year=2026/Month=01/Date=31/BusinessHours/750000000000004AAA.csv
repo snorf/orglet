@@ -1,0 +1,2 @@
+IsDeleted,BusinessHoursId,FridayEndTime,FridayStartTime,IsActive,IsDefault,LastViewedDate,MondayEndTime,MondayStartTime,Name,SaturdayEndTime,SaturdayStartTime,SundayEndTime,SundayStartTime,ThursdayEndTime,ThursdayStartTime,TimeZoneSidKey,TuesdayEndTime,TuesdayStartTime,WednesdayEndTime,WednesdayStartTime,CreatedDate,CreatedById,LastModifiedDate,LastModifiedById,SystemModstamp,Id
+false,,,,true,true,,,,Default,,,,,,,,,,,,2026-01-02T08:00:00.000+0000,005000000000001AAA,2026-01-02T08:00:00.000+0000,005000000000001AAA,2026-01-02T08:00:00.000+0000,01m000000000001AAA
