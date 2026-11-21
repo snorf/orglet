@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
-status: executing
-stopped_at: Completed 16-06-PLAN.md
-last_updated: "2026-11-21T08:26:10.551Z"
+status: verifying
+stopped_at: Phase 16 complete and verified
+last_updated: "2026-11-21T08:39:57.367Z"
 last_activity: 2026-11-21
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 16
   completed_plans: 16
-  percent: 14
+  percent: 18
 ---
 
 # Project State
@@ -23,17 +23,17 @@ See: .planning/PROJECT.md (updated 2026-11-03 at the start of v1.2)
 **Core value:** A Salesforce client pointed at orglet cannot tell the difference for the surface
 orglet claims to support, and anything it does not support is logged as `UNSUPPORTED:<area>`
 rather than faked.
-**Current focus:** Phase 16 — archive-fixture-generator
+**Current focus:** Phase 17 — archive-mode-read-only (next: /gsd:discuss-phase 17)
 
 ## Current Position
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
-Phase: 16 (archive-fixture-generator) — EXECUTING
-Plan: 6 of 6
-Status: Ready to execute
+Phase: 17 (archive-mode-read-only) — NOT STARTED
+Plan: Not started
+Status: Phase 16 complete and verified (16-VERIFICATION.md: passed, 3/3 criteria)
 Last activity: 2026-11-21
 
-Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
+Progress: [███░░░░░░░] 29% (v1.2: 2 of 7 phases)
 
 ## Performance Metrics
 
