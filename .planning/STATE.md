@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: archive mode
 status: executing
-stopped_at: Completed 16-05-PLAN.md
-last_updated: "2026-11-07T15:54:40.025Z"
-last_activity: 2026-11-07
+stopped_at: Completed 16-06-PLAN.md
+last_updated: "2026-11-21T08:26:10.551Z"
+last_activity: 2026-11-21
 progress:
   total_phases: 11
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 16
-  completed_plans: 15
+  completed_plans: 16
   percent: 14
 ---
 
@@ -29,9 +29,9 @@ rather than faked.
 
 Milestone: v1.2 "archive mode" (previous: v1.1 shipped 2026-11-01, archive in milestones/)
 Phase: 16 (archive-fixture-generator) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
-Last activity: 2026-11-07
+Last activity: 2026-11-21
 
 Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 
@@ -164,6 +164,7 @@ Progress: [█░░░░░░░░░] 14% (v1.2: 1 of 7 phases)
 | Phase 16 P03 | 25min | 3 tasks | 4 files |
 | Phase 16 P04 | 25min | 2 tasks | 6 files |
 | Phase 16 P05 | 15min | 2 tasks | 40 files |
+| Phase 16 P06 | 15min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -205,6 +206,6 @@ file (last at commit 8920ac9) and in `milestones/v1.1-ROADMAP.md` (Milestone Sum
 
 ## Session Continuity
 
-Last session: 2026-11-07T15:54:40.021Z
-Stopped at: Completed 16-05-PLAN.md
+Last session: 2026-11-21T08:26:10.545Z
+Stopped at: Completed 16-06-PLAN.md
 Resume file: None

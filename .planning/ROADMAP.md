@@ -45,7 +45,7 @@ Audit: [milestones/v1.1-MILESTONE-AUDIT.md](milestones/v1.1-MILESTONE-AUDIT.md).
 Goal: spin up orglet on an SFDX retrieve plus a Heimdall backup and browse the former org read-only, through the Salesforce API and a simple record view, with files served straight from the backup store. Research: `research/SUMMARY.md` (decisions D1-D5).
 
 - [x] **Phase 15: Files Model** - ContentDocument auto-create, versions, VersionData download, ContentDocumentLink, blob store interface (completed 2026-11-04)
-- [ ] **Phase 16: Archive Fixture Generator** - deterministic Heimdall-shaped backup of `examples/acme` in `examples/acme-archive`
+- [x] **Phase 16: Archive Fixture Generator** - deterministic Heimdall-shaped backup of `examples/acme` in `examples/acme-archive` (completed 2026-11-21)
 - [ ] **Phase 17: Archive Mode & Read-Only** - persisted org mode, write refusal, no-write `up`, frozen formula storage
 - [ ] **Phase 18: Archive Loader** - `orglet archive load` streams the backup into an empty archive org
 - [ ] **Phase 19: Erasure** - CLI-only hard delete with a ledger the loader respects
@@ -95,7 +95,7 @@ Plans:
 - [x] 16-03-PLAN.md — Import-mode spikes, seed data module (two-period story), fixture org boot and apply
 - [x] 16-04-PLAN.md — Heimdall-style Bulk 2.0 export per period (checkpoint paging, Failed run) and index rows
 - [x] 16-05-PLAN.md — buildFixture(), generated README, gen/--check CLI, root scripts, committed examples/acme-archive
-- [ ] 16-06-PLAN.md — Fixture acceptance test (determinism, MD5 == Checksum, index load, story), phase gate, README review
+- [x] 16-06-PLAN.md — Fixture acceptance test (determinism, MD5 == Checksum, index load, story), phase gate, README review
 **Notes**: Needs a seeded id/clock seam in engine/schema (PITFALLS P23); the index dump is written independently of the loader so the loader test is not circular.
 
 ### Phase 17: Archive Mode & Read-Only
@@ -178,7 +178,7 @@ Plans:
 | 13. Roll-Ups over Formula Fields | v1.1 | 8/8 | Complete    | 2026-10-24 |
 | 14. Check Report & Enterprise Acceptance | v1.1 | 12/12 | Complete    | 2026-10-31 |
 | 15. Files Model | v1.2 | 10/10 | Complete    | 2026-11-04 |
-| 16. Archive Fixture Generator | v1.2 | 5/6 | In Progress|  |
+| 16. Archive Fixture Generator | v1.2 | 6/6 | Complete   | 2026-11-21 |
 | 17. Archive Mode & Read-Only | v1.2 | 0/0 | Not started | - |
 | 18. Archive Loader | v1.2 | 0/0 | Not started | - |
 | 19. Erasure | v1.2 | 0/0 | Not started | - |
@@ -193,7 +193,7 @@ Unsequenced ideas captured for a later milestone. 999.1-999.7 (the gaps observed
 
 **Goal:** Load __e platform events as objects that accept POST /sobjects (publish) and describe correctly but store nothing queryable, with an optional change-event stream, as groundwork for EVT-01 (CDC/Platform Events to Kafka/SQS). Removes UNSUPPORTED:object-kind for __e.
 **Requirements:** TBD
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 - [ ] TBD (promote with /gsd:review-backlog when ready)
